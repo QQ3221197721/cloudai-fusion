@@ -1,0 +1,199 @@
+{
+  "_comment": "CloudAI Fusion - Enterprise Features Configuration Example",
+
+  "sso": {
+    "_description": "SSO integration with SAML, LDAP, or OIDC",
+    "configs": [
+      {
+        "name": "Corporate SAML IdP",
+        "tenant_id": "acme-corp",
+        "protocol": "saml",
+        "enabled": true,
+        "auto_provision": true,
+        "saml": {
+          "entity_id": "https://idp.acme-corp.com/saml/metadata",
+          "sso_url": "https://idp.acme-corp.com/saml/sso",
+          "certificate": "-----BEGIN CERTIFICATE-----\nMIIDpDCCAoygAwIBAgI...\n-----END CERTIFICATE-----",
+          "acs_url": "https://cloudai-fusion.io/api/v1/enterprise/sso/callback/saml",
+          "sign_requests": true,
+          "name_id_format": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+        },
+        "role_mapping": {
+          "Platform Admins": "admin",
+          "ML Engineers": "editor",
+          "Data Scientists": "viewer",
+          "DevOps": "operator"
+        }
+      },
+      {
+        "name": "Internal LDAP",
+        "tenant_id": "acme-corp",
+        "protocol": "ldap",
+        "enabled": true,
+        "auto_provision": true,
+        "ldap": {
+          "host": "ldap.acme-corp.internal",
+          "port": 636,
+          "use_tls": true,
+          "bind_dn": "cn=cloudai-svc,ou=services,dc=acme-corp,dc=com",
+          "bind_password_secret": "ldap-bind-password",
+          "base_dn": "ou=employees,dc=acme-corp,dc=com",
+          "user_filter": "(uid={{username}})",
+          "group_base_dn": "ou=groups,dc=acme-corp,dc=com",
+          "group_filter": "(member={{dn}})"
+        },
+        "role_mapping": {
+          "cn=admins,ou=groups,dc=acme-corp,dc=com": "admin",
+          "cn=engineers,ou=groups,dc=acme-corp,dc=com": "editor"
+        }
+      }
+    ]
+  },
+
+  "sla": {
+    "_description": "SLA contract configurations by tier",
+    "contracts": {
+      "enterprise": {
+        "tier": "enterprise",
+        "availability_target": 0.9999,
+        "support_hours": "24x7",
+        "incident_response_times": {
+          "critical": "15m",
+          "high": "1h",
+          "medium": "4h",
+          "low": "1d"
+        },
+        "credit_policy": {
+          "max_credit_percentage": 30,
+          "tiers": [
+            { "threshold": 0.999, "credit_percentage": 10 },
+            { "threshold": 0.995, "credit_percentage": 25 },
+            { "threshold": 0.990, "credit_percentage": 30 }
+          ]
+        },
+        "features": [
+          "Dedicated account manager",
+          "Custom SLA terms negotiable",
+          "Priority incident routing",
+          "Quarterly business reviews"
+        ]
+      },
+      "premium": {
+        "tier": "premium",
+        "availability_target": 0.9995,
+        "support_hours": "24x7",
+        "incident_response_times": {
+          "critical": "30m",
+          "high": "2h",
+          "medium": "8h",
+          "low": "2d"
+        },
+        "credit_policy": {
+          "max_credit_percentage": 25,
+          "tiers": [
+            { "threshold": 0.999, "credit_percentage": 10 },
+            { "threshold": 0.995, "credit_percentage": 20 },
+            { "threshold": 0.990, "credit_percentage": 25 }
+          ]
+        }
+      },
+      "business": {
+        "tier": "business",
+        "availability_target": 0.999,
+        "support_hours": "business_hours",
+        "incident_response_times": {
+          "critical": "1h",
+          "high": "4h",
+          "medium": "1d",
+          "low": "3d"
+        },
+        "credit_policy": {
+          "max_credit_percentage": 15,
+          "tiers": [
+            { "threshold": 0.995, "credit_percentage": 10 },
+            { "threshold": 0.990, "credit_percentage": 15 }
+          ]
+        }
+      }
+    }
+  },
+
+  "audit": {
+    "_description": "Scheduled audit report configurations",
+    "scheduled_reports": [
+      {
+        "tenant_id": "acme-corp",
+        "report_type": "access",
+        "schedule": "weekly",
+        "recipients": ["security@acme-corp.com", "compliance@acme-corp.com"],
+        "format": "pdf"
+      },
+      {
+        "tenant_id": "acme-corp",
+        "report_type": "compliance",
+        "schedule": "monthly",
+        "recipients": ["ciso@acme-corp.com"],
+        "format": "pdf"
+      },
+      {
+        "tenant_id": "acme-corp",
+        "report_type": "cost",
+        "schedule": "weekly",
+        "recipients": ["finance@acme-corp.com"],
+        "format": "csv"
+      },
+      {
+        "tenant_id": "acme-corp",
+        "report_type": "security",
+        "schedule": "daily",
+        "recipients": ["soc@acme-corp.com"],
+        "format": "json"
+      }
+    ]
+  },
+
+  "support": {
+    "_description": "Support ticket system configuration",
+    "auto_assignment": {
+      "enabled": true,
+      "rules": [
+        {
+          "category": "cluster",
+          "priority": ["critical", "high"],
+          "team": "platform-sre"
+        },
+        {
+          "category": "networking",
+          "team": "network-ops"
+        },
+        {
+          "category": "billing",
+          "team": "finance-support"
+        },
+        {
+          "category": "security",
+          "priority": ["critical"],
+          "team": "security-incident-response"
+        }
+      ]
+    },
+    "escalation_policy": {
+      "critical": {
+        "first_response_sla": "15m",
+        "escalation_after": "30m",
+        "escalate_to": "engineering-lead"
+      },
+      "high": {
+        "first_response_sla": "1h",
+        "escalation_after": "4h",
+        "escalate_to": "team-lead"
+      }
+    },
+    "notification_channels": {
+      "critical": ["pagerduty", "slack", "email"],
+      "high": ["slack", "email"],
+      "medium": ["email"],
+      "low": ["email"]
+    }
+  }
+}

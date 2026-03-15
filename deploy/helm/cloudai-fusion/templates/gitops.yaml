@@ -1,0 +1,114 @@
+{{- /*
+  GitOps Controller — manages ArgoCD/Flux integration, drift detection,
+  and environment promotion pipelines.
+*/}}
+{{- if .Values.gitops.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-gitops-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gitops-controller
+spec:
+  replicas: {{ .Values.gitops.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cloudai-fusion.name" . }}
+      app.kubernetes.io/component: gitops-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "cloudai-fusion.name" . }}
+        app.kubernetes.io/component: gitops-controller
+    spec:
+      serviceAccountName: {{ include "cloudai-fusion.fullname" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: gitops-controller
+          image: "{{ .Values.gitops.image.repository }}:{{ .Values.gitops.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.gitops.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: 8085
+            - name: metrics
+              containerPort: 9105
+          env:
+            - name: GITOPS_ENGINE
+              value: {{ .Values.gitops.engine | default "argocd" | quote }}
+            - name: DRIFT_CHECK_INTERVAL
+              value: {{ .Values.gitops.driftCheckInterval | default "5m" | quote }}
+            - name: AUTO_REMEDIATE_DRIFT
+              value: {{ .Values.gitops.autoRemediateDrift | default "false" | quote }}
+            - name: APISERVER_ADDR
+              value: "http://{{ include "cloudai-fusion.fullname" . }}-apiserver:8080"
+            {{- if .Values.gitops.argocd.enabled }}
+            - name: ARGOCD_SERVER
+              value: {{ .Values.gitops.argocd.server | quote }}
+            - name: ARGOCD_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cloudai-fusion.fullname" . }}-gitops-secrets
+                  key: argocd-auth-token
+                  optional: true
+            {{- end }}
+            {{- if .Values.gitops.flux.enabled }}
+            - name: FLUX_NAMESPACE
+              value: {{ .Values.gitops.flux.namespace | default "flux-system" | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.gitops.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-gitops-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gitops-controller
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8085
+      targetPort: http
+    - name: metrics
+      port: 9105
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: {{ include "cloudai-fusion.name" . }}
+    app.kubernetes.io/component: gitops-controller
+---
+{{- if .Values.gitops.argocd.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-gitops-secrets
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  {{- if .Values.gitops.argocd.authToken }}
+  argocd-auth-token: {{ .Values.gitops.argocd.authToken | b64enc | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

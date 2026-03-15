@@ -1,0 +1,23 @@
+# Example: vLLM Inference Service with 1x A100 GPU
+# Submit via: curl -X POST http://localhost:8080/api/v1/workloads -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d @examples/inference-service.json
+{
+  "name": "llama2-7b-serving",
+  "cluster_id": "your-cluster-uuid",
+  "type": "inference",
+  "priority": 80,
+  "framework": "pytorch",
+  "model_name": "meta-llama/Llama-2-7b-chat-hf",
+  "image": "vllm/vllm-openai:latest",
+  "command": "python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-2-7b-chat-hf --port 8000",
+  "gpu_type_required": "nvidia-a100",
+  "gpu_count_required": 1,
+  "resource_request": {
+    "cpu": "8",
+    "memory": "32Gi",
+    "nvidia.com/gpu": "1"
+  },
+  "env_vars": {
+    "HF_TOKEN": "your-huggingface-token",
+    "VLLM_ATTENTION_BACKEND": "FLASH_ATTN"
+  }
+}

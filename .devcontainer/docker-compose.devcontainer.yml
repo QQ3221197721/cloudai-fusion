@@ -1,0 +1,38 @@
+# DevContainer-specific docker-compose override
+# Used by .devcontainer/devcontainer.json alongside ../docker-compose.yml
+version: "3.9"
+
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    environment:
+      - CLOUDAI_DB_HOST=postgres
+      - CLOUDAI_DB_PORT=5432
+      - CLOUDAI_DB_NAME=cloudai
+      - CLOUDAI_DB_USER=cloudai
+      - CLOUDAI_DB_PASSWORD=devcontainer_secret
+      - CLOUDAI_REDIS_ADDR=redis:6379
+      - CLOUDAI_KAFKA_BROKERS=kafka:9092
+      - CLOUDAI_NATS_URL=nats://nats:4222
+      - CLOUDAI_JWT_SECRET=devcontainer-jwt-secret-not-for-production-use-32bytes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks:
+      - cloudai-net
+
+  # Override postgres password for devcontainer (no .env needed)
+  postgres:
+    environment:
+      - POSTGRES_DB=cloudai
+      - POSTGRES_USER=cloudai
+      - POSTGRES_PASSWORD=devcontainer_secret

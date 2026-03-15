@@ -1,0 +1,77 @@
+# ============================================================================
+# CloudAI Fusion - Docker Build Context Exclusions
+# Reduces build context size → faster docker build, smaller cache layers
+# ============================================================================
+
+# --- Version Control ---
+.git
+.gitignore
+
+# --- Environment & Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Documentation (not needed in images) ---
+*.md
+LICENSE
+DCO
+docs/
+
+# --- Build Artifacts ---
+bin/
+dist/
+build/
+coverage/
+
+# --- Go ---
+vendor/
+*.test
+*.out
+**/*_test.go
+
+# --- Python ---
+__pycache__
+*.pyc
+*.pyo
+.eggs
+*.egg-info
+venv/
+.venv/
+.pytest_cache/
+.mypy_cache/
+ai/requirements-dev.txt
+
+# --- Data & Logs (mounted at runtime) ---
+data/
+logs/
+*.log
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Dev & CI files ---
+.devcontainer/
+docker-compose.dev.yml
+docker-compose.gpu.yml
+.golangci.yml
+.goreleaser.yml
+.codecov.yml
+pytest.ini
+Makefile
+
+# --- Infrastructure (not part of application) ---
+terraform/
+monitoring/
+deploy/
+examples/
+tests/
+scripts/setup-gpu.*
+scripts/diagnose.*
+scripts/deploy-cloud.*
+scripts/env-generate.*

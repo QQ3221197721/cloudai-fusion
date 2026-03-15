@@ -1,0 +1,246 @@
+{{- /*
+  NetworkPolicy — Zero-trust microsegmentation for CloudAI Fusion components.
+  Each component only allows traffic from the services it needs to communicate with.
+*/}}
+{{- if .Values.networkPolicy.enabled }}
+---
+# =============================================================================
+# API Server NetworkPolicy
+# Ingress: external traffic (Ingress controller) + internal (scheduler, agent)
+# Egress: postgresql, redis, kafka, ai-engine, scheduler
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-apiserver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: apiserver
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: apiserver
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace | default "ingress-nginx" }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.apiserver.service.port }}
+    # Allow from other CloudAI components
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "cloudai-fusion.selectorLabels" . | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.apiserver.service.port }}
+    # Allow Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.monitoringNamespace | default "monitoring" }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.apiserver.service.metricsPort }}
+  egress:
+    # DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Internal services
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "cloudai-fusion.selectorLabels" . | nindent 14 }}
+---
+# =============================================================================
+# Scheduler NetworkPolicy
+# Ingress: apiserver only
+# Egress: postgresql, redis, K8s API server
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-scheduler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scheduler
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: scheduler
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "cloudai-fusion.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: apiserver
+      ports:
+        - protocol: TCP
+          port: {{ .Values.scheduler.service.port }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.monitoringNamespace | default "monitoring" }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.scheduler.service.metricsPort }}
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # K8s API server
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
+    # PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# =============================================================================
+# Agent NetworkPolicy
+# Ingress: Prometheus only
+# Egress: apiserver, K8s API
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.monitoringNamespace | default "monitoring" }}
+      ports:
+        - protocol: TCP
+          port: 9092
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Apiserver
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "cloudai-fusion.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: apiserver
+      ports:
+        - protocol: TCP
+          port: {{ .Values.apiserver.service.port }}
+    # K8s API server
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
+---
+# =============================================================================
+# AI Engine NetworkPolicy
+# Ingress: apiserver only
+# Egress: external LLM APIs (HTTPS)
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-ai-engine
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai-engine
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ai-engine
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "cloudai-fusion.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: apiserver
+      ports:
+        - protocol: TCP
+          port: {{ .Values.aiEngine.service.port }}
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # External LLM APIs (OpenAI, DashScope, etc.)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+{{- end }}

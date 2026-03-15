@@ -1,0 +1,47 @@
+# ============================================================================
+# CloudAI Fusion - GPU Compose Override
+# ============================================================================
+#
+# This overlay switches the ai-engine to GPU mode (NVIDIA CUDA).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+#   ./start.sh --gpu          (Linux)
+#   start.bat --gpu           (Windows with WSL2)
+#
+# Prerequisites:
+#   Linux:   NVIDIA driver + nvidia-container-toolkit  (run: scripts/setup-gpu.sh)
+#   Windows: WSL2 + NVIDIA driver + Docker Desktop GPU (run: scripts/setup-gpu.bat)
+#   macOS:   NOT SUPPORTED — NVIDIA GPU cannot passthrough on macOS
+#
+# ============================================================================
+version: "3.9"
+
+services:
+  ai-engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai.gpu
+    environment:
+      - AI_DEVICE=cuda
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all}
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # CUDA memory management
+      - PYTORCH_CUDA_ALLOC_CONF=${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-all}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${GPU_COUNT:-all}
+              capabilities: [gpu]
+    # GPU images are larger, allow more startup time
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/healthz"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 8
+    # Shared memory for PyTorch DataLoader multi-process
+    shm_size: '2g'

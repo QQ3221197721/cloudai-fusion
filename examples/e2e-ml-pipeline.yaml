@@ -1,0 +1,240 @@
+# CloudAI Fusion - End-to-End ML Pipeline Example
+# Demonstrates a complete production ML pipeline integrating GPU scheduling,
+# FinOps cost controls, AIOps monitoring, and edge deployment.
+#
+# Apply with: cloudai-fusion apply -f examples/e2e-ml-pipeline.yaml
+
+apiVersion: cloudai-fusion.io/v1
+kind: MLPipeline
+metadata:
+  name: image-classification-pipeline
+  namespace: ml-platform
+  labels:
+    app: cloudai-fusion
+    team: ml-engineering
+    project: visual-inspection
+    environment: production
+  annotations:
+    cloudai-fusion.io/cost-center: "ML-001"
+    cloudai-fusion.io/owner: "ml-team@example.com"
+spec:
+  # --- Stage 1: Data Preparation ---
+  stages:
+    - name: data-preparation
+      type: batch
+      resources:
+        requests:
+          cpu: "8"
+          memory: "32Gi"
+        limits:
+          cpu: "16"
+          memory: "64Gi"
+      container:
+        image: cloudai-fusion/data-pipeline:v2.1
+        command: ["python", "prepare_data.py"]
+        args:
+          - "--input=s3://datasets/raw-images"
+          - "--output=s3://datasets/processed"
+          - "--validation-split=0.15"
+          - "--augmentation=standard"
+      timeout: 2h
+      retries: 2
+      costPolicy:
+        maxCost: 50    # USD
+        useSpot: true
+        spotFallback: on_demand
+
+    # --- Stage 2: Model Training ---
+    - name: model-training
+      type: training
+      dependsOn: [data-preparation]
+      resources:
+        requests:
+          cpu: "32"
+          memory: "128Gi"
+          nvidia.com/gpu: "4"
+        limits:
+          cpu: "48"
+          memory: "192Gi"
+          nvidia.com/gpu: "4"
+      gpuScheduling:
+        type: nvidia-a100
+        topology: NVLink           # NVLink | PCIe | any
+        memoryMode: default        # default | MIG
+        priority: 100
+        preemptible: false
+        gang: true                 # All GPUs must be co-located
+      container:
+        image: cloudai-fusion/trainer:v3.0
+        command: ["torchrun"]
+        args:
+          - "--nproc_per_node=4"
+          - "train.py"
+          - "--model=efficientnet-v2-l"
+          - "--dataset=s3://datasets/processed"
+          - "--epochs=50"
+          - "--batch-size=64"
+          - "--lr=0.001"
+          - "--checkpoint-dir=/checkpoints"
+          - "--wandb-project=visual-inspection"
+        env:
+          - name: NCCL_DEBUG
+            value: "WARN"
+          - name: CUDA_VISIBLE_DEVICES
+            value: "0,1,2,3"
+      checkpointing:
+        enabled: true
+        interval: 5m
+        storage: s3://checkpoints/visual-inspection
+        keepLast: 5
+      timeout: 24h
+      retries: 1
+      costPolicy:
+        maxCost: 500   # USD
+        useSpot: true
+        spotFallback: on_demand
+        checkpointOnSpotTermination: true
+
+    # --- Stage 3: Model Evaluation ---
+    - name: model-evaluation
+      type: batch
+      dependsOn: [model-training]
+      resources:
+        requests:
+          cpu: "8"
+          memory: "32Gi"
+          nvidia.com/gpu: "1"
+      container:
+        image: cloudai-fusion/evaluator:v2.0
+        command: ["python", "evaluate.py"]
+        args:
+          - "--model=/models/latest"
+          - "--test-data=s3://datasets/processed/test"
+          - "--metrics=accuracy,f1,precision,recall,auc"
+          - "--output=s3://reports/evaluation"
+      qualityGates:
+        - metric: accuracy
+          operator: gte
+          threshold: 0.95
+        - metric: f1_score
+          operator: gte
+          threshold: 0.93
+        - metric: inference_latency_p99_ms
+          operator: lte
+          threshold: 50
+      timeout: 1h
+
+    # --- Stage 4: Model Compression (for Edge) ---
+    - name: model-compression
+      type: batch
+      dependsOn: [model-evaluation]
+      resources:
+        requests:
+          cpu: "16"
+          memory: "64Gi"
+          nvidia.com/gpu: "1"
+      container:
+        image: cloudai-fusion/compressor:v1.5
+        command: ["python", "compress.py"]
+        args:
+          - "--input-model=/models/latest"
+          - "--output=/models/compressed"
+          - "--pipeline=prune,quantize,distill"
+          - "--target-size=500M"
+          - "--min-accuracy=0.92"
+      edgeTargets:
+        - profile: balanced
+          targetDevices: [jetson-orin]
+          maxSize: 500Mi
+          maxLatency: 50ms
+        - profile: ultra-compact
+          targetDevices: [jetson-orin-nano]
+          maxSize: 100Mi
+          maxLatency: 100ms
+      timeout: 4h
+
+    # --- Stage 5: Cloud Deployment ---
+    - name: cloud-deployment
+      type: deployment
+      dependsOn: [model-evaluation]
+      deployment:
+        replicas: 3
+        strategy: canary
+        canaryPercentage: 20
+        canaryDuration: 30m
+        rollbackOnFailure: true
+        container:
+          image: cloudai-fusion/serving:v2.0
+          command: ["triton-server"]
+          args:
+            - "--model-repository=/models"
+            - "--grpc-port=8001"
+            - "--http-port=8000"
+            - "--metrics-port=8002"
+          resources:
+            requests:
+              cpu: "4"
+              memory: "16Gi"
+              nvidia.com/gpu: "1"
+        autoscaling:
+          enabled: true
+          minReplicas: 3
+          maxReplicas: 20
+          metrics:
+            - type: gpu_utilization
+              target: 0.70
+            - type: request_latency_p99
+              target: 100ms
+        healthCheck:
+          endpoint: /v2/health/ready
+          initialDelay: 30s
+          interval: 10s
+          timeout: 5s
+
+    # --- Stage 6: Edge Deployment ---
+    - name: edge-deployment
+      type: edge_rollout
+      dependsOn: [model-compression]
+      edgeDeployment:
+        targetCluster: factory-edge-cluster
+        model:
+          source: s3://models/compressed/balanced
+          compressionProfile: balanced
+        rollout:
+          strategy: canary
+          canaryNodes: [edge-node-01]
+          validationDuration: 1h
+          validationMetrics:
+            - metric: inference_accuracy
+              operator: gte
+              threshold: 0.92
+            - metric: inference_latency_p99_ms
+              operator: lte
+              threshold: 50
+          fullRolloutAfterValidation: true
+        sync:
+          mode: cloud_push
+          verifyChecksum: true
+
+  # --- Pipeline-Level Settings ---
+  notifications:
+    onSuccess:
+      channels: [slack]
+      message: "Pipeline {{.Name}} completed successfully"
+    onFailure:
+      channels: [slack, pagerduty, email]
+      message: "Pipeline {{.Name}} failed at stage {{.FailedStage}}"
+    onCostExceeded:
+      channels: [slack, email]
+      message: "Pipeline {{.Name}} exceeded cost budget: ${{.ActualCost}} > ${{.BudgetLimit}}"
+
+  costPolicy:
+    totalBudget: 1000  # USD
+    alertThresholds: [0.50, 0.80, 0.95]
+
+  monitoring:
+    dashboardEnabled: true
+    metricsRetention: 30d
+    tracing:
+      enabled: true
+      samplingRate: 0.1

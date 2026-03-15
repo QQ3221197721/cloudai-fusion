@@ -1,0 +1,426 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+# ============================================================================
+# CloudAI Fusion — GoReleaser Configuration
+# Produces multi-platform binaries, Docker images, SBOM, Homebrew formula, etc.
+# Triggered by: `git tag -a v0.2.0 -m "Release v0.2.0" && git push --tags`
+# ============================================================================
+
+version: 2
+
+project_name: cloudai-fusion
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+# ---------------------------------------------------------------------------
+# Git
+# ---------------------------------------------------------------------------
+git:
+  tag_sort: -version:refname
+  prerelease_suffix: "-"
+
+# ---------------------------------------------------------------------------
+# Builds — 3 binaries × (linux/darwin/windows) × (amd64/arm64)
+# ---------------------------------------------------------------------------
+builds:
+  - id: apiserver
+    main: ./cmd/apiserver
+    binary: cloudai-apiserver
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.Version={{.Version}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.GitCommit={{.ShortCommit}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.GitTreeState={{.Env.GIT_TREE_STATE}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.BuildTime={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+  - id: scheduler
+    main: ./cmd/scheduler
+    binary: cloudai-scheduler
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.Version={{.Version}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.GitCommit={{.ShortCommit}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.GitTreeState={{.Env.GIT_TREE_STATE}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.BuildTime={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+  - id: agent
+    main: ./cmd/agent
+    binary: cloudai-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.Version={{.Version}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.GitCommit={{.ShortCommit}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.GitTreeState={{.Env.GIT_TREE_STATE}}
+      - -X github.com/cloudai-fusion/cloudai-fusion/pkg/version.BuildTime={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+# ---------------------------------------------------------------------------
+# Archives — tar.gz for *nix, zip for Windows
+# ---------------------------------------------------------------------------
+archives:
+  - id: default
+    builds:
+      - apiserver
+      - scheduler
+      - agent
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+      - docs/*
+
+# ---------------------------------------------------------------------------
+# Checksum
+# ---------------------------------------------------------------------------
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+# ---------------------------------------------------------------------------
+# SBOM — Software Bill of Materials (SPDX format via syft)
+# ---------------------------------------------------------------------------
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .ArtifactName }}.sbom.spdx.json"
+
+# ---------------------------------------------------------------------------
+# Signs — Cosign keyless signing (Sigstore / Fulcio)
+# ---------------------------------------------------------------------------
+signs:
+  - cmd: cosign
+    args:
+      - "sign-blob"
+      - "--yes"
+      - "--output-signature=${signature}"
+      - "--output-certificate=${certificate}"
+      - "${artifact}"
+    artifacts: checksum
+    certificate: "${artifact}.pem"
+
+# ---------------------------------------------------------------------------
+# Docker Images — multi-arch manifest
+# ---------------------------------------------------------------------------
+dockers:
+  # apiserver — amd64
+  - id: apiserver-amd64
+    ids:
+      - apiserver
+    image_templates:
+      - "ghcr.io/cloudai-fusion/apiserver:{{ .Version }}-amd64"
+    use: buildx
+    dockerfile: docker/Dockerfile.apiserver
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title=cloudai-apiserver"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.source=https://github.com/cloudai-fusion/cloudai-fusion"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+    extra_files:
+      - docker/Dockerfile.apiserver
+    goos: linux
+    goarch: amd64
+
+  # apiserver — arm64
+  - id: apiserver-arm64
+    ids:
+      - apiserver
+    image_templates:
+      - "ghcr.io/cloudai-fusion/apiserver:{{ .Version }}-arm64"
+    use: buildx
+    dockerfile: docker/Dockerfile.apiserver
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title=cloudai-apiserver"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+    extra_files:
+      - docker/Dockerfile.apiserver
+    goos: linux
+    goarch: arm64
+
+  # scheduler — amd64
+  - id: scheduler-amd64
+    ids:
+      - scheduler
+    image_templates:
+      - "ghcr.io/cloudai-fusion/scheduler:{{ .Version }}-amd64"
+    use: buildx
+    dockerfile: docker/Dockerfile.scheduler
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title=cloudai-scheduler"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+    extra_files:
+      - docker/Dockerfile.scheduler
+    goos: linux
+    goarch: amd64
+
+  # scheduler — arm64
+  - id: scheduler-arm64
+    ids:
+      - scheduler
+    image_templates:
+      - "ghcr.io/cloudai-fusion/scheduler:{{ .Version }}-arm64"
+    use: buildx
+    dockerfile: docker/Dockerfile.scheduler
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title=cloudai-scheduler"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+    extra_files:
+      - docker/Dockerfile.scheduler
+    goos: linux
+    goarch: arm64
+
+  # agent — amd64
+  - id: agent-amd64
+    ids:
+      - agent
+    image_templates:
+      - "ghcr.io/cloudai-fusion/agent:{{ .Version }}-amd64"
+    use: buildx
+    dockerfile: docker/Dockerfile.agent
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title=cloudai-agent"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+    extra_files:
+      - docker/Dockerfile.agent
+    goos: linux
+    goarch: amd64
+
+  # agent — arm64
+  - id: agent-arm64
+    ids:
+      - agent
+    image_templates:
+      - "ghcr.io/cloudai-fusion/agent:{{ .Version }}-arm64"
+    use: buildx
+    dockerfile: docker/Dockerfile.agent
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title=cloudai-agent"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+    extra_files:
+      - docker/Dockerfile.agent
+    goos: linux
+    goarch: arm64
+
+# ---------------------------------------------------------------------------
+# Docker Manifests — multi-arch tags
+# ---------------------------------------------------------------------------
+docker_manifests:
+  - name_template: "ghcr.io/cloudai-fusion/apiserver:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/cloudai-fusion/apiserver:{{ .Version }}-amd64"
+      - "ghcr.io/cloudai-fusion/apiserver:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/cloudai-fusion/apiserver:latest"
+    image_templates:
+      - "ghcr.io/cloudai-fusion/apiserver:{{ .Version }}-amd64"
+      - "ghcr.io/cloudai-fusion/apiserver:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/cloudai-fusion/scheduler:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/cloudai-fusion/scheduler:{{ .Version }}-amd64"
+      - "ghcr.io/cloudai-fusion/scheduler:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/cloudai-fusion/scheduler:latest"
+    image_templates:
+      - "ghcr.io/cloudai-fusion/scheduler:{{ .Version }}-amd64"
+      - "ghcr.io/cloudai-fusion/scheduler:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/cloudai-fusion/agent:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/cloudai-fusion/agent:{{ .Version }}-amd64"
+      - "ghcr.io/cloudai-fusion/agent:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/cloudai-fusion/agent:latest"
+    image_templates:
+      - "ghcr.io/cloudai-fusion/agent:{{ .Version }}-amd64"
+      - "ghcr.io/cloudai-fusion/agent:{{ .Version }}-arm64"
+
+# ---------------------------------------------------------------------------
+# Docker Signs — cosign keyless on all images
+# ---------------------------------------------------------------------------
+docker_signs:
+  - cmd: cosign
+    args:
+      - "sign"
+      - "--yes"
+      - "${artifact}"
+    artifacts: manifests
+
+# ---------------------------------------------------------------------------
+# Homebrew Tap
+# ---------------------------------------------------------------------------
+brews:
+  - name: cloudai-fusion
+    repository:
+      owner: cloudai-fusion
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/cloudai-fusion/cloudai-fusion"
+    description: "Cloud-Native AI Unified Management Platform — multi-cloud, GPU scheduling, AI Ops"
+    license: "Apache-2.0"
+    install: |
+      bin.install "cloudai-apiserver"
+      bin.install "cloudai-scheduler"
+      bin.install "cloudai-agent"
+    test: |
+      system "#{bin}/cloudai-apiserver", "--version"
+
+# ---------------------------------------------------------------------------
+# Nix package (optional)
+# ---------------------------------------------------------------------------
+nix:
+  - name: cloudai-fusion
+    repository:
+      owner: cloudai-fusion
+      name: nur-packages
+      token: "{{ .Env.NIX_TOKEN }}"
+    homepage: "https://github.com/cloudai-fusion/cloudai-fusion"
+    description: "Cloud-Native AI Unified Management Platform"
+    license: "asl20"
+    install: |
+      mkdir -p $out/bin
+      cp cloudai-apiserver $out/bin/
+      cp cloudai-scheduler $out/bin/
+      cp cloudai-agent $out/bin/
+
+# ---------------------------------------------------------------------------
+# Changelog — generated from conventional commits (fallback; primary is git-cliff)
+# ---------------------------------------------------------------------------
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "^style:"
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: "Breaking Changes"
+      regexp: '^.*?!:'
+      order: 0
+    - title: "Features"
+      regexp: '^feat'
+      order: 1
+    - title: "Bug Fixes"
+      regexp: '^fix'
+      order: 2
+    - title: "Performance"
+      regexp: '^perf'
+      order: 3
+    - title: "Refactor"
+      regexp: '^refactor'
+      order: 4
+    - title: "Others"
+      order: 999
+
+# ---------------------------------------------------------------------------
+# Release — GitHub Release
+# ---------------------------------------------------------------------------
+release:
+  github:
+    owner: cloudai-fusion
+    name: cloudai-fusion
+  prerelease: auto
+  draft: false
+  name_template: "{{ .ProjectName }} v{{ .Version }}"
+  header: |
+    ## CloudAI Fusion {{ .Tag }}
+
+    {{ if .Prerelease }}⚠️ This is a pre-release version.{{ end }}
+
+    ### Installation
+
+    **Homebrew (macOS/Linux):**
+    ```bash
+    brew install cloudai-fusion/tap/cloudai-fusion
+    ```
+
+    **Docker:**
+    ```bash
+    docker pull ghcr.io/cloudai-fusion/apiserver:{{ .Version }}
+    docker pull ghcr.io/cloudai-fusion/scheduler:{{ .Version }}
+    docker pull ghcr.io/cloudai-fusion/agent:{{ .Version }}
+    ```
+
+    **Verify signatures:**
+    ```bash
+    cosign verify ghcr.io/cloudai-fusion/apiserver:{{ .Version }}
+    ```
+  footer: |
+    ---
+    **Full Changelog**: https://github.com/cloudai-fusion/cloudai-fusion/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+# ---------------------------------------------------------------------------
+# Announce — (optional) send release notification
+# ---------------------------------------------------------------------------
+# announce:
+#   slack:
+#     enabled: true
+#     channel: "#releases"

@@ -1,0 +1,150 @@
+# CloudAI Fusion - SLO Recording Rules
+# Pre-computes SLI/SLO metrics for efficient alerting and dashboarding.
+groups:
+  - name: cloudai_slo_recording
+    interval: 30s
+    rules:
+      # ===== Availability SLI (error-rate based) =====
+      # 5-minute availability
+      - record: cloudai:sli:availability:5m
+        expr: |
+          1 - (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[5m]))
+            / sum by (service) (rate(cloudai_sli_requests_total[5m]))
+          )
+
+      # 30-minute availability
+      - record: cloudai:sli:availability:30m
+        expr: |
+          1 - (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[30m]))
+            / sum by (service) (rate(cloudai_sli_requests_total[30m]))
+          )
+
+      # 1-hour availability
+      - record: cloudai:sli:availability:1h
+        expr: |
+          1 - (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[1h]))
+            / sum by (service) (rate(cloudai_sli_requests_total[1h]))
+          )
+
+      # 24-hour availability
+      - record: cloudai:sli:availability:24h
+        expr: |
+          1 - (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[24h]))
+            / sum by (service) (rate(cloudai_sli_requests_total[24h]))
+          )
+
+      # ===== Error Rate (inverted availability) =====
+      - record: cloudai:sli:error_rate:5m
+        expr: |
+          sum by (service) (rate(cloudai_sli_requests_total{result="error"}[5m]))
+          / sum by (service) (rate(cloudai_sli_requests_total[5m]))
+
+      # ===== Latency SLI =====
+      # p50 latency
+      - record: cloudai:sli:latency_p50:5m
+        expr: histogram_quantile(0.50, sum by (service, le) (rate(cloudai_sli_latency_seconds_bucket[5m])))
+
+      # p95 latency
+      - record: cloudai:sli:latency_p95:5m
+        expr: histogram_quantile(0.95, sum by (service, le) (rate(cloudai_sli_latency_seconds_bucket[5m])))
+
+      # p99 latency
+      - record: cloudai:sli:latency_p99:5m
+        expr: histogram_quantile(0.99, sum by (service, le) (rate(cloudai_sli_latency_seconds_bucket[5m])))
+
+      # ===== HTTP Golden Signals Recording =====
+      # QPS per path
+      - record: cloudai:http:qps:5m
+        expr: sum by (method, path) (rate(cloudai_http_requests_total[5m]))
+
+      # Total QPS
+      - record: cloudai:http:qps_total:5m
+        expr: sum(rate(cloudai_http_requests_total[5m]))
+
+      # Error rate per path
+      - record: cloudai:http:error_rate:5m
+        expr: |
+          sum by (method, path) (rate(cloudai_http_errors_total{error_type="server_error"}[5m]))
+          / sum by (method, path) (rate(cloudai_http_requests_total[5m]))
+
+      # p99 latency per path
+      - record: cloudai:http:latency_p99:5m
+        expr: histogram_quantile(0.99, sum by (method, path, le) (rate(cloudai_http_request_duration_seconds_bucket[5m])))
+
+      # ===== Burn Rate Recording (multi-window) =====
+      # 1-hour burn rate
+      - record: cloudai:slo:burn_rate:1h
+        expr: |
+          (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[1h]))
+            / sum by (service) (rate(cloudai_sli_requests_total[1h]))
+          ) / 0.001
+
+      # 6-hour burn rate
+      - record: cloudai:slo:burn_rate:6h
+        expr: |
+          (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[6h]))
+            / sum by (service) (rate(cloudai_sli_requests_total[6h]))
+          ) / 0.001
+
+      # 24-hour burn rate
+      - record: cloudai:slo:burn_rate:24h
+        expr: |
+          (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[24h]))
+            / sum by (service) (rate(cloudai_sli_requests_total[24h]))
+          ) / 0.001
+
+      # ===== Error Budget Consumption =====
+      - record: cloudai:slo:error_budget_consumed:30d
+        expr: |
+          1 - (
+            (1 - (
+              sum by (service) (rate(cloudai_sli_requests_total{result="error"}[30d]))
+              / sum by (service) (rate(cloudai_sli_requests_total[30d]))
+            )) / 0.999
+          )
+
+      # ===== Resource Utilization Recording =====
+      # Average GPU utilization per cluster
+      - record: cloudai:resource:gpu_avg_util
+        expr: avg by (cluster_id) (cloudai_resource_gpu_utilization_percent)
+
+      # Average CPU utilization per cluster
+      - record: cloudai:resource:cpu_avg_util
+        expr: avg by (cluster_id) (cloudai_resource_cpu_utilization_percent)
+
+      # Memory utilization ratio per node
+      - record: cloudai:resource:memory_util_ratio
+        expr: |
+          cloudai_resource_memory_used_bytes / cloudai_resource_memory_total_bytes
+
+      # GPU memory utilization ratio
+      - record: cloudai:resource:gpu_memory_util_ratio
+        expr: |
+          cloudai_resource_gpu_memory_used_bytes / cloudai_resource_gpu_memory_total_bytes
+
+      # ===== Business Metrics Recording =====
+      # Task success rate
+      - record: cloudai:task:success_rate:10m
+        expr: |
+          sum(rate(cloudai_task_success_total[10m]))
+          / (sum(rate(cloudai_task_success_total[10m])) + sum(rate(cloudai_task_failure_total[10m])))
+
+      # Scheduling throughput
+      - record: cloudai:scheduler:decisions_per_min
+        expr: sum(rate(cloudai_scheduler_decisions_total[5m])) * 60
+
+      # ===== Cost Metrics Recording =====
+      # Total hourly cost
+      - record: cloudai:cost:total_hourly
+        expr: sum(cloudai_cost_resource_hourly_usd)
+
+      # Cost per cluster
+      - record: cloudai:cost:per_cluster_hourly
+        expr: sum by (cluster_id) (cloudai_cost_resource_hourly_usd)

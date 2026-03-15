@@ -1,0 +1,264 @@
+name: CloudAI Fusion CI/CD
+
+on:
+  push:
+    branches: [main, develop, 'release/*']
+  pull_request:
+    branches: [main, develop]
+  release:
+    types: [published]
+
+env:
+  GO_VERSION: '1.25'
+  PYTHON_VERSION: '3.11'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+jobs:
+  # ============================================================================
+  # Go Backend - Lint, Test, Build
+  # ============================================================================
+  go-lint:
+    name: Go Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2
+          args: --timeout=5m
+
+  go-test:
+    name: Go Test
+    runs-on: ubuntu-latest
+    needs: go-lint
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cloudai_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: cloudai_test
+          DB_USER: test
+          DB_PASSWORD: test
+          REDIS_ADDR: localhost:6379
+        run: |
+          go test -v -race -coverprofile=coverage.out ./pkg/... ./cmd/...
+          go tool cover -func=coverage.out | tail -1
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.out
+          flags: go-backend
+
+  go-build:
+    name: Go Build
+    runs-on: ubuntu-latest
+    needs: go-test
+    strategy:
+      matrix:
+        component: [apiserver, scheduler, agent]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Build ${{ matrix.component }}
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+            -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" \
+            -o bin/${{ matrix.component }} \
+            ./cmd/${{ matrix.component }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.component }}-binary
+          path: bin/${{ matrix.component }}
+
+  # ============================================================================
+  # Python AI Engine - Lint, Test
+  # ============================================================================
+  python-lint:
+    name: Python Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: |
+          pip install ruff mypy
+          cd ai
+          ruff check .
+          ruff format --check .
+
+  python-test:
+    name: Python Test
+    runs-on: ubuntu-latest
+    needs: python-lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: |
+          pip install -r ai/requirements.txt
+          pip install pytest pytest-asyncio pytest-cov httpx
+          cd ai
+          python -m pytest tests/ -v --cov=agents --cov=anomaly --cov=scheduler --cov-report=xml:../coverage.xml --override-ini='addopts='
+      - uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: python-ai
+
+  # ============================================================================
+  # Security Scanning
+  # ============================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  # ============================================================================
+  # Docker Images - Build & Push
+  # ============================================================================
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [go-build, python-test]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    strategy:
+      matrix:
+        include:
+          - component: apiserver
+            dockerfile: docker/Dockerfile.apiserver
+          - component: scheduler
+            dockerfile: docker/Dockerfile.scheduler
+          - component: agent
+            dockerfile: docker/Dockerfile.agent
+          - component: ai-engine
+            dockerfile: docker/Dockerfile.ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================================
+  # Helm Chart - Lint & Package
+  # ============================================================================
+  helm-lint:
+    name: Helm Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/cloudai-fusion
+
+  helm-publish:
+    name: Helm Publish
+    runs-on: ubuntu-latest
+    needs: [helm-lint, docker-build]
+    if: github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: |
+          helm package deploy/helm/cloudai-fusion --version ${{ github.ref_name }}
+          helm push cloudai-fusion-${{ github.ref_name }}.tgz oci://${{ env.REGISTRY }}/${{ github.repository }}/charts
+
+  # ============================================================================
+  # Integration Tests (on main only)
+  # ============================================================================
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start services
+        run: |
+          docker compose -f docker-compose.yml up -d
+          sleep 30
+      - name: Health check
+        run: |
+          curl -sf http://localhost:8080/healthz || exit 1
+          curl -sf http://localhost:8090/healthz || exit 1
+      - name: API smoke tests
+        run: |
+          # Login
+          TOKEN=$(curl -sf -X POST http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"admin123"}' | jq -r '.access_token')
+          # List clusters
+          curl -sf http://localhost:8080/api/v1/clusters \
+            -H "Authorization: Bearer $TOKEN" | jq .
+          # List providers
+          curl -sf http://localhost:8080/api/v1/providers \
+            -H "Authorization: Bearer $TOKEN" | jq .
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

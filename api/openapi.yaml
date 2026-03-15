@@ -1,0 +1,2161 @@
+openapi: 3.1.0
+info:
+  title: CloudAI Fusion API
+  description: |
+    CloudAI Fusion - Cloud-Native AI Unified Management Platform API.
+    Provides endpoints for multi-cloud cluster management, AI workload scheduling,
+    security policy enforcement, monitoring & alerting, and cost optimization.
+  version: 0.1.0-mvp
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  contact:
+    name: CloudAI Fusion Team
+    url: https://github.com/cloudai-fusion/cloudai-fusion
+
+servers:
+  - url: http://localhost:8080
+    description: Go API Server (clusters, auth, security, monitoring)
+  - url: http://localhost:8090
+    description: Python AI Engine (agents, LLM, chat, operations)
+  - url: https://api.cloudai-fusion.io
+    description: Production
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: auth
+    description: Authentication & authorization
+  - name: clusters
+    description: Kubernetes cluster management
+  - name: providers
+    description: Cloud provider operations
+  - name: workloads
+    description: AI workload management
+  - name: security
+    description: Security policies & compliance
+  - name: monitoring
+    description: Monitoring & alerting
+  - name: cost
+    description: Cost management & optimization
+  - name: mesh
+    description: eBPF/Cilium/Istio Ambient service mesh
+  - name: wasm
+    description: WebAssembly container runtime
+  - name: edge
+    description: Edge-cloud collaborative architecture
+  - name: agents
+    description: AI agent operations (scheduling, security, cost)
+  - name: chat
+    description: Conversational AI operations assistant
+  - name: operations
+    description: Incident management & self-healing
+  - name: insights
+    description: AI-powered operational insights
+  - name: tenants
+    description: Multi-tenant isolation & billing
+  - name: enterprise
+    description: Enterprise features (SSO, SLA, audit)
+  - name: tickets
+    description: Support ticket management
+
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      tags: [system]
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+
+  /api/v1/auth/login:
+    post:
+      summary: User login
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+
+  /api/v1/auth/register:
+    post:
+      summary: Register new user
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "201":
+          description: User registered
+
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh JWT token
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+
+  /api/v1/clusters:
+    get:
+      summary: List managed clusters
+      tags: [clusters]
+      responses:
+        "200":
+          description: List of clusters
+    post:
+      summary: Import a cluster
+      tags: [clusters]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportClusterRequest"
+      responses:
+        "201":
+          description: Cluster imported
+
+  /api/v1/clusters/{id}:
+    get:
+      summary: Get cluster details
+      tags: [clusters]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cluster details
+
+  /api/v1/clusters/{id}/health:
+    get:
+      summary: Get cluster health
+      tags: [clusters]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cluster health status
+
+  /api/v1/clusters/{id}/gpu-topology:
+    get:
+      summary: Get GPU topology for cluster
+      tags: [clusters]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: GPU topology information
+
+  /api/v1/providers:
+    get:
+      summary: List cloud providers
+      tags: [providers]
+      responses:
+        "200":
+          description: List of configured providers
+
+  /api/v1/providers/{name}/gpu-instances:
+    get:
+      summary: List available GPU instances
+      tags: [providers]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Available GPU instance types
+
+  /api/v1/workloads:
+    get:
+      summary: List workloads
+      tags: [workloads]
+      responses:
+        "200":
+          description: List of workloads
+    post:
+      summary: Create workload
+      tags: [workloads]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Workload"
+      responses:
+        "201":
+          description: Workload created
+
+  /api/v1/security/policies:
+    get:
+      summary: List security policies
+      tags: [security]
+      responses:
+        "200":
+          description: List of security policies
+    post:
+      summary: Create security policy
+      tags: [security]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecurityPolicy"
+      responses:
+        "201":
+          description: Policy created
+
+  /api/v1/security/scan:
+    post:
+      summary: Run vulnerability scan
+      tags: [security]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cluster_id, scan_type]
+              properties:
+                cluster_id:
+                  type: string
+                scan_type:
+                  type: string
+                  enum: [image, config, runtime]
+      responses:
+        "202":
+          description: Scan initiated
+
+  /api/v1/security/compliance/{clusterId}/{framework}:
+    get:
+      summary: Get compliance report
+      tags: [security]
+      parameters:
+        - name: clusterId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: framework
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [CIS, NIST, SOC2, PCI-DSS, HIPAA]
+      responses:
+        "200":
+          description: Compliance report
+
+  /api/v1/monitoring/alerts/rules:
+    get:
+      summary: List alert rules
+      tags: [monitoring]
+      responses:
+        "200":
+          description: Alert rules
+
+  /api/v1/cost/summary:
+    get:
+      summary: Get cost summary
+      tags: [cost]
+      parameters:
+        - name: start
+          in: query
+          schema:
+            type: string
+        - name: end
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cost summary
+
+  /api/v1/cost/optimization:
+    get:
+      summary: Get cost optimization recommendations
+      tags: [cost]
+      responses:
+        "200":
+          description: Cost optimization recommendations
+
+  # =========================================================================
+  # Service Mesh Endpoints (eBPF / Cilium / Istio Ambient)
+  # =========================================================================
+
+  /api/v1/mesh/status:
+    get:
+      summary: Get service mesh status
+      tags: [mesh]
+      responses:
+        "200":
+          description: Mesh mode, mTLS state, connected services
+
+  /api/v1/mesh/policies:
+    get:
+      summary: List mesh network policies
+      tags: [mesh]
+      responses:
+        "200":
+          description: List of L3/L4/L7 network policies
+    post:
+      summary: Create mesh network policy
+      tags: [mesh]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                namespace:
+                  type: string
+                type:
+                  type: string
+                  enum: [network, traffic, authorization]
+                action:
+                  type: string
+                  enum: [allow, deny, audit]
+      responses:
+        "201":
+          description: Policy created
+
+  /api/v1/mesh/traffic:
+    get:
+      summary: Get mesh traffic metrics
+      tags: [mesh]
+      parameters:
+        - name: namespace
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Real-time traffic metrics
+
+  # =========================================================================
+  # WebAssembly Runtime Endpoints
+  # =========================================================================
+
+  /api/v1/wasm/modules:
+    get:
+      summary: List registered Wasm modules
+      tags: [wasm]
+      responses:
+        "200":
+          description: List of Wasm modules
+    post:
+      summary: Register a Wasm module
+      tags: [wasm]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, source, runtime]
+              properties:
+                name:
+                  type: string
+                source:
+                  type: string
+                runtime:
+                  type: string
+                  enum: [spin, wasmedge, wasmtime]
+                memory_limit_mb:
+                  type: integer
+                environment:
+                  type: object
+      responses:
+        "201":
+          description: Module registered
+
+  /api/v1/wasm/deploy:
+    post:
+      summary: Deploy Wasm function
+      tags: [wasm]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [module_name, target_cluster]
+              properties:
+                module_name:
+                  type: string
+                target_cluster:
+                  type: string
+                replicas:
+                  type: integer
+                trigger:
+                  type: string
+                  enum: [http, event, cron]
+      responses:
+        "202":
+          description: Deployment initiated
+
+  /api/v1/wasm/instances:
+    get:
+      summary: List running Wasm instances
+      tags: [wasm]
+      responses:
+        "200":
+          description: List of Wasm instances
+
+  /api/v1/wasm/metrics:
+    get:
+      summary: Get Wasm runtime metrics
+      tags: [wasm]
+      responses:
+        "200":
+          description: Performance metrics for Wasm functions
+
+  # =========================================================================
+  # Edge-Cloud Architecture Endpoints
+  # =========================================================================
+
+  /api/v1/edge/topology:
+    get:
+      summary: Get edge-cloud topology
+      tags: [edge]
+      responses:
+        "200":
+          description: Three-tier topology (Cloud/Edge/Terminal)
+
+  /api/v1/edge/nodes:
+    get:
+      summary: List edge nodes
+      tags: [edge]
+      responses:
+        "200":
+          description: List of edge nodes
+    post:
+      summary: Register edge node
+      tags: [edge]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, region, endpoint]
+              properties:
+                name:
+                  type: string
+                region:
+                  type: string
+                capabilities:
+                  type: array
+                  items:
+                    type: string
+                max_power_watts:
+                  type: integer
+                endpoint:
+                  type: string
+      responses:
+        "201":
+          description: Edge node registered
+
+  /api/v1/edge/deploy:
+    post:
+      summary: Deploy workload to edge
+      tags: [edge]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workload_id, target_nodes]
+              properties:
+                workload_id:
+                  type: string
+                target_nodes:
+                  type: array
+                  items:
+                    type: string
+                model_size_params:
+                  type: string
+                sync_policy:
+                  type: string
+                  enum: [strong, eventual, manual]
+      responses:
+        "202":
+          description: Edge deployment initiated
+
+  /api/v1/edge/sync-policies:
+    get:
+      summary: Get edge sync policies
+      tags: [edge]
+      responses:
+        "200":
+          description: Data synchronization policies
+
+  # =========================================================================
+  # AI Engine Endpoints (port 8090)
+  # =========================================================================
+
+  /api/v1/scheduling/optimize:
+    post:
+      summary: AI-powered scheduling optimization with LLM reasoning
+      tags: [agents]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulingRequest"
+      responses:
+        "200":
+          description: Scheduling decision with confidence score and reasoning
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulingDecision"
+
+  /api/v1/anomaly/detect:
+    post:
+      summary: Anomaly detection with LLM-enhanced threat analysis
+      tags: [agents]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnomalyDetectionRequest"
+      responses:
+        "200":
+          description: Anomaly detection result with severity and recommendations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnomalyResult"
+
+  /api/v1/cost/analyze:
+    post:
+      summary: Cost analysis with LLM-generated optimization recommendations
+      tags: [agents]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CostAnalysisRequest"
+      responses:
+        "200":
+          description: Cost analysis with breakdown and savings potential
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CostAnalysisResult"
+
+  /api/v1/insights:
+    get:
+      summary: Generate dynamic AI-powered operational insights
+      tags: [insights]
+      security: []
+      responses:
+        "200":
+          description: Array of insights across all agent domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentInsight"
+
+  /api/v1/models/status:
+    get:
+      summary: Honest status of AI models and LLM backends
+      tags: [agents]
+      security: []
+      responses:
+        "200":
+          description: Model status including LLM integration availability
+
+  /api/v1/chat:
+    post:
+      summary: Interactive AI operations assistant powered by LLM
+      tags: [chat]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: AI assistant response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+
+  /api/v1/ops/incident:
+    post:
+      summary: LLM-powered incident root cause analysis and remediation
+      tags: [operations]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentRequest"
+      responses:
+        "200":
+          description: Incident analysis with root cause and remediation script
+
+  /api/v1/ops/scaling:
+    post:
+      summary: Predictive scaling recommendations
+      tags: [operations]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                avg_gpu_utilization:
+                  type: number
+                avg_cpu_utilization:
+                  type: number
+                queue_depth:
+                  type: integer
+      responses:
+        "200":
+          description: Scaling recommendations with confidence
+
+  # =========================================================================
+  # Multi-Tenant Isolation Endpoints
+  # =========================================================================
+
+  /api/v1/tenants:
+    get:
+      summary: List all tenants
+      tags: [tenants]
+      parameters:
+        - name: tier
+          in: query
+          schema:
+            type: string
+            enum: [free, starter, pro, enterprise]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended, pending, deactivated]
+      responses:
+        "200":
+          description: List of tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+    post:
+      summary: Create a new tenant
+      tags: [tenants]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTenantRequest"
+      responses:
+        "201":
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /api/v1/tenants/{tenantId}:
+    get:
+      summary: Get tenant details
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Tenant details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+    delete:
+      summary: Delete a tenant
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "204":
+          description: Tenant deleted
+
+  /api/v1/tenants/{tenantId}/tier:
+    put:
+      summary: Update tenant tier
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tier]
+              properties:
+                tier:
+                  type: string
+                  enum: [free, starter, pro, enterprise]
+      responses:
+        "200":
+          description: Tier updated
+
+  /api/v1/tenants/{tenantId}/suspend:
+    post:
+      summary: Suspend a tenant
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Tenant suspended
+
+  /api/v1/tenants/{tenantId}/reactivate:
+    post:
+      summary: Reactivate a suspended tenant
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Tenant reactivated
+
+  /api/v1/tenants/{tenantId}/quota:
+    get:
+      summary: Get tenant quota usage
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Quota usage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaUsage"
+
+  /api/v1/tenants/{tenantId}/quota/check:
+    post:
+      summary: Check if a resource request fits within quota
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resource_type, amount]
+              properties:
+                resource_type:
+                  type: string
+                  enum: [cpu, memory, gpu, storage, pods]
+                amount:
+                  type: number
+      responses:
+        "200":
+          description: Quota check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allowed:
+                    type: boolean
+                  reason:
+                    type: string
+
+  /api/v1/tenants/{tenantId}/billing/usage:
+    post:
+      summary: Record usage for billing
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsageRecord"
+      responses:
+        "201":
+          description: Usage recorded
+
+  /api/v1/tenants/{tenantId}/billing/summary:
+    get:
+      summary: Get billing summary
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "2026-03"
+      responses:
+        "200":
+          description: Billing summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingSummary"
+
+  /api/v1/tenants/{tenantId}/billing/invoices:
+    get:
+      summary: List invoices for a tenant
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+    post:
+      summary: Generate an invoice
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [period]
+              properties:
+                period:
+                  type: string
+                  example: "2026-03"
+      responses:
+        "201":
+          description: Invoice generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /api/v1/tenants/{tenantId}/encryption/rotate:
+    post:
+      summary: Rotate tenant encryption key
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Key rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncryptionKey"
+
+  /api/v1/tenants/{tenantId}/network:
+    put:
+      summary: Update network isolation settings
+      tags: [tenants]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NetworkIsolation"
+      responses:
+        "200":
+          description: Network isolation updated
+
+  # =========================================================================
+  # Enterprise Features Endpoints
+  # =========================================================================
+
+  /api/v1/enterprise/sso:
+    get:
+      summary: List SSO configurations
+      tags: [enterprise]
+      responses:
+        "200":
+          description: List of SSO configs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SSOConfig"
+    post:
+      summary: Configure SSO provider
+      tags: [enterprise]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SSOConfig"
+      responses:
+        "201":
+          description: SSO configured
+
+  /api/v1/enterprise/sso/{ssoId}:
+    get:
+      summary: Get SSO configuration
+      tags: [enterprise]
+      parameters:
+        - name: ssoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSO configuration
+    delete:
+      summary: Delete SSO configuration
+      tags: [enterprise]
+      parameters:
+        - name: ssoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: SSO config deleted
+
+  /api/v1/enterprise/sso/{ssoId}/authenticate:
+    post:
+      summary: Authenticate via SSO
+      tags: [enterprise]
+      security: []
+      parameters:
+        - name: ssoId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: SSO login result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SSOLoginResult"
+
+  /api/v1/enterprise/audit/reports:
+    get:
+      summary: List audit reports
+      tags: [enterprise]
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [access, security, compliance, change, cost]
+      responses:
+        "200":
+          description: Audit reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditReport"
+    post:
+      summary: Generate audit report
+      tags: [enterprise]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, report_type, start_time, end_time]
+              properties:
+                tenant_id:
+                  type: string
+                report_type:
+                  type: string
+                  enum: [access, security, compliance, change, cost]
+                start_time:
+                  type: string
+                  format: date-time
+                end_time:
+                  type: string
+                  format: date-time
+                generated_by:
+                  type: string
+      responses:
+        "201":
+          description: Report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditReport"
+
+  /api/v1/enterprise/sla/contracts:
+    post:
+      summary: Create SLA contract
+      tags: [enterprise]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, tier]
+              properties:
+                tenant_id:
+                  type: string
+                tier:
+                  type: string
+                  enum: [standard, business, premium, enterprise]
+      responses:
+        "201":
+          description: SLA contract created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SLAContract"
+
+  /api/v1/enterprise/sla/contracts/{tenantId}:
+    get:
+      summary: Get SLA contract for tenant
+      tags: [enterprise]
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: SLA contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SLAContract"
+
+  /api/v1/enterprise/sla/reports:
+    post:
+      summary: Record SLA report
+      tags: [enterprise]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, period, availability, downtime_minutes]
+              properties:
+                tenant_id:
+                  type: string
+                period:
+                  type: string
+                availability:
+                  type: number
+                downtime_minutes:
+                  type: number
+                incidents:
+                  type: integer
+      responses:
+        "201":
+          description: SLA report recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SLAReport"
+    get:
+      summary: List SLA reports
+      tags: [enterprise]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SLA reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SLAReport"
+
+  # =========================================================================
+  # Support Ticket Endpoints
+  # =========================================================================
+
+  /api/v1/tickets:
+    get:
+      summary: List support tickets
+      tags: [tickets]
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, assigned, in_progress, resolved, closed]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+      responses:
+        "200":
+          description: List of tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportTicket"
+    post:
+      summary: Create support ticket
+      tags: [tickets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+      responses:
+        "201":
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  /api/v1/tickets/{ticketId}:
+    get:
+      summary: Get ticket details
+      tags: [tickets]
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ticket details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  /api/v1/tickets/{ticketId}/assign:
+    post:
+      summary: Assign ticket to engineer
+      tags: [tickets]
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignee_id]
+              properties:
+                assignee_id:
+                  type: string
+      responses:
+        "200":
+          description: Ticket assigned
+
+  /api/v1/tickets/{ticketId}/comments:
+    post:
+      summary: Add comment to ticket
+      tags: [tickets]
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [author_id, content]
+              properties:
+                author_id:
+                  type: string
+                content:
+                  type: string
+                internal:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: Comment added
+
+  /api/v1/tickets/{ticketId}/resolve:
+    post:
+      summary: Resolve a ticket
+      tags: [tickets]
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolution]
+              properties:
+                resolution:
+                  type: string
+      responses:
+        "200":
+          description: Ticket resolved
+
+  /api/v1/tickets/{ticketId}/rate:
+    post:
+      summary: Rate ticket resolution
+      tags: [tickets]
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                feedback:
+                  type: string
+      responses:
+        "200":
+          description: Rating submitted
+
+  /api/v1/tickets/metrics:
+    get:
+      summary: Get ticket metrics for a tenant
+      tags: [tickets]
+      parameters:
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ticket metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketMetrics"
+
+  /api/v1/ops/history:
+    get:
+      summary: Get recent incident analysis history
+      tags: [operations]
+      security: []
+      responses:
+        "200":
+          description: List of recent incident analyses
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        user:
+          type: object
+
+    ImportClusterRequest:
+      type: object
+      required: [name, provider, region, kubeconfig]
+      properties:
+        name:
+          type: string
+        provider:
+          type: string
+          enum: [aliyun, aws, azure, gcp, huawei, tencent]
+        region:
+          type: string
+        kubeconfig:
+          type: string
+        labels:
+          type: object
+
+    Workload:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [training, inference, fine-tuning, batch, serving]
+        cluster_id:
+          type: string
+        framework:
+          type: string
+          enum: [pytorch, tensorflow, jax]
+        resource_request:
+          type: object
+          properties:
+            gpu_count:
+              type: integer
+            gpu_type:
+              type: string
+            cpu_millicores:
+              type: integer
+            memory_bytes:
+              type: integer
+
+    SecurityPolicy:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [network, rbac, pod-security, compliance, secret, image]
+        enforcement:
+          type: string
+          enum: [enforce, audit, warn]
+        rules:
+          type: array
+          items:
+            type: object
+
+    # AI Engine Schemas
+    SchedulingRequest:
+      type: object
+      required: [workload_id, workload_type, gpu_count]
+      properties:
+        workload_id:
+          type: string
+        workload_type:
+          type: string
+          enum: [training, inference, fine-tuning]
+        gpu_count:
+          type: integer
+        gpu_type:
+          type: string
+        priority:
+          type: integer
+        available_nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResourceMetrics"
+
+    SchedulingDecision:
+      type: object
+      properties:
+        workload_id:
+          type: string
+        recommended_node:
+          type: string
+        gpu_indices:
+          type: array
+          items:
+            type: integer
+        confidence:
+          type: number
+        estimated_cost_per_hour:
+          type: number
+        optimization_score:
+          type: number
+        reasoning:
+          type: string
+        llm_analysis:
+          type: string
+          nullable: true
+
+    ResourceMetrics:
+      type: object
+      required: [node_name, cluster_id, gpu_utilization, gpu_memory_usage, cpu_utilization, memory_utilization]
+      properties:
+        node_name:
+          type: string
+        cluster_id:
+          type: string
+        gpu_utilization:
+          type: number
+        gpu_memory_usage:
+          type: number
+        cpu_utilization:
+          type: number
+        memory_utilization:
+          type: number
+
+    AnomalyDetectionRequest:
+      type: object
+      required: [cluster_id, metrics]
+      properties:
+        cluster_id:
+          type: string
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResourceMetrics"
+
+    AnomalyResult:
+      type: object
+      properties:
+        cluster_id:
+          type: string
+        anomalies:
+          type: array
+          items:
+            type: object
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        analysis:
+          type: string
+        llm_threat_assessment:
+          type: string
+          nullable: true
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    CostAnalysisRequest:
+      type: object
+      required: [cluster_ids]
+      properties:
+        cluster_ids:
+          type: array
+          items:
+            type: string
+        period_days:
+          type: integer
+          default: 30
+
+    CostAnalysisResult:
+      type: object
+      properties:
+        total_cost:
+          type: number
+        cost_breakdown:
+          type: object
+        optimization_potential:
+          type: number
+        recommendations:
+          type: array
+          items:
+            type: object
+        projected_savings_monthly:
+          type: number
+        llm_analysis:
+          type: string
+          nullable: true
+
+    AgentInsight:
+      type: object
+      properties:
+        agent_type:
+          type: string
+          enum: [scheduler, security, cost, operations]
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        title:
+          type: string
+        description:
+          type: string
+        recommendation:
+          type: string
+        confidence:
+          type: number
+
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        context:
+          type: object
+
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+        agent_type:
+          type: string
+        confidence:
+          type: number
+        suggestions:
+          type: array
+          items:
+            type: string
+        llm_provider:
+          type: string
+          nullable: true
+
+  parameters:
+    TenantId:
+      name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique tenant identifier
+
+  schemas:
+    # =========================================================================
+    # Multi-Tenant Schemas
+    # =========================================================================
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        display_name:
+          type: string
+        tier:
+          type: string
+          enum: [free, starter, pro, enterprise]
+        status:
+          type: string
+          enum: [active, suspended, pending, deactivated]
+        owner_id:
+          type: string
+        owner_email:
+          type: string
+          format: email
+        quota:
+          $ref: "#/components/schemas/ResourceQuota"
+        network:
+          $ref: "#/components/schemas/NetworkIsolation"
+        billing:
+          $ref: "#/components/schemas/BillingConfig"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateTenantRequest:
+      type: object
+      required: [name, display_name, owner_id, owner_email, tier]
+      properties:
+        name:
+          type: string
+          pattern: "^[a-z0-9-]+$"
+        display_name:
+          type: string
+        owner_id:
+          type: string
+        owner_email:
+          type: string
+          format: email
+        tier:
+          type: string
+          enum: [free, starter, pro, enterprise]
+
+    ResourceQuota:
+      type: object
+      properties:
+        max_cpu_millicores:
+          type: integer
+          format: int64
+        max_memory_bytes:
+          type: integer
+          format: int64
+        max_gpu_count:
+          type: integer
+        max_pods:
+          type: integer
+        max_services:
+          type: integer
+        max_namespaces:
+          type: integer
+        max_storage_bytes:
+          type: integer
+          format: int64
+
+    QuotaUsage:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        cpu_millicores:
+          type: integer
+          format: int64
+        memory_bytes:
+          type: integer
+          format: int64
+        gpu_count:
+          type: integer
+        pods:
+          type: integer
+        storage_bytes:
+          type: integer
+          format: int64
+        updated_at:
+          type: string
+          format: date-time
+
+    NetworkIsolation:
+      type: object
+      properties:
+        vpc_enabled:
+          type: boolean
+        vpc_id:
+          type: string
+        vpc_cidr:
+          type: string
+        enable_network_policy:
+          type: boolean
+        dns_zone:
+          type: string
+
+    BillingConfig:
+      type: object
+      properties:
+        billing_email:
+          type: string
+          format: email
+        payment_method:
+          type: string
+        currency:
+          type: string
+          default: USD
+        budget_limit:
+          type: number
+        alert_threshold:
+          type: number
+
+    UsageRecord:
+      type: object
+      required: [resource_type, quantity]
+      properties:
+        resource_type:
+          type: string
+          enum: [cpu, memory, gpu, storage, network_egress]
+        quantity:
+          type: number
+        namespace:
+          type: string
+        cluster_id:
+          type: string
+
+    BillingSummary:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        period:
+          type: string
+        total_cost:
+          type: number
+        daily_costs:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              cost:
+                type: number
+        resource_breakdown:
+          type: object
+          additionalProperties:
+            type: number
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        period:
+          type: string
+        total_amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue]
+        line_items:
+          type: array
+          items:
+            type: object
+            properties:
+              resource_type:
+                type: string
+              quantity:
+                type: number
+              unit_price:
+                type: number
+              total:
+                type: number
+        created_at:
+          type: string
+          format: date-time
+
+    EncryptionKey:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        version:
+          type: integer
+        algorithm:
+          type: string
+        status:
+          type: string
+          enum: [active, rotated, revoked]
+        created_at:
+          type: string
+          format: date-time
+
+    # =========================================================================
+    # Enterprise Schemas
+    # =========================================================================
+    SSOConfig:
+      type: object
+      required: [tenant_id, name, protocol]
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        name:
+          type: string
+        protocol:
+          type: string
+          enum: [saml, ldap, oidc]
+        saml:
+          type: object
+          properties:
+            entity_id:
+              type: string
+            sso_url:
+              type: string
+              format: uri
+            certificate:
+              type: string
+            acs_url:
+              type: string
+              format: uri
+        ldap:
+          type: object
+          properties:
+            host:
+              type: string
+            port:
+              type: integer
+            base_dn:
+              type: string
+            user_filter:
+              type: string
+            use_tls:
+              type: boolean
+        role_mapping:
+          type: object
+          additionalProperties:
+            type: string
+        auto_provision:
+          type: boolean
+        enabled:
+          type: boolean
+
+    SSOLoginResult:
+      type: object
+      properties:
+        user_id:
+          type: string
+        email:
+          type: string
+        display_name:
+          type: string
+        role:
+          type: string
+        groups:
+          type: array
+          items:
+            type: string
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    AuditReport:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        report_type:
+          type: string
+          enum: [access, security, compliance, change, cost]
+        status:
+          type: string
+          enum: [generating, completed, failed]
+        period:
+          type: object
+          properties:
+            start_time:
+              type: string
+              format: date-time
+            end_time:
+              type: string
+              format: date-time
+        summary:
+          type: object
+          properties:
+            total_events:
+              type: integer
+            critical_findings:
+              type: integer
+            compliance_score:
+              type: number
+        generated_at:
+          type: string
+          format: date-time
+
+    SLAContract:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        tier:
+          type: string
+          enum: [standard, business, premium, enterprise]
+        availability_target:
+          type: number
+          example: 0.9999
+        credit_policy:
+          type: object
+          properties:
+            max_credit_percentage:
+              type: number
+            tiers:
+              type: array
+              items:
+                type: object
+                properties:
+                  threshold:
+                    type: number
+                  credit_percentage:
+                    type: number
+        incident_response_times:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SLAReport:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        period:
+          type: string
+        availability:
+          type: number
+        target:
+          type: number
+        is_met:
+          type: boolean
+        downtime_minutes:
+          type: number
+        incidents:
+          type: integer
+        credit_due:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    # =========================================================================
+    # Support Ticket Schemas
+    # =========================================================================
+    SupportTicket:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+        status:
+          type: string
+          enum: [open, assigned, in_progress, resolved, closed]
+        category:
+          type: string
+          enum: [cluster, networking, billing, api, security, performance, other]
+        assignee_id:
+          type: string
+        reporter_id:
+          type: string
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketComment"
+        sla_deadline:
+          type: string
+          format: date-time
+        sla_breached:
+          type: boolean
+        resolution:
+          type: string
+        satisfaction_rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateTicketRequest:
+      type: object
+      required: [tenant_id, title, description, priority, reporter_id]
+      properties:
+        tenant_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+        category:
+          type: string
+          enum: [cluster, networking, billing, api, security, performance, other]
+        reporter_id:
+          type: string
+
+    TicketComment:
+      type: object
+      properties:
+        id:
+          type: string
+        author_id:
+          type: string
+        content:
+          type: string
+        internal:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    TicketMetrics:
+      type: object
+      properties:
+        total_tickets:
+          type: integer
+        open_tickets:
+          type: integer
+        resolved_tickets:
+          type: integer
+        avg_first_response_hours:
+          type: number
+        avg_resolution_hours:
+          type: number
+        satisfaction_avg:
+          type: number
+        sla_compliance_rate:
+          type: number
+        by_priority:
+          type: object
+          additionalProperties:
+            type: integer
+
+    # =========================================================================
+    # Original Schemas
+    # =========================================================================
+    IncidentRequest:
+      type: object
+      required: [incident_id, title, description]
+      properties:
+        incident_id:
+          type: string
+        title:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        category:
+          type: string
+          enum: [gpu_failure, node_pressure, pod_crash, oom, network, default]
+        description:
+          type: string
+        affected_resources:
+          type: array
+          items:
+            type: string

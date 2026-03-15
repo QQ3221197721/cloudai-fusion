@@ -1,0 +1,164 @@
+# =============================================================================
+# CloudAI Fusion - Multi-Tenant Configuration Example
+# =============================================================================
+# This example demonstrates how to configure multi-tenant isolation including
+# resource quotas, network isolation, encryption, and billing.
+
+# --- Tenant: Enterprise Customer ---
+apiVersion: cloudai-fusion.io/v1
+kind: Tenant
+metadata:
+  name: acme-corp
+  displayName: "Acme Corporation"
+spec:
+  tier: enterprise
+  owner:
+    id: "user-001"
+    email: "admin@acme-corp.com"
+
+  # Resource Quota — limits per tenant
+  quota:
+    maxCPUMillicores: 256000       # 256 vCPU
+    maxMemoryBytes: 549755813888   # 512 GiB
+    maxGPUCount: 128
+    maxPods: 5000
+    maxServices: 500
+    maxNamespaces: 100
+    maxClusters: 20
+    maxStorageBytes: 10995116277760 # 10 TiB
+    maxNetworkEgressGB: 10000
+    maxModelCount: 500
+    maxEndpoints: 200
+
+  # Network Isolation — VPC per Tenant
+  network:
+    vpcEnabled: true
+    vpcCIDR: "10.100.0.0/16"
+    enableNetworkPolicy: true
+    allowedCIDRs:
+      - "10.100.0.0/16"
+      - "172.16.0.0/12"  # internal services
+    dnsZone: "acme-corp.internal.cloudai-fusion.io"
+
+  # Encryption — Tenant-specific keys
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    keyProvider: "aws-kms"           # aws-kms, gcp-kms, azure-keyvault, vault
+    keyRotationDays: 90
+    encryptSecrets: true
+    encryptVolumes: true
+    encryptBackups: true
+    encryptTransit: true
+
+  # Billing — Usage-based with budget alerts
+  billing:
+    email: "billing@acme-corp.com"
+    paymentMethod: "invoice-net30"
+    currency: "USD"
+    budgetLimit: 50000.00
+    alertThreshold: 0.8             # alert at 80% of budget
+    autoSuspendOnBudgetExceeded: false
+
+  # Namespaces managed by this tenant
+  namespaces:
+    - "acme-production"
+    - "acme-staging"
+    - "acme-ml-training"
+
+---
+# --- Tenant: Startup (Pro Tier) ---
+apiVersion: cloudai-fusion.io/v1
+kind: Tenant
+metadata:
+  name: startup-ai
+  displayName: "Startup AI Inc"
+spec:
+  tier: pro
+  owner:
+    id: "user-042"
+    email: "cto@startup-ai.com"
+
+  quota:
+    maxCPUMillicores: 64000        # 64 vCPU
+    maxMemoryBytes: 137438953472   # 128 GiB
+    maxGPUCount: 16
+    maxPods: 1000
+    maxServices: 100
+    maxNamespaces: 20
+    maxClusters: 5
+
+  network:
+    vpcEnabled: true
+    enableNetworkPolicy: true
+    dnsZone: "startup-ai.internal.cloudai-fusion.io"
+
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    keyProvider: "vault"
+    keyRotationDays: 90
+
+  billing:
+    email: "finance@startup-ai.com"
+    currency: "USD"
+    budgetLimit: 5000.00
+    alertThreshold: 0.75
+
+---
+# --- Tenant: Free Tier Developer ---
+apiVersion: cloudai-fusion.io/v1
+kind: Tenant
+metadata:
+  name: dev-sandbox
+  displayName: "Developer Sandbox"
+spec:
+  tier: free
+  owner:
+    id: "user-099"
+    email: "dev@example.com"
+
+  quota:
+    maxCPUMillicores: 4000         # 4 vCPU
+    maxMemoryBytes: 8589934592     # 8 GiB
+    maxGPUCount: 0
+    maxPods: 20
+    maxServices: 5
+    maxNamespaces: 2
+    maxClusters: 1
+
+  network:
+    vpcEnabled: false
+    enableNetworkPolicy: true
+
+  encryption:
+    enabled: false
+
+  billing:
+    email: "dev@example.com"
+    currency: "USD"
+    budgetLimit: 0                 # free tier
+
+---
+# --- Resource Pricing Configuration ---
+apiVersion: cloudai-fusion.io/v1
+kind: ResourcePricing
+metadata:
+  name: default-pricing
+spec:
+  prices:
+    - resourceType: cpu
+      unitPrice: 0.048             # per vCPU-hour
+      unit: "vCPU-hour"
+    - resourceType: memory
+      unitPrice: 0.006             # per GiB-hour
+      unit: "GiB-hour"
+    - resourceType: gpu
+      unitPrice: 2.50              # per GPU-hour (A100)
+      unit: "GPU-hour"
+    - resourceType: storage
+      unitPrice: 0.10              # per GiB-month
+      unit: "GiB-month"
+    - resourceType: network_egress
+      unitPrice: 0.09              # per GiB
+      unit: "GiB"

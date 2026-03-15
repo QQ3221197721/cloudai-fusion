@@ -1,0 +1,29 @@
+# Example: PyTorch BERT Fine-tuning on 4x A100 GPUs
+# Submit via: curl -X POST http://localhost:8080/api/v1/workloads -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d @examples/training-job.json
+{
+  "name": "bert-large-finetune",
+  "cluster_id": "your-cluster-uuid",
+  "type": "training",
+  "priority": 100,
+  "framework": "pytorch",
+  "model_name": "bert-large-uncased",
+  "image": "nvcr.io/nvidia/pytorch:24.03-py3",
+  "command": "torchrun --nproc_per_node=4 train.py --model bert-large --epochs 3 --batch-size 32",
+  "gpu_type_required": "nvidia-a100",
+  "gpu_count_required": 4,
+  "resource_request": {
+    "cpu": "32",
+    "memory": "128Gi",
+    "nvidia.com/gpu": "4"
+  },
+  "resource_limit": {
+    "cpu": "48",
+    "memory": "192Gi",
+    "nvidia.com/gpu": "4"
+  },
+  "env_vars": {
+    "NCCL_DEBUG": "INFO",
+    "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+    "WANDB_PROJECT": "bert-finetune"
+  }
+}

@@ -1,0 +1,71 @@
+# CloudAI Fusion - AI Engine Dockerfile (CPU)
+# Multi-stage build: separate dependency install from runtime
+#
+# Image size comparison:
+#   Single-stage python:3.11-slim  ~  1.5GB (includes pip cache, build tools)
+#   Multi-stage with slim runtime  ~  900MB (production deps only)
+
+# ============================================
+# Stage 1: Build dependencies (includes build tools for C extensions)
+# ============================================
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies for C extensions (numpy, scipy, etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Install production dependencies into a virtual env for clean copy
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy only requirements first (layer caching)
+COPY ai/requirements.txt /tmp/requirements.txt
+
+# Install production deps only (strip dev/test deps)
+# Filter out pytest/dev packages — they don't belong in production images
+RUN grep -v -E '^(pytest|pytest-|coverage|flake8|black|mypy|isort)' /tmp/requirements.txt > /tmp/requirements-prod.txt && \
+    pip install --no-cache-dir -r /tmp/requirements-prod.txt
+
+# ============================================
+# Stage 2: Runtime (minimal, no build tools)
+# ============================================
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install only runtime system dependencies (no build-essential, no pip)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    tzdata \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r cloudai && useradd -r -g cloudai cloudai
+
+# Copy pre-built virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Copy AI application code
+COPY ai/ .
+
+# Create model directory
+RUN mkdir -p /models && chown -R cloudai:cloudai /models /app
+
+USER cloudai
+
+EXPOSE 8090
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:8090/healthz || exit 1
+
+CMD ["python", "-m", "uvicorn", "agents.server:app", "--host", "0.0.0.0", "--port", "8090"]

@@ -1,0 +1,264 @@
+# CloudAI Fusion — SLO Burn Rate Alerts & Smart Alert Convergence
+# Implements Google SRE multi-window, multi-burn-rate alerting:
+#   - Fast burn (14.4x over 1h + 5m) → page immediately
+#   - Medium burn (6x over 6h + 30m) → ticket/warning
+#   - Slow burn (3x over 24h + 6h) → low-priority notification
+# Plus error budget policy alerts and intelligent convergence rules.
+
+groups:
+  # =========================================================================
+  # SLO Burn Rate Alerts — Multi-Window
+  # Based on: https://sre.google/workbook/alerting-on-slos/
+  # Target: 99.9% availability (0.001 error budget over 30 days)
+  # =========================================================================
+  - name: cloudai_slo_burn_rate_alerts
+    rules:
+      # ----- Fast Burn: page-worthy (2% of budget in 1 hour) -----
+      # 14.4x burn rate over 1h AND 5m (dual window to reduce false positives)
+      - alert: SLOBurnRateFast_Critical
+        expr: |
+          (
+            cloudai:slo:burn_rate:1h{service=~"apiserver|scheduler|controlplane"} > 14.4
+          ) and (
+            cloudai:slo:burn_rate:5m{service=~"apiserver|scheduler|controlplane"} > 14.4
+          )
+        for: 2m
+        labels:
+          severity: page
+          team: sre
+          slo_window: fast
+          convergence_group: slo_burn_rate
+        annotations:
+          summary: "SLO fast burn rate critical: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} is burning error budget at {{ $value | printf "%.1f" }}x the allowed rate.
+            At this rate, the 30-day budget will be exhausted in {{ printf "%.0f" (divide 720 $value) }} hours.
+            Immediate action required.
+          runbook: "https://runbooks.cloudai.io/slo/fast-burn"
+          dashboard: "https://grafana.cloudai.io/d/slo-overview?var-service={{ $labels.service }}"
+
+      # ----- Medium Burn: ticket-worthy (5% of budget in 6 hours) -----
+      - alert: SLOBurnRateMedium_Warning
+        expr: |
+          (
+            cloudai:slo:burn_rate:6h{service=~"apiserver|scheduler|ai-engine|controlplane"} > 6
+          ) and (
+            cloudai:slo:burn_rate:30m{service=~"apiserver|scheduler|ai-engine|controlplane"} > 6
+          )
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+          slo_window: medium
+          convergence_group: slo_burn_rate
+        annotations:
+          summary: "SLO medium burn rate warning: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} is burning error budget at {{ $value | printf "%.1f" }}x rate over 6h window.
+            Estimated budget exhaustion in {{ printf "%.0f" (divide 720 $value) }} hours.
+          runbook: "https://runbooks.cloudai.io/slo/medium-burn"
+
+      # ----- Slow Burn: notification-worthy (10% of budget in 3 days) -----
+      - alert: SLOBurnRateSlow_Info
+        expr: |
+          (
+            cloudai:slo:burn_rate:24h{service=~"apiserver|scheduler|ai-engine|controlplane"} > 3
+          ) and (
+            cloudai:slo:burn_rate:6h{service=~"apiserver|scheduler|ai-engine|controlplane"} > 3
+          )
+        for: 30m
+        labels:
+          severity: info
+          team: sre
+          slo_window: slow
+          convergence_group: slo_burn_rate
+        annotations:
+          summary: "SLO slow burn rate: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} has sustained elevated error rate ({{ $value | printf "%.1f" }}x) over 24h.
+            Budget trending toward exhaustion. Review recent changes.
+          runbook: "https://runbooks.cloudai.io/slo/slow-burn"
+
+  # =========================================================================
+  # Error Budget Policy Alerts
+  # Triggered at budget consumption thresholds: 50%, 80%, 100%
+  # =========================================================================
+  - name: cloudai_error_budget_policy_alerts
+    rules:
+      # Warning: 50% of error budget consumed
+      - alert: ErrorBudgetConsumed50Pct
+        expr: cloudai_error_budget_consumed_ratio > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+          convergence_group: error_budget
+        annotations:
+          summary: "Error budget 50% consumed: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} has consumed {{ $value | printf "%.0f" }}% of its 30-day error budget.
+            Monitor closely and consider reducing deployment velocity.
+          action: "Review recent incidents and SLIs for {{ $labels.service }}"
+
+      # Critical: 80% of error budget consumed — freeze deployments
+      - alert: ErrorBudgetConsumed80Pct
+        expr: cloudai_error_budget_consumed_ratio > 0.8
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+          convergence_group: error_budget
+          policy: freeze_deployments
+        annotations:
+          summary: "Error budget 80% consumed — deployment freeze: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} has consumed {{ $value | printf "%.0f" }}% of error budget.
+            Non-critical deployments MUST be frozen. Only reliability fixes allowed.
+          action: "Freeze deployments, focus on reliability improvements"
+          runbook: "https://runbooks.cloudai.io/error-budget/freeze"
+
+      # Page: Error budget exhausted
+      - alert: ErrorBudgetExhausted
+        expr: cloudai_error_budget_consumed_ratio >= 1.0
+        for: 1m
+        labels:
+          severity: page
+          team: sre
+          convergence_group: error_budget
+          policy: full_freeze
+        annotations:
+          summary: "Error budget EXHAUSTED: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} has completely exhausted its error budget.
+            ALL deployments frozen. Incident response required. Focus exclusively on reliability.
+          action: "Declare incident, freeze all deployments, conduct root cause analysis"
+          runbook: "https://runbooks.cloudai.io/error-budget/exhausted"
+
+  # =========================================================================
+  # Latency SLO Alerts
+  # =========================================================================
+  - name: cloudai_latency_slo_alerts
+    rules:
+      - alert: LatencySLO_P99_Breach
+        expr: cloudai:sli:latency_p99:5m{service="apiserver"} > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+          convergence_group: latency
+        annotations:
+          summary: "P99 latency SLO breach: {{ $labels.service }}"
+          description: "{{ $labels.service }} P99 latency is {{ $value | printf \"%.2f\" }}s (target: 2s)"
+
+      - alert: LatencySLO_P95_Breach
+        expr: cloudai:sli:latency_p95:5m{service="apiserver"} > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+          convergence_group: latency
+        annotations:
+          summary: "P95 latency SLO breach: {{ $labels.service }}"
+          description: "{{ $labels.service }} P95 latency is {{ $value | printf \"%.2f\" }}s (target: 0.5s)"
+
+      - alert: LatencySLO_AIEngine_P99_Breach
+        expr: cloudai:sli:latency_p99:5m{service="ai-engine"} > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+          convergence_group: latency
+        annotations:
+          summary: "AI Engine P99 latency SLO breach"
+          description: "AI Engine P99 latency is {{ $value | printf \"%.2f\" }}s (target: 10s)"
+
+  # =========================================================================
+  # Smart Alert Convergence — Inhibition & Routing Rules
+  # These rules work with Alertmanager's inhibit_rules configuration.
+  # =========================================================================
+  - name: cloudai_alert_convergence
+    rules:
+      # Composite alert: service is degraded (multiple SLO breaches)
+      - alert: ServiceDegraded
+        expr: |
+          (
+            count by (service) (ALERTS{alertname=~"SLOBurnRate.*|LatencySLO.*|ErrorBudget.*", alertstate="firing"})
+          ) >= 2
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+          convergence_group: composite
+          inhibit_source: "true"
+        annotations:
+          summary: "Service degraded — multiple SLO breaches: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} has {{ $value }} concurrent SLO-related alerts firing.
+            This composite alert inhibits individual SLO alerts for cleaner notification.
+
+      # Alert storm detection — too many alerts firing
+      - alert: AlertStormDetected
+        expr: count(ALERTS{alertstate="firing", team="sre"}) > 10
+        for: 2m
+        labels:
+          severity: page
+          team: sre
+          convergence_group: meta
+        annotations:
+          summary: "Alert storm detected: {{ $value }} SRE alerts firing"
+          description: |
+            {{ $value }} SRE alerts are currently firing simultaneously.
+            This likely indicates a systemic issue. Escalating to incident commander.
+          action: "Declare major incident, activate war room"
+
+      # Error budget burn rate deceleration (recovery signal)
+      - alert: ErrorBudgetRecovering
+        expr: |
+          cloudai:slo:burn_rate:1h < 1.0
+          and cloudai:slo:burn_rate:6h > 1.0
+          and cloudai_error_budget_consumed_ratio > 0.5
+        for: 30m
+        labels:
+          severity: info
+          team: sre
+          convergence_group: recovery
+        annotations:
+          summary: "Error budget recovering: {{ $labels.service }}"
+          description: |
+            Service {{ $labels.service }} burn rate has dropped below 1.0x in the last hour.
+            Budget consumption is {{ $value | printf "%.0f" }}% but trending toward recovery.
+
+  # =========================================================================
+  # Recording Rules — Additional burn rate windows for alerting
+  # =========================================================================
+  - name: cloudai_slo_burn_rate_recording
+    interval: 30s
+    rules:
+      # 5-minute burn rate (for fast-burn correlation window)
+      - record: cloudai:slo:burn_rate:5m
+        expr: |
+          (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[5m]))
+            / sum by (service) (rate(cloudai_sli_requests_total[5m]))
+          ) / 0.001
+
+      # 30-minute burn rate (for medium-burn correlation window)
+      - record: cloudai:slo:burn_rate:30m
+        expr: |
+          (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[30m]))
+            / sum by (service) (rate(cloudai_sli_requests_total[30m]))
+          ) / 0.001
+
+      # 3-day burn rate
+      - record: cloudai:slo:burn_rate:3d
+        expr: |
+          (
+            sum by (service) (rate(cloudai_sli_requests_total{result="error"}[3d]))
+            / sum by (service) (rate(cloudai_sli_requests_total[3d]))
+          ) / 0.001
+
+      # Error budget consumption velocity (budget consumed per hour)
+      - record: cloudai:error_budget:consumption_velocity_per_hour
+        expr: |
+          deriv(cloudai_error_budget_consumed_ratio[1h]) * 3600

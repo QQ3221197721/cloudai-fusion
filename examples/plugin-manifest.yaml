@@ -1,0 +1,258 @@
+# CloudAI Fusion - Plugin Development Example
+# This example shows a complete plugin manifest and configuration
+# for building custom extensions to the platform.
+#
+# Use: cloudai-fusion plugin init --from examples/plugin-manifest.yaml
+
+apiVersion: cloudai-fusion.io/v1
+kind: PluginManifest
+metadata:
+  name: custom-gpu-monitor
+  namespace: ml-platform
+  labels:
+    app: cloudai-fusion
+    component: plugin
+spec:
+  # --- Plugin Identity ---
+  plugin:
+    name: custom-gpu-monitor
+    version: 1.2.0
+    description: "Advanced GPU monitoring plugin with thermal throttling detection and power consumption tracking"
+    author: "CloudAI Community"
+    license: "Apache-2.0"
+    homepage: "https://github.com/cloudai-fusion/plugins/gpu-monitor"
+    repository: "https://github.com/cloudai-fusion/plugins"
+    keywords:
+      - gpu
+      - monitoring
+      - nvidia
+      - thermal
+      - power
+
+  # --- Extension Points ---
+  extensionPoints:
+    - type: scheduler_filter
+      description: "Filter nodes based on GPU thermal status"
+      priority: 100
+    - type: metric_collector
+      description: "Collect advanced GPU metrics (power, temp, ECC errors)"
+      priority: 50
+    - type: health_checker
+      description: "GPU health assessment with thermal throttle detection"
+      priority: 80
+    - type: webhook
+      description: "Alert webhook for GPU thermal events"
+      events:
+        - gpu.thermal.warning
+        - gpu.thermal.critical
+        - gpu.ecc.error
+        - gpu.power.limit
+
+  # --- Dependencies ---
+  dependencies:
+    platform:
+      minVersion: "2.0.0"
+      maxVersion: "3.0.0"
+    plugins:
+      - name: nvidia-device-plugin
+        version: ">=1.0.0"
+        optional: false
+      - name: prometheus-exporter
+        version: ">=0.5.0"
+        optional: true
+    system:
+      - nvidia-smi
+      - nvml
+
+  # --- Configuration Schema ---
+  config:
+    schema:
+      type: object
+      properties:
+        pollingInterval:
+          type: string
+          default: "10s"
+          description: "How often to poll GPU metrics"
+        thermalThresholds:
+          type: object
+          properties:
+            warning:
+              type: integer
+              default: 80
+              description: "Temperature warning threshold (Celsius)"
+            critical:
+              type: integer
+              default: 90
+              description: "Temperature critical threshold (Celsius)"
+            shutdown:
+              type: integer
+              default: 95
+              description: "Emergency shutdown threshold (Celsius)"
+        powerTracking:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              default: true
+            reportInterval:
+              type: string
+              default: "1m"
+            costPerKWh:
+              type: number
+              default: 0.12
+        eccMonitoring:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              default: true
+            singleBitThreshold:
+              type: integer
+              default: 100
+              description: "Alert when single-bit ECC errors exceed this count"
+            doubleBitAction:
+              type: string
+              enum: [alert, drain, shutdown]
+              default: drain
+        alerting:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              default: true
+            channels:
+              type: array
+              items:
+                type: string
+              default: [slack, prometheus]
+            cooldownPeriod:
+              type: string
+              default: "5m"
+    defaults:
+      pollingInterval: "10s"
+      thermalThresholds:
+        warning: 80
+        critical: 90
+        shutdown: 95
+      powerTracking:
+        enabled: true
+        reportInterval: "1m"
+        costPerKWh: 0.12
+      eccMonitoring:
+        enabled: true
+        singleBitThreshold: 100
+        doubleBitAction: drain
+      alerting:
+        enabled: true
+        channels: [slack, prometheus]
+        cooldownPeriod: "5m"
+
+  # --- Resource Requirements ---
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    hostAccess:
+      devices: [/dev/nvidia*]
+      volumes:
+        - hostPath: /var/run/nvidia
+          mountPath: /var/run/nvidia
+          readOnly: true
+
+  # --- Health & Lifecycle ---
+  lifecycle:
+    init:
+      timeout: 30s
+      retries: 3
+      commands:
+        - "nvidia-smi --query"
+        - "verify-nvml-access"
+    healthCheck:
+      endpoint: /healthz
+      interval: 30s
+      timeout: 5s
+      failureThreshold: 3
+    shutdown:
+      gracePeriod: 15s
+      commands:
+        - "flush-metrics"
+        - "close-nvml-session"
+
+  # --- Metrics Exported ---
+  metrics:
+    prometheus:
+      port: 9101
+      path: /metrics
+      labels:
+        plugin: gpu-monitor
+    exported:
+      - name: gpu_temperature_celsius
+        type: gauge
+        help: "Current GPU temperature in Celsius"
+        labels: [gpu_index, gpu_name, node]
+      - name: gpu_power_watts
+        type: gauge
+        help: "Current GPU power draw in watts"
+        labels: [gpu_index, gpu_name, node]
+      - name: gpu_power_cost_usd
+        type: counter
+        help: "Cumulative GPU power cost in USD"
+        labels: [gpu_index, node]
+      - name: gpu_ecc_single_bit_total
+        type: counter
+        help: "Total single-bit ECC errors"
+        labels: [gpu_index, node]
+      - name: gpu_ecc_double_bit_total
+        type: counter
+        help: "Total double-bit ECC errors"
+        labels: [gpu_index, node]
+      - name: gpu_thermal_throttle_events_total
+        type: counter
+        help: "Total thermal throttling events"
+        labels: [gpu_index, node]
+      - name: gpu_fan_speed_percent
+        type: gauge
+        help: "GPU fan speed percentage"
+        labels: [gpu_index, node]
+
+---
+# Example: Plugin Installation
+apiVersion: cloudai-fusion.io/v1
+kind: PluginInstallation
+metadata:
+  name: install-gpu-monitor
+  namespace: ml-platform
+spec:
+  pluginRef:
+    name: custom-gpu-monitor
+    version: "1.2.0"
+    source: marketplace    # marketplace | local | git
+  config:
+    pollingInterval: "5s"
+    thermalThresholds:
+      warning: 75
+      critical: 85
+      shutdown: 92
+    powerTracking:
+      enabled: true
+      reportInterval: "30s"
+      costPerKWh: 0.15
+    eccMonitoring:
+      enabled: true
+      singleBitThreshold: 50
+      doubleBitAction: drain
+    alerting:
+      enabled: true
+      channels: [slack, pagerduty, prometheus]
+      cooldownPeriod: "3m"
+  nodeSelector:
+    matchLabels:
+      nvidia.com/gpu.present: "true"
+  rollout:
+    strategy: canary
+    canaryPercentage: 25
+    pauseBetweenStages: 5m
+    rollbackOnFailure: true

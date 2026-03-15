@@ -1,0 +1,311 @@
+# CloudAI Fusion - AIOps Intelligent Operations Configuration
+# This example demonstrates predictive autoscaling, self-healing,
+# and capacity planning configuration.
+#
+# Apply with: cloudai-fusion apply -f examples/aiops-operations.yaml
+
+apiVersion: cloudai-fusion.io/v1
+kind: AIOpsPolicy
+metadata:
+  name: production-aiops
+  namespace: ml-platform
+  labels:
+    app: cloudai-fusion
+    component: aiops
+    environment: production
+spec:
+  # --- Predictive Autoscaler ---
+  autoscaler:
+    enabled: true
+    evaluationInterval: 30s
+    targets:
+      - name: inference-service
+        kind: Deployment
+        namespace: ml-platform
+        minReplicas: 3
+        maxReplicas: 50
+        metrics:
+          - type: cpu
+            target: 0.65
+            weight: 0.3
+          - type: memory
+            target: 0.70
+            weight: 0.2
+          - type: gpu_utilization
+            target: 0.75
+            weight: 0.3
+          - type: custom
+            name: request_latency_p99_ms
+            target: 200
+            weight: 0.2
+        prediction:
+          enabled: true
+          horizon: 10m
+          confidence: 0.80
+          algorithm: linear_regression_ema   # linear_regression_ema | holt_winters
+          historyWindow: 1h
+        cooldown:
+          scaleUp: 3m
+          scaleDown: 10m
+        behavior:
+          scaleUp:
+            maxStep: 5
+            stabilizationWindow: 60s
+          scaleDown:
+            maxStep: 2
+            stabilizationWindow: 300s
+        toleranceBand: 0.10
+
+      - name: training-scheduler
+        kind: Deployment
+        namespace: ml-platform
+        minReplicas: 1
+        maxReplicas: 10
+        metrics:
+          - type: custom
+            name: pending_training_jobs
+            target: 5
+            weight: 0.6
+          - type: cpu
+            target: 0.70
+            weight: 0.4
+        prediction:
+          enabled: true
+          horizon: 15m
+          confidence: 0.75
+          historyWindow: 2h
+        cooldown:
+          scaleUp: 2m
+          scaleDown: 15m
+
+  # --- Self-Healing Engine ---
+  selfHealing:
+    enabled: true
+    checkInterval: 15s
+    maxConcurrentRemediations: 3
+    detectors:
+      - name: pod-crash-loop
+        type: pod_health
+        conditions:
+          - metric: restart_count
+            operator: gt
+            threshold: 3
+            window: 10m
+        severity: high
+
+      - name: gpu-memory-leak
+        type: gpu_health
+        conditions:
+          - metric: gpu_memory_used_percent
+            operator: gt
+            threshold: 95
+            window: 5m
+          - metric: gpu_memory_growth_rate
+            operator: gt
+            threshold: 0.1
+            window: 30m
+        severity: critical
+
+      - name: node-disk-pressure
+        type: node_health
+        conditions:
+          - metric: disk_usage_percent
+            operator: gt
+            threshold: 90
+        severity: high
+
+      - name: api-latency-degradation
+        type: service_health
+        conditions:
+          - metric: p99_latency_ms
+            operator: gt
+            threshold: 500
+            window: 5m
+          - metric: error_rate
+            operator: gt
+            threshold: 0.05
+            window: 5m
+        severity: high
+        correlateWith:
+          - pod-crash-loop
+          - gpu-memory-leak
+
+      - name: etcd-leader-loss
+        type: cluster_health
+        conditions:
+          - metric: etcd_has_leader
+            operator: eq
+            threshold: 0
+        severity: critical
+
+      - name: certificate-expiry
+        type: security
+        conditions:
+          - metric: cert_days_remaining
+            operator: lt
+            threshold: 30
+        severity: medium
+
+    playbooks:
+      - name: restart-crashed-pod
+        trigger: pod-crash-loop
+        cooldown: 5m
+        maxExecutions: 3
+        dryRun: false
+        steps:
+          - action: log_event
+            params:
+              message: "Pod crash loop detected, initiating restart"
+              severity: warning
+          - action: capture_diagnostics
+            params:
+              collectLogs: true
+              collectMetrics: true
+              logLines: 500
+          - action: delete_pod
+            params:
+              gracePeriod: 30s
+          - action: verify_health
+            params:
+              timeout: 120s
+              healthEndpoint: /healthz
+
+      - name: gpu-memory-recovery
+        trigger: gpu-memory-leak
+        cooldown: 10m
+        maxExecutions: 2
+        dryRun: false
+        steps:
+          - action: log_event
+            params:
+              message: "GPU memory leak detected"
+              severity: critical
+          - action: capture_gpu_diagnostics
+            params:
+              collectNvidiaSmi: true
+              collectCudaMemInfo: true
+          - action: graceful_restart
+            params:
+              drainTimeout: 60s
+              checkpointFirst: true
+          - action: verify_gpu_health
+            params:
+              timeout: 180s
+
+      - name: node-disk-cleanup
+        trigger: node-disk-pressure
+        cooldown: 30m
+        maxExecutions: 2
+        steps:
+          - action: cleanup_images
+            params:
+              olderThan: 7d
+              keepLatest: 3
+          - action: cleanup_logs
+            params:
+              olderThan: 3d
+              compressFirst: true
+          - action: verify_disk_space
+            params:
+              expectedFreePercent: 30
+
+      - name: auto-rollback
+        trigger: api-latency-degradation
+        cooldown: 15m
+        maxExecutions: 1
+        dryRun: false
+        steps:
+          - action: log_event
+            params:
+              message: "Service degradation detected, evaluating rollback"
+          - action: check_recent_deployment
+            params:
+              window: 30m
+          - action: rollback_deployment
+            params:
+              revision: previous
+              waitReady: true
+              timeout: 300s
+          - action: verify_health
+            params:
+              timeout: 120s
+              successThreshold: 3
+
+    rootCauseAnalysis:
+      enabled: true
+      patterns:
+        - name: cascading-failure
+          symptoms: [api-latency-degradation, pod-crash-loop]
+          rootCause: "Upstream service dependency failure"
+          recommendation: "Check upstream service health and circuit breakers"
+        - name: resource-exhaustion
+          symptoms: [gpu-memory-leak, node-disk-pressure]
+          rootCause: "Resource leak in workload"
+          recommendation: "Review workload resource limits and memory management"
+        - name: infrastructure-degradation
+          symptoms: [etcd-leader-loss, node-disk-pressure]
+          rootCause: "Underlying infrastructure instability"
+          recommendation: "Check cloud provider status and node hardware health"
+
+  # --- Capacity Planning ---
+  capacityPlanning:
+    enabled: true
+    snapshotInterval: 5m
+    historyRetention: 90d
+    resources:
+      - name: gpu-compute
+        type: gpu
+        currentCapacity: 128
+        thresholds:
+          warning: 0.75
+          critical: 0.90
+        forecast:
+          enabled: true
+          horizon: 30d
+          algorithm: linear_trend_ema
+          confidenceLevel: 0.85
+      - name: cpu-compute
+        type: cpu
+        currentCapacity: 2048   # cores
+        thresholds:
+          warning: 0.70
+          critical: 0.85
+      - name: memory
+        type: memory
+        currentCapacity: 8192   # GiB
+        thresholds:
+          warning: 0.75
+          critical: 0.90
+      - name: storage
+        type: storage
+        currentCapacity: 100    # TiB
+        thresholds:
+          warning: 0.80
+          critical: 0.92
+    expansionPlanning:
+      enabled: true
+      leadTime: 14d
+      budgetConstraint: 100000  # USD per month
+      preferredInstanceTypes:
+        gpu: [p3.8xlarge, g4dn.12xlarge]
+        cpu: [m5.4xlarge, c5.4xlarge]
+      urgencyLevels:
+        immediate:
+          condition: "usage > critical_threshold"
+          action: auto_provision
+        scheduled:
+          condition: "forecast_exhaustion < 30d"
+          action: create_ticket
+        planned:
+          condition: "forecast_exhaustion < 90d"
+          action: add_to_roadmap
+    alerts:
+      - name: capacity-warning
+        condition: "any_resource_usage > warning_threshold"
+        channels: [slack]
+      - name: capacity-critical
+        condition: "any_resource_usage > critical_threshold"
+        channels: [pagerduty, slack, email]
+      - name: exhaustion-forecast
+        condition: "forecast_exhaustion_days < 30"
+        channels: [slack, email]

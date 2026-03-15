@@ -1,0 +1,183 @@
+# CloudAI Fusion - FinOps Cost Optimization Configuration
+# This example demonstrates complete FinOps setup including spot prediction,
+# reserved instance recommendations, and cost analysis reporting.
+#
+# Apply with: cloudai-fusion apply -f examples/finops-cost-policy.yaml
+
+apiVersion: cloudai-fusion.io/v1
+kind: FinOpsPolicy
+metadata:
+  name: production-cost-optimization
+  namespace: ml-platform
+  labels:
+    app: cloudai-fusion
+    component: finops
+    environment: production
+spec:
+  # --- Spot Instance Prediction Engine ---
+  spotPrediction:
+    enabled: true
+    predictionWindow: 2h
+    priceHistoryRetention: 30d
+    instanceTypes:
+      - name: p3.2xlarge
+        region: us-east-1
+        maxInterruptionProbability: 0.15
+        bidStrategy:
+          type: dynamic
+          targetSavingsRate: 0.65
+          maxBidPercentOfOnDemand: 0.85
+          riskTolerance: medium    # low | medium | high
+      - name: p3.8xlarge
+        region: us-east-1
+        maxInterruptionProbability: 0.10
+        bidStrategy:
+          type: dynamic
+          targetSavingsRate: 0.55
+          maxBidPercentOfOnDemand: 0.90
+          riskTolerance: low
+      - name: g4dn.xlarge
+        region: us-west-2
+        maxInterruptionProbability: 0.20
+        bidStrategy:
+          type: aggressive
+          targetSavingsRate: 0.70
+          maxBidPercentOfOnDemand: 0.75
+          riskTolerance: high
+    migrationPolicy:
+      enabled: true
+      gracePeriod: 120s
+      checkpointBeforeMigration: true
+      fallbackToOnDemand: true
+      migrationPriority:
+        - label: "workload-type=training"
+          priority: high
+        - label: "workload-type=inference"
+          priority: critical
+        - label: "workload-type=batch"
+          priority: low
+    alerts:
+      - name: high-interruption-risk
+        condition: "interruption_probability > 0.30"
+        severity: warning
+        channels: [slack, email]
+      - name: spot-price-spike
+        condition: "spot_price > on_demand_price * 0.90"
+        severity: critical
+        channels: [pagerduty, slack]
+
+  # --- Reserved Instance Recommendation ---
+  reservedInstances:
+    enabled: true
+    analysisWindow: 90d
+    recommendationRefresh: 7d
+    coverageTarget: 0.80
+    instanceFamilies:
+      - family: p3
+        regions: [us-east-1, us-west-2]
+        paymentOptions:
+          preferred: partial_upfront
+          consider: [no_upfront, all_upfront]
+        terms:
+          preferred: 1yr
+          consider: [3yr]
+        breakEvenThreshold: 0.70
+      - family: g4dn
+        regions: [us-east-1, eu-west-1]
+        paymentOptions:
+          preferred: all_upfront
+          consider: [partial_upfront]
+        terms:
+          preferred: 3yr
+          consider: [1yr]
+        breakEvenThreshold: 0.60
+    usagePatternAnalysis:
+      percentiles: [50, 75, 90, 95]
+      minUsageForRecommendation: 0.50
+      confidenceThreshold: 0.80
+    exclusions:
+      - reason: "dev/test workloads"
+        selector:
+          matchLabels:
+            environment: development
+      - reason: "short-lived batch jobs"
+        selector:
+          matchLabels:
+            workload-type: batch
+
+  # --- Cost Analysis & Reporting ---
+  costAnalysis:
+    enabled: true
+    dimensions:
+      - service
+      - team
+      - project
+      - region
+      - environment
+      - resource_type
+    anomalyDetection:
+      enabled: true
+      sensitivityMultiplier: 2.0
+      minDataPoints: 7
+      alertOnAnomaly: true
+    budgets:
+      - name: ml-training-budget
+        amount: 50000
+        currency: USD
+        period: monthly
+        scope:
+          matchLabels:
+            workload-type: training
+        alerts:
+          - threshold: 0.50
+            channels: [email]
+          - threshold: 0.80
+            channels: [slack, email]
+          - threshold: 0.95
+            channels: [pagerduty, slack, email]
+      - name: inference-budget
+        amount: 30000
+        currency: USD
+        period: monthly
+        scope:
+          matchLabels:
+            workload-type: inference
+        alerts:
+          - threshold: 0.80
+            channels: [slack]
+          - threshold: 1.00
+            channels: [pagerduty, slack, email]
+    reports:
+      - name: weekly-cost-summary
+        schedule: "0 9 * * MON"
+        type: summary
+        recipients: [finance@example.com, platform-team@example.com]
+        format: pdf
+        includeForecasting: true
+        forecastDays: 30
+      - name: daily-anomaly-report
+        schedule: "0 8 * * *"
+        type: anomaly
+        recipients: [sre-team@example.com]
+        format: html
+      - name: monthly-optimization
+        schedule: "0 10 1 * *"
+        type: optimization
+        recipients: [cto@example.com, finance@example.com]
+        format: pdf
+        includeRecommendations: true
+    optimizationRules:
+      - name: idle-resource-detection
+        type: idle
+        threshold: 0.05
+        lookbackPeriod: 7d
+        action: alert
+      - name: rightsizing
+        type: rightsizing
+        cpuThreshold: 0.30
+        memoryThreshold: 0.40
+        lookbackPeriod: 14d
+        action: recommend
+      - name: unattached-volumes
+        type: storage
+        action: alert

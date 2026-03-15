@@ -1,0 +1,198 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "API Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(cloudai_api_requests_total[5m])",
+          "legendFormat": "{{method}} {{path}}"
+        }
+      ]
+    },
+    {
+      "title": "API Latency P99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(cloudai_api_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99 {{path}}"
+        }
+      ]
+    },
+    {
+      "title": "GPU Utilization by Node",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "cloudai_gpu_utilization_percent",
+          "legendFormat": "{{node}} GPU-{{gpu_index}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "max": 100,
+          "min": 0,
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 60 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "GPU Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "cloudai_gpu_memory_used_bytes / cloudai_gpu_memory_total_bytes * 100",
+          "legendFormat": "{{node}} GPU-{{gpu_index}}"
+        }
+      ]
+    },
+    {
+      "title": "Scheduling Queue Depth",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "cloudai_scheduler_queue_depth",
+          "legendFormat": "Queue"
+        }
+      ]
+    },
+    {
+      "title": "Scheduling Decisions/min",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(cloudai_scheduler_decisions_total[1m]) * 60",
+          "legendFormat": "Decisions"
+        }
+      ]
+    },
+    {
+      "title": "Active Workloads",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "cloudai_workloads_active",
+          "legendFormat": "Active"
+        }
+      ]
+    },
+    {
+      "title": "Cloud Cost (Monthly)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 16 },
+      "targets": [
+        {
+          "expr": "cloudai_cost_monthly_total",
+          "legendFormat": "Cost"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD" }
+      }
+    },
+    {
+      "title": "AI Agent Invocations",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "rate(cloudai_ai_agent_invocations_total[5m])",
+          "legendFormat": "{{agent_type}}"
+        }
+      ]
+    },
+    {
+      "title": "AI Agent Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(cloudai_ai_agent_latency_seconds_bucket[5m]))",
+          "legendFormat": "p95 {{agent_type}}"
+        }
+      ]
+    },
+    {
+      "title": "Anomalies Detected",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(cloudai_ai_anomaly_detections_total[5m])",
+          "legendFormat": "{{severity}}"
+        }
+      ]
+    },
+    {
+      "title": "Security Threats",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(cloudai_security_threats_total[5m])",
+          "legendFormat": "{{threat_type}}"
+        }
+      ]
+    },
+    {
+      "title": "Cluster Health",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 36 },
+      "targets": [
+        {
+          "expr": "cloudai_cluster_status",
+          "legendFormat": "{{cluster_name}}",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["cloudai-fusion", "gpu", "kubernetes", "ai"],
+  "templating": {
+    "list": [
+      {
+        "name": "cluster",
+        "type": "query",
+        "query": "label_values(cloudai_cluster_status, cluster_name)",
+        "datasource": "Prometheus"
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "query": "label_values(kube_pod_info{cluster=\"$cluster\"}, namespace)",
+        "datasource": "Prometheus"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "CloudAI Fusion - Platform Overview",
+  "uid": "cloudai-fusion-overview",
+  "version": 1
+}

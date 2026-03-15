@@ -1,0 +1,69 @@
+# CloudAI Fusion - API Server Dockerfile
+# Multi-stage build with distroless for minimal attack surface & image size
+#
+# Image size comparison:
+#   alpine:3.19 runtime  ~  8MB + binary
+#   distroless/static    ~  2MB + binary  (75% smaller, zero shell/package manager)
+#
+# Security benefits:
+#   - No shell (no shell-based exploits)
+#   - No package manager (no accidental installs)
+#   - CVE scan completes in seconds instead of minutes
+
+# ============================================
+# Stage 1: Build
+# ============================================
+FROM golang:1.25-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /app
+
+# Cache dependencies (separate layer for faster rebuilds)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source and build all binaries
+COPY . .
+
+# Build API server (static binary, no CGO)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -trimpath \
+    -ldflags="-s -w -X main.Version=$(cat VERSION 2>/dev/null || echo dev) -X main.GitCommit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown) -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    -o /app/bin/apiserver \
+    ./cmd/apiserver
+
+# Build healthcheck binary (~2MB, replaces curl in distroless)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -trimpath -ldflags="-s -w" \
+    -o /app/bin/healthcheck \
+    ./cmd/healthcheck
+
+# ============================================
+# Stage 2: Runtime (distroless — no shell, no package manager)
+# ============================================
+FROM gcr.io/distroless/static-debian12:nonroot
+
+# Copy timezone data and CA certs from builder (distroless/static has CA certs but not tzdata)
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+
+# Copy binaries
+COPY --from=builder /app/bin/apiserver /usr/local/bin/apiserver
+COPY --from=builder /app/bin/healthcheck /usr/local/bin/healthcheck
+
+# Copy config files
+COPY --from=builder /app/cloudai-fusion.yaml /etc/cloudai-fusion/cloudai-fusion.yaml
+COPY --from=builder /app/scripts/init-db.sql /opt/cloudai/init-db.sql
+
+# distroless/static:nonroot runs as uid 65534 by default
+USER nonroot:nonroot
+WORKDIR /home/nonroot
+
+EXPOSE 8080 9100
+
+# Use our static healthcheck binary instead of curl (no shell in distroless)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/usr/local/bin/healthcheck", "http://localhost:8080/healthz"]
+
+ENTRYPOINT ["apiserver"]
+CMD ["--config", "/etc/cloudai-fusion/cloudai-fusion.yaml", "--host", "0.0.0.0", "--port", "8080"]

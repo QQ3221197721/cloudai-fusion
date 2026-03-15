@@ -1,0 +1,153 @@
+{{- if .Values.enterprise.enabled }}
+# =============================================================================
+# Enterprise Controller — SSO, audit, SLA, support tickets
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-enterprise
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: enterprise
+spec:
+  replicas: {{ .Values.enterprise.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: enterprise
+  template:
+    metadata:
+      labels:
+        {{- include "cloudai-fusion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: enterprise
+    spec:
+      serviceAccountName: {{ include "cloudai-fusion.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: enterprise
+          image: "{{ .Values.enterprise.image.repository }}:{{ .Values.enterprise.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8087
+              protocol: TCP
+            - name: metrics
+              containerPort: 9107
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.enterprise.env.LOG_LEVEL | default "info" | quote }}
+            - name: DB_HOST
+              value: {{ .Values.database.host | quote }}
+            - name: DB_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: DB_NAME
+              value: {{ .Values.database.name | quote }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cloudai-fusion.fullname" . }}-secrets
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cloudai-fusion.fullname" . }}-secrets
+                  key: db-password
+            {{- if .Values.enterprise.sso.samlCertSecret }}
+            - name: SAML_CERT_SECRET
+              value: {{ .Values.enterprise.sso.samlCertSecret | quote }}
+            {{- end }}
+            {{- if .Values.enterprise.sso.ldapBindPasswordSecret }}
+            - name: LDAP_BIND_SECRET
+              value: {{ .Values.enterprise.sso.ldapBindPasswordSecret | quote }}
+            {{- end }}
+            - name: TICKET_NOTIFICATION_WEBHOOK
+              value: {{ .Values.enterprise.support.notificationWebhook | default "" | quote }}
+          resources:
+            {{- toYaml .Values.enterprise.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cloudai-fusion/enterprise
+              readOnly: true
+            {{- if .Values.enterprise.sso.samlCertSecret }}
+            - name: saml-cert
+              mountPath: /etc/cloudai-fusion/saml
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "cloudai-fusion.fullname" . }}-enterprise-config
+        {{- if .Values.enterprise.sso.samlCertSecret }}
+        - name: saml-cert
+          secret:
+            secretName: {{ .Values.enterprise.sso.samlCertSecret }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-enterprise
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: enterprise
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.enterprise.service.port | default 8087 }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.enterprise.service.metricsPort | default 9107 }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "cloudai-fusion.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: enterprise
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-enterprise-config
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    sso:
+      enabled: {{ .Values.enterprise.sso.enabled | default true }}
+      sessionTimeout: {{ .Values.enterprise.sso.sessionTimeout | default "8h" }}
+      maxSessions: {{ .Values.enterprise.sso.maxSessions | default 5 }}
+    audit:
+      retentionDays: {{ .Values.enterprise.audit.retentionDays | default 365 }}
+      storageBackend: {{ .Values.enterprise.audit.storageBackend | default "postgresql" }}
+      compressReports: {{ .Values.enterprise.audit.compressReports | default true }}
+    sla:
+      checkInterval: {{ .Values.enterprise.sla.checkInterval | default "1m" }}
+      reportSchedule: {{ .Values.enterprise.sla.reportSchedule | default "daily" }}
+    support:
+      maxTicketsPerTenant: {{ .Values.enterprise.support.maxTicketsPerTenant | default 100 }}
+      autoAssignment: {{ .Values.enterprise.support.autoAssignment | default true }}
+      escalationEnabled: {{ .Values.enterprise.support.escalationEnabled | default true }}
+{{- end }}

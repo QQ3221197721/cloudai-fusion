@@ -1,0 +1,169 @@
+# CloudAI Fusion - Operations Alert Rules (GitOps, MultiCluster, Observability)
+groups:
+  # ========================================================================
+  # GitOps Alerts
+  # ========================================================================
+  - name: cloudai_gitops_alerts
+    rules:
+      - alert: GitOpsSyncFailed
+        expr: cloudai_gitops_sync_status{status="failed"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: gitops
+        annotations:
+          summary: "GitOps sync failed for {{ $labels.app_name }} in {{ $labels.environment }}"
+          description: "Application {{ $labels.app_name }} has failed to sync via {{ $labels.engine }} for 5+ minutes."
+          runbook_url: "/runbooks/gitops-sync-failure"
+
+      - alert: GitOpsConfigDrift
+        expr: cloudai_gitops_drift_detected > 0
+        for: 10m
+        labels:
+          severity: warning
+          component: gitops
+        annotations:
+          summary: "Configuration drift detected for {{ $labels.app_name }}"
+          description: "{{ $value }} drifted resources in {{ $labels.app_name }} ({{ $labels.environment }})."
+
+      - alert: GitOpsPromotionStalled
+        expr: cloudai_gitops_promotion_duration_seconds > 3600
+        for: 15m
+        labels:
+          severity: warning
+          component: gitops
+        annotations:
+          summary: "Promotion pipeline stalled for {{ $labels.pipeline_name }}"
+          description: "Promotion has been in progress for over 1 hour."
+
+      - alert: GitOpsAppUnhealthy
+        expr: cloudai_gitops_app_health_status{status!="healthy"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: gitops
+        annotations:
+          summary: "GitOps application {{ $labels.app_name }} unhealthy"
+
+  # ========================================================================
+  # Multi-Cluster Alerts
+  # ========================================================================
+  - name: cloudai_multicluster_alerts
+    rules:
+      - alert: FederationMemberOffline
+        expr: cloudai_multicluster_member_status{status="offline"} > 0
+        for: 2m
+        labels:
+          severity: critical
+          component: multicluster
+        annotations:
+          summary: "Federation member {{ $labels.cluster_name }} is offline"
+          description: "Cluster {{ $labels.cluster_name }} ({{ $labels.region }}) has been offline for 2+ minutes."
+          runbook_url: "/runbooks/cluster-offline"
+
+      - alert: FederationMemberNotReady
+        expr: cloudai_multicluster_member_status{status="not-ready"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: multicluster
+        annotations:
+          summary: "Federation member {{ $labels.cluster_name }} not ready"
+
+      - alert: CrossClusterLBNoHealthyEndpoints
+        expr: cloudai_multicluster_healthy_endpoints == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: multicluster
+        annotations:
+          summary: "No healthy endpoints for global service {{ $labels.service_name }}"
+          runbook_url: "/runbooks/no-healthy-endpoints"
+
+      - alert: DRFailoverTriggered
+        expr: increase(cloudai_multicluster_failover_total[5m]) > 0
+        labels:
+          severity: critical
+          component: multicluster
+        annotations:
+          summary: "DR failover triggered for plan {{ $labels.plan_name }}"
+          description: "Failover from {{ $labels.from_cluster }} to {{ $labels.to_cluster }}."
+
+      - alert: DRReplicationLagHigh
+        expr: cloudai_multicluster_replication_lag_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+          component: multicluster
+        annotations:
+          summary: "DR replication lag above 5 minutes for {{ $labels.plan_name }}"
+
+      - alert: ClusterUpgradeFailed
+        expr: cloudai_multicluster_upgrade_status{status="failed"} > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: multicluster
+        annotations:
+          summary: "Cluster upgrade failed for {{ $labels.cluster_name }}"
+          runbook_url: "/runbooks/cluster-upgrade-failure"
+
+  # ========================================================================
+  # Observability Operations Alerts
+  # ========================================================================
+  - name: cloudai_observability_ops_alerts
+    rules:
+      - alert: AlertRoutingFailure
+        expr: rate(cloudai_observability_routing_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: observability
+        annotations:
+          summary: "Alert routing failures detected"
+
+      - alert: OnCallNoResponder
+        expr: cloudai_observability_oncall_active_responders == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: observability
+        annotations:
+          summary: "No active on-call responder for team {{ $labels.team }}"
+          runbook_url: "/runbooks/oncall-gap"
+
+      - alert: RunbookExecutionFailed
+        expr: increase(cloudai_observability_runbook_failures_total[10m]) > 0
+        labels:
+          severity: warning
+          component: observability
+        annotations:
+          summary: "Runbook '{{ $labels.runbook_name }}' execution failed"
+
+      - alert: IncidentUnacknowledged
+        expr: cloudai_observability_incident_unack_duration_seconds{severity=~"P0.*|P1.*"} > 300
+        for: 1m
+        labels:
+          severity: critical
+          component: observability
+        annotations:
+          summary: "P0/P1 incident unacknowledged for 5+ minutes"
+          description: "Incident {{ $labels.incident_id }} ({{ $labels.severity }}) needs immediate attention."
+
+      - alert: HighAlertVolume
+        expr: rate(cloudai_observability_alerts_fired_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: observability
+        annotations:
+          summary: "High alert volume: {{ $value | humanize }}/s — possible alert storm"
+
+      - alert: ActionItemsOverdue
+        expr: cloudai_observability_action_items_overdue > 0
+        for: 24h
+        labels:
+          severity: warning
+          component: observability
+        annotations:
+          summary: "{{ $value }} overdue action items from incident retrospectives"

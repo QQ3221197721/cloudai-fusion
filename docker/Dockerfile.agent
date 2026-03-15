@@ -1,0 +1,51 @@
+# CloudAI Fusion - Agent Service Dockerfile
+# Multi-stage build with distroless for minimal attack surface & image size
+
+# ============================================
+# Stage 1: Build
+# ============================================
+FROM golang:1.25-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /app
+
+# Cache dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source and build
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -trimpath \
+    -ldflags="-s -w -X main.Version=$(cat VERSION 2>/dev/null || echo dev) -X main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    -o /app/bin/agent \
+    ./cmd/agent
+
+# Build healthcheck binary (replaces curl in distroless)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -trimpath -ldflags="-s -w" \
+    -o /app/bin/healthcheck \
+    ./cmd/healthcheck
+
+# ============================================
+# Stage 2: Runtime (distroless — no shell, no package manager)
+# ============================================
+FROM gcr.io/distroless/static-debian12:nonroot
+
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+
+COPY --from=builder /app/bin/agent /usr/local/bin/agent
+COPY --from=builder /app/bin/healthcheck /usr/local/bin/healthcheck
+COPY --from=builder /app/cloudai-fusion.yaml /etc/cloudai-fusion/cloudai-fusion.yaml
+
+USER nonroot:nonroot
+WORKDIR /home/nonroot
+
+EXPOSE 8082 9102
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/usr/local/bin/healthcheck", "http://localhost:8082/healthz"]
+
+ENTRYPOINT ["agent"]
+CMD ["--config", "/etc/cloudai-fusion/cloudai-fusion.yaml", "--host", "0.0.0.0", "--port", "8082"]
