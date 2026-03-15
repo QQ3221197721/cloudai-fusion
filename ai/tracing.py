@@ -31,7 +31,6 @@ from opentelemetry.propagators.composite import CompositeHTTPPropagator
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.trace import (
     SpanKind,
     StatusCode,
@@ -122,8 +121,8 @@ def init_tracing(config: Optional[TracingConfig] = None) -> TracerProvider:
 
     resource = Resource.create(
         {
-            ResourceAttributes.SERVICE_NAME: config.service_name,
-            ResourceAttributes.SERVICE_VERSION: config.service_version,
+            "service.name": config.service_name,
+            "service.version": config.service_version,
             "environment": config.environment,
             "language": "python",
         }
