@@ -1,108 +1,161 @@
 # ============================================================================
 # golangci-lint v2 configuration for CloudAI Fusion
 # Run: golangci-lint run ./...
-# Docs: https://golangci-lint.run/docs/configuration/file/
-# ============================================================================
-# 策略: 先用核心 linter 保证 CI 通过，后续逐步启用更多检查
+# Migrated from v1 → v2 format (required for Go 1.25+ support)
 # ============================================================================
 
 version: "2"
 
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+output:
+  formats:
+    - format: colored-line-number
+  sort-results: true
+
 linters:
-  # 仅启用 go vet 已验证通过的核心检查，避免存量代码大量报错
   enable:
-    - govet           # Go 内置静态分析 (已通过 go vet ./...)
-    - staticcheck     # 静态分析 (含 gosimple)
-    - ineffassign     # 无效赋值检测
-    - unused          # 未使用代码检测
+    # Default linters
+    - errcheck        # Check for unchecked errors
+    - gosimple        # Simplify code
+    - govet           # Vet examines Go source code
+    - ineffassign     # Detect ineffectual assignments
+    - staticcheck     # Static analysis checks
+    - unused          # Check for unused code
+
+    # Additional linters
+    - bodyclose       # Check HTTP response body is closed
+    - copyloopvar     # Detect loop variable capture issues
+    - dupl            # Code clone detection
+    - durationcheck   # Check for two durations multiplied together
+    - errname         # Check error naming conventions
+    - errorlint       # Wrapping errors with fmt.Errorf
+    - exhaustive      # Check exhaustive switch statements
+    - gocognit        # Cognitive complexity
+    - goconst         # Find repeated strings that could be constants
+    - gocritic        # Opinionated Go source code linter
+    - gocyclo         # Cyclomatic complexity
+    - gosec           # Security checks
+    - misspell        # Find misspelled English words
+    - nakedret        # Find naked returns in long functions
+    - nilerr          # Find code that returns nil even if error is not nil
+    - noctx           # Find HTTP requests without context.Context
+    - prealloc        # Find slice declarations that could be preallocated
+    - predeclared     # Find shadowed predeclared identifiers
+    - revive          # Extensible linter (successor of golint)
+    - unconvert       # Remove unnecessary type conversions
+    - unparam         # Find unused function parameters
+    - wastedassign    # Find wasted assignment statements
 
   settings:
-    staticcheck:
-      checks:
-        - all
-        - "-SA1019"   # 忽略 deprecated 警告（存量代码较多）
-        - "-SA9003"   # 忽略空分支
-        - "-ST1000"   # 忽略包注释格式
-        - "-ST1003"   # 忽略命名风格
-        - "-ST1016"   # 忽略方法接收者命名
-        - "-ST1020"   # 忽略导出函数注释
-        - "-ST1021"   # 忽略导出类型注释
-        - "-ST1022"   # 忽略导出变量注释
-        - "-QF1012"   # 忽略 fmt.Errorf 简化建议
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+
+    gocyclo:
+      min-complexity: 25
+
+    gocognit:
+      min-complexity: 40
+
+    dupl:
+      threshold: 200
+
+    goconst:
+      min-len: 3
+      min-occurrences: 4
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+      disabled-checks:
+        - ifElseChain
+        - hugeParam
+
+    gosec:
+      excludes:
+        # G404: Insecure random number source (math/rand) — acceptable for non-security
+        # purposes like jitter, load balancing, and test data generation.
+        # Security-critical randomness uses crypto/rand (auth tokens, secrets, etc.)
+        - G404  # Insecure random number source (math/rand)
+
+    nakedret:
+      max-func-lines: 30
+
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: exported
+          disabled: true  # Too noisy for internal packages
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: var-declaration
+        - name: var-naming
+
+    exhaustive:
+      default-signifies-exhaustive: true
+
+    misspell:
+      locale: US
 
   exclusions:
     rules:
-      # 测试文件宽松处理
+      # Test files can have longer functions and more complexity
       - path: _test\.go
-        linters: [errcheck, unused]
-      # Mock / 生成文件
-      - path: mock_
-        linters: [unused]
-      # 示例目录
-      - path: examples/
-        linters: [errcheck]
+        linters:
+          - dupl
+          - gocyclo
+          - gocognit
+          - errcheck
+          - gosec
+          - unparam
+          - goconst
 
-# 格式化器 (v2: 与 linter 分离)
+      # Generated / mock files
+      - path: mock_
+        linters:
+          - dupl
+          - unused
+          - unparam
+
+      # Main entry points
+      - path: cmd/
+        linters:
+          - gocyclo
+
+      # Allow fmt.Println in examples
+      - path: examples/
+        linters:
+          - gosimple
+
+    # v2: issue limits moved here
+    max-issues-per-linter: 50
+    max-same-issues: 5
+
+# Formatters (v2: separated from linters)
 formatters:
   enable:
     - gofmt
     - goimports
 
-# 输出限制
-issues:
-  max-issues-per-linter: 50
-  max-same-issues: 3
-# ============================================================================
-# golangci-lint v2 configuration for CloudAI Fusion
-# Run: golangci-lint run ./...
-# Docs: https://golangci-lint.run/docs/configuration/file/
-# ============================================================================
-# 策略: 先用核心 linter 保证 CI 通过，后续逐步启用更多检查
-# ============================================================================
-
-version: "2"
-
-linters:
-  # 仅启用 go vet 已验证通过的核心检查，避免存量代码大量报错
-  enable:
-    - govet           # Go 内置静态分析 (已通过 go vet ./...)
-    - staticcheck     # 静态分析 (含 gosimple)
-    - ineffassign     # 无效赋值检测
-    - unused          # 未使用代码检测
-
-  settings:
-    staticcheck:
-      checks:
-        - all
-        - "-SA1019"   # 忽略 deprecated 警告（存量代码较多）
-        - "-SA9003"   # 忽略空分支
-        - "-ST1000"   # 忽略包注释格式
-        - "-ST1003"   # 忽略命名风格
-        - "-ST1016"   # 忽略方法接收者命名
-        - "-ST1020"   # 忽略导出函数注释
-        - "-ST1021"   # 忽略导出类型注释
-        - "-ST1022"   # 忽略导出变量注释
-        - "-QF1012"   # 忽略 fmt.Errorf 简化建议
-
-  exclusions:
-    rules:
-      # 测试文件宽松处理
-      - path: _test\.go
-        linters: [errcheck, unused]
-      # Mock / 生成文件
-      - path: mock_
-        linters: [unused]
-      # 示例目录
-      - path: examples/
-        linters: [errcheck]
-
-# 格式化器 (v2: 与 linter 分离)
-formatters:
-  enable:
-    - gofmt
-    - goimports
-
-# 输出限制
-issues:
-  max-issues-per-linter: 50
-  max-same-issues: 3
+severity:
+  default: warning
+  rules:
+    - linters:
+        - govet
+        - errcheck
+        - staticcheck
+      severity: error
