@@ -372,3 +372,4 @@ def start_span(
     """
     tracer = get_tracer()
     return tracer.start_as_current_span(name, kind=kind, attributes=attributes or {})
+
