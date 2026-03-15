@@ -34,7 +34,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2
+          version: v2.11.3
           args: --timeout=5m
 
   go-test:
@@ -129,7 +129,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: |
-          pip install -r ai/requirements.txt
+          pip install -r ai/requirements-ci.txt
           pip install pytest pytest-asyncio pytest-cov httpx
           cd ai
           python -m pytest tests/ -v --cov=agents --cov=anomaly --cov=scheduler --cov-report=xml:../coverage.xml --override-ini='addopts='
