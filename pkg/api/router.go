@@ -179,6 +179,7 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 			wasmGroup.POST("/deploy", auth.RequirePermission(auth.PermWorkloadCreate), handleWasmDeploy(cfg.WasmManager))
 			wasmGroup.GET("/instances", auth.RequirePermission(auth.PermWorkloadRead), handleWasmInstances(cfg.WasmManager))
 			wasmGroup.GET("/metrics", auth.RequirePermission(auth.PermMonitorRead), handleWasmMetrics(cfg.WasmManager))
+			wasmGroup.GET("/health", auth.RequirePermission(auth.PermMonitorRead), handleWasmHealth(cfg.WasmManager))
 		}
 
 		// ---- Edge-Cloud Collaborative Architecture ----
@@ -1084,6 +1085,17 @@ func handleWasmMetrics(mgr wasm.WasmService) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, metrics)
+	}
+}
+
+func handleWasmHealth(mgr wasm.WasmService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		health, err := mgr.CheckRuntimeHealth(c.Request.Context())
+		if err != nil {
+			apperrors.RespondError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, health)
 	}
 }
 

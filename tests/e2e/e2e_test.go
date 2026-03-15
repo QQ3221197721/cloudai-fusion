@@ -269,8 +269,8 @@ func TestE2E_EdgeComputingPipeline(t *testing.T) {
 	nodePayload := `{
 		"name": "edge-node-01",
 		"tier": "edge",
-		"location": "factory-floor-1",
-		"capabilities": ["gpu-inference", "tflite"]
+		"region": "factory-floor-1",
+		"labels": {"capability-gpu-inference": "true", "capability-tflite": "true"}
 	}`
 	w = env.do(t, "POST", "/api/v1/edge/nodes", nodePayload)
 	if w.Code != http.StatusOK && w.Code != http.StatusCreated {
@@ -284,8 +284,10 @@ func TestE2E_EdgeComputingPipeline(t *testing.T) {
 	// Step 4: Deploy model to edge
 	deployPayload := `{
 		"model_id": "yolov8-nano",
-		"node_id": "edge-node-01",
-		"runtime": "tensorrt"
+		"model_name": "YOLOv8 Nano",
+		"parameter_count": "3.2M",
+		"edge_node_id": "edge-node-01",
+		"framework": "tensorrt"
 	}`
 	w = env.do(t, "POST", "/api/v1/edge/deploy", deployPayload)
 	if w.Code != http.StatusOK && w.Code != http.StatusCreated {
