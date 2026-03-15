@@ -1,29 +1,18 @@
 # ============================================================================
 # golangci-lint v2 configuration for CloudAI Fusion
 # Run: golangci-lint run ./...
-# Migrated from v1 → v2 format (required for Go 1.25+ support)
+# Docs: https://golangci-lint.run/docs/configuration/file/
 # ============================================================================
 
 version: "2"
 
-run:
-  timeout: 5m
-  tests: true
-  modules-download-mode: readonly
-
-output:
-  formats:
-    - format: colored-line-number
-  sort-results: true
-
 linters:
   enable:
-    # Default linters
+    # Default linters (gosimple merged into staticcheck in v2)
     - errcheck        # Check for unchecked errors
-    - gosimple        # Simplify code
     - govet           # Vet examines Go source code
     - ineffassign     # Detect ineffectual assignments
-    - staticcheck     # Static analysis checks
+    - staticcheck     # Static analysis checks (includes gosimple)
     - unused          # Check for unused code
 
     # Additional linters
@@ -78,10 +67,7 @@ linters:
 
     gosec:
       excludes:
-        # G404: Insecure random number source (math/rand) — acceptable for non-security
-        # purposes like jitter, load balancing, and test data generation.
-        # Security-critical randomness uses crypto/rand (auth tokens, secrets, etc.)
-        - G404  # Insecure random number source (math/rand)
+        - G404  # Insecure random number source (math/rand) — acceptable for non-security use
 
     nakedret:
       max-func-lines: 30
@@ -95,7 +81,7 @@ linters:
         - name: error-return
         - name: error-strings
         - name: exported
-          disabled: true  # Too noisy for internal packages
+          disabled: true
         - name: increment-decrement
         - name: indent-error-flow
         - name: range
@@ -136,20 +122,21 @@ linters:
         linters:
           - gocyclo
 
-      # Allow fmt.Println in examples
+      # Examples directory
       - path: examples/
         linters:
-          - gosimple
-
-    # v2: issue limits moved here
-    max-issues-per-linter: 50
-    max-same-issues: 5
+          - errcheck
 
 # Formatters (v2: separated from linters)
 formatters:
   enable:
     - gofmt
     - goimports
+
+# Issues configuration (v2: separate top-level section)
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 5
 
 severity:
   default: warning
