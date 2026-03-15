@@ -1,0 +1,521 @@
+# CloudAI Fusion Helm Chart Values
+# Override these values for your deployment
+#
+# To see all configurable values:
+#   helm show values ./deploy/helm/cloudai-fusion
+#
+# To install with custom values:
+#   helm install cloudai-fusion ./deploy/helm/cloudai-fusion -f my-values.yaml
+
+# -- Global settings shared across all sub-charts
+global:
+  imageRegistry: ghcr.io/cloudai-fusion
+  imagePullPolicy: IfNotPresent
+  storageClass: ""
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full release name
+fullnameOverride: ""
+
+# =============================================================================
+# API Server
+# =============================================================================
+apiserver:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/cloudai-fusion/apiserver
+    tag: "0.1.0-mvp"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 8080
+    grpcPort: 9090
+    metricsPort: 9100
+  env:
+    LOG_LEVEL: "info"
+  # -- HPA configuration
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    # targetMemoryUtilizationPercentage: 80
+
+# =============================================================================
+# Scheduler
+# =============================================================================
+scheduler:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/scheduler
+    tag: "0.1.0-mvp"
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+  service:
+    type: ClusterIP
+    port: 8081
+    metricsPort: 9101
+  env:
+    SCHEDULING_INTERVAL: "10"
+    LOG_LEVEL: "info"
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 75
+
+# Agent Service
+agent:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/agent
+    tag: "0.1.0-mvp"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 8082
+
+# =============================================================================
+# AI Engine
+# =============================================================================
+aiEngine:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/ai-engine
+    tag: "0.1.0-mvp"
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 4Gi
+    limits:
+      cpu: 8000m
+      memory: 16Gi
+      nvidia.com/gpu: 0  # Set to 1 for GPU-accelerated inference
+  service:
+    type: ClusterIP
+    port: 8090
+  env:
+    AI_DEVICE: "cpu"
+    AI_LOG_LEVEL: "info"
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    # targetMemoryUtilizationPercentage: 80
+
+# PostgreSQL
+# IMPORTANT: Override password in production!
+#   helm install cloudai-fusion ... --set postgresql.auth.password=<STRONG_PASSWORD>
+postgresql:
+  enabled: true
+  auth:
+    database: cloudai
+    username: cloudai
+    password: ""  # REQUIRED: set via --set postgresql.auth.password=...
+  primary:
+    persistence:
+      size: 20Gi
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+# Redis
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Kafka
+kafka:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    size: 10Gi
+
+# =============================================================================
+# Monitoring
+# =============================================================================
+monitoring:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: ""  # Override via --set monitoring.grafana.adminPassword=...
+  # -- ServiceMonitor for Prometheus Operator auto-discovery
+  serviceMonitor:
+    enabled: false
+    interval: "30s"
+    scrapeTimeout: "10s"
+    honorLabels: false
+    # -- Additional labels for ServiceMonitor (e.g., release: kube-prometheus-stack)
+    additionalLabels: {}
+
+# Ingress
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: cloudai-fusion.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Service Account
+serviceAccount:
+  create: true
+  name: cloudai-fusion
+  annotations: {}
+
+# RBAC
+rbac:
+  create: true
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# -- Node selector for all pods
+nodeSelector: {}
+
+# -- Tolerations for all pods
+tolerations: []
+
+# -- Affinity rules for all pods
+affinity: {}
+
+# =============================================================================
+# Network Policy — Zero-trust microsegmentation
+# =============================================================================
+networkPolicy:
+  # -- Enable NetworkPolicy resources
+  enabled: false
+  # -- Namespace where the Ingress controller runs
+  ingressNamespace: ingress-nginx
+  # -- Namespace where Prometheus/monitoring runs
+  monitoringNamespace: monitoring
+
+# =============================================================================
+# PodDisruptionBudget — High availability during voluntary disruptions
+# =============================================================================
+podDisruptionBudget:
+  # -- Enable PDB resources
+  enabled: true
+  apiserver:
+    # -- Minimum available replicas (or use maxUnavailable)
+    minAvailable: 1
+    # maxUnavailable: 1
+  scheduler:
+    minAvailable: 1
+  aiEngine:
+    maxUnavailable: 1
+
+# Database (used by secrets template)
+# IMPORTANT: Override in production!
+database:
+  host: cloudai-fusion-postgresql
+  port: "5432"
+  name: cloudai
+  user: cloudai
+  password: ""  # REQUIRED: set via --set database.password=...
+
+# Auth
+# IMPORTANT: Override in production! Generate with: openssl rand -hex 32
+auth:
+  jwtSecret: ""  # REQUIRED: set via --set auth.jwtSecret=...
+
+# =============================================================================
+# GitOps Controller
+# =============================================================================
+gitops:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/gitops-controller
+    tag: "0.1.0-mvp"
+  engine: argocd  # argocd or flux
+  driftCheckInterval: "5m"
+  autoRemediateDrift: false
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  argocd:
+    enabled: true
+    server: "argocd-server.argocd:443"
+    authToken: ""  # Set via --set gitops.argocd.authToken=...
+  flux:
+    enabled: false
+    namespace: flux-system
+  promotion:
+    stages:
+      - name: dev
+        environment: development
+      - name: staging
+        environment: staging
+      - name: production
+        environment: production
+
+# =============================================================================
+# Multi-Cluster Controller
+# =============================================================================
+multicluster:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/multicluster-controller
+    tag: "0.1.0-mvp"
+  federationType: karmada  # karmada or clusternet
+  defaultLBPolicy: weighted-round-robin
+  healthCheckInterval: "10s"
+  failoverThreshold: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  dr:
+    strategy: hot-standby  # multi-active, hot-standby, warm-standby
+    rpo: "5m"
+    rto: "15m"
+    autoFailover: true
+
+# =============================================================================
+# Observability Controller
+# =============================================================================
+observability:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/observability-controller
+    tag: "0.1.0-mvp"
+  alertmanagerURL: "http://alertmanager:9093"
+  pagerdutyIntegrationKey: ""  # Set via --set observability.pagerdutyIntegrationKey=...
+  slackWebhookURL: ""  # Set via --set observability.slackWebhookURL=...
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  oncall:
+    defaultRotation: weekly
+    timezone: UTC
+  runbook:
+    autoExecute: false
+    requireApproval: true
+
+# =============================================================================
+# Tenant Controller — Multi-tenant isolation
+# =============================================================================
+tenant:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/tenant-controller
+    tag: "0.1.0-mvp"
+  meteringInterval: "1m"
+  enableAutoSuspend: false
+  quotaEnforcementMode: enforce   # enforce, audit, warn
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  service:
+    port: 8086
+    metricsPort: 9106
+  env:
+    LOG_LEVEL: "info"
+  networkPolicy:
+    enabled: false
+  encryption:
+    provider: vault              # vault, aws-kms, gcp-kms, azure-keyvault
+    keyRotationDays: 90
+    kmsEndpoint: ""              # Set via --set tenant.encryption.kmsEndpoint=...
+  billing:
+    defaultCurrency: USD
+    invoiceSchedule: monthly
+  pricing:
+    - resourceType: cpu
+      unitPrice: 0.048
+      unit: "vCPU-hour"
+    - resourceType: memory
+      unitPrice: 0.006
+      unit: "GiB-hour"
+    - resourceType: gpu
+      unitPrice: 2.50
+      unit: "GPU-hour"
+    - resourceType: storage
+      unitPrice: 0.10
+      unit: "GiB-month"
+    - resourceType: network_egress
+      unitPrice: 0.09
+      unit: "GiB"
+
+# =============================================================================
+# Enterprise Controller — SSO, audit, SLA, support
+# =============================================================================
+enterprise:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cloudai-fusion/enterprise
+    tag: "0.1.0-mvp"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  service:
+    port: 8087
+    metricsPort: 9107
+  env:
+    LOG_LEVEL: "info"
+  sso:
+    enabled: true
+    sessionTimeout: "8h"
+    maxSessions: 5
+    samlCertSecret: ""            # K8s Secret name containing SAML certificate
+    ldapBindPasswordSecret: ""    # K8s Secret name containing LDAP bind password
+  audit:
+    retentionDays: 365
+    storageBackend: postgresql    # postgresql, s3, gcs
+    compressReports: true
+  sla:
+    checkInterval: "1m"
+    reportSchedule: daily
+  support:
+    maxTicketsPerTenant: 100
+    autoAssignment: true
+    escalationEnabled: true
+    notificationWebhook: ""       # Slack/Teams webhook for ticket notifications
+
+# =============================================================================
+# Security Hardening
+# =============================================================================
+security:
+  pss:
+    enabled: false
+    profile: restricted          # restricted, baseline, privileged
+    version: latest              # PSS version (v1.28, latest)
+  cosign:
+    enabled: false
+    mode: warn                   # enforce, warn, audit
+    trustedRegistries:
+      - ghcr.io/cloudai-fusion
+    publicKey: ""                # PEM-encoded cosign public key
+    keyless:
+      enabled: false
+      fulcioURL: https://fulcio.sigstore.dev
+      rekorURL: https://rekor.sigstore.dev
+      identities: []             # [{issuer: "...", subject: "..."}]
+  audit:
+    enabled: false
+    schedule: "0 */6 * * *"      # Every 6 hours
+
+# =============================================================================
+# Cloud Providers (credentials injected via Secret)
+# =============================================================================
+cloudProviders:
+  - name: aliyun
+    type: aliyun
+    region: cn-hangzhou
+    accessKeyID: ""
+    accessKeySecret: ""
+  - name: aws
+    type: aws
+    region: us-east-1
+    accessKeyID: ""
+    accessKeySecret: ""
+  - name: gcp
+    type: gcp
+    region: us-central1
+    accessKeyID: ""
+    accessKeySecret: ""
+
+# =============================================================================
+# Operations — Backup, Logging, Audit Archival, DR Drills
+# =============================================================================
+operations:
+  backup:
+    enabled: false
+    storageClass: "standard"
+    storageSize: "50Gi"
+    database:
+      schedule: "0 2 * * *"         # Daily at 2 AM
+      image: "postgres:16-alpine"
+      historyLimit: 5
+      localRetain: 3
+      s3Upload: false
+      s3Bucket: "cloudai-fusion-backups"
+    etcd:
+      enabled: false
+      schedule: "0 3 * * *"         # Daily at 3 AM
+      image: "bitnami/etcd:3.5"
+      endpoints: "https://etcd:2379"
+      certSecret: "etcd-client-certs"
+  logging:
+    enabled: false
+    backend: loki                     # loki or elasticsearch
+    image: "fluent/fluent-bit:3.0"
+    lokiEndpoint: "http://loki:3100"
+    lokiHost: "loki"
+    lokiPort: 3100
+    esHost: "elasticsearch"
+    esPort: "9200"
+  auditArchival:
+    enabled: false
+    schedule: "0 4 * * 0"           # Weekly Sunday at 4 AM
+    olderThanDays: 90
+    s3Bucket: "cloudai-fusion-audit-archives"
+  drDrill:
+    enabled: false
+    schedule: "0 10 1 */3 *"        # Quarterly on 1st at 10 AM
+    type: tabletop                    # full, partial, tabletop
+    notifyChannel: ops-team
+
+image:
+  repository: ghcr.io/cloudai-fusion/cloudai-fusion
+  tag: "0.1.0-mvp"

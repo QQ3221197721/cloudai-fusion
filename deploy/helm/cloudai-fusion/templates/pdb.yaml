@@ -1,0 +1,72 @@
+{{- /*
+  PodDisruptionBudget — Guarantees minimum availability during voluntary disruptions
+  (node drains, rolling updates, cluster upgrades).
+*/}}
+{{- if .Values.podDisruptionBudget.enabled }}
+---
+# API Server PDB — at least 1 replica always available
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-apiserver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: apiserver
+spec:
+  {{- if .Values.podDisruptionBudget.apiserver.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.apiserver.minAvailable }}
+  {{- else if .Values.podDisruptionBudget.apiserver.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.apiserver.maxUnavailable }}
+  {{- else }}
+  minAvailable: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: apiserver
+---
+# Scheduler PDB — ensure scheduling continuity
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-scheduler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scheduler
+spec:
+  {{- if .Values.podDisruptionBudget.scheduler.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.scheduler.minAvailable }}
+  {{- else if .Values.podDisruptionBudget.scheduler.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.scheduler.maxUnavailable }}
+  {{- else }}
+  minAvailable: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: scheduler
+---
+# AI Engine PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-ai-engine
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai-engine
+spec:
+  {{- if .Values.podDisruptionBudget.aiEngine.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.aiEngine.minAvailable }}
+  {{- else if .Values.podDisruptionBudget.aiEngine.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.aiEngine.maxUnavailable }}
+  {{- else }}
+  maxUnavailable: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ai-engine
+{{- end }}

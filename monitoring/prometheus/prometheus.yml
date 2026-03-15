@@ -1,0 +1,52 @@
+# CloudAI Fusion - Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+# Alert rules
+rule_files:
+  - "rules/*.yml"
+
+# Scrape targets
+scrape_configs:
+  # API Server
+  - job_name: "cloudai-apiserver"
+    static_configs:
+      - targets: ["apiserver:9100"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Scheduler
+  - job_name: "cloudai-scheduler"
+    static_configs:
+      - targets: ["scheduler:9101"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Agent Service
+  - job_name: "cloudai-agent"
+    static_configs:
+      - targets: ["agent:9102"]
+    metrics_path: /metrics
+
+  # AI Engine
+  - job_name: "cloudai-ai-engine"
+    static_configs:
+      - targets: ["ai-engine:8090"]
+    metrics_path: /metrics
+
+  # PostgreSQL Exporter
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  # Redis Exporter
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

@@ -1,0 +1,184 @@
+{
+  "dashboard": {
+    "title": "CloudAI Fusion - Operations Overview",
+    "uid": "cloudai-operations",
+    "tags": ["cloudai", "operations", "gitops", "multicluster", "observability"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "GitOps — Application Sync Status",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "count(cloudai_gitops_sync_status{status=\"synced\"})",
+            "legendFormat": "Synced"
+          }
+        ]
+      },
+      {
+        "title": "GitOps — Sync Failures",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "count(cloudai_gitops_sync_status{status=\"failed\"})",
+            "legendFormat": "Failed"
+          }
+        ]
+      },
+      {
+        "title": "GitOps — Config Drift Count",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(cloudai_gitops_drift_detected)",
+            "legendFormat": "Drifts"
+          }
+        ]
+      },
+      {
+        "title": "GitOps — Active Promotions",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+        "targets": [
+          {
+            "expr": "count(cloudai_gitops_promotion_status{status=\"in-progress\"})",
+            "legendFormat": "Active"
+          }
+        ]
+      },
+      {
+        "title": "Multi-Cluster — Federation Members",
+        "type": "table",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+        "targets": [
+          {
+            "expr": "cloudai_multicluster_member_status",
+            "format": "table",
+            "instant": true
+          }
+        ]
+      },
+      {
+        "title": "Multi-Cluster — Cross-Cluster Traffic",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+        "targets": [
+          {
+            "expr": "rate(cloudai_multicluster_requests_total[5m])",
+            "legendFormat": "{{ cluster_name }}"
+          }
+        ]
+      },
+      {
+        "title": "Multi-Cluster — DR Replication Lag",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+        "targets": [
+          {
+            "expr": "cloudai_multicluster_replication_lag_seconds",
+            "legendFormat": "{{ plan_name }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "s" }
+        }
+      },
+      {
+        "title": "Multi-Cluster — Failover Events",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 12 },
+        "targets": [
+          {
+            "expr": "sum(increase(cloudai_multicluster_failover_total[24h]))",
+            "legendFormat": "Failovers (24h)"
+          }
+        ]
+      },
+      {
+        "title": "Multi-Cluster — Healthy Endpoints",
+        "type": "gauge",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 12 },
+        "targets": [
+          {
+            "expr": "sum(cloudai_multicluster_healthy_endpoints)",
+            "legendFormat": "Healthy"
+          }
+        ]
+      },
+      {
+        "title": "Observability — Alert Volume by Severity",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+        "targets": [
+          {
+            "expr": "rate(cloudai_observability_alerts_fired_total[5m])",
+            "legendFormat": "{{ severity }}"
+          }
+        ]
+      },
+      {
+        "title": "Observability — On-Call Status",
+        "type": "table",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+        "targets": [
+          {
+            "expr": "cloudai_observability_oncall_active_responders",
+            "format": "table",
+            "instant": true
+          }
+        ]
+      },
+      {
+        "title": "Observability — Runbook Executions",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+        "targets": [
+          {
+            "expr": "rate(cloudai_observability_runbook_executions_total[5m])",
+            "legendFormat": "{{ runbook_name }} - {{ status }}"
+          }
+        ]
+      },
+      {
+        "title": "Observability — Open Incidents",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 28 },
+        "targets": [
+          {
+            "expr": "count(cloudai_observability_incident_status{status!=\"closed\"})",
+            "legendFormat": "Open"
+          }
+        ]
+      },
+      {
+        "title": "Observability — MTTR (Mean Time To Resolve)",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 28 },
+        "targets": [
+          {
+            "expr": "avg(cloudai_observability_incident_resolution_seconds)",
+            "legendFormat": "MTTR"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "s" }
+        }
+      },
+      {
+        "title": "Observability — Action Items Status",
+        "type": "piechart",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+        "targets": [
+          {
+            "expr": "cloudai_observability_action_items_total",
+            "legendFormat": "{{ status }}"
+          }
+        ]
+      }
+    ]
+  }
+}

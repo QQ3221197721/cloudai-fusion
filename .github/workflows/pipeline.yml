@@ -1,0 +1,501 @@
+# ============================================================================
+# CloudAI Fusion — Multi-Environment Pipeline
+# ============================================================================
+# Environments:  develop → staging → production
+# Triggers:      push to develop / release branches / manual dispatch
+# Features:
+#   - Environment-specific configuration & secrets
+#   - Automated gate checks between environments
+#   - Smoke tests & integration tests per environment
+#   - Performance validation before production
+#   - Slack / webhook notifications on deploy events
+# ============================================================================
+
+name: Multi-Environment Pipeline
+
+on:
+  push:
+    branches:
+      - develop
+      - 'release/*'
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Target environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip integration tests (emergency deploy only)'
+        required: false
+        type: boolean
+        default: false
+      components:
+        description: 'Components to deploy (comma-separated, or "all")'
+        required: true
+        default: 'all'
+
+env:
+  GO_VERSION: '1.25'
+  PYTHON_VERSION: '3.11'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+  HELM_CHART_PATH: deploy/helm/cloudai-fusion
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+# ============================================================================
+# Reusable environment matrix
+# ============================================================================
+# dev:        auto-deploy on develop push
+# staging:    auto-deploy on release/* push; requires dev gate
+# production: manual approval required; requires staging gate
+# ============================================================================
+
+jobs:
+  # ==========================================================================
+  # 1. BUILD — Compile, test, and produce artifacts
+  # ==========================================================================
+  build:
+    name: "Build & Unit Test"
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+      go_test_passed: ${{ steps.gotest.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Go module cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-
+
+      - name: Run unit tests
+        id: gotest
+        run: |
+          go test -race -coverprofile=coverage.out \
+            -count=1 -timeout=300s ./pkg/... ./cmd/...
+          echo "coverage=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}')" >> $GITHUB_OUTPUT
+
+      - name: Build all binaries
+        run: |
+          for comp in apiserver scheduler agent; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+              -trimpath \
+              -ldflags="-s -w -X main.version=${{ github.sha }} -X main.commit=${{ github.sha }}" \
+              -o bin/${comp} ./cmd/${comp}
+          done
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/apiserver
+          tags: type=sha
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: bin/
+          retention-days: 3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  # ==========================================================================
+  # 2. DOCKER — Build & push multi-arch images
+  # ==========================================================================
+  docker:
+    name: "Docker Images"
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - component: apiserver
+            dockerfile: docker/Dockerfile.apiserver
+          - component: scheduler
+            dockerfile: docker/Dockerfile.scheduler
+          - component: agent
+            dockerfile: docker/Dockerfile.agent
+          - component: ai-engine
+            dockerfile: docker/Dockerfile.ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=raw,value=${{ github.ref_name }}-{{date 'YYYYMMDDHHmmss'}}
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ==========================================================================
+  # 3. DEPLOY DEV — Automatic on develop push
+  # ==========================================================================
+  deploy-dev:
+    name: "Deploy → Dev"
+    runs-on: ubuntu-latest
+    needs: docker
+    if: >
+      (github.ref == 'refs/heads/develop' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_env == 'dev')
+    environment:
+      name: dev
+      url: https://dev.cloudai-fusion.internal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.0'
+
+      - name: Configure kubeconfig (dev)
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.DEV_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Helm deploy to dev
+        run: |
+          helm upgrade --install cloudai-fusion ${{ env.HELM_CHART_PATH }} \
+            --namespace cloudai-dev --create-namespace \
+            --set global.environment=dev \
+            --set global.image.tag=${{ needs.docker.outputs.image_tag || github.sha }} \
+            --set global.image.registry=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set apiserver.replicas=1 \
+            --set scheduler.replicas=1 \
+            --set agent.replicas=1 \
+            --set resources.requests.cpu=250m \
+            --set resources.requests.memory=256Mi \
+            --values ${{ env.HELM_CHART_PATH }}/values.yaml \
+            --timeout 5m --wait --atomic
+
+      - name: Dev smoke tests
+        run: |
+          echo "=== Dev Smoke Tests ==="
+          MAX_RETRIES=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            if kubectl -n cloudai-dev exec deploy/cloudai-fusion-apiserver -- \
+              wget -qO- http://localhost:8080/healthz 2>/dev/null; then
+              echo "Health check passed on attempt $i"
+              break
+            fi
+            echo "Retry $i/$MAX_RETRIES..."
+            sleep 10
+          done
+
+          # Basic API validation
+          kubectl -n cloudai-dev exec deploy/cloudai-fusion-apiserver -- \
+            wget -qO- http://localhost:8080/api/v1/version || true
+
+      - name: Notify dev deploy
+        if: always()
+        run: |
+          echo "::notice title=Dev Deploy::Deployed to dev environment (status: ${{ job.status }})"
+
+  # ==========================================================================
+  # 4. INTEGRATION TESTS — Gate between dev and staging
+  # ==========================================================================
+  integration-gate:
+    name: "Integration Gate"
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    if: >
+      !cancelled() && needs.deploy-dev.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_tests != 'true')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run integration tests against dev
+        env:
+          TEST_ENV: dev
+          API_ENDPOINT: https://dev.cloudai-fusion.internal
+        run: |
+          go test -v -tags=integration -timeout=300s \
+            ./tests/integration/... \
+            -args -env=dev
+
+      - name: Run performance budget check
+        run: |
+          go test -v -run "TestPerformanceBudget" -timeout=120s \
+            ./tests/performance/...
+
+  # ==========================================================================
+  # 5. DEPLOY STAGING — Auto on release branches, after integration gate
+  # ==========================================================================
+  deploy-staging:
+    name: "Deploy → Staging"
+    runs-on: ubuntu-latest
+    needs: [docker, integration-gate]
+    if: >
+      (startsWith(github.ref, 'refs/heads/release/') && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.target_env == 'staging')
+    environment:
+      name: staging
+      url: https://staging.cloudai-fusion.internal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.0'
+
+      - name: Configure kubeconfig (staging)
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Helm deploy to staging
+        run: |
+          helm upgrade --install cloudai-fusion ${{ env.HELM_CHART_PATH }} \
+            --namespace cloudai-staging --create-namespace \
+            --set global.environment=staging \
+            --set global.image.tag=${{ needs.docker.outputs.image_tag || github.sha }} \
+            --set global.image.registry=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set apiserver.replicas=2 \
+            --set scheduler.replicas=2 \
+            --set agent.replicas=2 \
+            --set resources.requests.cpu=500m \
+            --set resources.requests.memory=512Mi \
+            --set resources.limits.cpu=2000m \
+            --set resources.limits.memory=2Gi \
+            --values ${{ env.HELM_CHART_PATH }}/values.yaml \
+            --timeout 10m --wait --atomic
+
+      - name: Staging smoke tests
+        run: |
+          echo "=== Staging Smoke Tests ==="
+          sleep 15
+          kubectl -n cloudai-staging rollout status deploy/cloudai-fusion-apiserver --timeout=120s
+          kubectl -n cloudai-staging rollout status deploy/cloudai-fusion-scheduler --timeout=120s
+
+          # Validate endpoints
+          for endpoint in /healthz /readyz /api/v1/version; do
+            kubectl -n cloudai-staging exec deploy/cloudai-fusion-apiserver -- \
+              wget -qO- http://localhost:8080${endpoint}
+            echo "  ✓ ${endpoint}"
+          done
+
+      - name: Run staging acceptance tests
+        run: |
+          go test -v -run "TestE2E" -timeout=300s \
+            ./tests/e2e/... \
+            -args -env=staging
+
+  # ==========================================================================
+  # 6. PERFORMANCE GATE — Heavy validation before production
+  # ==========================================================================
+  performance-gate:
+    name: "Performance Gate"
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: >
+      !cancelled() && needs.deploy-staging.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run stress tests (condensed)
+        run: |
+          go test -v -run "TestStress_10000|TestStress_20000" -timeout=300s \
+            ./tests/performance/...
+
+      - name: Run chaos engineering validation
+        run: |
+          go test -v -run "TestChaosEnhanced_SLOCompliance|TestChaosEnhanced_GradualDegradation" \
+            -timeout=300s ./tests/chaos/...
+
+      - name: Run GPU scheduler benchmark regression
+        run: |
+          go test -bench="BenchmarkLargeScale" -benchmem -benchtime=3s \
+            -timeout=300s ./pkg/scheduler/ -run='^$'
+
+      - name: Performance summary
+        run: |
+          echo "::notice title=Performance Gate::All performance validations passed"
+
+  # ==========================================================================
+  # 7. DEPLOY PRODUCTION — Manual approval + canary
+  # ==========================================================================
+  deploy-production:
+    name: "Deploy → Production"
+    runs-on: ubuntu-latest
+    needs: [docker, performance-gate]
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.target_env == 'production'
+    environment:
+      name: production
+      url: https://cloudai-fusion.io
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.0'
+
+      - name: Configure kubeconfig (production)
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.PROD_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Pre-deploy snapshot
+        run: |
+          echo "=== Production Pre-Deploy Snapshot ==="
+          kubectl -n cloudai-production get deploy -o wide || true
+          kubectl -n cloudai-production get pods -o wide || true
+
+          # Record current image tags for rollback reference
+          for comp in apiserver scheduler agent; do
+            IMAGE=$(kubectl -n cloudai-production get deploy cloudai-fusion-${comp} \
+              -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "none")
+            echo "  Current ${comp}: ${IMAGE}"
+            echo "PREV_${comp^^}_IMAGE=${IMAGE}" >> $GITHUB_ENV
+          done
+
+      - name: Helm deploy to production (canary-ready)
+        run: |
+          helm upgrade --install cloudai-fusion ${{ env.HELM_CHART_PATH }} \
+            --namespace cloudai-production --create-namespace \
+            --set global.environment=production \
+            --set global.image.tag=${{ needs.docker.outputs.image_tag || github.sha }} \
+            --set global.image.registry=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }} \
+            --set apiserver.replicas=3 \
+            --set scheduler.replicas=3 \
+            --set agent.replicas=3 \
+            --set resources.requests.cpu=1000m \
+            --set resources.requests.memory=1Gi \
+            --set resources.limits.cpu=4000m \
+            --set resources.limits.memory=4Gi \
+            --set monitoring.enabled=true \
+            --set monitoring.slo.errorBudget=0.1 \
+            --values ${{ env.HELM_CHART_PATH }}/values-production.yaml \
+            --timeout 15m --wait --atomic
+
+      - name: Production health validation
+        run: |
+          echo "=== Production Health Validation ==="
+          sleep 30
+
+          # Rollout status for all components
+          for comp in apiserver scheduler agent; do
+            kubectl -n cloudai-production rollout status deploy/cloudai-fusion-${comp} --timeout=180s
+            echo "  ✓ ${comp} rollout complete"
+          done
+
+          # Readiness probes
+          for endpoint in /healthz /readyz; do
+            kubectl -n cloudai-production exec deploy/cloudai-fusion-apiserver -- \
+              wget -qO- http://localhost:8080${endpoint}
+            echo "  ✓ ${endpoint}"
+          done
+
+      - name: Post-deploy monitoring (5min observation)
+        run: |
+          echo "=== 5-Minute Observation Window ==="
+          for i in $(seq 1 5); do
+            echo "--- Minute $i/5 ---"
+
+            # Check pod status
+            READY=$(kubectl -n cloudai-production get pods -l app.kubernetes.io/name=cloudai-fusion \
+              --no-headers 2>/dev/null | grep -c "Running" || echo 0)
+            TOTAL=$(kubectl -n cloudai-production get pods -l app.kubernetes.io/name=cloudai-fusion \
+              --no-headers 2>/dev/null | wc -l || echo 0)
+            echo "  Pods: ${READY}/${TOTAL} running"
+
+            # Check for restarts
+            RESTARTS=$(kubectl -n cloudai-production get pods -l app.kubernetes.io/name=cloudai-fusion \
+              -o jsonpath='{.items[*].status.containerStatuses[0].restartCount}' 2>/dev/null || echo "0")
+            echo "  Restarts: ${RESTARTS}"
+
+            sleep 60
+          done
+
+      - name: Auto-rollback on failure
+        if: failure()
+        run: |
+          echo "::error title=Production Deploy Failed::Initiating automatic rollback"
+          helm rollback cloudai-fusion 0 \
+            --namespace cloudai-production \
+            --timeout 10m --wait
+          echo "::notice title=Rollback::Production rolled back to previous release"
+
+  # ==========================================================================
+  # 8. POST-DEPLOY NOTIFICATION
+  # ==========================================================================
+  notify:
+    name: "Notify"
+    runs-on: ubuntu-latest
+    needs: [deploy-dev, deploy-staging, deploy-production]
+    if: always()
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "============================================"
+          echo "  CloudAI Fusion — Deployment Summary"
+          echo "============================================"
+          echo "  Ref:          ${{ github.ref }}"
+          echo "  SHA:          ${{ github.sha }}"
+          echo "  Trigger:      ${{ github.event_name }}"
+          echo "  Dev:          ${{ needs.deploy-dev.result || 'skipped' }}"
+          echo "  Staging:      ${{ needs.deploy-staging.result || 'skipped' }}"
+          echo "  Production:   ${{ needs.deploy-production.result || 'skipped' }}"
+          echo "============================================"
+
+      - name: Send webhook notification
+        if: always()
+        run: |
+          if [ -n "${{ secrets.DEPLOY_WEBHOOK_URL }}" ]; then
+            curl -sf -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "project": "cloudai-fusion",
+                "ref": "${{ github.ref }}",
+                "sha": "${{ github.sha }}",
+                "dev": "${{ needs.deploy-dev.result || 'skipped' }}",
+                "staging": "${{ needs.deploy-staging.result || 'skipped' }}",
+                "production": "${{ needs.deploy-production.result || 'skipped' }}"
+              }' || true
+          fi

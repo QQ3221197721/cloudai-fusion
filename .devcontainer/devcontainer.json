@@ -1,0 +1,101 @@
+{
+    "name": "CloudAI Fusion Dev",
+    "dockerComposeFile": ["../docker-compose.yml", "docker-compose.devcontainer.yml"],
+    "service": "devcontainer",
+    "workspaceFolder": "/workspace",
+
+    "features": {
+        "ghcr.io/devcontainers/features/go:1": {
+            "version": "1.25"
+        },
+        "ghcr.io/devcontainers/features/python:1": {
+            "version": "3.11",
+            "installTools": true
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "dockerDashComposeVersion": "v2"
+        },
+        "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+            "helm": "latest",
+            "kubectl": "latest",
+            "minikube": "none"
+        },
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "golang.go",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-azuretools.vscode-docker",
+                "ms-kubernetes-tools.vscode-kubernetes-tools",
+                "redhat.vscode-yaml",
+                "streetsidesoftware.code-spell-checker",
+                "eamodio.gitlens",
+                "hashicorp.terraform",
+                "zxh404.vscode-proto3",
+                "42Crunch.vscode-openapi"
+            ],
+            "settings": {
+                "go.toolsManagement.autoUpdate": true,
+                "go.lintTool": "golangci-lint",
+                "go.lintFlags": ["--config=.golangci.yml"],
+                "go.testFlags": ["-v", "-count=1"],
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "editor.formatOnSave": true,
+                "[go]": {
+                    "editor.defaultFormatter": "golang.go"
+                },
+                "[python]": {
+                    "editor.defaultFormatter": "ms-python.python"
+                },
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
+        }
+    },
+
+    "forwardPorts": [
+        8080, 8081, 8082, 8090,
+        9090, 3000, 16686,
+        5432, 6379, 9092, 4222, 8222
+    ],
+
+    "portsAttributes": {
+        "8080": { "label": "API Server",  "onAutoForward": "notify" },
+        "8081": { "label": "Scheduler",   "onAutoForward": "silent" },
+        "8082": { "label": "Agent",       "onAutoForward": "silent" },
+        "8090": { "label": "AI Engine",   "onAutoForward": "silent" },
+        "9090": { "label": "Prometheus",  "onAutoForward": "silent" },
+        "3000": { "label": "Grafana",     "onAutoForward": "notify" },
+        "16686": { "label": "Jaeger",     "onAutoForward": "silent" },
+        "5432": { "label": "PostgreSQL",  "onAutoForward": "silent" },
+        "6379": { "label": "Redis",       "onAutoForward": "silent" },
+        "9092": { "label": "Kafka",       "onAutoForward": "silent" },
+        "4222": { "label": "NATS",        "onAutoForward": "silent" },
+        "8222": { "label": "NATS Monitor","onAutoForward": "silent" }
+    },
+
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+    "postStartCommand": "echo '\\n  CloudAI Fusion Dev Container ready!\\n  Run: make help\\n'",
+
+    "remoteUser": "vscode",
+
+    "containerEnv": {
+        "CLOUDAI_ENV": "development",
+        "CLOUDAI_DB_HOST": "postgres",
+        "CLOUDAI_DB_PORT": "5432",
+        "CLOUDAI_DB_NAME": "cloudai",
+        "CLOUDAI_DB_USER": "cloudai",
+        "CLOUDAI_DB_PASSWORD": "devcontainer_secret",
+        "CLOUDAI_REDIS_ADDR": "redis:6379",
+        "CLOUDAI_KAFKA_BROKERS": "kafka:9092",
+        "CLOUDAI_NATS_URL": "nats://nats:4222",
+        "CLOUDAI_JWT_SECRET": "devcontainer-jwt-secret-not-for-production-use-32bytes",
+        "CLOUDAI_LOG_LEVEL": "debug",
+        "GOPATH": "/home/vscode/go",
+        "GOFLAGS": "-trimpath"
+    }
+}

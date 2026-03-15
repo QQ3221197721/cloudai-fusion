@@ -1,0 +1,486 @@
+{{/*
+  Enterprise Operations Templates
+  - Database Backup CronJob (pg_dump with S3/OSS upload)
+  - Etcd Backup CronJob
+  - Log Collection DaemonSet (Fluent Bit -> Loki/ES)
+  - Audit Log Archival CronJob
+  - DR Drill Scheduled CronJob
+*/}}
+
+{{- if .Values.operations.backup.enabled }}
+# ============================================================================
+# Database Backup CronJob
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-db-backup
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db-backup
+spec:
+  schedule: {{ .Values.operations.backup.database.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.operations.backup.database.historyLimit | default 5 }}
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            {{- include "cloudai-fusion.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: db-backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "cloudai-fusion.fullname" . }}-backup
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: db-backup
+              image: {{ .Values.operations.backup.database.image | default "postgres:16-alpine" }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  BACKUP_FILE="/backup/cloudai-fusion-${TIMESTAMP}.sql.gz"
+
+                  echo "[$(date)] Starting database backup..."
+                  pg_dump \
+                    --host="${DB_HOST}" \
+                    --port="${DB_PORT}" \
+                    --username="${DB_USER}" \
+                    --dbname="${DB_NAME}" \
+                    --format=custom \
+                    --compress=9 \
+                    --file="${BACKUP_FILE}"
+
+                  BACKUP_SIZE=$(stat -f%z "${BACKUP_FILE}" 2>/dev/null || stat -c%s "${BACKUP_FILE}")
+                  echo "[$(date)] Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE} bytes)"
+
+                  # Calculate SHA-256 checksum
+                  CHECKSUM=$(sha256sum "${BACKUP_FILE}" | awk '{print $1}')
+                  echo "${CHECKSUM}" > "${BACKUP_FILE}.sha256"
+
+                  {{- if .Values.operations.backup.database.s3Upload }}
+                  # Upload to S3/OSS
+                  echo "[$(date)] Uploading to {{ .Values.operations.backup.database.s3Bucket }}..."
+                  aws s3 cp "${BACKUP_FILE}" "s3://{{ .Values.operations.backup.database.s3Bucket }}/db-backups/${TIMESTAMP}/"
+                  aws s3 cp "${BACKUP_FILE}.sha256" "s3://{{ .Values.operations.backup.database.s3Bucket }}/db-backups/${TIMESTAMP}/"
+                  echo "[$(date)] Upload completed."
+                  {{- end }}
+
+                  # Cleanup old local backups (keep last N)
+                  cd /backup && ls -t cloudai-fusion-*.sql.gz | tail -n +{{ .Values.operations.backup.database.localRetain | default 3 | add 1 }} | xargs -r rm -f
+                  echo "[$(date)] Backup job finished successfully."
+              env:
+                - name: DB_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "cloudai-fusion.fullname" . }}-db
+                      key: host
+                - name: DB_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "cloudai-fusion.fullname" . }}-db
+                      key: port
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "cloudai-fusion.fullname" . }}-db
+                      key: username
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "cloudai-fusion.fullname" . }}-db
+                      key: database
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "cloudai-fusion.fullname" . }}-db
+                      key: password
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backup
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: {{ include "cloudai-fusion.fullname" . }}-backup-pvc
+---
+# Backup PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-backup-pvc
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: {{ .Values.operations.backup.storageClass | default "standard" }}
+  resources:
+    requests:
+      storage: {{ .Values.operations.backup.storageSize | default "50Gi" }}
+---
+# Backup ServiceAccount + RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-backup
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-backup
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+    resourceNames:
+      - {{ include "cloudai-fusion.fullname" . }}-db
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-backup
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "cloudai-fusion.fullname" . }}-backup
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "cloudai-fusion.fullname" . }}-backup
+{{- end }}
+
+{{- if .Values.operations.backup.etcd.enabled }}
+---
+# ============================================================================
+# Etcd Backup CronJob
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-etcd-backup
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: etcd-backup
+spec:
+  schedule: {{ .Values.operations.backup.etcd.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: etcd-backup
+              image: {{ .Values.operations.backup.etcd.image | default "bitnami/etcd:3.5" }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  etcdctl snapshot save "/backup/etcd-${TIMESTAMP}.db" \
+                    --endpoints="{{ .Values.operations.backup.etcd.endpoints }}" \
+                    --cacert=/etc/etcd/ca.crt \
+                    --cert=/etc/etcd/tls.crt \
+                    --key=/etc/etcd/tls.key
+                  echo "Etcd snapshot saved: etcd-${TIMESTAMP}.db"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backup
+                - name: etcd-certs
+                  mountPath: /etc/etcd
+                  readOnly: true
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: {{ include "cloudai-fusion.fullname" . }}-backup-pvc
+            - name: etcd-certs
+              secret:
+                secretName: {{ .Values.operations.backup.etcd.certSecret | default "etcd-client-certs" }}
+{{- end }}
+
+{{- if .Values.operations.logging.enabled }}
+---
+# ============================================================================
+# Fluent Bit Log Collection DaemonSet
+# ============================================================================
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: log-collector
+spec:
+  selector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: log-collector
+  template:
+    metadata:
+      labels:
+        {{- include "cloudai-fusion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: log-collector
+    spec:
+      serviceAccountName: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: fluent-bit
+          image: {{ .Values.operations.logging.image | default "fluent/fluent-bit:3.0" }}
+          ports:
+            - containerPort: 2020
+              name: metrics
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- if eq .Values.operations.logging.backend "loki" }}
+            - name: LOKI_ENDPOINT
+              value: {{ .Values.operations.logging.lokiEndpoint | default "http://loki:3100" }}
+            {{- end }}
+            {{- if eq .Values.operations.logging.backend "elasticsearch" }}
+            - name: ES_HOST
+              value: {{ .Values.operations.logging.esHost | default "elasticsearch" }}
+            - name: ES_PORT
+              value: {{ .Values.operations.logging.esPort | default "9200" | quote }}
+            {{- end }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+            - name: containers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            - name: config
+              mountPath: /fluent-bit/etc/
+      volumes:
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: containers
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: config
+          configMap:
+            name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+---
+# Fluent Bit ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        5
+        Log_Level    info
+        Daemon       off
+        Parsers_File parsers.conf
+        HTTP_Server  On
+        HTTP_Listen  0.0.0.0
+        HTTP_Port    2020
+
+    [INPUT]
+        Name             tail
+        Tag              kube.*
+        Path             /var/log/containers/*cloudai-fusion*.log
+        Parser           docker
+        DB               /var/log/flb_kube.db
+        Mem_Buf_Limit    10MB
+        Skip_Long_Lines  On
+        Refresh_Interval 10
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Merge_Log           On
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On
+
+    [FILTER]
+        Name   grep
+        Match  kube.*
+        Exclude log healthcheck
+
+    {{- if eq .Values.operations.logging.backend "loki" }}
+    [OUTPUT]
+        Name          loki
+        Match         kube.*
+        Host          {{ .Values.operations.logging.lokiHost | default "loki" }}
+        Port          {{ .Values.operations.logging.lokiPort | default 3100 }}
+        Labels        job=fluent-bit, app=cloudai-fusion
+        Auto_Kubernetes_Labels On
+        Line_Format   json
+    {{- else if eq .Values.operations.logging.backend "elasticsearch" }}
+    [OUTPUT]
+        Name          es
+        Match         kube.*
+        Host          ${ES_HOST}
+        Port          ${ES_PORT}
+        Index         cloudai-fusion
+        Type          _doc
+        Logstash_Format On
+        Logstash_Prefix cloudai-fusion
+        Retry_Limit   3
+        Suppress_Type_Name On
+    {{- end }}
+
+  parsers.conf: |
+    [PARSER]
+        Name         docker
+        Format       json
+        Time_Key     time
+        Time_Format  %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep    On
+
+    [PARSER]
+        Name         cloudai
+        Format       json
+        Time_Key     timestamp
+        Time_Format  %Y-%m-%dT%H:%M:%S%z
+---
+# Fluent Bit ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "cloudai-fusion.fullname" . }}-fluent-bit
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+
+{{- if .Values.operations.auditArchival.enabled }}
+---
+# ============================================================================
+# Audit Log Archival CronJob
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-audit-archival
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: audit-archival
+spec:
+  schedule: {{ .Values.operations.auditArchival.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: archival
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              command: ["cloudai-fusion", "audit", "archive",
+                "--older-than={{ .Values.operations.auditArchival.olderThanDays }}d",
+                "--target=s3://{{ .Values.operations.auditArchival.s3Bucket }}/audit-archives/"]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+{{- end }}
+
+{{- if .Values.operations.drDrill.enabled }}
+---
+# ============================================================================
+# Disaster Recovery Drill Scheduled CronJob
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-dr-drill
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dr-drill
+  annotations:
+    description: "Automated DR drill - validates backup restore and measures RPO/RTO"
+spec:
+  schedule: {{ .Values.operations.drDrill.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: dr-drill
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              command: ["cloudai-fusion", "disaster", "drill",
+                "--type={{ .Values.operations.drDrill.type | default "tabletop" }}",
+                "--notify={{ .Values.operations.drDrill.notifyChannel | default "ops-team" }}"]
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+{{- end }}

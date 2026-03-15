@@ -1,0 +1,76 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output
+dist/
+build/
+vendor/
+
+# Go
+*.test
+*.out
+# go.sum  # NOTE: go.sum should be committed for reproducible builds
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+venv/
+.venv/
+*.egg
+.pytest_cache/
+
+# Logs
+logs/
+*.log
+
+# Docker
+.docker/
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Secrets
+*.pem
+*.key
+*.crt
+secrets/
+
+# Data
+data/
+*.db
+*.sqlite3
+
+# Coverage
+coverage/
+*.cover
+htmlcov/
+.coverage
+
+# Misc cache
+.mypy_cache/
+.ruff_cache/

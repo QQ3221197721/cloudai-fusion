@@ -1,0 +1,369 @@
+# ============================================================================
+# CloudAI Fusion - Docker Compose (Development & Local Testing)
+# ============================================================================
+#
+# Service Startup Dependency Graph (→ = "waits for healthy"):
+#
+#   postgres ─────────┐
+#   redis ────────────┤
+#   kafka ────────────┼──→ apiserver ──→ agent
+#   nats ─────────────┤          │
+#                     │          └──→ scheduler ──→ agent
+#   ai-engine ────────┘
+#
+#   Monitoring: prometheus → grafana, postgres-exporter, redis-exporter
+#   Tracing:    jaeger (always-on, OTLP gRPC :4317, UI :16686)
+#
+# Quick Start:
+#   1. Run:  scripts/env-generate.bat  (or .sh)  to generate .env
+#   2. Run:  docker compose up -d
+#   3. Run:  scripts/diagnose.bat (or .sh) to verify all services
+#
+# ============================================================================
+version: "3.9"
+
+services:
+  # --------------------------------------------------------------------------
+  # Core Services
+  # --------------------------------------------------------------------------
+  apiserver:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.apiserver
+    ports:
+      - "8080:8080"
+      - "9100:9100"  # metrics
+    environment:
+      - CLOUDAI_ENV=${CLOUDAI_ENV:-development}
+      - CLOUDAI_DB_HOST=postgres
+      - CLOUDAI_DB_PORT=5432
+      - CLOUDAI_DB_NAME=cloudai
+      - CLOUDAI_DB_USER=cloudai
+      - CLOUDAI_DB_PASSWORD=${CLOUDAI_DB_PASSWORD:?Set CLOUDAI_DB_PASSWORD in .env — run scripts/env-generate to auto-generate}
+      - CLOUDAI_REDIS_ADDR=redis:6379
+      - CLOUDAI_KAFKA_BROKERS=kafka:9092
+      - CLOUDAI_NATS_URL=nats://nats:4222
+      - CLOUDAI_JWT_SECRET=${CLOUDAI_JWT_SECRET:?Set CLOUDAI_JWT_SECRET in .env — run scripts/env-generate to auto-generate}
+      - CLOUDAI_LOG_LEVEL=${CLOUDAI_LOG_LEVEL:-debug}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      # Feature Profile & Flags (minimal/standard/full)
+      - CLOUDAI_FEATURE_PROFILE=${CLOUDAI_FEATURE_PROFILE:-standard}
+      # Per-flag overrides (uncomment to customise):
+      # - CLOUDAI_FF_EDGE_COMPUTING=${CLOUDAI_FF_EDGE_COMPUTING:-}
+      # - CLOUDAI_FF_WASM_RUNTIME=${CLOUDAI_FF_WASM_RUNTIME:-}
+      # - CLOUDAI_FF_SERVICE_MESH=${CLOUDAI_FF_SERVICE_MESH:-}
+      # - CLOUDAI_FF_DISTRIBUTED_TRACING=${CLOUDAI_FF_DISTRIBUTED_TRACING:-}
+      # - CLOUDAI_FF_COST_OPTIMIZATION=${CLOUDAI_FF_COST_OPTIMIZATION:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks:
+      - cloudai-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scheduler
+    ports:
+      - "8081:8081"
+      - "9101:9101"  # metrics
+    environment:
+      - CLOUDAI_ENV=${CLOUDAI_ENV:-development}
+      - CLOUDAI_DB_HOST=postgres
+      - CLOUDAI_DB_PORT=5432
+      - CLOUDAI_DB_NAME=cloudai
+      - CLOUDAI_DB_USER=cloudai
+      - CLOUDAI_DB_PASSWORD=${CLOUDAI_DB_PASSWORD:?Set CLOUDAI_DB_PASSWORD in .env}
+      - CLOUDAI_REDIS_ADDR=redis:6379
+      - CLOUDAI_KAFKA_BROKERS=kafka:9092
+      - CLOUDAI_NATS_URL=nats://nats:4222
+      - CLOUDAI_AI_ENGINE_ADDR=ai-engine:8090
+      - CLOUDAI_LOG_LEVEL=${CLOUDAI_LOG_LEVEL:-debug}
+      # Feature Profile (inherits from apiserver if consistent)
+      - CLOUDAI_FEATURE_PROFILE=${CLOUDAI_FEATURE_PROFILE:-standard}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      ai-engine:
+        condition: service_healthy
+    networks:
+      - cloudai-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8081/healthz"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    ports:
+      - "8082:8082"
+      - "9102:9102"  # metrics
+    environment:
+      - CLOUDAI_ENV=${CLOUDAI_ENV:-development}
+      - CLOUDAI_APISERVER_ADDR=apiserver:8080
+      - CLOUDAI_SCHEDULER_ADDR=scheduler:8081
+      - CLOUDAI_AI_ENGINE_ADDR=ai-engine:8090
+      - CLOUDAI_REDIS_ADDR=redis:6379
+      - CLOUDAI_LOG_LEVEL=${CLOUDAI_LOG_LEVEL:-debug}
+    depends_on:
+      apiserver:
+        condition: service_healthy
+      scheduler:
+        condition: service_healthy
+      ai-engine:
+        condition: service_healthy
+    networks:
+      - cloudai-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8082/healthz"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+
+  ai-engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai
+    ports:
+      - "8090:8090"
+    environment:
+      - AI_MODEL_PATH=/models
+      - AI_LOG_LEVEL=debug
+      - AI_DEVICE=cpu
+      - AI_REDIS_ADDR=redis:6379
+      # Distributed tracing (cross-language: Go ↔ Python via W3C traceparent)
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      - CLOUDAI_ENV=${CLOUDAI_ENV:-development}
+      # LLM Integration (set API keys to enable generative AI)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      - DASHSCOPE_BASE_URL=${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      - DASHSCOPE_MODEL=${DASHSCOPE_MODEL:-qwen-max}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3:8b}
+      - VLLM_BASE_URL=${VLLM_BASE_URL:-http://host.docker.internal:8000/v1}
+      - VLLM_MODEL=${VLLM_MODEL:-Qwen/Qwen2.5-7B-Instruct}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.3}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-2048}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-30}
+    volumes:
+      - ai-models:/models
+    networks:
+      - cloudai-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/healthz"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+
+  # --------------------------------------------------------------------------
+  # Infrastructure
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=cloudai
+      - POSTGRES_USER=cloudai
+      - POSTGRES_PASSWORD=${CLOUDAI_DB_PASSWORD:?Set CLOUDAI_DB_PASSWORD in .env}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cloudai-net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - cloudai-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,HOST://0.0.0.0:9092
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CLUSTER_ID: "cloudai-fusion-local-dev"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      start_period: 20s
+      retries: 8
+    networks:
+      - cloudai-net
+
+  nats:
+    image: nats:2.10-alpine
+    ports:
+      - "4222:4222"   # Client connections
+      - "8222:8222"   # HTTP monitoring
+      - "6222:6222"   # Cluster routing
+    command: ["--jetstream", "--store_dir=/data", "--http_port=8222", "--max_payload=8MB"]
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - cloudai-net
+
+  # --------------------------------------------------------------------------
+  # Tracing (always-on: required by core services for cross-language debugging)
+  # --------------------------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - cloudai-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:16687/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  # --------------------------------------------------------------------------
+  # Monitoring Stack  (profile: monitoring)
+  #   Start with: docker compose --profile monitoring up -d
+  #   Or:         docker compose up -d  (always-on services start without flag)
+  # --------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    profiles: ["monitoring", "full"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/rules/:/etc/prometheus/rules/
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - cloudai-net
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    profiles: ["monitoring", "full"]
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-cloudai}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - ./monitoring/grafana/provisioning/:/etc/grafana/provisioning/
+      - ./monitoring/grafana/dashboards/:/var/lib/grafana/dashboards/
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - cloudai-net
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    profiles: ["monitoring", "full"]
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://cloudai:${CLOUDAI_DB_PASSWORD:?err}@postgres:5432/cloudai?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cloudai-net
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    profiles: ["monitoring", "full"]
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - cloudai-net
+    restart: unless-stopped
+
+# --------------------------------------------------------------------------
+# Volumes & Networks
+# --------------------------------------------------------------------------
+volumes:
+  pg-data:
+  redis-data:
+  kafka-data:
+  nats-data:
+  prometheus-data:
+  grafana-data:
+  ai-models:
+
+networks:
+  cloudai-net:
+    driver: bridge

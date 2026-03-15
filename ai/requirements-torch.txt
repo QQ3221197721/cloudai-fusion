@@ -1,0 +1,20 @@
+# ============================================================================
+# CloudAI Fusion - PyTorch ML Backend
+# ============================================================================
+# Install: pip install -r requirements-torch.txt
+#
+# This installs ALL core dependencies + PyTorch (CPU by default).
+# For GPU support (CUDA 12.1):
+#   pip install -r requirements-torch.txt --extra-index-url https://download.pytorch.org/whl/cu121
+#
+# WARNING: Do NOT install alongside requirements-tf.txt (framework conflict).
+# ============================================================================
+
+-r requirements.txt
+
+# PyTorch is already in requirements.txt (CPU default).
+# Override here for GPU-specific builds if needed:
+# torch==2.2.2+cu121  # Uncomment for CUDA 12.1
+
+# QLoRA 4-bit quantization (Linux + CUDA only)
+# bitsandbytes==0.43.1  # Uncomment if you have CUDA GPU

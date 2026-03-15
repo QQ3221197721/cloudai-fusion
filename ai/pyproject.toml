@@ -1,0 +1,63 @@
+# ============================================================================
+# CloudAI Fusion - Python Project Configuration
+# ============================================================================
+
+[project]
+name = "cloudai-fusion-ai"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+# ============================================================================
+# Ruff — Python Linter & Formatter
+# ============================================================================
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["agents", "anomaly", "scheduler", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort (import sorting)
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff-specific rules
+]
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "B008",    # do not perform function calls in argument defaults (FastAPI uses this)
+    "B905",    # zip() without an explicit strict= parameter
+    "SIM108",  # use ternary operator (readability preference)
+    "RUF012",  # mutable class variables should use ClassVar (Pydantic models)
+    "RUF003",  # ambiguous unicode characters in comments
+    "F811",    # redefinition of unused name from line N (common in test fixtures)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",    # use of assert
+    "B011",    # do not call assert False
+    "B017",    # do not assert blind exception
+    "N802",    # function name should be lowercase
+    "E712",    # comparison to True/False
+    "RUF059",  # unpacked variable never used (common in tuple unpacking)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agents", "anomaly", "scheduler", "tracing"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# ============================================================================
+# Pytest Configuration (supplement to ai/pytest.ini)
+# ============================================================================
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

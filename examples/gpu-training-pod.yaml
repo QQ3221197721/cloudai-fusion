@@ -1,0 +1,59 @@
+# Example: Deploy a GPU training workload on Kubernetes
+# Apply with: kubectl apply -f examples/gpu-training-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pytorch-training
+  namespace: default
+  labels:
+    app: cloudai-fusion
+    workload-type: training
+    framework: pytorch
+  annotations:
+    cloudai-fusion.io/priority: "100"
+    cloudai-fusion.io/gpu-type: "nvidia-a100"
+    cloudai-fusion.io/scheduling-policy: "topology-aware"
+spec:
+  restartPolicy: Never
+  containers:
+    - name: trainer
+      image: nvcr.io/nvidia/pytorch:24.03-py3
+      command: ["torchrun"]
+      args:
+        - "--nproc_per_node=2"
+        - "train.py"
+        - "--model=bert-large"
+        - "--epochs=3"
+        - "--batch-size=32"
+      resources:
+        requests:
+          cpu: "16"
+          memory: "64Gi"
+          nvidia.com/gpu: "2"
+        limits:
+          cpu: "24"
+          memory: "96Gi"
+          nvidia.com/gpu: "2"
+      env:
+        - name: NCCL_DEBUG
+          value: "INFO"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0,1"
+      volumeMounts:
+        - name: dataset
+          mountPath: /data
+        - name: checkpoints
+          mountPath: /checkpoints
+  volumes:
+    - name: dataset
+      persistentVolumeClaim:
+        claimName: training-dataset-pvc
+    - name: checkpoints
+      persistentVolumeClaim:
+        claimName: checkpoints-pvc
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  nodeSelector:
+    cloud.google.com/gke-accelerator: nvidia-tesla-a100

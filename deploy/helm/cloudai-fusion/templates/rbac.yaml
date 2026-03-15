@@ -1,0 +1,160 @@
+{{- /*
+  RBAC: ClusterRole, ServiceAccount, ClusterRoleBinding for each component
+*/}}
+---
+# =============================================================================
+# API Server RBAC
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-apiserver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: apiserver
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-apiserver
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+rules:
+  # Full cluster visibility
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "services", "namespaces", "configmaps", "secrets", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # GPU / device plugin resources
+  - apiGroups: [""]
+    resources: ["nodes/status", "pods/status"]
+    verbs: ["get", "list", "watch"]
+  # Network policies (eBPF / Cilium)
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumnetworkpolicies", "ciliumclusterwidenetworkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Metrics
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-apiserver
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "cloudai-fusion.fullname" . }}-apiserver
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "cloudai-fusion.fullname" . }}-apiserver
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# =============================================================================
+# Scheduler RBAC
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-scheduler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: scheduler
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-scheduler
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/binding"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["patch", "update"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  # GPU topology discovery
+  - apiGroups: [""]
+    resources: ["nodes/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["nvidia.com"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["scheduling.k8s.io"]
+    resources: ["priorityclasses"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-scheduler
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "cloudai-fusion.fullname" . }}-scheduler
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "cloudai-fusion.fullname" . }}-scheduler
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# =============================================================================
+# Agent RBAC (DaemonSet on every node)
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-agent
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/status"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-agent
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "cloudai-fusion.fullname" . }}-agent
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "cloudai-fusion.fullname" . }}-agent
+  apiGroup: rbac.authorization.k8s.io

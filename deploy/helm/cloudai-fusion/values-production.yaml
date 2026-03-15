@@ -1,0 +1,432 @@
+# =============================================================================
+# CloudAI Fusion — Production Values Overlay
+# =============================================================================
+#
+# Usage:
+#   helm install cloudai-fusion ./deploy/helm/cloudai-fusion \
+#     -f deploy/helm/cloudai-fusion/values-production.yaml \
+#     --set postgresql.auth.password=<STRONG_PASSWORD> \
+#     --set auth.jwtSecret=<JWT_SECRET> \
+#     --set database.password=<DB_PASSWORD>
+#
+# This overlay enforces:
+#   - Multi-replica deployments for all critical services
+#   - Production-grade resource requests/limits
+#   - Cross-AZ topology spread and pod anti-affinity
+#   - Full HPA and PDB coverage
+#   - NetworkPolicy zero-trust microsegmentation
+#   - Pod Security Standards (restricted)
+#   - Image signing verification (cosign)
+
+global:
+  imageRegistry: ghcr.io/cloudai-fusion
+  imagePullPolicy: Always  # Always pull in production for image freshness
+
+# =============================================================================
+# API Server — Production (multi-replica, full HPA)
+# =============================================================================
+apiserver:
+  replicaCount: 3
+  image:
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+  env:
+    LOG_LEVEL: "warn"
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 65
+    targetMemoryUtilizationPercentage: 75
+
+# =============================================================================
+# Scheduler — Production (HA pair)
+# =============================================================================
+scheduler:
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 2Gi
+    limits:
+      cpu: 8000m
+      memory: 8Gi
+  env:
+    SCHEDULING_INTERVAL: "5"
+    LOG_LEVEL: "warn"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# =============================================================================
+# Agent — Production
+# =============================================================================
+agent:
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+# =============================================================================
+# AI Engine — Production (GPU-enabled)
+# =============================================================================
+aiEngine:
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 4000m
+      memory: 8Gi
+    limits:
+      cpu: 16000m
+      memory: 32Gi
+      nvidia.com/gpu: 1
+  env:
+    AI_DEVICE: "cuda"
+    AI_LOG_LEVEL: "warn"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage: 70
+
+# =============================================================================
+# PostgreSQL HA — Primary + Read Replicas
+# =============================================================================
+postgresql:
+  enabled: true
+  architecture: replication      # Enable streaming replication
+  auth:
+    database: cloudai
+    username: cloudai
+    password: ""                 # REQUIRED: --set postgresql.auth.password=...
+    replicationUsername: repl_user
+    replicationPassword: ""      # REQUIRED: --set postgresql.auth.replicationPassword=...
+  primary:
+    persistence:
+      size: 100Gi
+      storageClass: "gp3-encrypted"
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+      limits:
+        cpu: 8000m
+        memory: 16Gi
+    podAntiAffinityPreset: hard
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+    extraEnvVars:
+      - name: POSTGRESQL_MAX_CONNECTIONS
+        value: "500"
+      - name: POSTGRESQL_SHARED_BUFFERS
+        value: "2GB"
+      - name: POSTGRESQL_WORK_MEM
+        value: "64MB"
+      - name: POSTGRESQL_MAINTENANCE_WORK_MEM
+        value: "512MB"
+      - name: POSTGRESQL_WAL_BUFFERS
+        value: "64MB"
+      - name: POSTGRESQL_EFFECTIVE_CACHE_SIZE
+        value: "12GB"
+  readReplicas:
+    replicaCount: 2
+    persistence:
+      size: 100Gi
+      storageClass: "gp3-encrypted"
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+      limits:
+        cpu: 4000m
+        memory: 8Gi
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# =============================================================================
+# Redis Sentinel HA
+# =============================================================================
+redis:
+  enabled: true
+  architecture: replication      # Enable Redis Sentinel
+  auth:
+    enabled: true
+    password: ""                 # REQUIRED: --set redis.auth.password=...
+  sentinel:
+    enabled: true
+    quorum: 2
+    masterSet: cloudai-master
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  master:
+    persistence:
+      size: 10Gi
+      storageClass: "gp3-encrypted"
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+  replica:
+    replicaCount: 2
+    persistence:
+      size: 10Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# =============================================================================
+# Kafka HA
+# =============================================================================
+kafka:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    size: 50Gi
+    storageClass: "gp3-encrypted"
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+
+# =============================================================================
+# Monitoring — Full production stack
+# =============================================================================
+monitoring:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: ""            # REQUIRED: --set monitoring.grafana.adminPassword=...
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+    scrapeTimeout: "10s"
+    honorLabels: true
+
+# =============================================================================
+# Ingress — TLS-enabled production ingress
+# =============================================================================
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "50"
+    nginx.ingress.kubernetes.io/rate-limit-rps: "100"
+  hosts:
+    - host: api.cloudai-fusion.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: cloudai-fusion-tls
+      hosts:
+        - api.cloudai-fusion.io
+
+# =============================================================================
+# Security — Hardened production
+# =============================================================================
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534             # nobody
+  fsGroup: 65534
+
+networkPolicy:
+  enabled: true                 # Enforce zero-trust
+  ingressNamespace: ingress-nginx
+  monitoringNamespace: monitoring
+
+# =============================================================================
+# PDB — Production availability guarantees
+# =============================================================================
+podDisruptionBudget:
+  enabled: true
+  apiserver:
+    minAvailable: 2             # At least 2 replicas always available
+  scheduler:
+    minAvailable: 1
+  aiEngine:
+    minAvailable: 1
+
+# =============================================================================
+# Pod Security Standards — restricted profile
+# =============================================================================
+podSecurityStandards:
+  enabled: true
+  profile: restricted           # baseline, restricted
+  enforce: true                 # enforce vs audit/warn
+  audit: true
+  warn: true
+
+# =============================================================================
+# Image Signing Verification (cosign)
+# =============================================================================
+imageVerification:
+  enabled: true
+  cosign:
+    publicKey: ""               # REQUIRED: --set imageVerification.cosign.publicKey=...
+    rekor:
+      enabled: true
+      url: "https://rekor.sigstore.dev"
+  allowedRegistries:
+    - "ghcr.io/cloudai-fusion"
+  policy: reject                # reject unsigned images
+
+# =============================================================================
+# Cross-AZ Topology and Anti-Affinity
+# =============================================================================
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: DoNotSchedule
+
+# Pod anti-affinity — spread replicas across nodes
+podAntiAffinity:
+  enabled: true
+  type: hard                    # hard (required) or soft (preferred)
+
+# =============================================================================
+# GitOps — Production
+# =============================================================================
+gitops:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  engine: argocd
+  driftCheckInterval: "2m"
+  autoRemediateDrift: true
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+# =============================================================================
+# Multi-Cluster — Production
+# =============================================================================
+multicluster:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  federationType: karmada
+  healthCheckInterval: "5s"
+  failoverThreshold: 3
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+  dr:
+    strategy: multi-active
+    rpo: "1m"
+    rto: "5m"
+    autoFailover: true
+
+# =============================================================================
+# Observability — Production
+# =============================================================================
+observability:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  oncall:
+    defaultRotation: weekly
+    timezone: UTC
+  runbook:
+    autoExecute: false
+    requireApproval: true
+
+# =============================================================================
+# Tenant Controller — Production
+# =============================================================================
+tenant:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  meteringInterval: "30s"
+  enableAutoSuspend: true
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+# =============================================================================
+# Enterprise — Production
+# =============================================================================
+enterprise:
+  enabled: true
+  replicaCount: 2
+  image:
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi

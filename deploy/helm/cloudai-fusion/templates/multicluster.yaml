@@ -1,0 +1,94 @@
+{{- /*
+  Multi-Cluster Controller — manages cluster federation, cross-cluster
+  load balancing, disaster recovery, and lifecycle management.
+*/}}
+{{- if .Values.multicluster.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-multicluster-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: multicluster-controller
+spec:
+  replicas: {{ .Values.multicluster.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cloudai-fusion.name" . }}
+      app.kubernetes.io/component: multicluster-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "cloudai-fusion.name" . }}
+        app.kubernetes.io/component: multicluster-controller
+    spec:
+      serviceAccountName: {{ include "cloudai-fusion.fullname" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: multicluster-controller
+          image: "{{ .Values.multicluster.image.repository }}:{{ .Values.multicluster.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.multicluster.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: 8086
+            - name: metrics
+              containerPort: 9106
+          env:
+            - name: FEDERATION_TYPE
+              value: {{ .Values.multicluster.federationType | default "karmada" | quote }}
+            - name: DEFAULT_LB_POLICY
+              value: {{ .Values.multicluster.defaultLBPolicy | default "weighted-round-robin" | quote }}
+            - name: HEALTH_CHECK_INTERVAL
+              value: {{ .Values.multicluster.healthCheckInterval | default "10s" | quote }}
+            - name: FAILOVER_THRESHOLD
+              value: {{ .Values.multicluster.failoverThreshold | default "3" | quote }}
+            - name: APISERVER_ADDR
+              value: "http://{{ include "cloudai-fusion.fullname" . }}-apiserver:8080"
+            - name: DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cloudai-fusion.fullname" . }}-secrets
+                  key: database-url
+          resources:
+            {{- toYaml .Values.multicluster.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-multicluster-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: multicluster-controller
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8086
+      targetPort: http
+    - name: metrics
+      port: 9106
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: {{ include "cloudai-fusion.name" . }}
+    app.kubernetes.io/component: multicluster-controller
+{{- end }}

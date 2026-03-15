@@ -1,0 +1,71 @@
+# ============================================================================
+# Codecov Configuration
+# https://docs.codecov.io/docs/codecov-yaml
+# ============================================================================
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "60...90"
+
+  status:
+    project:
+      default:
+        target: 60%        # Minimum overall coverage
+        threshold: 2%       # Allow 2% drop without failing
+        if_ci_failed: error
+      go:
+        flags:
+          - go
+        target: 65%
+      python:
+        flags:
+          - python
+        target: 55%
+
+    patch:
+      default:
+        target: 70%         # New code must have 70% coverage
+        threshold: 5%
+
+  # Ignore generated code and test files
+  ignore:
+    - "**/*_test.go"
+    - "**/mock_*.go"
+    - "**/testdata/**"
+    - "ai/tests/**"
+    - "tests/**"
+    - "scripts/**"
+    - "deploy/**"
+    - "monitoring/**"
+    - "docker/**"
+    - "terraform/**"
+    - "docs/**"
+    - "dist/**"
+    - "api/proto/**"
+
+flags:
+  go:
+    paths:
+      - pkg/
+      - cmd/
+    carryforward: true
+  python:
+    paths:
+      - ai/
+    carryforward: true
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  branches:
+    - main
+    - develop

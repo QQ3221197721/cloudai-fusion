@@ -1,0 +1,31 @@
+# Example: Security Policy - Restrict GPU workloads to trusted images
+# Submit via: curl -X POST http://localhost:8080/api/v1/security/policies -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d @examples/security-policy.json
+{
+  "name": "trusted-gpu-images-only",
+  "description": "Only allow GPU workloads from trusted container registries",
+  "type": "pod-security",
+  "scope": "cluster",
+  "enforcement": "enforce",
+  "rules": [
+    {
+      "name": "trusted-registry",
+      "description": "GPU workloads must use images from approved registries",
+      "match": {
+        "resource_type": "workload",
+        "gpu_count_min": 1
+      },
+      "condition": "image_registry IN ('nvcr.io', 'gcr.io', 'registry.cn-hangzhou.aliyuncs.com')",
+      "action": "deny"
+    },
+    {
+      "name": "no-privileged-gpu",
+      "description": "GPU workloads must not run as privileged",
+      "match": {
+        "resource_type": "pod",
+        "labels": {"workload-type": "training"}
+      },
+      "condition": "security_context.privileged == false",
+      "action": "deny"
+    }
+  ]
+}

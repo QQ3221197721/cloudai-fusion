@@ -1,0 +1,169 @@
+{{- /*
+  Helm Tests — Run with `helm test <release-name>`
+  Tests verify connectivity and basic functionality after install/upgrade.
+*/}}
+---
+# Test 1: API Server health endpoint
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-test-apiserver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: healthz
+      image: curlimages/curl:8.5.0
+      command:
+        - sh
+        - -c
+        - |
+          echo "=== Testing API Server health ==="
+          curl -sf --max-time 10 \
+            http://{{ include "cloudai-fusion.fullname" . }}-apiserver:{{ .Values.apiserver.service.port }}/healthz \
+            && echo "PASS: /healthz returned 200" \
+            || (echo "FAIL: /healthz unreachable" && exit 1)
+
+          echo ""
+          echo "=== Testing API Server readiness ==="
+          curl -sf --max-time 10 \
+            http://{{ include "cloudai-fusion.fullname" . }}-apiserver:{{ .Values.apiserver.service.port }}/readyz \
+            && echo "PASS: /readyz returned 200" \
+            || (echo "FAIL: /readyz unreachable" && exit 1)
+---
+# Test 2: API Server login endpoint returns 401 for bad credentials
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-test-auth
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: auth-test
+      image: curlimages/curl:8.5.0
+      command:
+        - sh
+        - -c
+        - |
+          echo "=== Testing auth endpoint rejects bad credentials ==="
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"username":"invalid","password":"invalid"}' \
+            http://{{ include "cloudai-fusion.fullname" . }}-apiserver:{{ .Values.apiserver.service.port }}/api/v1/auth/login)
+
+          if [ "$HTTP_CODE" = "401" ]; then
+            echo "PASS: /api/v1/auth/login returned 401 for bad credentials"
+          else
+            echo "FAIL: Expected 401, got $HTTP_CODE"
+            exit 1
+          fi
+{{- if .Values.postgresql.enabled }}
+---
+# Test 3: PostgreSQL connectivity
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-test-postgresql
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "3"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: pg-check
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "=== Testing PostgreSQL connectivity ==="
+          if nc -z -w5 {{ include "cloudai-fusion.postgresql.host" . }} 5432; then
+            echo "PASS: PostgreSQL is reachable on port 5432"
+          else
+            echo "FAIL: Cannot connect to PostgreSQL"
+            exit 1
+          fi
+{{- end }}
+{{- if .Values.redis.enabled }}
+---
+# Test 4: Redis connectivity
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-test-redis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: redis-check
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "=== Testing Redis connectivity ==="
+          REDIS_HOST=$(echo "{{ include "cloudai-fusion.redis.host" . }}" | cut -d: -f1)
+          REDIS_PORT=$(echo "{{ include "cloudai-fusion.redis.host" . }}" | cut -d: -f2)
+          if nc -z -w5 $REDIS_HOST $REDIS_PORT; then
+            echo "PASS: Redis is reachable on port $REDIS_PORT"
+          else
+            echo "FAIL: Cannot connect to Redis"
+            exit 1
+          fi
+{{- end }}
+---
+# Test 5: Scheduler connectivity
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-test-scheduler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: scheduler-check
+      image: curlimages/curl:8.5.0
+      command:
+        - sh
+        - -c
+        - |
+          echo "=== Testing Scheduler health ==="
+          curl -sf --max-time 10 \
+            http://{{ include "cloudai-fusion.fullname" . }}-scheduler:{{ .Values.scheduler.service.port }}/healthz \
+            && echo "PASS: Scheduler /healthz returned 200" \
+            || (echo "FAIL: Scheduler /healthz unreachable" && exit 1)

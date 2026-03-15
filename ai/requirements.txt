@@ -1,0 +1,76 @@
+# ============================================================================
+# CloudAI Fusion - AI Engine Core Dependencies
+# ============================================================================
+# This file contains ONLY the core runtime dependencies (no ML framework).
+# For ML backends, install ONE of:
+#   pip install -r requirements-torch.txt   (PyTorch — recommended)
+#   pip install -r requirements-tf.txt      (TensorFlow — alternative)
+#
+# For development/testing:
+#   pip install -r requirements-dev.txt
+#
+# Quick setup (PyTorch + dev):
+#   pip install -r requirements.txt
+# ============================================================================
+
+# --- Web Framework ---
+fastapi==0.110.0
+uvicorn[standard]==0.28.0
+pydantic==2.6.4
+
+# --- Data Processing ---
+numpy==1.26.4
+scipy==1.12.0
+pandas==2.2.1
+pyarrow==15.0.2
+scikit-learn==1.4.2
+
+# --- LLM Integration (OpenAI-compatible API) ---
+openai==1.14.3
+dashscope==1.14.1
+
+# --- LLM Fine-Tuning (LoRA / QLoRA) ---
+transformers==4.40.2
+peft==0.10.0
+datasets==2.18.0
+accelerate==0.28.0
+
+# --- ONNX Export (for Go-side model serving) ---
+onnx==1.16.0
+onnxruntime==1.17.3
+
+# --- Anomaly Detection ---
+prophet==1.1.5
+statsmodels==0.14.1
+
+# --- Reinforcement Learning (scheduling optimization) ---
+gymnasium==0.29.1
+stable-baselines3==2.3.0
+
+# --- HTTP & Async ---
+httpx==0.27.0
+aiohttp==3.9.3
+redis==5.0.3
+
+# --- Observability ---
+prometheus-client==0.20.0
+opentelemetry-api==1.23.0
+opentelemetry-sdk==1.23.0
+opentelemetry-exporter-otlp==1.23.0
+opentelemetry-semantic-conventions==0.44b0
+
+# --- Utilities ---
+pyyaml==6.0.1
+python-dotenv==1.0.1
+structlog==24.1.0
+tenacity==8.2.3
+
+# --- Default ML Backend: PyTorch (CPU) ---
+# NOTE: For GPU support, install from https://pytorch.org/get-started/locally/
+#       pip install torch --index-url https://download.pytorch.org/whl/cu121
+torch==2.2.2
+
+# --- Development dependencies ---
+pytest==8.1.1
+pytest-asyncio==0.23.6
+pytest-cov==5.0.0

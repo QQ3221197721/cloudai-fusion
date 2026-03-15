@@ -1,0 +1,126 @@
+# CloudAI Fusion - Default Configuration
+# Place this file at /etc/cloudai-fusion/cloudai-fusion.yaml or ./cloudai-fusion.yaml
+
+# General
+env: development
+log_level: info
+
+# API Server
+host: 0.0.0.0
+port: 8080
+read_timeout: 30s
+write_timeout: 30s
+metrics_port: 9100
+
+# Scheduler
+scheduler_port: 8081
+scheduling_interval: 10
+
+# Agent
+agent_port: 8082
+apiserver_addr: localhost:8080
+
+# Database (PostgreSQL)
+db_host: localhost
+db_port: 5432
+db_name: cloudai
+db_user: cloudai
+# db_password: <set via CLOUDAI_DB_PASSWORD env var>
+db_sslmode: disable
+db_max_open_conns: 25
+db_max_idle_conns: 10
+
+# Redis
+redis_addr: localhost:6379
+redis_password: ""
+redis_db: 0
+
+# Kafka
+kafka_brokers: localhost:9092
+kafka_group_id: cloudai-fusion
+
+# Authentication
+# jwt_secret: <set via CLOUDAI_JWT_SECRET env var — use 32+ byte random key>
+jwt_expiry: 24h
+
+# AI Engine
+ai_engine_addr: localhost:8090
+ai_model_path: ./models
+ai_device: cpu
+
+# ---------------------------------------------------------------------------
+# Feature Profile & Flags
+# ---------------------------------------------------------------------------
+# Profile selects a predefined feature set:
+#   minimal  — Core only (API/Scheduler/Agent + DB/Redis). Fastest startup.
+#   standard — (default) Production-ready set with monitoring, edge, security.
+#   full     — Everything enabled, including experimental features.
+#
+# Individual flags can be overridden via environment variables:
+#   CLOUDAI_FF_<KEY>=true|false  (e.g. CLOUDAI_FF_EDGE_COMPUTING=false)
+#
+# API at runtime:
+#   GET  /api/v1/features          — list all flags
+#   GET  /api/v1/features?group=true — grouped by category
+#   GET  /api/v1/features/:key      — single flag
+#   PUT  /api/v1/features/:key      — toggle {"enabled": true|false}
+feature_profile: standard
+
+# To disable specific features (uncomment as needed):
+# ---- Compute ----
+# CLOUDAI_FF_GPU_SHARING_MPS=false
+# CLOUDAI_FF_GPU_SHARING_MIG=false
+# CLOUDAI_FF_TOPOLOGY_AWARE_SCHEDULING=false
+# CLOUDAI_FF_WASM_RUNTIME=false
+# CLOUDAI_FF_EDGE_COMPUTING=false
+#
+# ---- AI ----
+# CLOUDAI_FF_RL_SCHEDULER=false
+# CLOUDAI_FF_AUTO_SCALING=false
+# CLOUDAI_FF_LLM_OPERATIONS_AGENT=false
+# CLOUDAI_FF_AIOPS_SELF_HEALING=false
+# CLOUDAI_FF_CAPACITY_PLANNING=false
+#
+# ---- Networking ----
+# CLOUDAI_FF_SERVICE_MESH=false
+# CLOUDAI_FF_GRPC_INTERNAL=false
+# CLOUDAI_FF_WEBSOCKET_EVENTS=false
+#
+# ---- Observability ----
+# CLOUDAI_FF_DISTRIBUTED_TRACING=false
+# CLOUDAI_FF_ADVANCED_MONITORING=false
+# CLOUDAI_FF_AUDIT_LOGGING=false
+#
+# ---- Security ----
+# CLOUDAI_FF_ADVANCED_THREAT_DETECTION=false
+# CLOUDAI_FF_COMPLIANCE_SCANNING=false
+#
+# ---- FinOps ----
+# CLOUDAI_FF_COST_OPTIMIZATION=false
+# CLOUDAI_FF_SPOT_INSTANCE_MGMT=false
+# CLOUDAI_FF_RESERVED_INSTANCE_ADVISOR=false
+#
+# ---- Platform ----
+# CLOUDAI_FF_MULTI_CLUSTER=false
+# CLOUDAI_FF_GITOPS=false
+# CLOUDAI_FF_PLUGIN_ECOSYSTEM=false
+# CLOUDAI_FF_MULTI_TENANCY=false
+# CLOUDAI_FF_DISASTER_RECOVERY=false
+
+# Cloud Providers (configure as needed)
+cloud_providers: []
+#  - name: aliyun-prod
+#    type: aliyun
+#    region: cn-hangzhou
+#    access_key_id: ""
+#    access_key_secret: ""
+#  - name: aws-prod
+#    type: aws
+#    region: us-east-1
+#    access_key_id: ""
+#    access_key_secret: ""
+
+# Monitoring
+prometheus_endpoint: http://localhost:9090
+grafana_endpoint: http://localhost:3000
+jaeger_endpoint: http://localhost:4317

@@ -1,0 +1,55 @@
+apiVersion: v2
+name: cloudai-fusion
+description: CloudAI Fusion - Cloud-Native AI Unified Management Platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0-mvp"
+kubeVersion: ">=1.25.0-0"
+home: https://github.com/cloudai-fusion/cloudai-fusion
+icon: https://raw.githubusercontent.com/cloudai-fusion/cloudai-fusion/main/docs/logo.png
+keywords:
+  - cloud-native
+  - ai
+  - kubernetes
+  - multi-cloud
+  - gpu-scheduling
+  - aiops
+  - machine-learning
+  - edge-computing
+  - service-mesh
+  - observability
+maintainers:
+  - name: CloudAI Fusion Team
+    email: team@cloudai-fusion.io
+    url: https://github.com/cloudai-fusion
+sources:
+  - https://github.com/cloudai-fusion/cloudai-fusion
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/category: ai-machine-learning
+  artifacthub.io/signKey: |
+    fingerprint: TBD
+    url: https://github.com/cloudai-fusion/cloudai-fusion/blob/main/pgp-key.asc
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Helm chart release
+    - kind: added
+      description: NetworkPolicy, PDB, HPA, ServiceMonitor templates
+    - kind: added
+      description: Helm test suite
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/prerelease: "true"
+# Optional sub-chart dependencies (uncomment to use Bitnami charts)
+# dependencies:
+#   - name: postgresql
+#     version: "~14.0"
+#     repository: https://charts.bitnami.com/bitnami
+#     condition: postgresql.enabled
+#   - name: redis
+#     version: "~18.0"
+#     repository: https://charts.bitnami.com/bitnami
+#     condition: redis.enabled
+#   - name: kafka
+#     version: "~26.0"
+#     repository: https://charts.bitnami.com/bitnami
+#     condition: kafka.enabled

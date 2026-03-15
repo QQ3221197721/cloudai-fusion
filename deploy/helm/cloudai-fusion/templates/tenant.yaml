@@ -1,0 +1,175 @@
+{{- if .Values.tenant.enabled }}
+# =============================================================================
+# Tenant Controller — Multi-tenant isolation, quota, billing
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-tenant-controller
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tenant-controller
+spec:
+  replicas: {{ .Values.tenant.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: tenant-controller
+  template:
+    metadata:
+      labels:
+        {{- include "cloudai-fusion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: tenant-controller
+    spec:
+      serviceAccountName: {{ include "cloudai-fusion.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: tenant-controller
+          image: "{{ .Values.tenant.image.repository }}:{{ .Values.tenant.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          args:
+            - --metering-interval={{ .Values.tenant.meteringInterval }}
+            - --enable-auto-suspend={{ .Values.tenant.enableAutoSuspend }}
+          ports:
+            - name: http
+              containerPort: 8086
+              protocol: TCP
+            - name: metrics
+              containerPort: 9106
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.tenant.env.LOG_LEVEL | default "info" | quote }}
+            - name: DB_HOST
+              value: {{ .Values.database.host | quote }}
+            - name: DB_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: DB_NAME
+              value: {{ .Values.database.name | quote }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cloudai-fusion.fullname" . }}-secrets
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cloudai-fusion.fullname" . }}-secrets
+                  key: db-password
+            {{- if .Values.tenant.encryption.kmsEndpoint }}
+            - name: KMS_ENDPOINT
+              value: {{ .Values.tenant.encryption.kmsEndpoint | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.tenant.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cloudai-fusion/tenant
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "cloudai-fusion.fullname" . }}-tenant-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-tenant-controller
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tenant-controller
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.tenant.service.port | default 8086 }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.tenant.service.metricsPort | default 9106 }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    {{- include "cloudai-fusion.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: tenant-controller
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-tenant-config
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    metering:
+      interval: {{ .Values.tenant.meteringInterval | default "1m" }}
+      batchSize: 100
+    quota:
+      enforcementMode: {{ .Values.tenant.quotaEnforcementMode | default "enforce" }}
+      warningThreshold: 0.8
+      criticalThreshold: 0.95
+    billing:
+      defaultCurrency: {{ .Values.tenant.billing.defaultCurrency | default "USD" }}
+      invoiceSchedule: {{ .Values.tenant.billing.invoiceSchedule | default "monthly" }}
+    encryption:
+      provider: {{ .Values.tenant.encryption.provider | default "vault" }}
+      keyRotationDays: {{ .Values.tenant.encryption.keyRotationDays | default 90 }}
+    pricing:
+      {{- toYaml .Values.tenant.pricing | nindent 6 }}
+{{- if .Values.tenant.networkPolicy.enabled }}
+---
+# Tenant controller needs access to K8s API and database only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-tenant-controller
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "cloudai-fusion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: tenant-controller
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: apiserver
+      ports:
+        - port: 8086
+          protocol: TCP
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: {{ .Values.networkPolicy.monitoringNamespace | default "monitoring" }}
+      ports:
+        - port: 9106
+          protocol: TCP
+  egress:
+    - to: []  # Allow all egress (K8s API, database, KMS)
+{{- end }}
+{{- end }}

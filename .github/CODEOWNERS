@@ -1,0 +1,117 @@
+# CloudAI Fusion CODEOWNERS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Each line is a file pattern followed by one or more owners.
+# Order matters — later matches take precedence.
+# Owners are automatically requested for review when a PR touches matching files.
+
+# ============================================================================
+# Default — catches everything not matched below
+# ============================================================================
+*                                   @cloudai-fusion/maintainers
+
+# ============================================================================
+# Go Core Platform (API Server, Auth, Config, Errors, Store)
+# ============================================================================
+/cmd/apiserver/                     @cloudai-fusion/core-platform
+/pkg/api/                           @cloudai-fusion/core-platform
+/pkg/auth/                          @cloudai-fusion/core-platform
+/pkg/config/                        @cloudai-fusion/core-platform
+/pkg/common/                        @cloudai-fusion/core-platform
+/pkg/errors/                        @cloudai-fusion/core-platform
+/pkg/store/                         @cloudai-fusion/core-platform
+/pkg/resilience/                    @cloudai-fusion/core-platform
+/pkg/validation/                    @cloudai-fusion/core-platform
+/pkg/logging/                       @cloudai-fusion/core-platform
+/pkg/tracing/                       @cloudai-fusion/core-platform
+/pkg/health/                        @cloudai-fusion/core-platform
+/pkg/grpc/                          @cloudai-fusion/core-platform
+/pkg/websocket/                     @cloudai-fusion/core-platform
+/pkg/migrate/                       @cloudai-fusion/core-platform
+/pkg/feature/                       @cloudai-fusion/core-platform
+/pkg/workload/                      @cloudai-fusion/core-platform
+
+# ============================================================================
+# GPU Scheduler & Resource Management
+# ============================================================================
+/cmd/scheduler/                     @cloudai-fusion/scheduler
+/pkg/scheduler/                     @cloudai-fusion/scheduler
+/pkg/k8s/                           @cloudai-fusion/scheduler
+
+# ============================================================================
+# Node Agent & Metrics Collection
+# ============================================================================
+/cmd/agent/                         @cloudai-fusion/agent
+/pkg/agent/                         @cloudai-fusion/agent
+/pkg/monitor/                       @cloudai-fusion/agent
+
+# ============================================================================
+# Multi-Cloud Providers
+# ============================================================================
+/pkg/cloud/                         @cloudai-fusion/cloud-providers
+/pkg/cluster/                       @cloudai-fusion/cloud-providers
+
+# ============================================================================
+# Security (RBAC, Scanning, Compliance, Threat Detection, OIDC)
+# ============================================================================
+/pkg/security/                      @cloudai-fusion/security
+
+# ============================================================================
+# Advanced Infrastructure (Mesh, Wasm, Edge)
+# ============================================================================
+/pkg/mesh/                          @cloudai-fusion/infrastructure
+/pkg/wasm/                          @cloudai-fusion/infrastructure
+/pkg/edge/                          @cloudai-fusion/infrastructure
+
+# ============================================================================
+# Python AI Engine (Agents, Anomaly Detection, RL Scheduler)
+# ============================================================================
+/ai/                                @cloudai-fusion/ai-engine
+
+# ============================================================================
+# Deployment & Infrastructure
+# ============================================================================
+/deploy/                            @cloudai-fusion/infrastructure
+/docker/                            @cloudai-fusion/infrastructure
+/monitoring/                        @cloudai-fusion/infrastructure
+/docker-compose*.yml                @cloudai-fusion/infrastructure
+Dockerfile                          @cloudai-fusion/infrastructure
+Makefile                            @cloudai-fusion/infrastructure
+
+# ============================================================================
+# Helm Chart
+# ============================================================================
+/deploy/helm/                       @cloudai-fusion/infrastructure @cloudai-fusion/maintainers
+
+# ============================================================================
+# CI/CD
+# ============================================================================
+/.github/workflows/                 @cloudai-fusion/maintainers
+
+# ============================================================================
+# Documentation
+# ============================================================================
+/docs/                              @cloudai-fusion/docs
+*.md                                @cloudai-fusion/docs
+
+# ============================================================================
+# API Specification
+# ============================================================================
+/api/                               @cloudai-fusion/core-platform @cloudai-fusion/docs
+
+# ============================================================================
+# Governance & Community Files (Maintainers only)
+# ============================================================================
+/CODE_OF_CONDUCT.md                 @cloudai-fusion/maintainers
+/GOVERNANCE.md                      @cloudai-fusion/maintainers
+/SECURITY.md                        @cloudai-fusion/maintainers
+/LICENSE                            @cloudai-fusion/maintainers
+/CODEOWNERS                         @cloudai-fusion/maintainers
+/DCO                                @cloudai-fusion/maintainers
+
+# ============================================================================
+# Dependencies (require careful review)
+# ============================================================================
+go.mod                              @cloudai-fusion/maintainers
+go.sum                              @cloudai-fusion/maintainers
+/ai/requirements.txt                @cloudai-fusion/ai-engine @cloudai-fusion/maintainers

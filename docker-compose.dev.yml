@@ -1,0 +1,57 @@
+# ============================================================================
+# CloudAI Fusion - Docker Compose Development Overrides
+# ============================================================================
+#
+# CPU mode (default):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# GPU mode (Linux/Windows WSL2):
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml -f docker-compose.dev.yml up -d
+#
+# ============================================================================
+version: "3.9"
+
+services:
+  # --------------------------------------------------------------------------
+  # Override core services with hot-reload support
+  # --------------------------------------------------------------------------
+  apiserver:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.apiserver
+    volumes:
+      - .:/app/src:ro
+    environment:
+      - CLOUDAI_ENV=development
+      - CLOUDAI_LOG_LEVEL=debug
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scheduler
+    volumes:
+      - .:/app/src:ro
+    environment:
+      - CLOUDAI_ENV=development
+      - CLOUDAI_LOG_LEVEL=debug
+
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agent
+    volumes:
+      - .:/app/src:ro
+    environment:
+      - CLOUDAI_ENV=development
+      - CLOUDAI_LOG_LEVEL=debug
+
+  ai-engine:
+    volumes:
+      - ./ai:/app:ro
+      - ai-models:/models
+    environment:
+      - AI_ENV=development
+      - AI_LOG_LEVEL=debug
+      # Device: cpu (default), cuda (GPU), mps (Apple Silicon)
+      - AI_DEVICE=${AI_DEVICE:-cpu}
+    command: ["python", "-m", "uvicorn", "agents.server:app", "--host", "0.0.0.0", "--port", "8090", "--reload"]

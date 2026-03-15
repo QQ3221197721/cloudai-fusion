@@ -1,0 +1,182 @@
+{{- /*
+  Security Hardening Templates — Pod Security Standards + Cosign Image Verification
+  Applies PSS namespace labels, cosign admission webhook, and security audit CronJob.
+*/}}
+
+{{- /*
+  =============================================================================
+  PSS Namespace Labels
+  Applies Pod Security Standards (restricted) to the release namespace.
+  =============================================================================
+*/}}
+{{- if .Values.security.pss.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    # Pod Security Standards — restricted profile
+    pod-security.kubernetes.io/enforce: {{ .Values.security.pss.profile | default "restricted" }}
+    pod-security.kubernetes.io/enforce-version: {{ .Values.security.pss.version | default "latest" }}
+    pod-security.kubernetes.io/audit: {{ .Values.security.pss.profile | default "restricted" }}
+    pod-security.kubernetes.io/audit-version: {{ .Values.security.pss.version | default "latest" }}
+    pod-security.kubernetes.io/warn: {{ .Values.security.pss.profile | default "restricted" }}
+    pod-security.kubernetes.io/warn-version: {{ .Values.security.pss.version | default "latest" }}
+{{- end }}
+---
+{{- /*
+  =============================================================================
+  Cosign Image Verification — ClusterImagePolicy (Sigstore policy-controller)
+  Enforces container image signature verification using cosign.
+  Requires: sigstore/policy-controller installed in the cluster.
+  =============================================================================
+*/}}
+{{- if .Values.security.cosign.enabled }}
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-cosign-policy
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: security
+spec:
+  mode: {{ .Values.security.cosign.mode | default "enforce" }}
+  images:
+    {{- range .Values.security.cosign.trustedRegistries }}
+    - glob: "{{ . }}/**"
+    {{- end }}
+  authorities:
+    {{- if .Values.security.cosign.publicKey }}
+    - name: cosign-key
+      key:
+        data: |
+          {{ .Values.security.cosign.publicKey | nindent 10 }}
+    {{- end }}
+    {{- if .Values.security.cosign.keyless.enabled }}
+    - name: keyless-sigstore
+      keyless:
+        url: {{ .Values.security.cosign.keyless.fulcioURL | default "https://fulcio.sigstore.dev" }}
+        identities:
+          {{- range .Values.security.cosign.keyless.identities }}
+          - issuer: {{ .issuer }}
+            subject: {{ .subject }}
+          {{- end }}
+      ctlog:
+        url: {{ .Values.security.cosign.keyless.rekorURL | default "https://rekor.sigstore.dev" }}
+    {{- end }}
+{{- end }}
+---
+{{- /*
+  =============================================================================
+  Security Audit CronJob
+  Periodically audits namespace PSS compliance and image signatures.
+  =============================================================================
+*/}}
+{{- if .Values.security.audit.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-security-audit
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: security-audit
+spec:
+  schedule: {{ .Values.security.audit.schedule | default "0 */6 * * *" | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            {{- include "cloudai-fusion.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: security-audit
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "cloudai-fusion.serviceAccountName" (dict "context" . "component" "security-audit") }}
+          securityContext:
+            {{- include "cloudai-fusion.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: security-audit
+              image: {{ include "cloudai-fusion.image" (dict "context" . "image" .Values.apiserver.image) }}
+              imagePullPolicy: {{ include "cloudai-fusion.imagePullPolicy" . }}
+              command: ["cloudai-fusion"]
+              args:
+                - security-audit
+                - --namespace={{ .Release.Namespace }}
+                - --pss-profile={{ .Values.security.pss.profile | default "restricted" }}
+                {{- if .Values.security.cosign.enabled }}
+                - --verify-images=true
+                {{- end }}
+                - --output=json
+              securityContext:
+                {{- include "cloudai-fusion.containerSecurityContext" . | nindent 16 }}
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+              env:
+                - name: LOG_LEVEL
+                  value: {{ .Values.logLevel | default "info" | quote }}
+                - name: NAMESPACE
+                  value: {{ .Release.Namespace }}
+{{- end }}
+---
+{{- /*
+  =============================================================================
+  RBAC for Security Audit
+  ServiceAccount + ClusterRole + ClusterRoleBinding for PSS audit.
+  =============================================================================
+*/}}
+{{- if .Values.security.audit.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-security-audit
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: security-audit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-security-audit
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+rules:
+  # Read pods for PSS compliance audit
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "list"]
+  # Read deployments/statefulsets for image verification
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+    verbs: ["get", "list"]
+  # Events for reporting
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "cloudai-fusion.fullname" . }}-security-audit
+  labels:
+    {{- include "cloudai-fusion.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "cloudai-fusion.fullname" . }}-security-audit
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "cloudai-fusion.fullname" . }}-security-audit
+    namespace: {{ .Release.Namespace }}
+{{- end }}

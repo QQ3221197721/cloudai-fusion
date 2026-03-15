@@ -1,0 +1,274 @@
+# CloudAI Fusion - Alert Rules
+groups:
+  - name: cloudai_gpu_alerts
+    interval: 30s
+    rules:
+      - alert: GPUHighUtilization
+        expr: cloudai_gpu_utilization_percent > 95
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GPU utilization above 95% on {{ $labels.node_name }}"
+          description: "GPU {{ $labels.gpu_index }} on {{ $labels.node_name }} has been above 95% for 5 minutes."
+
+      - alert: GPUMemoryExhaustion
+        expr: cloudai_gpu_memory_used_bytes / cloudai_gpu_memory_total_bytes * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GPU memory near exhaustion on {{ $labels.node_name }}"
+
+      - alert: GPUThermalThrottle
+        expr: cloudai_gpu_temperature_celsius > 85
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GPU thermal throttling risk on {{ $labels.node_name }}"
+
+  - name: cloudai_scheduler_alerts
+    rules:
+      - alert: SchedulerQueueBuildup
+        expr: cloudai_scheduler_queue_length > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Scheduling queue has {{ $value }} pending workloads"
+
+      - alert: SchedulerHighLatency
+        expr: histogram_quantile(0.99, cloudai_scheduler_decision_duration_seconds_bucket) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Scheduling decisions taking over 5s (p99)"
+
+  - name: cloudai_api_alerts
+    rules:
+      - alert: APIHighErrorRate
+        expr: rate(cloudai_api_requests_total{status=~"5.."}[5m]) / rate(cloudai_api_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API error rate above 5%"
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, cloudai_api_request_duration_seconds_bucket) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API latency above 2s (p95)"
+
+  - name: cloudai_security_alerts
+    rules:
+      - alert: SecurityEventsSpike
+        expr: rate(cloudai_security_events_total{severity="critical"}[5m]) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical security events detected"
+
+  - name: cloudai_cost_alerts
+    rules:
+      - alert: CostSpike
+        expr: increase(cloudai_cost_hourly_usd[1h]) / cloudai_cost_hourly_usd > 0.5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hourly cost increased by over 50%"
+
+  # ========================================================================
+  # Golden Signals — Latency, Traffic, Errors, Saturation
+  # ========================================================================
+  - name: cloudai_golden_signals
+    rules:
+      # Latency: p99 above 2s for 5 minutes
+      - alert: HTTPLatencyP99High
+        expr: histogram_quantile(0.99, rate(cloudai_http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP p99 latency above 2s (current: {{ $value | humanizeDuration }})"
+
+      # Latency: p99 above 5s — critical
+      - alert: HTTPLatencyP99Critical
+        expr: histogram_quantile(0.99, rate(cloudai_http_request_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP p99 latency above 5s — severe degradation"
+
+      # gRPC latency
+      - alert: GRPCLatencyP99High
+        expr: histogram_quantile(0.99, rate(cloudai_grpc_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gRPC p99 latency above 1s"
+
+      # Traffic: sudden drop (>50% decrease in 10m)
+      - alert: TrafficDropSudden
+        expr: rate(cloudai_http_requests_total[5m]) < rate(cloudai_http_requests_total[30m]) * 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP traffic dropped over 50% compared to 30m baseline"
+
+      # Error rate: >5% of all requests are 5xx
+      - alert: HTTPErrorRateHigh
+        expr: |
+          sum(rate(cloudai_http_errors_total{error_type="server_error"}[5m]))
+          / sum(rate(cloudai_http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx error rate above 5%"
+
+      # Saturation: in-flight requests high
+      - alert: HTTPRequestsInFlightHigh
+        expr: cloudai_http_requests_in_flight > 200
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Over 200 HTTP requests in flight — possible saturation"
+
+      # Goroutine leak
+      - alert: GoroutineCountHigh
+        expr: cloudai_runtime_goroutines_count > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Goroutine count above 10k — possible leak"
+
+      # Connection pool saturation
+      - alert: DBPoolSaturated
+        expr: cloudai_pool_utilization_ratio{pool_name="postgres"} > 0.9
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool over 90% utilization"
+
+  # ========================================================================
+  # Business Metrics
+  # ========================================================================
+  - name: cloudai_business_alerts
+    rules:
+      # Task success rate below 95%
+      - alert: TaskSuccessRateLow
+        expr: |
+          sum(rate(cloudai_task_success_total[10m]))
+          / (sum(rate(cloudai_task_success_total[10m])) + sum(rate(cloudai_task_failure_total[10m]))) < 0.95
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI task success rate below 95%"
+
+      # Scheduling latency p95 above 60s
+      - alert: SchedulingLatencyHigh
+        expr: histogram_quantile(0.95, rate(cloudai_scheduler_scheduling_latency_seconds_bucket[5m])) > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Workload scheduling latency p95 above 60s"
+
+      # EventBus error rate
+      - alert: EventBusErrorRateHigh
+        expr: rate(cloudai_eventbus_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event bus delivery error rate above 0.1/s"
+
+  # ========================================================================
+  # SLO-Based Alerts (Multi-Window Burn Rate)
+  # ========================================================================
+  - name: cloudai_slo_alerts
+    rules:
+      # SLO burn rate: fast burn (1h window, 14.4x threshold)
+      - alert: SLOBurnRateFast
+        expr: cloudai_slo_burn_rate{window="1h"} > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          slo_window: "1h"
+        annotations:
+          summary: "SLO burn rate critical (1h) for {{ $labels.service }} — {{ $value }}x budget"
+
+      # SLO burn rate: medium burn (6h window, 6x threshold)
+      - alert: SLOBurnRateMedium
+        expr: cloudai_slo_burn_rate{window="6h"} > 6
+        for: 15m
+        labels:
+          severity: warning
+          slo_window: "6h"
+        annotations:
+          summary: "SLO burn rate elevated (6h) for {{ $labels.service }} — {{ $value }}x budget"
+
+      # SLO burn rate: slow burn (24h window, 3x threshold)
+      - alert: SLOBurnRateSlow
+        expr: cloudai_slo_burn_rate{window="24h"} > 3
+        for: 1h
+        labels:
+          severity: warning
+          slo_window: "24h"
+        annotations:
+          summary: "SLO burn rate elevated (24h) for {{ $labels.service }} — {{ $value }}x budget"
+
+      # Error budget exhausted
+      - alert: SLOErrorBudgetExhausted
+        expr: cloudai_slo_error_budget_remaining_ratio < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error budget < 10% for {{ $labels.service }}"
+
+      # Availability SLO breached
+      - alert: SLOAvailabilityBreach
+        expr: cloudai_slo_availability_ratio < 0.999
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Availability SLO breached for {{ $labels.service }} ({{ $value | humanizePercentage }})"
+
+  # ========================================================================
+  # Cost Metrics
+  # ========================================================================
+  - name: cloudai_cost_advanced_alerts
+    rules:
+      # Budget utilization above 90%
+      - alert: BudgetUtilizationHigh
+        expr: cloudai_cost_budget_utilization_ratio > 0.9
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Budget utilization above 90% for {{ $labels.team }}/{{ $labels.project }}"
+
+      # Per-unit cost spike
+      - alert: ComputeUnitCostSpike
+        expr: cloudai_cost_compute_unit_usd > 5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Compute unit cost above $5/hour for {{ $labels.instance_type }}"

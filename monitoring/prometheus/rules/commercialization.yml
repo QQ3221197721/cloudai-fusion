@@ -1,0 +1,332 @@
+# =============================================================================
+# CloudAI Fusion — Commercialization Alert Rules
+# Multi-tenant quota, SLA monitoring, billing, and enterprise alerts
+# =============================================================================
+groups:
+  # ===========================================================================
+  # Tenant Quota Alerts
+  # ===========================================================================
+  - name: tenant_quota_alerts
+    interval: 30s
+    rules:
+      # --- CPU Quota ---
+      - alert: TenantCPUQuotaWarning
+        expr: |
+          (cloudai_tenant_cpu_usage_millicores / cloudai_tenant_cpu_quota_millicores) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} CPU usage at {{ $value | humanizePercentage }}"
+          description: >
+            Tenant {{ $labels.tenant_name }} ({{ $labels.tier }}) is using more than 80%
+            of their CPU quota. Current: {{ $labels.tenant_id }}.
+          runbook_url: "https://docs.cloudai-fusion.io/runbooks/tenant-quota-cpu"
+
+      - alert: TenantCPUQuotaCritical
+        expr: |
+          (cloudai_tenant_cpu_usage_millicores / cloudai_tenant_cpu_quota_millicores) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} CPU quota nearly exhausted"
+          description: >
+            Tenant {{ $labels.tenant_name }} is using over 95% of CPU quota.
+            Workloads may be throttled or rejected.
+
+      # --- Memory Quota ---
+      - alert: TenantMemoryQuotaWarning
+        expr: |
+          (cloudai_tenant_memory_usage_bytes / cloudai_tenant_memory_quota_bytes) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} memory usage at {{ $value | humanizePercentage }}"
+
+      - alert: TenantMemoryQuotaCritical
+        expr: |
+          (cloudai_tenant_memory_usage_bytes / cloudai_tenant_memory_quota_bytes) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} memory quota nearly exhausted"
+
+      # --- GPU Quota ---
+      - alert: TenantGPUQuotaWarning
+        expr: |
+          (cloudai_tenant_gpu_usage / cloudai_tenant_gpu_quota) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} GPU usage at {{ $value | humanizePercentage }}"
+
+      - alert: TenantGPUQuotaExhausted
+        expr: |
+          cloudai_tenant_gpu_usage >= cloudai_tenant_gpu_quota
+        for: 1m
+        labels:
+          severity: critical
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} GPU quota fully consumed"
+          description: "No GPU capacity remaining. New GPU workloads will be rejected."
+
+      # --- Pod Quota ---
+      - alert: TenantPodQuotaWarning
+        expr: |
+          (cloudai_tenant_pod_count / cloudai_tenant_pod_quota) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} pod count approaching quota limit"
+
+      # --- Storage Quota ---
+      - alert: TenantStorageQuotaWarning
+        expr: |
+          (cloudai_tenant_storage_usage_bytes / cloudai_tenant_storage_quota_bytes) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: quota
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} storage usage exceeding 80% of quota"
+
+  # ===========================================================================
+  # SLA Monitoring Alerts
+  # ===========================================================================
+  - name: sla_alerts
+    interval: 1m
+    rules:
+      # --- Availability SLA ---
+      - alert: SLAAvailabilityAtRisk
+        expr: |
+          cloudai_sla_availability_ratio < cloudai_sla_availability_target * 1.005
+        for: 5m
+        labels:
+          severity: warning
+          category: sla
+        annotations:
+          summary: "SLA availability at risk for tenant {{ $labels.tenant_id }}"
+          description: >
+            Current availability {{ $value | humanizePercentage }} is within 0.5% of
+            SLA target. Tier: {{ $labels.sla_tier }}.
+          runbook_url: "https://docs.cloudai-fusion.io/runbooks/sla-availability"
+
+      - alert: SLAAvailabilityBreached
+        expr: |
+          cloudai_sla_availability_ratio < cloudai_sla_availability_target
+        for: 1m
+        labels:
+          severity: critical
+          category: sla
+          pagerduty: "true"
+        annotations:
+          summary: "SLA BREACH: Tenant {{ $labels.tenant_id }} availability below target"
+          description: >
+            SLA breached! Current: {{ $value | humanizePercentage }},
+            Target: {{ $labels.target }}. Credit compensation may apply.
+
+      # --- Error Rate SLA ---
+      - alert: SLAErrorRateHigh
+        expr: |
+          rate(cloudai_tenant_request_errors_total[5m])
+          / rate(cloudai_tenant_request_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          category: sla
+        annotations:
+          summary: "Error rate >1% for tenant {{ $labels.tenant_id }}"
+
+      - alert: SLAErrorRateCritical
+        expr: |
+          rate(cloudai_tenant_request_errors_total[5m])
+          / rate(cloudai_tenant_request_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          category: sla
+        annotations:
+          summary: "Error rate >5% for tenant {{ $labels.tenant_id }} — SLA at risk"
+
+      # --- Latency SLA ---
+      - alert: SLALatencyP99High
+        expr: |
+          histogram_quantile(0.99, rate(cloudai_tenant_request_duration_seconds_bucket[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          category: sla
+        annotations:
+          summary: "P99 latency >2s for tenant {{ $labels.tenant_id }}"
+
+      # --- SLA Credit Due ---
+      - alert: SLACreditAccruing
+        expr: |
+          cloudai_sla_credit_due_total > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: sla
+        annotations:
+          summary: "SLA credit accruing for tenant {{ $labels.tenant_id }}: ${{ $value }}"
+
+  # ===========================================================================
+  # Billing & Cost Alerts
+  # ===========================================================================
+  - name: billing_alerts
+    interval: 5m
+    rules:
+      - alert: TenantBudgetWarning
+        expr: |
+          (cloudai_tenant_monthly_cost / cloudai_tenant_budget_limit) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: billing
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} at {{ $value | humanizePercentage }} of budget"
+          description: >
+            Monthly spend approaching budget limit.
+            Current: ${{ printf "%.2f" $labels.current_cost }},
+            Limit: ${{ printf "%.2f" $labels.budget_limit }}.
+
+      - alert: TenantBudgetExceeded
+        expr: |
+          cloudai_tenant_monthly_cost > cloudai_tenant_budget_limit
+        for: 5m
+        labels:
+          severity: critical
+          category: billing
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} has EXCEEDED budget limit"
+          description: "Auto-suspend may be triggered if configured."
+
+      - alert: TenantBillingAnomaly
+        expr: |
+          cloudai_tenant_daily_cost > avg_over_time(cloudai_tenant_daily_cost[7d]) * 3
+        for: 30m
+        labels:
+          severity: warning
+          category: billing
+        annotations:
+          summary: "Billing anomaly: tenant {{ $labels.tenant_id }} daily cost 3x above average"
+
+      - alert: InvoiceOverdue
+        expr: |
+          cloudai_invoice_overdue_count > 0
+        for: 1h
+        labels:
+          severity: warning
+          category: billing
+        annotations:
+          summary: "Tenant {{ $labels.tenant_id }} has {{ $value }} overdue invoice(s)"
+
+  # ===========================================================================
+  # Enterprise Feature Alerts
+  # ===========================================================================
+  - name: enterprise_alerts
+    interval: 1m
+    rules:
+      # --- SSO ---
+      - alert: SSOAuthenticationFailureSpike
+        expr: |
+          rate(cloudai_sso_auth_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "SSO auth failures spiking for {{ $labels.sso_name }} ({{ $labels.protocol }})"
+          description: "Possible brute-force attack or IdP misconfiguration."
+
+      - alert: SSOProviderDown
+        expr: |
+          cloudai_sso_provider_healthy == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "SSO provider {{ $labels.sso_name }} is DOWN"
+          description: "Users cannot authenticate via {{ $labels.protocol }}."
+
+      # --- Encryption ---
+      - alert: EncryptionKeyRotationOverdue
+        expr: |
+          (time() - cloudai_tenant_encryption_key_last_rotated_timestamp) > (90 * 86400)
+        for: 1h
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Encryption key rotation overdue for tenant {{ $labels.tenant_id }}"
+          description: "Key has not been rotated in over 90 days."
+
+      # --- Support Tickets ---
+      - alert: CriticalTicketUnassigned
+        expr: |
+          cloudai_ticket_unassigned_count{priority="critical"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          category: support
+          pagerduty: "true"
+        annotations:
+          summary: "Critical ticket unassigned for >5 minutes"
+          description: "Violates SLA response time requirements."
+
+      - alert: TicketSLABreachImminent
+        expr: |
+          (cloudai_ticket_sla_deadline_seconds - time()) < 600
+          and cloudai_ticket_status != "resolved"
+        for: 1m
+        labels:
+          severity: critical
+          category: support
+        annotations:
+          summary: "Ticket {{ $labels.ticket_id }} SLA deadline in <10 minutes"
+
+      - alert: HighTicketVolume
+        expr: |
+          cloudai_ticket_open_count > 50
+        for: 10m
+        labels:
+          severity: warning
+          category: support
+        annotations:
+          summary: "High open ticket volume for tenant {{ $labels.tenant_id }}: {{ $value }}"
+
+      # --- Tenant Health ---
+      - alert: TenantControllerDown
+        expr: |
+          up{job="cloudai-tenant-controller"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: platform
+        annotations:
+          summary: "Tenant controller is DOWN"
+          description: "Quota enforcement and billing metering are not functioning."
+
+      - alert: EnterpriseControllerDown
+        expr: |
+          up{job="cloudai-enterprise"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: platform
+        annotations:
+          summary: "Enterprise controller is DOWN"
+          description: "SSO, audit, SLA, and support ticket features unavailable."

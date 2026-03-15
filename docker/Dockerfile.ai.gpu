@@ -1,0 +1,112 @@
+# ============================================================================
+# CloudAI Fusion - AI Engine GPU Dockerfile (NVIDIA CUDA)
+# ============================================================================
+#
+# OPTIMIZED: Multi-stage build with minimal CUDA base
+#
+# Image size comparison:
+#   BEFORE: nvidia/cuda:12.4.1-cudnn-runtime  ~  3.5GB base → 5-8GB final
+#   AFTER:  nvidia/cuda:12.4.1-base           ~  200MB base → 2-3GB final
+#
+# Why this works:
+#   PyTorch wheels from pytorch.org/whl/cu124 BUNDLE their own CUDA runtime
+#   libraries and cuDNN. We only need the NVIDIA driver interface (libcuda.so),
+#   which is provided by nvidia/cuda:base + nvidia-container-toolkit at runtime.
+#
+# Usage:
+#   docker build -f docker/Dockerfile.ai.gpu -t cloudai-ai-engine:gpu .
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+#
+# Requirements:
+#   - NVIDIA GPU with CUDA Compute Capability >= 7.0
+#   - NVIDIA Driver >= 525.60 (Linux) or latest Game Ready/Studio driver (Windows)
+#   - NVIDIA Container Toolkit installed (Linux: nvidia-docker2)
+#   - Docker Desktop with WSL2 GPU support (Windows)
+#
+# Supported platforms:
+#   Linux:   Full GPU passthrough via NVIDIA Container Toolkit
+#   Windows: GPU passthrough via WSL2 + Docker Desktop
+#   macOS:   NOT supported — use Dockerfile.ai (CPU mode) instead
+#
+# ============================================================================
+
+# ============================================
+# Stage 1: Build dependencies (full tools for compilation)
+# ============================================
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Build tools for C extensions (numpy, scipy wheel compilation)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Use a virtual env for clean multi-stage copy
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install CPU dependencies first (layer cache friendly)
+COPY ai/requirements.txt /tmp/requirements.txt
+RUN grep -v -E '^(pytest|pytest-|coverage|flake8|black|mypy|isort)' /tmp/requirements.txt > /tmp/requirements-prod.txt && \
+    pip install --no-cache-dir -r /tmp/requirements-prod.txt
+
+# Override CPU PyTorch with CUDA 12.4 version (bundles CUDA runtime + cuDNN)
+# This is the key optimization: PyTorch bundles ~2GB of CUDA libs, so we
+# don't need the 3.5GB nvidia/cuda:cudnn-runtime base image.
+RUN pip install --no-cache-dir --force-reinstall \
+    torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/cu124
+
+# ============================================
+# Stage 2: Runtime (minimal CUDA base — only driver interface)
+# ============================================
+# KEY CHANGE: cuda:base (~200MB) instead of cuda:cudnn-runtime (~3.5GB)
+# PyTorch's bundled CUDA libs handle everything; we only need libcuda.so
+FROM nvidia/cuda:12.4.1-base-ubuntu22.04 AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install Python 3.11 runtime (no pip, no build tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-venv \
+    curl \
+    tzdata \
+    libgomp1 \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r cloudai && useradd -r -g cloudai cloudai
+
+WORKDIR /app
+
+# Copy pre-built virtual environment (includes PyTorch with bundled CUDA)
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy AI application code
+COPY ai/ .
+
+# Create model directory
+RUN mkdir -p /models && chown -R cloudai:cloudai /models /app
+
+USER cloudai
+
+# GPU environment
+ENV AI_DEVICE=cuda \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+EXPOSE 8090
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8090/healthz || exit 1
+
+CMD ["python", "-m", "uvicorn", "agents.server:app", "--host", "0.0.0.0", "--port", "8090"]

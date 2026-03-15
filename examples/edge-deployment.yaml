@@ -1,0 +1,228 @@
+# CloudAI Fusion - Edge Computing Deployment Configuration
+# This example demonstrates edge node setup with offline runtime,
+# model compression, and edge-cloud synchronization.
+#
+# Apply with: cloudai-fusion apply -f examples/edge-deployment.yaml
+
+apiVersion: cloudai-fusion.io/v1
+kind: EdgeDeployment
+metadata:
+  name: factory-edge-cluster
+  namespace: edge-system
+  labels:
+    app: cloudai-fusion
+    component: edge
+    location: factory-floor-a
+    tier: industrial
+spec:
+  # --- Edge Node Configuration ---
+  nodes:
+    - name: edge-node-01
+      hardware:
+        deviceType: nvidia-jetson-orin
+        gpuMemory: 32Gi
+        cpuCores: 12
+        memory: 64Gi
+        storage: 512Gi
+      network:
+        primaryInterface: eth0
+        bandwidth: 1Gbps
+        latencyToCloud: 50ms
+        hasCellularBackup: true
+        cellularInterface: wwan0
+      labels:
+        zone: assembly-line-1
+        capability: realtime-inference
+
+    - name: edge-node-02
+      hardware:
+        deviceType: nvidia-jetson-orin-nano
+        gpuMemory: 8Gi
+        cpuCores: 6
+        memory: 8Gi
+        storage: 256Gi
+      network:
+        primaryInterface: eth0
+        bandwidth: 100Mbps
+        latencyToCloud: 100ms
+        hasCellularBackup: false
+      labels:
+        zone: quality-inspection
+        capability: image-classification
+
+  # --- Offline Runtime Configuration ---
+  offlineRuntime:
+    enabled: true
+    stateStorePath: /var/lib/cloudai/state
+    maxOfflineDuration: 72h
+    localDecisionEngine:
+      enabled: true
+      decisionCacheTTL: 24h
+      fallbackPolicies:
+        scheduling: local_fifo
+        resourceAllocation: static_reservation
+        healthCheck: local_only
+    heartbeat:
+      interval: 30s
+      offlineThreshold: 5m
+      reconnectStrategy:
+        maxRetries: 0          # infinite
+        initialDelay: 5s
+        maxDelay: 5m
+        backoffMultiplier: 2.0
+    stateRecovery:
+      onReconnect: full_sync
+      conflictResolution: cloud_wins
+      syncBatchSize: 100
+    healthSelfCheck:
+      interval: 60s
+      checks:
+        - name: gpu-health
+          type: nvidia_smi
+          timeout: 10s
+        - name: disk-health
+          type: disk_usage
+          threshold: 90
+        - name: memory-health
+          type: memory_usage
+          threshold: 85
+        - name: model-integrity
+          type: checksum_verify
+          path: /var/lib/cloudai/models
+
+  # --- Model Compression Pipeline ---
+  modelCompression:
+    defaultPipeline:
+      - stage: pruning
+        config:
+          method: magnitude
+          sparsity: 0.5
+          structured: true
+          iterativePruning:
+            enabled: true
+            iterations: 3
+            schedule: cubic
+      - stage: quantization
+        config:
+          method: dynamic
+          targetBits: 8
+          calibrationSamples: 1000
+          calibrationDataset: /data/calibration
+          perChannel: true
+      - stage: distillation
+        config:
+          teacherModel: "bert-large-uncased"
+          studentLayers: 6
+          temperature: 4.0
+          alpha: 0.5
+          epochs: 10
+    targetConstraints:
+      maxModelSize: 500Mi
+      maxInferenceLatency: 50ms
+      minAccuracy: 0.92
+    profiles:
+      - name: ultra-compact
+        description: "For devices with < 4GB GPU memory"
+        pruningSparsity: 0.7
+        quantizationBits: 4
+        maxModelSize: 100Mi
+        minAccuracy: 0.85
+      - name: balanced
+        description: "For mid-range edge devices"
+        pruningSparsity: 0.5
+        quantizationBits: 8
+        maxModelSize: 500Mi
+        minAccuracy: 0.92
+      - name: high-fidelity
+        description: "For powerful edge GPUs"
+        pruningSparsity: 0.3
+        quantizationBits: 16
+        maxModelSize: 2Gi
+        minAccuracy: 0.97
+
+  # --- Edge-Cloud Synchronization ---
+  synchronization:
+    enabled: true
+    mode: bidirectional
+    syncInterval: 60s
+    compression:
+      enabled: true
+      algorithm: zstd
+      level: 3
+      deltaSync: true
+    priorityQueues:
+      - name: critical
+        priority: 0
+        maxRetries: 10
+        types: [health_status, alert, fault_report]
+      - name: high
+        priority: 1
+        maxRetries: 5
+        types: [model_update, config_change, metric_snapshot]
+      - name: normal
+        priority: 2
+        maxRetries: 3
+        types: [log_batch, telemetry, audit_event]
+      - name: low
+        priority: 3
+        maxRetries: 1
+        types: [usage_report, analytics, debug_info]
+    bandwidthLimits:
+      upload: 50Mbps
+      download: 100Mbps
+      burstAllowance: 1.5x
+    conflictResolution:
+      strategy: cloud_wins     # cloud_wins | edge_wins | latest_wins | manual
+      notifyOnConflict: true
+      conflictLogRetention: 30d
+    modelDistribution:
+      enabled: true
+      verifyChecksum: true
+      rolloutStrategy: canary
+      canaryPercentage: 20
+      validationTimeout: 5m
+
+  # --- Workload Scheduling for Edge ---
+  workloads:
+    - name: defect-detection
+      model: yolov8-defect-v3
+      compressionProfile: balanced
+      replicas: 2
+      resources:
+        requests:
+          cpu: "2"
+          memory: "4Gi"
+          nvidia.com/gpu: "1"
+      scheduling:
+        nodeSelector:
+          capability: realtime-inference
+        maxLatency: 30ms
+        priority: critical
+      monitoring:
+        metricsInterval: 10s
+        exportMetrics: true
+        alertOnLatencyBreach: true
+
+    - name: predictive-maintenance
+      model: lstm-maintenance-v2
+      compressionProfile: ultra-compact
+      replicas: 1
+      resources:
+        requests:
+          cpu: "1"
+          memory: "2Gi"
+      scheduling:
+        nodeSelector:
+          zone: assembly-line-1
+        maxLatency: 100ms
+        priority: high
+      dataCollection:
+        sensorInputs:
+          - type: vibration
+            frequency: 100Hz
+          - type: temperature
+            frequency: 1Hz
+          - type: acoustic
+            frequency: 44100Hz
+        bufferSize: 10000
+        flushInterval: 60s
