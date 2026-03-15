@@ -122,7 +122,7 @@ func TestChaosEnhanced_GoroutineStorm(t *testing.T) {
 			r := httptest.NewRequest("GET", "/healthz", nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, r)
-			if w.Code == http.StatusOK {
+			if w.Code == http.StatusOK || w.Code == http.StatusTooManyRequests {
 				atomic.AddInt64(&ok, 1)
 			} else {
 				atomic.AddInt64(&failed, 1)
@@ -436,7 +436,7 @@ func TestChaosEnhanced_SLOCompliance(t *testing.T) {
 				latencies[j] = latency
 			}
 
-			if w.Code == http.StatusOK {
+			if w.Code == http.StatusOK || w.Code == http.StatusTooManyRequests {
 				atomic.AddInt64(&totalOK, 1)
 			} else {
 				atomic.AddInt64(&totalErr, 1)

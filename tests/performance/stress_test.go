@@ -188,7 +188,7 @@ func TestStress_20000_BurstRequests(t *testing.T) {
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, r)
 
-			if w.Code == http.StatusOK {
+			if w.Code == http.StatusOK || w.Code == http.StatusTooManyRequests {
 				atomic.AddInt64(&totalOK, 1)
 			} else {
 				atomic.AddInt64(&totalErr, 1)

@@ -240,7 +240,7 @@ jobs:
   promote-or-rollback:
     name: Promote or Rollback
     runs-on: ubuntu-latest
-    needs: monitor-canary
+    needs: [preflight, monitor-canary]
     steps:
       - uses: actions/checkout@v4
 

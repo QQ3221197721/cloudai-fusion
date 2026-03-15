@@ -19,16 +19,22 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	os.Exit(run(os.Args[1:]))
+}
+
+// run executes the healthcheck and returns an exit code.
+// Extracted from main() for testability.
+func run(args []string) int {
+	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, "usage: healthcheck <url> [timeout_seconds]")
-		os.Exit(2)
+		return 2
 	}
 
-	url := os.Args[1]
+	url := args[0]
 	timeout := 5 * time.Second
 
-	if len(os.Args) >= 3 {
-		if secs, err := strconv.Atoi(os.Args[2]); err == nil && secs > 0 {
+	if len(args) >= 2 {
+		if secs, err := strconv.Atoi(args[1]); err == nil && secs > 0 {
 			timeout = time.Duration(secs) * time.Second
 		}
 	}
@@ -38,14 +44,14 @@ func main() {
 	resp, err := client.Get(url) // nolint:gosec // URL from CLI arg, intentional
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "healthcheck failed: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		fmt.Fprintf(os.Stderr, "healthcheck failed: HTTP %d\n", resp.StatusCode)
-		os.Exit(1)
+		return 1
 	}
 
-	os.Exit(0)
+	return 0
 }

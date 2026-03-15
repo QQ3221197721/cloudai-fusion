@@ -125,6 +125,8 @@ jobs:
     name: "Docker Images"
     runs-on: ubuntu-latest
     needs: build
+    outputs:
+      image_tag: ${{ needs.build.outputs.image_tag }}
     strategy:
       matrix:
         include:
