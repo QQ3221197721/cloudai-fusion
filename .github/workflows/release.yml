@@ -100,7 +100,7 @@ jobs:
           GIT_TREE_STATE: ${{ env.GIT_TREE_STATE }}
 
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: dist/*.sbom.spdx.json
@@ -230,7 +230,7 @@ jobs:
           echo "YUM repo metadata generated (stub)"
 
       - name: Upload package repo artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: package-repos
           path: |

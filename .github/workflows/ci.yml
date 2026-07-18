@@ -98,7 +98,7 @@ jobs:
             -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" \
             -o bin/${{ matrix.component }} \
             ./cmd/${{ matrix.component }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.component }}-binary
           path: bin/${{ matrix.component }}
@@ -251,7 +251,7 @@ jobs:
           mkdir -p /tmp/digests
           echo "${{ steps.build.outputs.digest }}" > "/tmp/digests/${{ matrix.component }}.txt"
       - name: Upload digest artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digest-${{ matrix.component }}
           path: /tmp/digests/${{ matrix.component }}.txt
