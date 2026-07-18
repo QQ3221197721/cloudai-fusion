@@ -26,7 +26,7 @@ peft==0.10.0
 datasets==2.18.0
 accelerate==0.28.0
 onnx==1.16.0
-onnxruntime==1.17.3
+onnxruntime==1.27.0
 prophet==1.1.5
 statsmodels==0.14.1
 gymnasium==0.29.1

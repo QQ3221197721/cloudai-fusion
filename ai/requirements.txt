@@ -37,7 +37,7 @@ accelerate==0.28.0
 
 # --- ONNX Export (for Go-side model serving) ---
 onnx==1.16.0
-onnxruntime==1.17.3
+onnxruntime==1.27.0
 
 # --- Anomaly Detection ---
 prophet==1.1.5
