@@ -8,7 +8,7 @@
 # ============================================
 # Stage 1: Build dependencies (includes build tools for C extensions)
 # ============================================
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -36,7 +36,7 @@ RUN grep -v -E '^(pytest|pytest-|coverage|flake8|black|mypy|isort)' /tmp/require
 # ============================================
 # Stage 2: Runtime (minimal, no build tools)
 # ============================================
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
