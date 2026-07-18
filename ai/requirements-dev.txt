@@ -24,7 +24,7 @@ ruff==0.3.4
 
 # --- Type stubs ---
 types-PyYAML==6.0.12.20240311
-types-redis==4.6.0.20240311
+types-redis==4.6.0.20241004
 
 # --- Documentation ---
 # sphinx==7.2.6           # Uncomment if building docs
