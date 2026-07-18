@@ -31,7 +31,7 @@ dashscope==1.14.1
 
 # --- LLM Fine-Tuning (LoRA / QLoRA) ---
 transformers==4.40.2
-peft==0.10.0
+peft==0.19.1
 datasets==2.18.0
 accelerate==0.28.0
 
