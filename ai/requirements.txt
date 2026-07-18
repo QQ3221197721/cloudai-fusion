@@ -44,7 +44,7 @@ prophet==1.1.5
 statsmodels==0.14.1
 
 # --- Reinforcement Learning (scheduling optimization) ---
-gymnasium==0.29.1
+gymnasium==1.3.0
 stable-baselines3==2.3.0
 
 # --- HTTP & Async ---
