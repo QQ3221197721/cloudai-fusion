@@ -30,7 +30,7 @@ openai==1.14.3
 dashscope==1.14.1
 
 # --- LLM Fine-Tuning (LoRA / QLoRA) ---
-transformers==4.40.2
+transformers==5.14.1
 peft==0.10.0
 datasets==2.18.0
 accelerate==0.28.0
