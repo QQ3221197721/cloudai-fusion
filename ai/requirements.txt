@@ -26,7 +26,7 @@ pyarrow==15.0.2
 scikit-learn==1.4.2
 
 # --- LLM Integration (OpenAI-compatible API) ---
-openai==1.14.3
+openai==2.46.0
 dashscope==1.14.1
 
 # --- LLM Fine-Tuning (LoRA / QLoRA) ---

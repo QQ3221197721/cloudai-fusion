@@ -17,7 +17,7 @@ pandas>=2.2.0
 scikit-learn>=1.4.0
 
 # --- LLM Integration ---
-openai>=1.14.0
+openai>=2.46.0
 httpx>=0.27.0
 
 # --- HTTP & Async ---
