@@ -32,7 +32,7 @@ opentelemetry-exporter-otlp>=1.23.0,<3.0.0
 
 # --- Utilities ---
 pyyaml>=6.0
-python-dotenv>=1.0.0
+python-dotenv>=1.2.2
 structlog>=24.1.0
 tenacity>=8.2.0
 
