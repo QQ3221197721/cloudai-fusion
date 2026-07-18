@@ -10,6 +10,7 @@ import (
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 )
 
 // ============================================================================
@@ -61,6 +62,7 @@ type Manager struct {
 	driftReports map[string]*DriftReport
 	tfModules    map[string]*TerraformModule
 	driftScanner DriftScanner
+	evidenceRec  evidence.Recorder
 	logger       *logrus.Logger
 	mu           sync.RWMutex
 }
@@ -73,8 +75,21 @@ func NewManager(cfg ManagerConfig) *Manager {
 		pipelines:    make(map[string]*PromotionPipeline),
 		driftReports: make(map[string]*DriftReport),
 		tfModules:    make(map[string]*TerraformModule),
+		evidenceRec:  evidence.NopRecorder{},
 		logger:       logrus.StandardLogger(),
 	}
+}
+
+// SetEvidenceRecorder attaches the Verifiable Control Plane recorder so each
+// GitOps sync emits a signed receipt stating whether it ran on a real backend
+// (ArgoCD REST) or an honest simulation. A nil recorder disables emission.
+func (m *Manager) SetEvidenceRecorder(r evidence.Recorder) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if r == nil {
+		r = evidence.NopRecorder{}
+	}
+	m.evidenceRec = r
 }
 
 // DriftScanner compares an application's desired state (from Git) against its
@@ -239,14 +254,16 @@ func (m *Manager) SyncApplication(ctx context.Context, appID string, revision st
 			app.HealthStatus = HealthStatusHealthy
 			app.LastSyncedAt = &now
 			app.UpdatedAt = completed
-			return &SyncResult{
+			res := &SyncResult{
 				ApplicationID: appID,
 				Revision:      revision,
 				Status:        SyncStatusSynced,
 				Message:       fmt.Sprintf("ArgoCD sync completed for revision %s", revision),
 				StartedAt:     now,
 				CompletedAt:   completed,
-			}, nil
+			}
+			m.emitSyncEvidence(ctx, app, revision, res, true, "argocd")
+			return res, nil
 		}
 	}
 
@@ -274,7 +291,50 @@ func (m *Manager) SyncApplication(ctx context.Context, appID string, revision st
 	app.LastSyncedAt = &now
 	app.UpdatedAt = common.NowUTC()
 
+	m.emitSyncEvidence(ctx, app, revision, result, false, string(app.Engine))
 	return result, nil
+}
+
+// emitSyncEvidence records a signed receipt for one GitOps sync, stating plainly
+// whether the sync ran on a real backend (ArgoCD REST) or an honest simulation.
+// Called while holding m.mu; a nil/Nop recorder makes it a no-op.
+func (m *Manager) emitSyncEvidence(ctx context.Context, app *Application, revision string, result *SyncResult, real bool, driver string) {
+	rec := m.evidenceRec
+	if rec == nil {
+		return
+	}
+	mode := "simulated"
+	if real {
+		mode = "real"
+	}
+	_, _ = rec.Record(ctx, evidence.RecordInput{
+		Actor:   "gitops",
+		Action:  "gitops.sync",
+		Subject: app.ID,
+		Input: map[string]any{
+			"application": app.Name,
+			"engine":      string(app.Engine),
+			"revision":    revision,
+			"environment": app.Environment,
+		},
+		Output: map[string]any{
+			"status":  string(result.Status),
+			"message": result.Message,
+		},
+		Payload: map[string]any{
+			"application_id": app.ID,
+			"application":    app.Name,
+			"engine":         string(app.Engine),
+			"revision":       revision,
+			"environment":    app.Environment,
+			"status":         string(result.Status),
+			"sync_real":      real,
+			"driver":         driver,
+			"started_at":     result.StartedAt,
+			"completed_at":   result.CompletedAt,
+		},
+		Backends: []evidence.BackendFact{{Component: "gitops.sync", Mode: mode, Driver: driver}},
+	})
 }
 
 // ============================================================================

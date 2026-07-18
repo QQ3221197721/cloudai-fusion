@@ -17,7 +17,9 @@ import (
 
 	apperrors "github.com/cloudai-fusion/cloudai-fusion/pkg/errors"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 )
 
@@ -148,6 +150,7 @@ type Manager struct {
 	syncPolicies []*SyncPolicy
 	store        *store.Store // DB persistence (nil = in-memory only)
 	httpClient   *http.Client // for edge node REST API calls
+	recorder     evidence.Recorder
 	logger       *logrus.Logger
 	mu           sync.RWMutex
 	// New fields for enhanced edge-cloud collaboration
@@ -180,6 +183,14 @@ func NewManager(cfg Config) (*Manager, error) {
 		offlineHub:    NewOfflineHub(DefaultOfflineHubConfig(), logger),
 	}
 	return mgr, nil
+}
+
+// SetEvidenceRecorder attaches the Verifiable Control Plane recorder so edge node
+// registrations emit a signed receipt honestly tagged with the runtime mode.
+func (m *Manager) SetEvidenceRecorder(r evidence.Recorder) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.recorder = r
 }
 
 // SetStore injects a database store for persistent edge node management
@@ -235,7 +246,28 @@ func (m *Manager) RegisterNode(ctx context.Context, node *EdgeNode) error {
 	m.logger.WithFields(logrus.Fields{
 		"node": node.Name, "tier": node.Tier, "region": node.Region,
 	}).Info("Edge node registered")
+	m.emitNodeEvidence(ctx, node)
 	return nil
+}
+
+// emitNodeEvidence records a signed receipt for an edge node registration. The
+// registration/persistence is real, but no live edge-device runtime link is
+// verified here, so the runtime backend is honestly tagged simulated.
+func (m *Manager) emitNodeEvidence(ctx context.Context, node *EdgeNode) {
+	if m.recorder == nil {
+		return
+	}
+	_ = capability.Report("edge.runtime", "rest-stub", capability.ModeSimulated,
+		"edge node registry (no live edge-device runtime link verified)")
+	_, _ = m.recorder.Record(ctx, evidence.RecordInput{
+		Actor:   "edge",
+		Action:  "edge.node.register",
+		Subject: node.ID,
+		Input:   map[string]any{"name": node.Name, "tier": node.Tier, "region": node.Region},
+		Output:  map[string]any{"status": node.Status},
+		Payload: map[string]any{"node_id": node.ID, "name": node.Name, "tier": node.Tier, "region": node.Region},
+		Backends: []evidence.BackendFact{{Component: "edge.runtime", Mode: "simulated", Driver: "rest-stub"}},
+	})
 }
 
 // ListNodes returns all edge nodes (DB-first with cache fallback)

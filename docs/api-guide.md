@@ -473,6 +473,74 @@ GET /api/v1/edge/sync-policies
 
 Returns data synchronization policies between cloud and edge nodes.
 
+## Verifiable Control Plane (Evidence)
+
+Signed, hash-chained receipts for consequential actions, forming an RFC 6962 Merkle
+transparency log. The public key is unauthenticated (pin it to verify offline); the other
+reads require `security:read`; `rotate-key` requires `security:manage`.
+
+```
+GET  /api/v1/evidence/pubkey              # no auth: the verifying key to pin
+GET  /api/v1/evidence                     # ledger size, key id, anchor backend
+GET  /api/v1/evidence/records?action=&subject=&actor=&limit=
+GET  /api/v1/evidence/records/:id
+GET  /api/v1/evidence/records/:id/proof   # Merkle inclusion proof
+GET  /api/v1/evidence/verify              # server-side chain verification
+GET  /api/v1/evidence/export              # chain + public key (for offline verify)
+GET  /api/v1/evidence/checkpoint          # signed tree head (STH)
+GET  /api/v1/evidence/consistency?from=&to=
+POST /api/v1/evidence/rotate-key          # security:manage
+```
+
+Offline verification (anyone, no server trust required):
+```bash
+curl -s http://localhost:8080/api/v1/evidence/export | cafctl verify --bundle - --pubkey pinned.pem
+```
+
+## Verifiable AI Red Team
+
+Authorized, evidence-grade security validation. Every action records a signed receipt;
+mutating routes require `security:manage`, reads require `security:read`. The `report`
+and `evidence` endpoints require the evidence ledger to be configured.
+
+### Create an engagement
+
+```
+POST /api/v1/redteam/engagements
+```
+
+**Request:**
+```json
+{
+  "tenant_id": "team-a",
+  "scope": {
+    "targets": [{"kind": "url", "value": "https://app.lab.local/"}],
+    "allow_techniques": ["T1595", "T1190"],
+    "max_risk_tier": 1,
+    "approval_required_at": 1,
+    "rate_limit": {"max_actions": 100, "per": 60000000000}
+  }
+}
+```
+
+Risk tiers: `0` read-only, `1` exploit, `2` lateral. Target `kind` is one of
+`cidr | host | url | cluster`. An action at or above `approval_required_at` must be
+approved before it runs. `rate_limit.per` is a Go duration in nanoseconds (`60000000000`
+= 60s). Scope is deny-by-default: an empty `allow_techniques` authorizes nothing.
+
+### Lifecycle, approval, verifiable report
+
+```
+GET  /api/v1/redteam/engagements[?tenant_id=]
+GET  /api/v1/redteam/engagements/:id
+POST /api/v1/redteam/engagements/:id/abort     {"reason": "..."}                 # kill-switch
+POST /api/v1/redteam/engagements/:id/approve   {"action_id": "...", "risk_tier": 1}
+GET  /api/v1/redteam/engagements/:id/report    # verifiable report (embeds a signed STH)
+GET  /api/v1/redteam/engagements/:id/evidence  # this engagement's signed receipts
+```
+
+Full design and milestones: [`redteam-subsystem-spec.md`](redteam-subsystem-spec.md).
+
 ## Error Format
 
 All errors follow a consistent format:

@@ -27,13 +27,16 @@ import (
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/edge"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/election"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/feature"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/finops"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/logging"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/mesh"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/messaging"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/metrics"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/migrate"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/monitor"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/resilience"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/rpcserver"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/security"
@@ -564,6 +567,49 @@ func runServer(cmd *cobra.Command, args []string) error {
 	_ = netPolicyEngine
 	logger.Info("Network policy automation engine initialized")
 
+	// ================================================================
+	// Verifiable Control Plane: signed, hash-chained evidence ledger
+	// ================================================================
+	// This is the platform's "prove it" spine: consequential actions emit a
+	// signed receipt that states which real-vs-simulated backend executed them.
+	// Build() reports its signer/ledger/anchor backends to pkg/capability, so a
+	// production boot with an ephemeral key or in-memory ledger fails Enforce().
+	var evidenceKeyPEM []byte
+	if cfg.EvidenceKeyPath != "" {
+		evidenceKeyPEM, err = os.ReadFile(cfg.EvidenceKeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to read evidence signing key %q: %w", cfg.EvidenceKeyPath, err)
+		}
+	}
+	evidenceBuild := evidence.BuildConfig{
+		SigningKeyPEM: evidenceKeyPEM,
+		RekorURL:      cfg.RekorURL,
+		Logger:        logger,
+	}
+	if dbStore != nil {
+		evidenceBuild.DB = dbStore.DB()
+	}
+	evidenceLedger, err := evidence.Build(evidenceBuild)
+	if err != nil {
+		return fmt.Errorf("failed to init evidence ledger: %w", err)
+	}
+	logger.WithField("key_id", evidenceLedger.Signer().KeyID()).Info("Evidence ledger (Verifiable Control Plane) initialized")
+
+	// Provable FinOps: measured GPU reclamation with signed savings receipts. The
+	// reclaim action defaults to an honest simulation until a real K8s/cloud
+	// backend is wired; each receipt records whether the reclaim actually ran.
+	finopsReclaimer := finops.NewReclaimEngine(finops.ReclaimEngineConfig{
+		Recorder: evidenceLedger,
+		Logger:   logger,
+	})
+	logger.Info("FinOps reclaim engine initialized (measured savings receipts)")
+
+	// Verifiable AI Red Team: authorized, evidence-grade security validation.
+	// Engagements and scope-gated actions record signed receipts into the SAME
+	// evidence ledger, so red-team reports are offline-verifiable.
+	redteamManager := redteam.NewManager(evidenceLedger, logger)
+	logger.Info("Verifiable AI Red Team subsystem initialized (evidence-backed)")
+
 	// Fail fast: in production, refuse to boot if any initialized subsystem is
 	// backed by a simulation instead of a real dependency. This is the systemic
 	// cure for the previous "boots green on fakes" behavior.
@@ -593,6 +639,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 		FeatureFlags:    featureFlags,
 		WebSocketHub:    wsHub,
 		ControllerMgr:   ctrlManager,
+		EvidenceLedger:  evidenceLedger,
+		FinOpsReclaimer: finopsReclaimer,
+		RedTeamManager:  redteamManager,
 	}
 	if tracingProvider != nil {
 		routerCfg.Tracer = tracingProvider.Tracer()

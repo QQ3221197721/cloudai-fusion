@@ -641,6 +641,46 @@ func (qm *QueueManager) DequeueWithDRF() *QueuedWorkload {
 	return item
 }
 
+// FairnessSnapshot builds a DRF snapshot from the given running workloads using
+// the manager's configured resource pool, and computes each tenant's dominant
+// resource share. It is the authentic source for the verifiable fairness ledger
+// embedded in scheduling decisions: shares are derived from real allocations,
+// not fabricated. Tenants are keyed by workload namespace.
+func (qm *QueueManager) FairnessSnapshot(running []*Workload) *DRFState {
+	qm.mu.RLock()
+	totalGPUs := qm.drfState.TotalGPUs
+	totalCPU := qm.drfState.TotalCPU
+	totalMem := qm.drfState.TotalMemory
+	qm.mu.RUnlock()
+
+	st := &DRFState{
+		TotalGPUs:   totalGPUs,
+		TotalCPU:    totalCPU,
+		TotalMemory: totalMem,
+		TenantUsage: make(map[string]*TenantResourceUsage),
+	}
+	for _, w := range running {
+		if w == nil {
+			continue
+		}
+		tenant := w.Namespace
+		if tenant == "" {
+			tenant = "default"
+		}
+		u := st.TenantUsage[tenant]
+		if u == nil {
+			u = &TenantResourceUsage{TenantID: tenant, TenantName: tenant}
+			st.TenantUsage[tenant] = u
+		}
+		u.GPUsAllocated += w.ResourceRequest.GPUCount
+		u.CPUAllocated += w.ResourceRequest.CPUMillicores
+		u.MemAllocated += w.ResourceRequest.MemoryBytes
+		u.ActiveWorkloads++
+	}
+	st.ComputeDominantShare()
+	return st
+}
+
 // FindPreemptionCandidates finds workloads that can be preempted to make room
 func (qm *QueueManager) FindPreemptionCandidates(requester *QueuedWorkload, runningWorkloads []*Workload) []PreemptionDecision {
 	if !qm.config.PreemptionEnabled {

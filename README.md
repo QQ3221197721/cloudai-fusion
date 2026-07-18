@@ -14,7 +14,7 @@ says so — and in production it refuses to run on a simulation.**
 ## Why this project is different: Run Modes & Capability Transparency
 
 Every external-dependency boundary (cache, messaging, consensus, GitOps, scheduling,
-cloud, DB) reports whether it is running on a **real** backend or a **simulated**
+cloud, DB, evidence) reports whether it is running on a **real** backend or a **simulated**
 in-memory fallback. A single `run_mode` setting governs what is allowed:
 
 | Run mode | Simulated backends | Use case |
@@ -57,12 +57,19 @@ production).
 | **Leader election / HA** | Kubernetes `Lease` leader election | `client-go/leaderelection` | in-memory single-node |
 | **Kubernetes** | real clusters (in-cluster / kubeconfig / token) | `client-go` | scheduler returns **no** candidates in prod (no fake nodes) |
 | **Multi-cloud** | AWS EKS, Alibaba ACK, Azure AKS, GCP GKE, Huawei CCE, Tencent TKE | official cloud SDKs | provider registered in stub mode (no creds) |
-| **GitOps** | ArgoCD (REST sync API) | net/http | simulated (Flux client not yet linked) |
+| **GitOps** | ArgoCD (REST sync API) + Flux (dynamic-client reconcile-status reads) | net/http + `client-go/dynamic` | simulated when neither is reachable |
+| **Consensus** | hashicorp/raft (real leader election + log replication) | `hashicorp/raft` | in-memory Raft, reported simulated |
+| **Cross-cluster failover** | client-go API-server health probes + promotion | `client-go` | reported simulated without a real DR cluster |
+| **Verifiable Control Plane** | Ed25519-signed, hash-chained, RFC 6962 Merkle transparency log + offline verifier | `crypto/ed25519`, `crypto/sha256` | always real (no external dependency) |
+| **Verifiable AI Red Team** | scope-gated engagements, evidence-signed actions, LLM planner, web/AD exploit chaining | `client-go` + orchestrated tools | tools real-when-installed; LLM real-when-endpoint-set |
 | **AI / LLM** | OpenAI / DashScope / Ollama / vLLM; optional PyTorch/SB3 RL | OpenAI-compatible + `torch`/`stable-baselines3` | rule-based heuristics (honestly reported at `/api/v1/models/status`) |
 
-Components still simulated-when-unconfigured (and therefore blocked in production):
-**etcd election, Flux sync, cross-cluster failover, in-memory Raft**. Progress is
-measured objectively by `/api/v1/capabilities`, not by marketing claims.
+Real Flux reconcile-status reads, cross-cluster failover, and hashicorp/raft consensus
+are now implemented and integration-tested against `kind` (run with `-tags integration`).
+What remains gated on external resources (and therefore reported simulated until
+configured): **real multi-cloud SDK calls (credentials), red-team tools (the binaries),
+a live LLM endpoint, etcd election**. Progress is measured objectively by
+`/api/v1/capabilities`, not by marketing claims.
 
 ## Key Features
 
@@ -76,6 +83,8 @@ measured objectively by `/api/v1/capabilities`, not by marketing claims.
 | **Security & Compliance** | JWT + RBAC (4 roles), OIDC federation, CIS checks, threat detection, audit log |
 | **DevSecOps supply chain** | SAST, dep/secret/IaC scanning, SBOM, cosign signing, SLSA L3 provenance |
 | **Full Observability** | Prometheus metrics, OpenTelemetry tracing, Grafana, intelligent alerting |
+| **Verifiable Control Plane** | Ed25519-signed, hash-chained, Merkle-transparency-logged receipts for consequential actions; offline-verifiable via `cafctl` |
+| **Verifiable AI Red Team** | Authorized, evidence-grade security validation: scope-gated engagements, human-in-the-loop approval, web/AD exploit chaining, CVE-Bench harness |
 
 ## Architecture
 
@@ -93,6 +102,10 @@ measured objectively by `/api/v1/capabilities`, not by marketing claims.
 │  PostgreSQL │ Redis │ Kafka │ NATS │ Kubernetes │ Prometheus         │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+A cross-cutting **Verifiable Control Plane** (`pkg/evidence`) signs every consequential
+action into a hash-chained, Merkle-transparency-logged ledger; the **Verifiable AI Red
+Team** (`pkg/redteam`) runs authorized, evidence-grade security validation on top of it.
 
 See [docs/architecture.md](docs/architecture.md) for component and data-flow detail.
 
@@ -166,6 +179,8 @@ Full spec: [`api/openapi.yaml`](api/openapi.yaml).
 | `POST /api/v1/workloads` | Submit AI workload (state machine + events) |
 | `GET /api/v1/security/policies` `GET /api/v1/monitoring/alerts/events` | Security & monitoring |
 | `GET /api/v1/cost/summary` `GET /api/v1/mesh/status` `GET /api/v1/edge/topology` | Cost / mesh / edge |
+| `GET /api/v1/evidence` `GET /api/v1/evidence/export` | **Verifiable Control Plane**: signed receipts, chain export, offline verify |
+| `POST /api/v1/redteam/engagements` `GET /api/v1/redteam/engagements/:id/report` | **Verifiable AI Red Team**: scoped engagements + verifiable reports |
 | **AI Engine** (:8090) | `POST /scheduling/optimize`, `POST /anomaly/detect`, `POST /chat`, `GET /models/status` |
 
 ## Tech Stack
@@ -201,6 +216,8 @@ cloudai-fusion/
 │   ├── election/   # Kubernetes Lease leader election (client-go)
 │   ├── gitops/     # ArgoCD REST client
 │   ├── scheduler/  # GPU scheduling (real K8s nodes; no fake nodes in prod)
+│   ├── evidence/   # Verifiable Control Plane: signed hash-chain + Merkle log + verifier
+│   ├── redteam/    # Verifiable AI Red Team: scoped engagements, evidence, exploit chaining
 │   ├── cloud/ cluster/ security/ monitor/ mesh/ edge/ ...
 ├── ai/             # Python AI engine (agents, anomaly, RL scheduler)
 ├── .github/workflows/  # ci.yml + devsecops.yml
@@ -212,8 +229,8 @@ cloudai-fusion/
 
 | Version | Focus |
 |---------|-------|
-| **Current** | Run-mode honesty framework, real Redis/NATS/Kafka/K8s-Lease/ArgoCD, DevSecOps + SLSA |
-| **Next** | Real Flux client, cross-cluster failover, hashicorp/raft consensus, live-infra integration CI |
+| **Current** | Run-mode honesty framework; real Redis/NATS/Kafka/K8s-Lease/ArgoCD + Flux, cross-cluster failover, hashicorp/raft; Verifiable Control Plane (evidence) + Verifiable AI Red Team; DevSecOps + SLSA |
+| **Next** | Live-infra integration CI (real clouds / LLM / CVE-Bench in kind), red-team `/run` + `/ranges` API, AI-engine depth |
 
 ## Contributing / License
 

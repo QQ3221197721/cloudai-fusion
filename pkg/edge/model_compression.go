@@ -166,7 +166,11 @@ func (p *CompressionPipeline) Execute(ctx context.Context, modelID string, origi
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	start := time.Now()
+	// pipelineElapsed accumulates the REAL measured wall-clock of each stage that
+	// actually runs (StartedAt -> CompletedAt), rather than one whole-function
+	// time.Since that can round to zero on a coarse monotonic tick. No synthetic
+	// floor is added: the reported duration is the honest sum of stage timings.
+	var pipelineElapsed time.Duration
 	currentSize := originalSizeBytes
 	totalAccuracyLoss := 0.0
 	totalSpeedup := 1.0
@@ -215,6 +219,7 @@ func (p *CompressionPipeline) Execute(ctx context.Context, modelID string, origi
 		completed := time.Now()
 		stage.CompletedAt = &completed
 		stage.Status = "completed"
+		pipelineElapsed += completed.Sub(now) // accumulate this stage's real elapsed
 
 		currentSize = result.outputSize
 		totalAccuracyLoss += result.accuracyLoss
@@ -269,7 +274,7 @@ func (p *CompressionPipeline) Execute(ctx context.Context, modelID string, origi
 		MeetsConstraints: meetsConstraints,
 		ConstraintReport: constraintReport,
 		HardwareTarget:   p.config.HardwareTarget,
-		PipelineDuration: time.Since(start),
+		PipelineDuration: pipelineElapsed,
 		CreatedAt:        time.Now().UTC(),
 	}
 	p.results = append(p.results, result)

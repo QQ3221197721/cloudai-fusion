@@ -82,6 +82,13 @@ type Config struct {
 	// are forbidden and the process refuses to boot on them.
 	RunMode string `mapstructure:"run_mode"`
 
+	// Evidence (Verifiable Control Plane). EvidenceKeyPath points to an Ed25519
+	// PKCS#8 PEM signing key; empty => an ephemeral in-process key (dev/sim only,
+	// reported as simulated). RekorURL enables external transparency anchoring;
+	// empty => honest simulated anchor.
+	EvidenceKeyPath string `mapstructure:"evidence_key_path"`
+	RekorURL        string `mapstructure:"rekor_url"`
+
 	// Cloud Providers
 	CloudProviders []CloudProviderConfig `mapstructure:"cloud_providers"`
 
@@ -425,6 +432,11 @@ func setDefaults(v *viper.Viper) {
 	// Run mode: "" derives from env (production env => production);
 	// explicit values: simulation | degraded | production.
 	v.SetDefault("run_mode", "")
+
+	// Evidence (Verifiable Control Plane): empty key path => ephemeral dev key;
+	// empty rekor url => simulated transparency anchor.
+	v.SetDefault("evidence_key_path", "")
+	v.SetDefault("rekor_url", "")
 
 	// Monitoring
 	v.SetDefault("prometheus_endpoint", "http://localhost:9090")

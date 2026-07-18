@@ -19,11 +19,14 @@ import (
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/controller"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/edge"
 	apperrors "github.com/cloudai-fusion/cloudai-fusion/pkg/errors"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/feature"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/finops"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/logging"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/mesh"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/middleware"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/monitor"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/security"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing"
@@ -53,6 +56,18 @@ type RouterConfig struct {
 	Tracer        trace.Tracer        // OpenTelemetry tracer
 	WebSocketHub  *websocket.Hub      // Real-time event push
 	ControllerMgr *controller.Manager // Controller manager for reconciliation loops
+
+	// EvidenceLedger backs the Verifiable Control Plane (/api/v1/evidence).
+	// When nil, the evidence endpoints are not registered.
+	EvidenceLedger *evidence.Ledger
+
+	// FinOpsReclaimer backs POST /api/v1/finops/reclaim (measured, receipted
+	// GPU reclamation). When nil, the reclaim endpoint is not registered.
+	FinOpsReclaimer *finops.ReclaimEngine
+
+	// RedTeamManager backs the Verifiable AI Red Team subsystem
+	// (/api/v1/redteam). When nil, the red-team endpoints are not registered.
+	RedTeamManager *redteam.Manager
 }
 
 // NewRouter creates the main API router with all routes configured
@@ -91,6 +106,12 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 	// for every external-dependency-backed subsystem.
 	router.GET("/api/v1/capabilities", handleCapabilities)
 
+	// Evidence public key (no auth): publishing the verifying key is how third
+	// parties establish trust to verify exported chains offline.
+	if cfg.EvidenceLedger != nil {
+		router.GET("/api/v1/evidence/pubkey", handleEvidencePubKey(cfg.EvidenceLedger))
+	}
+
 	// WebSocket endpoint (no auth for now — add JWT validation in production)
 	if cfg.WebSocketHub != nil {
 		router.GET("/ws/events", cfg.WebSocketHub.HandleWebSocket())
@@ -108,6 +129,11 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 	// Protected API v1 routes
 	v1 := router.Group("/api/v1")
 	v1.Use(cfg.AuthService.AuthMiddleware())
+	// Record a signed receipt for every state-changing action on the protected
+	// API surface (runs after auth so the actor identity is known).
+	if cfg.EvidenceLedger != nil {
+		v1.Use(EvidenceMiddleware(EvidenceMiddlewareConfig{Ledger: cfg.EvidenceLedger}))
+	}
 	{
 		// ---- Cluster Management ----
 		clusters := v1.Group("/clusters")
@@ -201,6 +227,41 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 		// ---- Resource Summary ----
 		v1.GET("/resources/summary", auth.RequirePermission(auth.PermClusterRead), handleResourceSummary(cfg.ClusterManager))
 
+		// ---- Verifiable Control Plane (Evidence) ----
+		// Signed, hash-chained receipts for consequential actions. Read access is
+		// gated on security-read; the public key (above) is unauthenticated.
+		if cfg.EvidenceLedger != nil {
+			ev := v1.Group("/evidence")
+			{
+				ev.GET("", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceSummary(cfg.EvidenceLedger))
+				ev.GET("/records", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceList(cfg.EvidenceLedger))
+				ev.GET("/records/:id", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceGet(cfg.EvidenceLedger))
+				ev.GET("/records/:id/proof", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceInclusionProof(cfg.EvidenceLedger))
+				ev.GET("/verify", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceVerify(cfg.EvidenceLedger))
+				ev.GET("/export", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceExport(cfg.EvidenceLedger))
+				ev.GET("/checkpoint", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceCheckpoint(cfg.EvidenceLedger))
+				ev.GET("/consistency", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceConsistency(cfg.EvidenceLedger))
+				ev.POST("/rotate-key", auth.RequirePermission(auth.PermSecurityManage), handleEvidenceRotateKey(cfg.EvidenceLedger))
+			}
+
+			// Verifiable scheduling decisions: read "why this node / who was
+			// preempted" receipts from the evidence ledger.
+			sched := v1.Group("/scheduling")
+			{
+				sched.GET("/decisions", auth.RequirePermission(auth.PermMonitorRead), handleSchedulingDecisions(cfg.EvidenceLedger))
+				sched.GET("/decisions/:workloadID", auth.RequirePermission(auth.PermMonitorRead), handleSchedulingDecisionByWorkload(cfg.EvidenceLedger))
+			}
+
+			// Provable FinOps: measured, receipted GPU reclamation savings.
+			fin := v1.Group("/finops")
+			{
+				fin.GET("/savings", auth.RequirePermission(auth.PermCostRead), handleFinOpsSavings(cfg.EvidenceLedger))
+				if cfg.FinOpsReclaimer != nil {
+					fin.POST("/reclaim", auth.RequirePermission(auth.PermCostManage), handleFinOpsReclaim(cfg.FinOpsReclaimer))
+				}
+			}
+		}
+
 		// ---- Controller Manager (Reconciliation Loops) ----
 		if cfg.ControllerMgr != nil {
 			ctrlGroup := v1.Group("/controllers")
@@ -208,6 +269,25 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 				ctrlGroup.GET("/status", auth.RequirePermission(auth.PermMonitorRead), handleControllerStatus(cfg.ControllerMgr))
 				ctrlGroup.GET("/events", auth.RequirePermission(auth.PermMonitorRead), handleControllerEvents(cfg.ControllerMgr))
 				ctrlGroup.POST("/reconcile", auth.RequirePermission(auth.PermClusterCreate), handleTriggerReconcile(cfg.ControllerMgr))
+			}
+		}
+
+		// ---- Verifiable AI Red Team ----
+		// Authorized, evidence-grade security validation. Mutating routes require
+		// security-manage; reads require security-read. Report/evidence need the
+		// evidence ledger.
+		if cfg.RedTeamManager != nil {
+			rt := v1.Group("/redteam")
+			{
+				rt.POST("/engagements", auth.RequirePermission(auth.PermSecurityManage), handleRedTeamCreate(cfg.RedTeamManager))
+				rt.GET("/engagements", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamList(cfg.RedTeamManager))
+				rt.GET("/engagements/:id", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamGet(cfg.RedTeamManager))
+				rt.POST("/engagements/:id/abort", auth.RequirePermission(auth.PermSecurityManage), handleRedTeamAbort(cfg.RedTeamManager))
+				rt.POST("/engagements/:id/approve", auth.RequirePermission(auth.PermSecurityManage), handleRedTeamApprove(cfg.RedTeamManager))
+				if cfg.EvidenceLedger != nil {
+					rt.GET("/engagements/:id/report", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamReport(cfg.RedTeamManager, cfg.EvidenceLedger))
+					rt.GET("/engagements/:id/evidence", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamEvidence(cfg.EvidenceLedger))
+				}
 			}
 		}
 	}
@@ -916,14 +996,17 @@ func handleCostSummary(mgr cloud.CloudService) gin.HandlerFunc {
 
 func handleCostOptimization(mgr cloud.CloudService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Generate dynamic cost optimization recommendations based on provider data
+		// Heuristic cost-optimization *projections*. These are illustrative unit
+		// estimates scaled by provider count — NOT measured savings and NOT derived
+		// from live billing APIs. Measured, evidence-backed reclamation savings are
+		// served by GET /api/v1/finops/savings (each figure carries a signed receipt).
 		providers := mgr.ListProviders()
 		numProviders := len(providers)
 		if numProviders == 0 {
 			numProviders = 1
 		}
 
-		// Scale recommendations based on actual provider count
+		// Scale illustrative per-provider unit estimates by provider count.
 		spotSavings := 1250 * numProviders
 		gpuShareSavings := 2100 * numProviders
 		rightSizeSavings := 3400 * numProviders
@@ -980,7 +1063,9 @@ func handleCostOptimization(mgr cloud.CloudService) gin.HandlerFunc {
 			"total_potential_savings": fmt.Sprintf("$%d/month", totalSavings),
 			"providers_analyzed":      numProviders,
 			"analysis_timestamp":      common.NowUTC(),
-			"methodology":             "Based on real provider pricing APIs, utilization metrics, and workload patterns",
+			"estimate_type":           "heuristic_projection",
+			"measured":                false,
+			"methodology":             "Heuristic per-provider unit projections scaled by provider count. NOT measured and NOT from live billing APIs. For measured, signed savings see GET /api/v1/finops/savings.",
 		})
 	}
 }

@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 )
 
 // ============================================================================
@@ -27,6 +30,7 @@ type PredictiveAutoscaler struct {
 	scalingRules map[string]*ScalingRule
 	history      []ScalingEvent
 	config       AutoscaleConfig
+	evidenceRec  evidence.Recorder
 	mu           sync.RWMutex
 	logger       *logrus.Logger
 }
@@ -167,7 +171,52 @@ func NewPredictiveAutoscaler(cfg AutoscaleConfig, logger *logrus.Logger) *Predic
 		metricsDB:    make(map[string][]MetricSample),
 		scalingRules: make(map[string]*ScalingRule),
 		config:       cfg,
+		evidenceRec:  evidence.NopRecorder{},
 		logger:       logger,
+	}
+}
+
+// SetEvidenceRecorder attaches the Verifiable Control Plane recorder so every
+// scaling decision emits a signed receipt, honestly labeled with the method used
+// (heuristic/EMA — not a trained model) and whether it was applied to a real
+// backend. A nil recorder disables emission.
+func (a *PredictiveAutoscaler) SetEvidenceRecorder(r evidence.Recorder) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if r == nil {
+		r = evidence.NopRecorder{}
+	}
+	a.evidenceRec = r
+}
+
+// emitScalingEvidence records a signed, verifiable receipt for a scaling decision.
+func (a *PredictiveAutoscaler) emitScalingEvidence(ctx context.Context, d *ScalingDecision) {
+	a.mu.RLock()
+	rec := a.evidenceRec
+	a.mu.RUnlock()
+	if rec == nil {
+		return
+	}
+	// Honest: the engine is real code but uses heuristic/EMA forecasting, NOT a
+	// trained ML/RL model; and Evaluate is advisory (ApplyDecision performs any
+	// real action). Driver names the method so the receipt cannot overstate it.
+	_ = capability.Report("aiops.autoscale", "heuristic-ema", capability.ModeReal,
+		"heuristic/EMA predictive autoscaling (advisory; not a trained model)")
+	_, err := rec.Record(ctx, evidence.RecordInput{
+		Actor:   "aiops",
+		Action:  "aiops.autoscale",
+		Subject: d.WorkloadID,
+		Input:   map[string]any{"current_replicas": d.CurrentReplicas, "metrics": d.MetricValues, "predicted": d.Predicted},
+		Output:  map[string]any{"desired_replicas": d.DesiredReplicas, "direction": d.Direction, "blocked": d.Blocked},
+		Payload: map[string]any{
+			"decision": d,
+			"method":   "heuristic", // honestly labeled: heuristic/EMA, not ML/RL
+			"applied":  false,       // advisory decision; ApplyDecision would act
+		},
+		Backends: []evidence.BackendFact{{Component: "aiops.autoscale", Mode: "real", Driver: "heuristic-ema"}},
+	})
+	if err != nil {
+		a.logger.WithError(err).Warn("aiops: failed to emit autoscale evidence")
 	}
 }
 
@@ -332,6 +381,7 @@ func (a *PredictiveAutoscaler) Evaluate(ctx context.Context, workloadID string) 
 		"duration":  elapsed,
 	}).Debug("Autoscale evaluation completed")
 
+	a.emitScalingEvidence(ctx, decision)
 	return decision, nil
 }
 

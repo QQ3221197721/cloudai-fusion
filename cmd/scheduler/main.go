@@ -17,8 +17,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/config"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 )
 
 var (
@@ -73,6 +76,10 @@ func runScheduler(cmd *cobra.Command, args []string) error {
 		"version": Version,
 	}).Info("Starting CloudAI Fusion Scheduler")
 
+	// Establish the run-mode policy so simulated backends are enforced consistently
+	// with the apiserver (production forbids them; see capability.Enforce below).
+	capability.SetPolicy(cfg.EffectiveRunMode())
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -87,6 +94,47 @@ func runScheduler(cmd *cobra.Command, args []string) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to init scheduler engine: %w", err)
+	}
+
+	// Persist scheduling records to the shared DB when available. The evidence
+	// ledger reuses the same DB so its chain is durable and shared with the
+	// apiserver's /api/v1/scheduling/decisions read path.
+	var dbStore *store.Store
+	if s, derr := store.New(store.Config{DSN: cfg.DatabaseDSN(), LogLevel: "warn"}); derr != nil {
+		logger.WithError(derr).Warn("Database unavailable - scheduling evidence will use a non-durable in-memory ledger")
+	} else {
+		dbStore = s
+		defer func() { _ = dbStore.Close() }()
+		engine.SetStore(dbStore)
+	}
+
+	// Build the Verifiable Control Plane evidence ledger and attach it so every
+	// scheduling decision emits a signed, verifiable receipt.
+	var evidenceKeyPEM []byte
+	if cfg.EvidenceKeyPath != "" {
+		evidenceKeyPEM, err = os.ReadFile(cfg.EvidenceKeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to read evidence signing key %q: %w", cfg.EvidenceKeyPath, err)
+		}
+	}
+	evidenceBuild := evidence.BuildConfig{
+		SigningKeyPEM: evidenceKeyPEM,
+		RekorURL:      cfg.RekorURL,
+		Logger:        logger,
+	}
+	if dbStore != nil {
+		evidenceBuild.DB = dbStore.DB()
+	}
+	evidenceLedger, err := evidence.Build(evidenceBuild)
+	if err != nil {
+		return fmt.Errorf("failed to init evidence ledger: %w", err)
+	}
+	engine.SetEvidenceRecorder(evidenceLedger)
+	logger.WithField("key_id", evidenceLedger.Signer().KeyID()).Info("Scheduling evidence ledger attached")
+
+	// Fail fast in production if any backend (including evidence) is simulated.
+	if err := capability.Enforce(); err != nil {
+		return fmt.Errorf("startup blocked by run_mode policy: %w", err)
 	}
 
 	// Start scheduling loop
