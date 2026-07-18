@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Run-Mode Honesty Framework & Real Backends
+- `pkg/runmode` + `pkg/capability`: process-wide run mode (simulation/degraded/production) and a capability registry; production **refuses to boot** if any subsystem is simulated (`capability.Enforce()`)
+- `GET /api/v1/capabilities` endpoint and `/readyz` gating reporting real-vs-simulated backends
+- Real Redis driver (`go-redis`): distributed cache, `SET NX` + Lua locks, pub/sub (in-memory fallback, reported)
+- Real messaging drivers: NATS (`nats.go`, queue groups) and Kafka (`sarama`, consumer groups, acks=all)
+- Real Kubernetes Lease leader election (`client-go/leaderelection`) replacing the simulated backend
+- Real ArgoCD GitOps sync via REST (`ARGOCD_SERVER` / `ARGOCD_AUTH_TOKEN`)
+
+### Added — DevSecOps & Supply Chain
+- `.github/workflows/devsecops.yml`: gosec (SAST), govulncheck, CodeQL, gitleaks, pip-audit, Trivy config, Syft SBOM, dependency review
+- cosign keyless image signing + BuildKit SLSA provenance + SLSA Level 3 via `slsa-github-generator`
+- Dependabot config (gomod/pip/github-actions/docker); `make verify-signatures` / `make verify-provenance`
+
+### Changed
+- `config`: added `run_mode` (derives from env; production is strict)
+- Cache/messaging/election/gitops/scheduler factories now register real-vs-simulated status and fail fast in production
+- Scheduler no longer fabricates GPU nodes in production (returns none when no real cluster is connected)
+- Docs rewritten to reflect the honesty model (README, architecture, quickstart, SECURITY)
+
+### Security
+- Token refresh now validates a verified token identity and re-issues for that user/role (removed fabricated viewer-token path)
+- Real `grpc.health.v1` health checks replace the assumed-healthy stub
+- Bumped `go-redis` -> v9.7.3 and `golang.org/x/net` -> v0.53.0 (govulncheck-flagged CVEs)
+
 ### Added — Phase 5: Documentation & Community
 - Comprehensive user manual (14 chapters) covering all platform features
 - Production operations guide: deployment, monitoring, backup/restore, upgrade, DR

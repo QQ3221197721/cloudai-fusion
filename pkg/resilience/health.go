@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // ============================================================================
@@ -446,17 +449,42 @@ func DatabaseHealthChecker(pingFn func(ctx context.Context) error) HealthChecker
 }
 
 // GRPCHealthChecker returns a health checker for a gRPC service.
-// It performs a gRPC health check using the standard health protocol.
+// It performs a real health check using the standard grpc.health.v1 protocol:
+// it dials the target and calls Health.Check, mapping the response to our
+// HealthStatus. Connection or non-SERVING responses are reported as unhealthy.
 func GRPCHealthChecker(addr string, timeout time.Duration) HealthChecker {
 	return func(ctx context.Context) HealthCheckResult {
-		// In production, this would use:
-		//   grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		//   healthpb.NewHealthClient(conn).Check(ctx, &healthpb.HealthCheckRequest{})
-		//
-		// For now, return serving status with the target address.
+		cctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			return HealthCheckResult{
+				Status:  HealthNotServing,
+				Message: fmt.Sprintf("gRPC dial %s failed: %v", addr, err),
+				Details: map[string]string{"addr": addr},
+			}
+		}
+		defer func() { _ = conn.Close() }()
+
+		resp, err := healthpb.NewHealthClient(conn).Check(cctx, &healthpb.HealthCheckRequest{})
+		if err != nil {
+			return HealthCheckResult{
+				Status:  HealthNotServing,
+				Message: fmt.Sprintf("gRPC health check %s failed: %v", addr, err),
+				Details: map[string]string{"addr": addr},
+			}
+		}
+		if resp.GetStatus() != healthpb.HealthCheckResponse_SERVING {
+			return HealthCheckResult{
+				Status:  HealthNotServing,
+				Message: fmt.Sprintf("gRPC endpoint %s reported %s", addr, resp.GetStatus()),
+				Details: map[string]string{"addr": addr, "grpc_status": resp.GetStatus().String()},
+			}
+		}
 		return HealthCheckResult{
 			Status:  HealthServing,
-			Message: fmt.Sprintf("gRPC endpoint %s assumed healthy (replace with real grpc.health.v1 check)", addr),
+			Message: fmt.Sprintf("gRPC endpoint %s serving", addr),
 			Details: map[string]string{"addr": addr},
 		}
 	}

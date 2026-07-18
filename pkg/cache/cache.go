@@ -46,6 +46,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 )
 
 // ============================================================================
@@ -350,28 +352,32 @@ type redisCache struct {
 }
 
 // NewRedisCache creates a Redis-backed cache.
-// Falls back to in-memory if Redis is unavailable.
+// It connects to Redis via go-redis; if Redis is unavailable it falls back to
+// an in-memory cache and registers a "simulated" capability (rejected at boot
+// under run_mode=production).
 func NewRedisCache(cfg Config, logger *logrus.Logger) Cache {
 	if logger == nil {
 		logger = logrus.StandardLogger()
 	}
 
-	rc := &redisCache{
+	// Prefer the real Redis backend.
+	if client, err := newRedisClient(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB); err == nil {
+		_ = capability.Report("cache", "redis", capability.ModeReal, cfg.RedisAddr)
+		logger.WithField("addr", cfg.RedisAddr).Info("Redis cache connected")
+		return &redisRealCache{client: client, prefix: cfg.KeyPrefix, logger: logger, stats: CacheStats{Backend: "redis"}}
+	} else {
+		_ = capability.Report("cache", "memory", capability.ModeSimulated,
+			fmt.Sprintf("redis unavailable at %q: %v", cfg.RedisAddr, err))
+		logger.WithField("addr", cfg.RedisAddr).Warn("Redis cache unavailable — using in-memory fallback")
+	}
+
+	return &redisCache{
 		addr:     cfg.RedisAddr,
 		prefix:   cfg.KeyPrefix,
 		logger:   logger,
 		stats:    CacheStats{Backend: "redis"},
 		fallback: NewMemoryCache(cfg, logger).(*memoryCache),
 	}
-
-	// NOTE: In production, initialize with:
-	//   rc.client = redis.NewClusterClient(&redis.ClusterOptions{
-	//       Addrs: cfg.RedisClusterAddrs,
-	//   })
-	// For now, use in-memory fallback.
-	logger.WithField("addr", cfg.RedisAddr).Info("Redis cache initialized (fallback mode — add go-redis dependency)")
-
-	return rc
 }
 
 func (c *redisCache) Get(ctx context.Context, key string) ([]byte, error) {
@@ -766,28 +772,29 @@ type redisLock struct {
 	logger   *logrus.Logger
 }
 
-// NewRedisLock creates a Redis-backed distributed lock.
-// In production, replace the fallback with a real Redis client:
-//
-//	client := redis.NewClient(&redis.Options{Addr: addr})
-//	// Acquire: client.SetNX(ctx, prefix+key, ownerID, ttl)
-//	// Release: Lua script — if redis.call("get",KEYS[1])==ARGV[1] then redis.call("del",KEYS[1])
-//	// Renew:   Lua script — if redis.call("get",KEYS[1])==ARGV[1] then redis.call("pexpire",KEYS[1],ARGV[2])
-func NewRedisLock(addr, prefix, ownerID string, logger *logrus.Logger) DistributedLock {
+// NewRedisLock creates a Redis-backed distributed lock (SET NX + owner-checked
+// Lua release/renew). Falls back to an in-memory lock and registers a
+// "simulated" capability when Redis is unavailable.
+func NewRedisLock(addr, password string, db int, prefix, ownerID string, logger *logrus.Logger) DistributedLock {
 	if logger == nil {
 		logger = logrus.StandardLogger()
 	}
-	rl := &redisLock{
+	if client, err := newRedisClient(addr, password, db); err == nil {
+		_ = capability.Report("lock", "redis", capability.ModeReal, addr)
+		logger.WithField("addr", addr).Info("Redis distributed lock connected")
+		return &redisRealLock{client: client, prefix: prefix + "lock:", ownerID: ownerID}
+	} else {
+		_ = capability.Report("lock", "memory", capability.ModeSimulated,
+			fmt.Sprintf("redis unavailable at %q: %v", addr, err))
+		logger.WithField("addr", addr).Warn("Redis lock unavailable — using in-memory fallback")
+	}
+	return &redisLock{
 		addr:     addr,
 		prefix:   prefix + "lock:",
 		ownerID:  ownerID,
 		fallback: NewMemoryLock(ownerID),
 		logger:   logger,
 	}
-	// NOTE: In production, initialize Redis client here.
-	// For now, use in-memory fallback.
-	logger.WithField("addr", addr).Info("Redis lock initialized (fallback mode — add go-redis dependency)")
-	return rl
 }
 
 func (r *redisLock) Acquire(ctx context.Context, key string, ttl time.Duration) (bool, error) {
@@ -916,24 +923,25 @@ type redisPubSub struct {
 	logger   *logrus.Logger
 }
 
-// NewRedisPubSub creates a Redis-backed pub/sub.
-// In production, replace the fallback with a real Redis client:
-//
-//	client := redis.NewClient(&redis.Options{Addr: addr})
-//	// Publish: client.Publish(ctx, prefix+channel, message)
-//	// Subscribe: client.Subscribe(ctx, prefix+channel)
-func NewRedisPubSub(addr, prefix string, logger *logrus.Logger) PubSub {
+// NewRedisPubSub creates a Redis-backed pub/sub. Falls back to in-memory
+// channels and registers a "simulated" capability when Redis is unavailable.
+func NewRedisPubSub(addr, password string, db int, prefix string, logger *logrus.Logger) PubSub {
 	if logger == nil {
 		logger = logrus.StandardLogger()
 	}
-	rps := &redisPubSub{
+	if client, err := newRedisClient(addr, password, db); err == nil {
+		_ = capability.Report("pubsub", "redis", capability.ModeReal, addr)
+		logger.WithField("addr", addr).Info("Redis PubSub connected")
+		return &redisRealPubSub{client: client, prefix: prefix + "pubsub:"}
+	}
+	_ = capability.Report("pubsub", "memory", capability.ModeSimulated, addr)
+	logger.WithField("addr", addr).Warn("Redis PubSub unavailable — using in-memory fallback")
+	return &redisPubSub{
 		addr:     addr,
 		prefix:   prefix + "pubsub:",
 		fallback: NewMemoryPubSub(),
 		logger:   logger,
 	}
-	logger.WithField("addr", addr).Info("Redis PubSub initialized (fallback mode — add go-redis dependency)")
-	return rps
 }
 
 func (r *redisPubSub) Publish(ctx context.Context, channel string, message []byte) error {
@@ -961,8 +969,9 @@ func (r *redisPubSub) Close() error {
 func NewDistributedLock(cfg Config, ownerID string, logger *logrus.Logger) DistributedLock {
 	switch cfg.Backend {
 	case "redis", "multi":
-		return NewRedisLock(cfg.RedisAddr, cfg.KeyPrefix, ownerID, logger)
+		return NewRedisLock(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB, cfg.KeyPrefix, ownerID, logger)
 	default:
+		_ = capability.Report("lock", "memory", capability.ModeSimulated, "backend=memory (single-instance only)")
 		return NewMemoryLock(ownerID)
 	}
 }
@@ -971,8 +980,9 @@ func NewDistributedLock(cfg Config, ownerID string, logger *logrus.Logger) Distr
 func NewPubSub(cfg Config, logger *logrus.Logger) PubSub {
 	switch cfg.Backend {
 	case "redis", "multi":
-		return NewRedisPubSub(cfg.RedisAddr, cfg.KeyPrefix, logger)
+		return NewRedisPubSub(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB, cfg.KeyPrefix, logger)
 	default:
+		_ = capability.Report("pubsub", "memory", capability.ModeSimulated, "backend=memory (single-instance only)")
 		return NewMemoryPubSub()
 	}
 }

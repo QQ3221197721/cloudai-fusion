@@ -73,13 +73,20 @@ severity scoring:
 
 - JWT-based authentication with configurable token expiration
 - **Production JWT secret enforcement**: minimum 32 characters, high entropy required; API server **refuses to start** in production with weak/default secrets
-- Role-Based Access Control (RBAC) with four roles: `admin`, `operator`, `viewer`, `auditor`
+- Role-Based Access Control (RBAC) with four roles: `admin`, `operator`, `developer`, `viewer` (20+ permissions)
+- Token refresh validates a currently-valid token and re-issues for that **verified** identity/role (no fabricated identities)
 - OIDC cross-cloud identity federation with:
   - JWKS caching with configurable TTL and automatic rotation
   - Token Refresh flow (automatic re-authentication)
   - JIT (Just-In-Time) user provisioning from OIDC claims
   - Token Revocation / Logout endpoint
 - bcrypt password hashing with configurable cost factor
+
+### Run-Mode & Capability Enforcement
+
+- A process-wide `run_mode` (`simulation` / `degraded` / `production`) governs whether simulated/in-memory backends are permitted.
+- In **production**, any subsystem that can only offer a simulated backend causes the API server to **refuse to boot** (`capability.Enforce()`), preventing silent operation on non-durable fakes.
+- `GET /api/v1/capabilities` exposes, per subsystem, whether it is backed by a **real** dependency or a **simulated** fallback; `/readyz` fails readiness on simulated backends in production.
 
 ### Network Security
 
@@ -109,12 +116,27 @@ severity scoring:
 - Seccomp profile: `RuntimeDefault`
 - No privilege escalation (`allowPrivilegeEscalation: false`)
 
-### Supply Chain Security
+### Supply Chain Security (DevSecOps)
 
-- Signed container images (Cosign)
-- SBOM generation for each release
-- Dependency vulnerability scanning (Trivy, Grype)
-- GitHub Dependabot enabled for automated dependency updates
+CI (`.github/workflows/ci.yml`) and the dedicated security pipeline
+(`.github/workflows/devsecops.yml`) enforce, on every push/PR and weekly:
+
+- **SAST**: `gosec` (Go) with results uploaded to GitHub code scanning (SARIF)
+- **Dependency vulnerabilities**: `govulncheck` (Go, reachability-aware), `pip-audit` (Python), GitHub Dependency Review (PR gate)
+- **Secret scanning**: `gitleaks` (full history; allowlist for documented demo values in `.gitleaks.toml`)
+- **Semantic analysis**: CodeQL (Go)
+- **IaC / container config**: Trivy (filesystem + config)
+- **SBOM**: Syft (SPDX) per build
+- **Image signing**: **cosign keyless** (Sigstore -> Fulcio -> Rekor transparency log), signed by image digest
+- **Provenance**: BuildKit **SLSA provenance** + **SLSA Level 3** attestation via the trusted `slsa-github-generator` reusable workflow
+- **Dependency updates**: Dependabot (gomod, pip, github-actions, docker)
+
+Verify published artifacts locally:
+
+```bash
+make verify-signatures   # cosign keyless signatures on all 4 images
+make verify-provenance   # SLSA provenance (requires slsa-verifier)
+```
 
 ### Secrets Management
 

@@ -4,6 +4,41 @@ Base URL: `http://localhost:8080`
 
 All protected endpoints require a JWT token in the `Authorization: Bearer <token>` header.
 
+## Platform Status & Run Mode
+
+The platform never silently fakes a backend. A `run_mode` (`simulation` / `degraded` /
+`production`) controls whether simulated in-memory fallbacks are allowed; in `production`
+the server refuses to boot on any simulated backend.
+
+### Capabilities (no auth)
+
+```
+GET /api/v1/capabilities
+```
+
+Returns each subsystem's backing mode (real vs simulated) and the active run mode:
+
+```json
+{
+  "run_mode": "degraded",
+  "all_real": false,
+  "simulated_count": 1,
+  "backends": [
+    {"component": "messaging.producer", "mode": "simulated", "driver": "memory", "detail": "..."}
+  ]
+}
+```
+
+### Health & Readiness (no auth)
+
+```
+GET /healthz     # liveness
+GET /readyz      # readiness; returns 503 in production if any backend is simulated
+```
+
+> Token refresh (`POST /api/v1/auth/refresh`) requires a currently-valid bearer token and
+> re-issues a token for that **verified** identity/role.
+
 ## Authentication
 
 ### Login

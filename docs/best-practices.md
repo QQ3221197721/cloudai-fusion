@@ -2,6 +2,12 @@
 
 > **Purpose**: Production-proven patterns for getting the most out of CloudAI Fusion
 
+> **Run in `production` mode.** `CLOUDAI_RUN_MODE=production` forbids simulated backends
+> — the platform fails fast rather than running on non-durable in-memory fakes. Back
+> every dependency (PostgreSQL, Redis, NATS/Kafka, Kubernetes) with a real service and
+> verify via `GET /api/v1/capabilities`. Deploy only signed, provenance-attested images
+> (cosign + SLSA); gate releases on `make verify-signatures` / `make verify-provenance`.
+
 ## Table of Contents
 
 - [1. GPU Scheduling Best Practices](#1-gpu-scheduling-best-practices)

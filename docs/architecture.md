@@ -1,5 +1,31 @@
 # Architecture Overview
 
+## Design principle: honesty over illusion
+
+CloudAI Fusion is built so that **no subsystem can silently pretend a simulated
+backend is a real one.** Every external-dependency boundary resolves a *real* driver
+when the dependency is reachable, and otherwise falls back to an in-memory simulation
+that is **registered and reported**. A process-wide policy (`run_mode`) decides whether
+simulation is acceptable.
+
+```
+                         ┌──────────────────────────────────────────┐
+   config.run_mode  ───▶ │ runmode:  simulation | degraded | production│
+   (env/file/flag)       └───────────────┬──────────────────────────┘
+                                          │ policy
+        ┌─────────────────────────────────┼─────────────────────────────────┐
+        ▼                                 ▼                                 ▼
+ ┌──────────────┐              ┌────────────────────┐            ┌────────────────────┐
+ │ per-subsystem │  Report(...) │ capability.Registry │  gate      │ /readyz +           │
+ │ factories     │─────────────▶│ {component,mode,    │──────────▶ │ /api/v1/capabilities│
+ │ (cache, msg,  │  real|sim    │  driver, detail}    │            │ + boot Enforce()    │
+ │  election...) │              └────────────────────┘            └────────────────────┘
+```
+
+- **`pkg/runmode`** — the operating mode. `production` forbids simulated backends.
+- **`pkg/capability`** — a registry each factory reports into; `Enforce()` aborts a
+  production boot if any subsystem is simulated; `Snapshot()` powers `/api/v1/capabilities`.
+
 ## System Architecture
 
 ```
@@ -10,6 +36,7 @@
                              │ HTTPS / gRPC
 ┌────────────────────────────▼─────────────────────────────────────────┐
 │                        API Server (Go/Gin)                            │
+│  runmode policy + capability registry (real-vs-simulated enforcement) │
 │  ┌──────────┬──────────┬──────────┬──────────┬──────────┬─────────┐ │
 │  │   Auth   │  Cloud   │ Cluster  │ Workload │ Security │  Cost   │ │
 │  │  (JWT+   │ Provider │ Manager  │ Lifecycle│ Manager  │ Analyst │ │
@@ -19,198 +46,110 @@
       │              │              │              │
 ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼──────────────▼─────────────────┐
 │ Scheduler │ │   Agent   │ │           AI Engine (FastAPI)          │
-│(GPU-aware)│ │(DaemonSet)│ │ ┌──────────┬──────────┬────────────┐ │
-│           │ │           │ │ │ Schedule │Security  │    Cost     │ │
-│ Topology  │ │  Metrics  │ │ │  Agent   │  Agent   │   Agent    │ │
-│ RL Optim  │ │ Collector │ │ ├──────────┴──────────┴────────────┤ │
-│ MPS/MIG   │ │ DCGM+node │ │ │ Operations Agent (LLM-driven)   │ │
-└─────┬─────┘ └─────┬─────┘ │ ├─────────────────────────────────┤ │
-      │              │       │ │ LLM Client Abstraction Layer    │ │
-      │              │       │ │ OpenAI │ DashScope │ Ollama     │ │
-      │              │       │ └─────────────────────────────────┘ │
-      │              │       └───────────────────────────────┬─────┘
+│(GPU-aware)│ │(DaemonSet)│ │  Schedule / Security / Cost / Ops      │
+│ Topology  │ │  Metrics  │ │  agents + LLM client (rule fallback)   │
+│ RL Optim  │ │ DCGM+node │ │                                        │
+└─────┬─────┘ └─────┬─────┘ └───────────────────────────────┬───────┘
       │              │                                       │
 ┌─────▼──────────────▼───────────────────────────────────────▼─────────┐
-│                      Kubernetes Clusters                              │
-│  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────────┐  │
-│  │  Alibaba    │  │    AWS EKS   │  │  Azure AKS / GCP GKE /    │  │
-│  │  Cloud ACK  │  │              │  │  Huawei CCE / Tencent TKE  │  │
-│  └─────────────┘  └──────────────┘  └────────────────────────────┘  │
+│   Kubernetes (client-go)  │  Multi-cloud SDKs (EKS/ACK/AKS/GKE/...)   │
 └──────────────────────────────────────────────────────────────────────┘
       │
 ┌─────▼────────────────────────────────────────────────────────────────┐
-│                        Data Layer                                     │
-│  ┌────────────┐  ┌──────────┐  ┌──────────┐  ┌───────┐  ┌───────────────────┐  │
-│  │ PostgreSQL │  │  Redis   │  │  Kafka   │  │ NATS  │  │   Prometheus      │  │
-│  │  (GORM)    │  │ (Cache)  │  │ (Events) │  │(RT Msg)│  │   (Metrics TSDB)  │  │
-│  └────────────┘  └──────────┘  └──────────┘  └───────┘  └───────────────────┘  │
+│  Data / messaging layer (real driver when reachable, else simulated)  │
+│  PostgreSQL (GORM) │ Redis (go-redis) │ Kafka (sarama) │ NATS (nats.go)│
+│  Prometheus (metrics) │ Kubernetes Lease (leader election)            │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Component Details
 
 ### API Server (`cmd/apiserver`)
-- **Framework**: Go + Gin
-- **Responsibilities**: REST API gateway, request routing, authentication, authorization
-- **Key packages**: `pkg/api`, `pkg/auth`, `pkg/cloud`, `pkg/cluster`, `pkg/workload`
+- **Framework**: Go + Gin. Establishes the run-mode policy at startup and calls
+  `capability.Enforce()` before serving (fail-fast in production).
+- **Key packages**: `pkg/api`, `pkg/auth`, `pkg/runmode`, `pkg/capability`, `pkg/cloud`,
+  `pkg/cluster`, `pkg/workload`, `pkg/election`, `pkg/messaging`.
+- **Auth**: JWT + RBAC (4 roles). Token refresh validates a real, verified token identity
+  and re-issues for that user/role (no fabricated identities).
 
-### Scheduler (`cmd/scheduler`)
-- **Framework**: Go
-- **Responsibilities**: GPU topology-aware scheduling, NVLink affinity, preemption, RL optimization
-- **Key packages**: `pkg/scheduler` (engine, gpu_topology, rl_optimizer, gpu_sharing)
-- **GPU Topology**: nvidia-smi topo matrix discovery, NVLink bandwidth estimation
-- **RL Optimization**: Q-learning tabular optimizer (24 actions × 5D state space, epsilon-greedy)
-- **GPU Sharing**: NVIDIA MPS (multi-process service) and MIG (multi-instance GPU) CLI integration
+### Scheduler (`cmd/scheduler`, `pkg/scheduler`)
+- GPU topology-aware scheduling, NVLink affinity, preemption, RL (Q-learning) scoring.
+- **Node source**: watch cache → live Kubernetes API. In `production`, if no real node
+  source is connected the scheduler returns **no** candidates (it never fabricates nodes);
+  outside production it may use labeled simulated candidates, reported as `scheduler.nodes=simulated`.
 
-### Agent (`cmd/agent`)
-- **Framework**: Go + Cobra
-- **Responsibilities**: Node-level operations, metrics collection, AI-driven insights
-- **Key packages**: `pkg/agent`
-- **Integration**: NVIDIA DCGM exporter, node_exporter (Prometheus format), 3-tier data source chain
+### Agent (`cmd/agent`, `pkg/agent`)
+- Node metrics (NVIDIA DCGM + node_exporter), AI-driven insights, 3-tier data source chain.
 
 ### AI Engine (`ai/`)
-- **Framework**: Python + FastAPI
-- **Responsibilities**: 4 AI agents (scheduling, security, cost, operations), LLM integration, chat assistant
-- **Key modules**:
-  - `ai/agents/llm_client.py` -- Unified LLM client (OpenAI/DashScope/Ollama/vLLM) with 3-strategy JSON parsing
-  - `ai/agents/fine_tuning.py` -- Domain-specific LLM fine-tuning pipeline (OpenAI/DashScope/LoRA)
-  - `ai/agents/operations_agent.py` -- LLM-powered incident analysis with rule-based runbook fallback
-  - `ai/agents/server.py` -- Multi-agent FastAPI server with all endpoints
-  - `ai/anomaly/detector.py` -- Ensemble anomaly detection (Z-score, IQR, EMA, RoC)
-  - `ai/scheduler/train.py` -- RL scheduling model trainer
-  - `ai/tracing.py` -- OpenTelemetry W3C Trace Context propagation (cross-language with Go)
+- Python + FastAPI. 4 agents (scheduling, security, cost, operations) + chat.
+- **LLM**: OpenAI / DashScope / Ollama / vLLM via a unified client with priority fallback.
+- **ML**: PyTorch / stable-baselines3 are **optional** (guarded by `try/except ImportError`);
+  the default runtime uses NumPy heuristics (Z-score/IQR/EMA anomaly, tabular Q-learning).
+- **Honesty**: `GET /api/v1/models/status` reports exactly which models/LLMs are active
+  versus rule-based.
 
-## LLM Integration Architecture
+## Real-vs-Simulated Matrix
 
-```
-┌──────────────────────────────────────────────────────┐
-│                    LLM Client                         │
-│  ┌─────────┐  ┌───────────┐  ┌────────┐  ┌───────┐ │
-│  │ OpenAI  │  │ DashScope │  │ Ollama │  │ vLLM  │ │
-│  │ GPT-4o  │  │ Qwen-Max  │  │ Local  │  │ Self- │ │
-│  │         │  │           │  │ Models │  │ host  │ │
-│  └────┬────┘  └─────┬─────┘  └───┬────┘  └───┬───┘ │
-│       │             │            │            │      │
-│       └─────────────┴────────────┴────────────┘      │
-│              Priority-based Provider Chain            │
-│              (auto-fallback on failure)               │
-└──────────────┬────────────────────────┬──────────────┘
-               │                        │
-  ┌────────────▼────┐      ┌────────────▼────────────┐
-  │ Prompt Templates │      │  Structured JSON Output  │
-  │ - scheduling     │      │  - 3-strategy parsing:   │
-  │ - security       │      │    1. Direct JSON parse  │
-  │ - cost           │      │    2. Regex code block   │
-  │ - operations     │      │       extraction         │
-  │ - insights       │      │    3. Bracket-based find │
-  │ - chat           │      │  - response_format:      │
-  └─────────────────┘      │    json_object           │
-                            └──────────────────────────┘
-```
+| Subsystem | Real driver | Simulated fallback | Prod behavior |
+|-----------|-------------|--------------------|---------------|
+| Database | PostgreSQL / GORM | (none — degrades) | login/register need DB |
+| Cache/Lock/PubSub | Redis (`go-redis`) | in-memory | must be real |
+| Messaging | NATS (`nats.go`) / Kafka (`sarama`) | in-memory | must be real |
+| Leader election | K8s `Lease` (`client-go`) | in-memory single-node | must be real |
+| Kubernetes nodes | `client-go` | labeled sim nodes | **no fake nodes**; returns none |
+| Cloud | 6 official SDKs | stub mode (no creds) | needs creds |
+| GitOps | ArgoCD REST | simulated (Flux TBD) | must be real |
+| AI/LLM | OpenAI/DashScope/Ollama/vLLM + torch | heuristics | honest via `/models/status` |
 
-**Graceful Degradation**: When no LLM backend responds, every agent falls back to rule-based logic:
-- Scheduling: multi-factor scoring only (no LLM reasoning)
-- Security: threshold-based detection only (no threat analysis)
-- Cost: rule-based recommendations (spot, GPU sharing, reserved)
-- Operations: 6 built-in runbooks (gpu_failure, node_pressure, pod_crash, oom, network, default)
-- Insights: data-driven rule generation (not hardcoded)
-- Chat: keyword-matching response
-
-## GPU Scheduling Architecture (VP3)
-
-```
-                    Workload Request
-                         │
-                ┌────────▼────────┐
-                │  Priority Queue  │
-                │  (preemption)    │
-                └────────┬────────┘
-                         │
-              ┌──────────▼──────────┐
-              │  Candidate Nodes    │
-              │  (K8s API query)    │
-              └──────────┬──────────┘
-                         │
-         ┌───────────────┼───────────────┐
-         │               │               │
-    ┌────▼────┐   ┌──────▼──────┐  ┌─────▼─────┐
-    │Multi-   │   │ GPU Topology│  │    RL      │
-    │Factor   │   │ NVLink/NVS  │  │ Q-learning │
-    │Scoring  │   │ Bandwidth   │  │ Optimizer  │
-    └────┬────┘   └──────┬──────┘  └─────┬─────┘
-         │               │               │
-         └───────────────┼───────────────┘
-                         │
-              ┌──────────▼──────────┐
-              │  GPU Sharing Check  │
-              │  MPS / MIG / None   │
-              └──────────┬──────────┘
-                         │
-              ┌──────────▼──────────┐
-              │  Real Utilization   │
-              │  nvidia-smi → K8s   │
-              │  API → fallback     │
-              └──────────┬──────────┘
-                         │
-                   ScheduleResult
-```
+Anything that can only be simulated (etcd election, Flux, cross-cluster failover,
+in-memory Raft) is **blocked by `capability.Enforce()` in production**.
 
 ## Data Flow
 
-1. **User Request** → API Server (JWT auth) → Route to handler
-2. **Workload Submit** → Store in PostgreSQL → Queue for Scheduler
-3. **Scheduling** → Read K8s nodes → GPU topology + RL + multi-factor score → Bind Pod
-4. **Monitoring** → Agent collects GPU/CPU metrics via DCGM → Prometheus scrapes → Grafana displays
-5. **AI Insights** → AI Engine analyzes metrics → LLM reasoning (or rule fallback) → API serves to user
-6. **Incident Response** → Operations Agent → LLM root cause analysis → Remediation script → Runbook fallback
-7. **Chat** → User message → LLM chat completion → Keyword fallback if unavailable
+1. **Request** → API Server (JWT auth, RBAC) → handler.
+2. **Boot** → each factory resolves a real driver or a reported simulation → `Enforce()`
+   aborts the boot in production if anything is simulated.
+3. **Workload submit** → persisted in PostgreSQL → queued for the Scheduler.
+4. **Scheduling** → live K8s nodes → GPU topology + RL + multi-factor score → bind Pod.
+5. **Messaging** → NATS/Kafka producer (or reported in-memory) for async commands/events.
+6. **HA** → Kubernetes Lease leader election; only the leader runs reconciliation loops.
+7. **AI insights / incidents / chat** → AI Engine → LLM reasoning or honest rule fallback.
 
 ## Security Architecture
 
-- **Authentication**: JWT tokens with configurable expiry, production-enforced entropy validation
-- **Authorization**: RBAC with 4 roles (admin, operator, developer, viewer) and 20+ permissions
-- **OIDC Federation**: Cross-cloud identity via Discovery + Token Exchange + JWKS rotation + JIT provisioning
-- **Network**: eBPF/Cilium service mesh with mTLS
-- **Compliance**: CIS K8s Benchmark checks (via K8s API), pod security policies
-- **Vulnerability Scanning**: Trivy/Grype CLI integration for container images
-- **Threat Detection**: Rule-based engine with MITRE ATT&CK framework mapping
-- **Audit Logging**: DB-persisted audit trail with event correlation
+- **AuthN**: JWT with configurable expiry; production-enforced entropy validation.
+- **AuthZ**: RBAC (admin/operator/developer/viewer) with 20+ permissions.
+- **OIDC federation**: Discovery + token exchange + JWKS rotation + JIT provisioning.
+- **Network**: eBPF/Cilium service mesh with mTLS (metrics via Hubble when available).
+- **Compliance / threats**: CIS K8s checks, rule-based threat engine (MITRE ATT&CK mapping).
+- **Audit**: DB-persisted audit trail.
+- **gRPC health**: real `grpc.health.v1` checks (no assumed-healthy stub).
 
-### Debug Endpoint Security (Defense in Depth)
+### Debug endpoint defense-in-depth
 
-All `/debug/*` endpoints are protected by 6 layers:
+`/debug/*` is disabled unless `CLOUDAI_DEBUG_ENABLED=true`, then requires JWT + admin role,
+optional IP allowlist, audit logging, and pprof rate limiting.
 
-| Layer | Mechanism | Configuration |
-|-------|-----------|---------------|
-| 1. Safe Default | Disabled unless `CLOUDAI_DEBUG_ENABLED=true` | Environment variable |
-| 2. JWT Authentication | Same `AuthMiddleware()` as `/api/v1/*` | Bearer token required |
-| 3. Admin Role | Only `role=admin` users allowed | RBAC enforcement |
-| 4. IP Allowlist | Optional CIDR/IP network restriction | `CLOUDAI_DEBUG_ALLOWED_IPS` |
-| 5. Audit Log | All access logged with user identity | stderr output |
-| 6. Rate Limiting | pprof endpoints limited to ~2 req/min | Token bucket (anti-DoS) |
+## Supply-Chain Security (DevSecOps)
+
+- **CI** (`.github/workflows/ci.yml`): build/test/lint, Trivy fs scan, image build to GHCR.
+- **Security pipeline** (`.github/workflows/devsecops.yml`): gosec, govulncheck, CodeQL,
+  gitleaks, pip-audit, Trivy config, Syft SBOM, dependency review.
+- **Signing & provenance**: images are signed with **cosign (keyless, Sigstore/Rekor)** by
+  digest; **BuildKit SLSA provenance + SBOM** are attached; **SLSA Level 3** provenance is
+  generated by the trusted `slsa-github-generator` reusable workflow.
+- **Verification**: `make verify-signatures` (cosign) and `make verify-provenance` (slsa-verifier).
 
 ## Feature Toggle System
 
-Runtime feature flags allow modular deployment:
-
-```yaml
-# cloudai-fusion.yaml
-features:
-  profile: standard          # minimal | standard | full
-  edge_computing: true
-  service_mesh: true
-  wasm_runtime: false         # opt-in
-  finops: true
-```
-
-API: `GET /api/v1/features`, `PUT /api/v1/features/:key`
+Runtime feature flags (`GET /api/v1/features`, `PUT /api/v1/features/:key`) with
+profiles `minimal | standard | full` allow modular deployment.
 
 ## Container Image Optimization
 
-| Image | Base | Size | Key Technique |
-|-------|------|------|---------------|
-| apiserver | `distroless/static` | ~15MB | CGO_ENABLED=0, no shell |
-| scheduler | `distroless/static` | ~12MB | Static binary, nonroot user |
-| agent | `distroless/static` | ~10MB | Static binary, nonroot user |
-| ai-engine (CPU) | `python:3.11-slim` | ~900MB | Multi-stage, venv-only copy |
-| ai-engine (GPU) | `nvidia/cuda:12.4.1-base` | ~2-3GB | PyTorch bundles CUDA, no cudnn-runtime |
+| Image | Base | Notes |
+|-------|------|-------|
+| apiserver / scheduler / agent | `distroless/static` | `CGO_ENABLED=0`, static, nonroot |
+| ai-engine (CPU) | `python:3.11-slim` | multi-stage, venv-only copy |
+| ai-engine (GPU) | `nvidia/cuda:12.4.1-base` | PyTorch bundles CUDA |

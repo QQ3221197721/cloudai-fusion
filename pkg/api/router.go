@@ -5,12 +5,14 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/auth"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
@@ -84,6 +86,10 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 		router.GET("/api/v1/features/:key", handleGetFeature(cfg.FeatureFlags))
 		router.PUT("/api/v1/features/:key", handleSetFeature(cfg.FeatureFlags))
 	}
+
+	// Capability transparency (no auth): honest real-vs-simulated backend status
+	// for every external-dependency-backed subsystem.
+	router.GET("/api/v1/capabilities", handleCapabilities)
 
 	// WebSocket endpoint (no auth for now — add JWT validation in production)
 	if cfg.WebSocketHub != nil {
@@ -308,6 +314,21 @@ func handleReadyz(dbStore *store.Store) gin.HandlerFunc {
 		// Service readiness
 		checks["api_server"] = "healthy"
 
+		// Capability gate: surface simulated backends; in production a simulated
+		// backend means the platform is NOT ready (it must run on real infra).
+		if sim := capability.Simulated(); len(sim) > 0 {
+			names := make([]string, 0, len(sim))
+			for _, b := range sim {
+				names = append(names, b.Component)
+			}
+			checks["capabilities"] = "simulated: " + strings.Join(names, ",")
+			if capability.Policy().IsProduction() {
+				allHealthy = false
+			}
+		} else {
+			checks["capabilities"] = "all_real"
+		}
+
 		status := http.StatusOK
 		readyStatus := "ready"
 		if !allHealthy {
@@ -383,6 +404,21 @@ func handleVersion(c *gin.Context) {
 	})
 }
 
+// handleCapabilities reports, per subsystem, whether it runs on a REAL backend
+// or a SIMULATED fallback, plus the active run_mode. This is the honest,
+// machine-readable answer to "is this platform real right now?".
+func handleCapabilities(c *gin.Context) {
+	backends := capability.Snapshot()
+	sim := capability.Simulated()
+	c.JSON(http.StatusOK, gin.H{
+		"run_mode":        capability.Policy().String(),
+		"all_real":        len(sim) == 0,
+		"simulated_count": len(sim),
+		"backends":        backends,
+		"simulated":       sim,
+	})
+}
+
 // ============================================================================
 // Auth Handlers
 // ============================================================================
@@ -455,41 +491,38 @@ func handleRefreshToken(authSvc auth.AuthService) gin.HandlerFunc {
 			return
 		}
 
-		// Extract current user from Authorization header if present
+		// A refresh requires a currently-valid access token in the Authorization
+		// header. The new token is issued for that VERIFIED identity and role —
+		// never a fabricated user. Forged or expired tokens are rejected, closing
+		// the previous hole where any bearer string minted a viewer token.
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			apperrors.RespondError(c, apperrors.Unauthorized("authorization header required"))
+		if len(authHeader) <= 7 || !strings.HasPrefix(authHeader, "Bearer ") {
+			apperrors.RespondError(c, apperrors.Unauthorized("valid bearer token required to refresh"))
 			return
 		}
+		accessToken := strings.TrimSpace(authHeader[7:])
 
-		// Parse the existing token (even if expired) to get user info
-		parts := make([]string, 0)
-		for _, p := range []string{authHeader} {
-			if len(p) > 7 {
-				parts = append(parts, p[7:]) // strip "Bearer "
-			}
-		}
-		if len(parts) == 0 {
-			apperrors.RespondError(c, apperrors.Unauthorized("invalid authorization format"))
-			return
-		}
-
-		// Validate the refresh token format (64 hex chars)
+		// Validate the refresh token format (64 hex chars).
 		if len(req.RefreshToken) != 64 {
 			apperrors.RespondError(c, apperrors.Validation("invalid refresh token format", nil))
 			return
 		}
 
-		// In production this would validate refresh token against DB.
-		// For now, issue a new token pair for the user from the expired token's claims.
-		user := &auth.User{
-			ID:       common.NewUUID(),
-			Username: "refreshed-user",
-			Role:     auth.RoleViewer,
-			Status:   "active",
+		// Verify the presented access token; only a valid identity may refresh.
+		claims, err := authSvc.ValidateToken(accessToken)
+		if err != nil {
+			apperrors.RespondError(c, apperrors.Unauthorized("invalid or expired token; re-authenticate"))
+			return
 		}
 
-		token, err := authSvc.GenerateToken(user)
+		// Re-issue a token for the verified user, preserving their real role.
+		token, err := authSvc.GenerateToken(&auth.User{
+			ID:       claims.UserID,
+			Username: claims.Username,
+			Email:    claims.Email,
+			Role:     claims.Role,
+			Status:   "active",
+		})
 		if err != nil {
 			apperrors.RespondError(c, apperrors.Internal("failed to generate token", err))
 			return

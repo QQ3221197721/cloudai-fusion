@@ -19,6 +19,7 @@ import (
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/api"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/auth"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/config"
@@ -109,6 +110,12 @@ func runServer(cmd *cobra.Command, args []string) error {
 		"version":    Version,
 		"git_commit": GitCommit,
 	}).Info("Starting CloudAI Fusion API Server")
+
+	// Establish the run-mode policy that governs simulated-backend enforcement.
+	// In production, subsystems that can only offer a simulated/in-memory backend
+	// cause the process to refuse to boot (see capability.Enforce below).
+	capability.SetPolicy(cfg.EffectiveRunMode())
+	logger.WithField("run_mode", cfg.EffectiveRunMode().String()).Info("Run mode established")
 
 	// Graceful shutdown context using signal.NotifyContext (Problem #8.2)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -556,6 +563,14 @@ func runServer(cmd *cobra.Command, args []string) error {
 	})
 	_ = netPolicyEngine
 	logger.Info("Network policy automation engine initialized")
+
+	// Fail fast: in production, refuse to boot if any initialized subsystem is
+	// backed by a simulation instead of a real dependency. This is the systemic
+	// cure for the previous "boots green on fakes" behavior.
+	if err := capability.Enforce(); err != nil {
+		return fmt.Errorf("startup blocked by run_mode policy: %w", err)
+	}
+	logger.WithField("run_mode", capability.Policy().String()).Info("Run-mode capability check passed")
 
 	// Setup Gin router
 	if cfg.Env == "production" {

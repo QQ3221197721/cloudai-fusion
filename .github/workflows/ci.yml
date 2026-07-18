@@ -18,6 +18,7 @@ permissions:
   contents: read
   packages: write
   security-events: write
+  id-token: write # keyless cosign signing + SLSA provenance (Sigstore OIDC)
 
 jobs:
   # ============================================================================
@@ -167,6 +168,10 @@ jobs:
     name: Docker Build
     runs-on: ubuntu-latest
     needs: [go-build, python-test]
+    permissions:
+      contents: read
+      packages: write # push images to GHCR
+      id-token: write # keyless cosign signing (Sigstore OIDC)
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
     strategy:
       matrix:
@@ -196,7 +201,9 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-      - uses: docker/build-push-action@v5
+      - name: Build and push (with SLSA provenance + SBOM attestations)
+        id: build
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ${{ matrix.dockerfile }}
@@ -205,6 +212,105 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # BuildKit attaches an in-toto SLSA provenance attestation (mode=max:
+          # includes build invocation, materials and steps) and an SBOM to the
+          # image manifest in the registry — the "source of truth" for how the
+          # artifact was built.
+          provenance: mode=max
+          sbom: true
+
+      # ---- Supply chain: keyless cosign signature (Sigstore -> Fulcio -> Rekor) ----
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Sign image by digest (keyless)
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          COSIGN_YES: "true"
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+          echo "::notice::Signed ${IMAGE}@${DIGEST} (keyless; recorded in the Rekor transparency log)"
+      - name: Verify signature (self-check)
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign verify \
+            --certificate-identity-regexp "^https://github.com/${{ github.repository }}/.github/workflows/.+" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE}@${DIGEST}"
+      - name: Inspect SLSA provenance attestation (self-check)
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          docker buildx imagetools inspect "${IMAGE}@${DIGEST}" \
+            --format '{{ json .Provenance }}' | head -c 400 || true
+      - name: Export image digest (for SLSA L3 provenance)
+        run: |
+          mkdir -p /tmp/digests
+          echo "${{ steps.build.outputs.digest }}" > "/tmp/digests/${{ matrix.component }}.txt"
+      - name: Upload digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.component }}
+          path: /tmp/digests/${{ matrix.component }}.txt
+          retention-days: 1
+
+  # ============================================================================
+  # SLSA Level 3 provenance (trusted builder, non-falsifiable)
+  # ============================================================================
+  # The SLSA generator is a reusable workflow and cannot resolve digests itself,
+  # so this job collects the per-component digests emitted by the matrix build
+  # into a single JSON matrix that the generator job fans out over.
+  slsa-matrix:
+    name: SLSA Provenance Matrix
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    outputs:
+      images: ${{ steps.collect.outputs.images }}
+    steps:
+      - name: Download digest artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digest-*
+          path: digests
+          merge-multiple: true
+      - name: Build image/digest matrix
+        id: collect
+        run: |
+          items=""
+          for f in digests/*.txt; do
+            comp="$(basename "$f" .txt)"
+            dig="$(tr -d '[:space:]' < "$f")"
+            [ -z "$dig" ] && continue
+            item="{\"component\":\"$comp\",\"digest\":\"$dig\"}"
+            if [ -z "$items" ]; then items="$item"; else items="$items,$item"; fi
+          done
+          echo "images=[$items]" >> "$GITHUB_OUTPUT"
+
+  # SLSA L3 provenance generation via the trusted reusable builder. It produces
+  # a signed, non-falsifiable provenance attestation and pushes it to GHCR next
+  # to each image (verify with: slsa-verifier verify-image / make verify-provenance).
+  provenance:
+    name: SLSA L3 Provenance
+    needs: slsa-matrix
+    if: needs.slsa-matrix.outputs.images != '[]'
+    permissions:
+      actions: read # read the workflow run for provenance
+      id-token: write # keyless signing of the provenance
+      packages: write # push the provenance to GHCR
+    strategy:
+      matrix:
+        image: ${{ fromJSON(needs.slsa-matrix.outputs.images) }}
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
+    with:
+      image: ghcr.io/${{ github.repository }}/${{ matrix.image.component }}
+      digest: ${{ matrix.image.digest }}
+      registry-username: ${{ github.actor }}
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
 
   # ============================================================================
   # Helm Chart - Lint & Package

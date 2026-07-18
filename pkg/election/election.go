@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 )
 
 // ============================================================================
@@ -180,8 +182,12 @@ func New(cfg Config) (LeaderElector, error) {
 	case "kubernetes":
 		return newKubernetesElector(cfg)
 	case "etcd":
+		_ = capability.Report("election", "memory", capability.ModeSimulated,
+			"etcd backend not linked; using in-memory single-node election")
 		return newEtcdElector(cfg)
 	case "memory", "":
+		_ = capability.Report("election", "memory", capability.ModeSimulated,
+			"in-memory single-node election (not HA)")
 		return newMemoryElector(cfg), nil
 	default:
 		return nil, fmt.Errorf("unknown election backend: %s", cfg.Backend)
@@ -211,22 +217,22 @@ type kubernetesElector struct {
 }
 
 func newKubernetesElector(cfg Config) (LeaderElector, error) {
-	// In production, this would use:
-	//   k8s.io/client-go/tools/leaderelection
-	//   k8s.io/client-go/tools/leaderelection/resourcelock.LeaseLock
-	//
-	// The Lease API workflow:
-	// 1. Create/acquire a Lease object in the target namespace
-	// 2. The holder (leader) periodically renews the Lease
-	// 3. If renewal fails (leader crash), another instance acquires it
-	// 4. The Lease spec contains:
-	//    - holderIdentity: current leader's identity
-	//    - leaseDurationSeconds: TTL
-	//    - acquireTime / renewTime: timestamps
-	//
-	// For now, fall back to memory elector with K8s metadata attached.
-	cfg.Logger.Info("Kubernetes Lease API elector initialized (simulation mode, replace with client-go in production)")
-
+	// Prefer real client-go Lease-based leader election (see kubernetes.go).
+	client, err := buildKubeClient()
+	if err == nil {
+		if e, eerr := newK8sLeaseElector(cfg, client); eerr == nil {
+			_ = capability.Report("election", "kubernetes-lease", capability.ModeReal,
+				"coordination.k8s.io/v1 Lease leader election")
+			cfg.Logger.Info("Kubernetes Lease leader election initialized (client-go)")
+			return e, nil
+		} else {
+			err = eerr
+		}
+	}
+	// No reachable cluster — fall back to single-node memory election, honestly.
+	_ = capability.Report("election", "memory", capability.ModeSimulated,
+		fmt.Sprintf("kubernetes lease unavailable (%v); in-memory single-node election", err))
+	cfg.Logger.WithError(err).Warn("Kubernetes Lease unavailable — using in-memory single-node election")
 	mem := newMemoryElector(cfg)
 	return &kubernetesElector{
 		memoryElector: mem,

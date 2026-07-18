@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 )
 
 // ============================================================================
@@ -304,6 +306,11 @@ func (n *RaftNode) runCandidate(ctx context.Context) {
 		"term": currentTerm,
 	}).Info("Starting election")
 
+	// This Raft implementation simulates peer RPCs (no real gRPC RequestVote).
+	// Record it so run_mode=production refuses to rely on simulated consensus
+	// (use K8s Lease leader election or hashicorp/raft for real HA).
+	_ = capability.Report("consensus.raft", "sim", capability.ModeSimulated,
+		"Raft peer RPCs are simulated; not real distributed consensus")
 	// Request votes from all peers (simulated)
 	votesReceived := 1 // self-vote
 	totalVoters := len(n.config.Peers) + 1

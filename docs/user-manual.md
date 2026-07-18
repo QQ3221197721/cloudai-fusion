@@ -2,6 +2,12 @@
 
 > **Version**: 1.0 | **Last Updated**: March 2026
 
+> **Run modes & transparency**: CloudAI Fusion runs in one of three modes —
+> `simulation` (dev), `degraded` (staging), or `production` (strict). Every subsystem
+> reports whether it is backed by a **real** dependency or a **simulated** in-memory
+> fallback; `GET /api/v1/capabilities` shows this at any time, and in `production` the
+> platform refuses to start on a simulated backend.
+
 ## Table of Contents
 
 - [1. Platform Overview](#1-platform-overview)

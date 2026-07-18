@@ -8,6 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
 
@@ -222,7 +223,36 @@ func (m *Manager) SyncApplication(ctx context.Context, appID string, revision st
 		"environment": app.Environment,
 	}).Info("Sync triggered")
 
-	// Simulate sync based on engine type
+	// Prefer a real GitOps sync. ArgoCD is driven via its REST API when
+	// ARGOCD_SERVER + ARGOCD_AUTH_TOKEN are set; otherwise (and for Flux, which
+	// needs an in-cluster client) we record a simulated sync that
+	// run_mode=production rejects at boot (capability.Enforce).
+	if app.Engine == EngineArgoCD {
+		if client, ok := newArgoCDClientFromEnv(); ok {
+			_ = capability.Report("gitops.sync", "argocd", capability.ModeReal, "ArgoCD REST API")
+			if err := client.Sync(ctx, app.Name, revision); err != nil {
+				app.UpdatedAt = common.NowUTC()
+				return nil, fmt.Errorf("argocd sync failed for %q: %w", app.Name, err)
+			}
+			completed := common.NowUTC()
+			app.SyncStatus = SyncStatusSynced
+			app.HealthStatus = HealthStatusHealthy
+			app.LastSyncedAt = &now
+			app.UpdatedAt = completed
+			return &SyncResult{
+				ApplicationID: appID,
+				Revision:      revision,
+				Status:        SyncStatusSynced,
+				Message:       fmt.Sprintf("ArgoCD sync completed for revision %s", revision),
+				StartedAt:     now,
+				CompletedAt:   completed,
+			}, nil
+		}
+	}
+
+	// No real client configured (or Flux) — simulated sync, reported honestly.
+	_ = capability.Report("gitops.sync", "sim", capability.ModeSimulated,
+		fmt.Sprintf("%s sync simulated; set ARGOCD_SERVER/ARGOCD_AUTH_TOKEN (ArgoCD) or link a Flux client", app.Engine))
 	result := &SyncResult{
 		ApplicationID: appID,
 		Revision:      revision,
@@ -232,9 +262,6 @@ func (m *Manager) SyncApplication(ctx context.Context, appID string, revision st
 		CompletedAt:   common.NowUTC(),
 	}
 
-	// In production, this would call ArgoCD/Flux API:
-	// - ArgoCD: POST /api/v1/applications/{name}/sync
-	// - Flux: kubectl annotate gitrepository <name> reconcile.fluxcd.io/requestedAt=<timestamp>
 	switch app.Engine {
 	case EngineArgoCD:
 		result.Message = fmt.Sprintf("ArgoCD sync completed for revision %s", revision)
