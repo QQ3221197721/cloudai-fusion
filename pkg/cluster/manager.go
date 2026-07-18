@@ -74,21 +74,21 @@ type ClusterHealth struct {
 
 // Node represents a Kubernetes node
 type Node struct {
-	ID              string            `json:"id"`
-	ClusterID       string            `json:"cluster_id"`
-	Name            string            `json:"name"`
-	Role            string            `json:"role"`
-	Status          string            `json:"status"`
-	IPAddress       string            `json:"ip_address"`
-	OSImage         string            `json:"os_image"`
-	KernelVersion   string            `json:"kernel_version"`
-	ContainerRuntime string           `json:"container_runtime"`
-	CPU             ResourceUsage     `json:"cpu"`
-	Memory          ResourceUsage     `json:"memory"`
-	GPU             GPUResourceUsage  `json:"gpu,omitempty"`
-	Labels          map[string]string `json:"labels,omitempty"`
-	Taints          []Taint           `json:"taints,omitempty"`
-	Conditions      []NodeCondition   `json:"conditions,omitempty"`
+	ID               string            `json:"id"`
+	ClusterID        string            `json:"cluster_id"`
+	Name             string            `json:"name"`
+	Role             string            `json:"role"`
+	Status           string            `json:"status"`
+	IPAddress        string            `json:"ip_address"`
+	OSImage          string            `json:"os_image"`
+	KernelVersion    string            `json:"kernel_version"`
+	ContainerRuntime string            `json:"container_runtime"`
+	CPU              ResourceUsage     `json:"cpu"`
+	Memory           ResourceUsage     `json:"memory"`
+	GPU              GPUResourceUsage  `json:"gpu,omitempty"`
+	Labels           map[string]string `json:"labels,omitempty"`
+	Taints           []Taint           `json:"taints,omitempty"`
+	Conditions       []NodeCondition   `json:"conditions,omitempty"`
 }
 
 // ResourceUsage tracks resource allocation and usage
@@ -102,13 +102,13 @@ type ResourceUsage struct {
 
 // GPUResourceUsage tracks GPU-specific resource usage
 type GPUResourceUsage struct {
-	Type           common.GPUType           `json:"type"`
-	Count          int                      `json:"count"`
-	AllocatedCount int                      `json:"allocated_count"`
-	TotalMemory    int64                    `json:"total_memory_bytes"`
-	UsedMemory     int64                    `json:"used_memory_bytes"`
-	Utilization    float64                  `json:"utilization_percent"`
-	Topology       *common.GPUTopologyInfo  `json:"topology,omitempty"`
+	Type           common.GPUType          `json:"type"`
+	Count          int                     `json:"count"`
+	AllocatedCount int                     `json:"allocated_count"`
+	TotalMemory    int64                   `json:"total_memory_bytes"`
+	UsedMemory     int64                   `json:"used_memory_bytes"`
+	Utilization    float64                 `json:"utilization_percent"`
+	Topology       *common.GPUTopologyInfo `json:"topology,omitempty"`
 }
 
 // Taint represents a Kubernetes node taint
@@ -140,7 +140,7 @@ type ImportClusterRequest struct {
 
 // Manager manages Kubernetes clusters across multiple cloud providers
 type Manager struct {
-	clusters     map[string]*Cluster    // in-memory cache (hot-path reads)
+	clusters     map[string]*Cluster // in-memory cache (hot-path reads)
 	cloudManager *cloud.Manager
 	k8sClients   map[string]*k8s.Client // clusterID -> K8s client
 	store        *store.Store           // DB persistence (nil = in-memory only)
@@ -258,12 +258,12 @@ func (m *Manager) ImportCluster(ctx context.Context, req *ImportClusterRequest) 
 	now := common.NowUTC()
 
 	cluster := &Cluster{
-		ID:       id,
-		Name:     req.Name,
-		Provider: common.CloudProviderType(req.Provider),
-		Region:   req.Region,
-		Status:   common.ClusterStatusProvisioning,
-		Labels:   req.Labels,
+		ID:        id,
+		Name:      req.Name,
+		Provider:  common.CloudProviderType(req.Provider),
+		Region:    req.Region,
+		Status:    common.ClusterStatusProvisioning,
+		Labels:    req.Labels,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -610,11 +610,12 @@ func (m *Manager) syncClusterState(ctx context.Context, cluster *Cluster) {
 
 	m.mu.Lock()
 	cluster.Health = health
-	if health.Status == "healthy" {
+	switch health.Status {
+	case "healthy":
 		cluster.Status = common.ClusterStatusHealthy
-	} else if health.Status == "degraded" {
+	case "degraded":
 		cluster.Status = common.ClusterStatusDegraded
-	} else {
+	default:
 		cluster.Status = common.ClusterStatusUnreachable
 	}
 	cluster.NodeCount = health.NodeTotalCount

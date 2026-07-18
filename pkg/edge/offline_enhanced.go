@@ -25,10 +25,10 @@ import (
 type CachePolicy string
 
 const (
-	CachePolicyLRU  CachePolicy = "lru"
-	CachePolicyLFU  CachePolicy = "lfu"
-	CachePolicyTTL  CachePolicy = "ttl"
-	CachePolicyARC  CachePolicy = "arc" // Adaptive Replacement Cache
+	CachePolicyLRU CachePolicy = "lru"
+	CachePolicyLFU CachePolicy = "lfu"
+	CachePolicyTTL CachePolicy = "ttl"
+	CachePolicyARC CachePolicy = "arc" // Adaptive Replacement Cache
 )
 
 // CacheConfig configures the local edge cache
@@ -57,50 +57,50 @@ func DefaultCacheConfig() CacheConfig {
 
 // CacheEntry represents a single cache entry
 type CacheEntry struct {
-	Key          string      `json:"key"`
-	SizeBytes    int64       `json:"size_bytes"`
-	DataType     string      `json:"data_type"` // model_weight, config, feature_data, embedding
-	CreatedAt    time.Time   `json:"created_at"`
-	LastAccess   time.Time   `json:"last_access"`
-	AccessCount  int         `json:"access_count"`
+	Key          string        `json:"key"`
+	SizeBytes    int64         `json:"size_bytes"`
+	DataType     string        `json:"data_type"` // model_weight, config, feature_data, embedding
+	CreatedAt    time.Time     `json:"created_at"`
+	LastAccess   time.Time     `json:"last_access"`
+	AccessCount  int           `json:"access_count"`
 	TTL          time.Duration `json:"ttl"`
-	IsHot        bool        `json:"is_hot"`
-	IsPrefetched bool        `json:"is_prefetched"`
-	Compressed   bool        `json:"compressed"`
-	Checksum     string      `json:"checksum"`
+	IsHot        bool          `json:"is_hot"`
+	IsPrefetched bool          `json:"is_prefetched"`
+	Compressed   bool          `json:"compressed"`
+	Checksum     string        `json:"checksum"`
 }
 
 // PrefetchPrediction represents a predicted future access
 type PrefetchPrediction struct {
-	Key              string    `json:"key"`
-	PredictedAccess  time.Time `json:"predicted_access"`
-	Confidence       float64   `json:"confidence"` // 0-1
-	DataType         string    `json:"data_type"`
-	EstimatedSizeBytes int64   `json:"estimated_size_bytes"`
+	Key                string    `json:"key"`
+	PredictedAccess    time.Time `json:"predicted_access"`
+	Confidence         float64   `json:"confidence"` // 0-1
+	DataType           string    `json:"data_type"`
+	EstimatedSizeBytes int64     `json:"estimated_size_bytes"`
 }
 
 // CacheStats provides cache performance metrics
 type CacheStats struct {
-	TotalEntries   int     `json:"total_entries"`
-	UsedSizeMB     float64 `json:"used_size_mb"`
-	MaxSizeMB      int     `json:"max_size_mb"`
-	HitRate        float64 `json:"hit_rate_percent"`
-	MissRate       float64 `json:"miss_rate_percent"`
-	EvictionCount  int64   `json:"eviction_count"`
-	PrefetchHits   int64   `json:"prefetch_hits"`
-	HotDataCount   int     `json:"hot_data_count"`
-	Hits           int64   `json:"hits"`
-	Misses         int64   `json:"misses"`
+	TotalEntries  int     `json:"total_entries"`
+	UsedSizeMB    float64 `json:"used_size_mb"`
+	MaxSizeMB     int     `json:"max_size_mb"`
+	HitRate       float64 `json:"hit_rate_percent"`
+	MissRate      float64 `json:"miss_rate_percent"`
+	EvictionCount int64   `json:"eviction_count"`
+	PrefetchHits  int64   `json:"prefetch_hits"`
+	HotDataCount  int     `json:"hot_data_count"`
+	Hits          int64   `json:"hits"`
+	Misses        int64   `json:"misses"`
 }
 
 // EdgeCache manages local caching and prefetching
 type EdgeCache struct {
-	config       CacheConfig
-	entries      map[string]*CacheEntry
-	accessLog    []AccessRecord // for prefetch prediction
-	stats        CacheStats
-	mu           sync.RWMutex
-	logger       *logrus.Logger
+	config    CacheConfig
+	entries   map[string]*CacheEntry
+	accessLog []AccessRecord // for prefetch prediction
+	stats     CacheStats
+	mu        sync.RWMutex
+	logger    *logrus.Logger
 }
 
 // AccessRecord tracks an access event for pattern learning
@@ -345,11 +345,11 @@ func (c *EdgeCache) currentSizeBytes() int64 {
 type CRDTType string
 
 const (
-	CRDTGCounter    CRDTType = "g_counter"     // Grow-only counter
-	CRDTPNCounter   CRDTType = "pn_counter"    // Positive-Negative counter
-	CRDTLWWRegister CRDTType = "lww_register"  // Last-Writer-Wins register
-	CRDTORSet       CRDTType = "or_set"        // Observed-Remove set
-	CRDTMVRegister  CRDTType = "mv_register"   // Multi-Value register
+	CRDTGCounter    CRDTType = "g_counter"    // Grow-only counter
+	CRDTPNCounter   CRDTType = "pn_counter"   // Positive-Negative counter
+	CRDTLWWRegister CRDTType = "lww_register" // Last-Writer-Wins register
+	CRDTORSet       CRDTType = "or_set"       // Observed-Remove set
+	CRDTMVRegister  CRDTType = "mv_register"  // Multi-Value register
 )
 
 // CRDTConfig configures the CRDT sync engine
@@ -473,9 +473,9 @@ type ORSet struct {
 
 // ORSetElement represents an element in the OR-Set
 type ORSetElement struct {
-	Value    interface{}       `json:"value"`
-	AddTags  map[string]bool   `json:"add_tags"`  // unique tags for adds
-	RemTags  map[string]bool   `json:"rem_tags"`  // unique tags for removes
+	Value   interface{}     `json:"value"`
+	AddTags map[string]bool `json:"add_tags"` // unique tags for adds
+	RemTags map[string]bool `json:"rem_tags"` // unique tags for removes
 }
 
 // NewORSet creates a new OR-Set
@@ -559,9 +559,9 @@ func (s *ORSet) Values() []interface{} {
 // CRDTSyncEngine manages CRDT-based offline-first synchronization
 type CRDTSyncEngine struct {
 	config     CRDTConfig
-	counters   map[string]*PNCounter     // key -> PN counter
-	registers  map[string]*LWWRegister   // key -> LWW register
-	sets       map[string]*ORSet         // key -> OR-Set
+	counters   map[string]*PNCounter   // key -> PN counter
+	registers  map[string]*LWWRegister // key -> LWW register
+	sets       map[string]*ORSet       // key -> OR-Set
 	pendingOps []CRDTOperation
 	mu         sync.RWMutex
 	logger     *logrus.Logger
@@ -738,23 +738,23 @@ func (e *CRDTSyncEngine) GetRegisterValue(key string) (interface{}, bool) {
 
 // MDNSConfig configures mDNS service discovery
 type MDNSConfig struct {
-	ServiceName     string `json:"service_name"`      // e.g., "_cloudai._tcp"
-	Domain          string `json:"domain"`             // e.g., "local."
-	Port            int    `json:"port"`
-	BrowseIntervalSec int `json:"browse_interval_sec"`
-	TTLSec          int    `json:"ttl_sec"`
-	InstancePrefix  string `json:"instance_prefix"`    // e.g., "cloudai-edge-"
+	ServiceName       string `json:"service_name"` // e.g., "_cloudai._tcp"
+	Domain            string `json:"domain"`       // e.g., "local."
+	Port              int    `json:"port"`
+	BrowseIntervalSec int    `json:"browse_interval_sec"`
+	TTLSec            int    `json:"ttl_sec"`
+	InstancePrefix    string `json:"instance_prefix"` // e.g., "cloudai-edge-"
 }
 
 // DefaultMDNSConfig returns production-ready mDNS defaults
 func DefaultMDNSConfig() MDNSConfig {
 	return MDNSConfig{
-		ServiceName:     "_cloudai-edge._tcp",
-		Domain:          "local.",
-		Port:            8082,
+		ServiceName:       "_cloudai-edge._tcp",
+		Domain:            "local.",
+		Port:              8082,
 		BrowseIntervalSec: 30,
-		TTLSec:          120,
-		InstancePrefix:  "cloudai-edge-",
+		TTLSec:            120,
+		InstancePrefix:    "cloudai-edge-",
 	}
 }
 
@@ -773,10 +773,10 @@ type DiscoveredDevice struct {
 
 // DeviceDiscovery manages mDNS-based edge device discovery
 type DeviceDiscovery struct {
-	config   MDNSConfig
-	devices  map[string]*DiscoveredDevice // instanceName -> device
-	mu       sync.RWMutex
-	logger   *logrus.Logger
+	config  MDNSConfig
+	devices map[string]*DiscoveredDevice // instanceName -> device
+	mu      sync.RWMutex
+	logger  *logrus.Logger
 }
 
 // NewDeviceDiscovery creates a new mDNS device discovery manager
@@ -894,13 +894,13 @@ func (d *DeviceDiscovery) StartBrowse(ctx context.Context) {
 
 // OTAConfig configures over-the-air upgrade management
 type OTAConfig struct {
-	MaxConcurrentUpgrades int     `json:"max_concurrent_upgrades"`
-	RollbackTimeoutMin    int     `json:"rollback_timeout_min"`
-	HealthCheckIntervalSec int    `json:"health_check_interval_sec"`
-	MinHealthyPercent     float64 `json:"min_healthy_percent"`  // minimum healthy nodes to continue rollout
-	GrayscaleStages       []float64 `json:"grayscale_stages"`  // e.g., [0.01, 0.05, 0.25, 0.50, 1.0]
-	ABEnabled             bool    `json:"ab_enabled"`           // A/B partition support
-	AutoRollbackEnabled   bool    `json:"auto_rollback_enabled"`
+	MaxConcurrentUpgrades  int       `json:"max_concurrent_upgrades"`
+	RollbackTimeoutMin     int       `json:"rollback_timeout_min"`
+	HealthCheckIntervalSec int       `json:"health_check_interval_sec"`
+	MinHealthyPercent      float64   `json:"min_healthy_percent"` // minimum healthy nodes to continue rollout
+	GrayscaleStages        []float64 `json:"grayscale_stages"`    // e.g., [0.01, 0.05, 0.25, 0.50, 1.0]
+	ABEnabled              bool      `json:"ab_enabled"`          // A/B partition support
+	AutoRollbackEnabled    bool      `json:"auto_rollback_enabled"`
 }
 
 // DefaultOTAConfig returns production-ready OTA defaults
@@ -920,8 +920,8 @@ func DefaultOTAConfig() OTAConfig {
 type OTAPartition string
 
 const (
-	PartitionA       OTAPartition = "A"
-	PartitionB       OTAPartition = "B"
+	PartitionA OTAPartition = "A"
+	PartitionB OTAPartition = "B"
 )
 
 // FirmwareRelease represents a firmware/software release for OTA
@@ -931,8 +931,8 @@ type FirmwareRelease struct {
 	Description    string    `json:"description"`
 	SizeBytes      int64     `json:"size_bytes"`
 	ChecksumSHA256 string    `json:"checksum_sha256"`
-	MinVersion     string    `json:"min_version,omitempty"`  // minimum required current version
-	Components     []string  `json:"components"`             // e.g., ["agent", "runtime", "model-server"]
+	MinVersion     string    `json:"min_version,omitempty"` // minimum required current version
+	Components     []string  `json:"components"`            // e.g., ["agent", "runtime", "model-server"]
 	ReleaseNotes   string    `json:"release_notes,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	IsStable       bool      `json:"is_stable"`
@@ -940,44 +940,44 @@ type FirmwareRelease struct {
 
 // RolloutPlan defines the grayscale rollout strategy
 type RolloutPlan struct {
-	ID               string    `json:"id"`
-	ReleaseID        string    `json:"release_id"`
-	CurrentStage     int       `json:"current_stage"`      // index into GrayscaleStages
-	StagePercent     float64   `json:"stage_percent"`
-	TotalNodes       int       `json:"total_nodes"`
-	TargetNodes      int       `json:"target_nodes"`       // nodes to upgrade at this stage
-	UpgradedNodes    int       `json:"upgraded_nodes"`
-	HealthyNodes     int       `json:"healthy_nodes"`
-	FailedNodes      int       `json:"failed_nodes"`
-	RolledBackNodes  int       `json:"rolled_back_nodes"`
-	State            string    `json:"state"`               // pending, rolling, paused, complete, rolled_back
-	StartedAt        time.Time `json:"started_at"`
-	LastStageAt      time.Time `json:"last_stage_at"`
-	Error            string    `json:"error,omitempty"`
+	ID              string    `json:"id"`
+	ReleaseID       string    `json:"release_id"`
+	CurrentStage    int       `json:"current_stage"` // index into GrayscaleStages
+	StagePercent    float64   `json:"stage_percent"`
+	TotalNodes      int       `json:"total_nodes"`
+	TargetNodes     int       `json:"target_nodes"` // nodes to upgrade at this stage
+	UpgradedNodes   int       `json:"upgraded_nodes"`
+	HealthyNodes    int       `json:"healthy_nodes"`
+	FailedNodes     int       `json:"failed_nodes"`
+	RolledBackNodes int       `json:"rolled_back_nodes"`
+	State           string    `json:"state"` // pending, rolling, paused, complete, rolled_back
+	StartedAt       time.Time `json:"started_at"`
+	LastStageAt     time.Time `json:"last_stage_at"`
+	Error           string    `json:"error,omitempty"`
 }
 
 // NodeUpgradeStatus tracks per-node upgrade progress
 type NodeUpgradeStatus struct {
-	NodeID         string       `json:"node_id"`
-	ReleaseID      string       `json:"release_id"`
-	CurrentVersion string       `json:"current_version"`
-	TargetVersion  string       `json:"target_version"`
-	ActivePartition OTAPartition `json:"active_partition"`
+	NodeID           string       `json:"node_id"`
+	ReleaseID        string       `json:"release_id"`
+	CurrentVersion   string       `json:"current_version"`
+	TargetVersion    string       `json:"target_version"`
+	ActivePartition  OTAPartition `json:"active_partition"`
 	StagingPartition OTAPartition `json:"staging_partition"`
-	State          string       `json:"state"` // pending, downloading, installing, verifying, active, rolled_back, failed
-	Progress       float64      `json:"progress_percent"`
-	HealthScore    float64      `json:"health_score"` // 0-100 after upgrade
-	Error          string       `json:"error,omitempty"`
-	StartedAt      time.Time    `json:"started_at"`
-	CompletedAt    *time.Time   `json:"completed_at,omitempty"`
+	State            string       `json:"state"` // pending, downloading, installing, verifying, active, rolled_back, failed
+	Progress         float64      `json:"progress_percent"`
+	HealthScore      float64      `json:"health_score"` // 0-100 after upgrade
+	Error            string       `json:"error,omitempty"`
+	StartedAt        time.Time    `json:"started_at"`
+	CompletedAt      *time.Time   `json:"completed_at,omitempty"`
 }
 
 // OTAManager manages over-the-air upgrades with A/B grayscale rollout
 type OTAManager struct {
 	config       OTAConfig
-	releases     map[string]*FirmwareRelease    // releaseID -> release
-	rollouts     map[string]*RolloutPlan        // rolloutID -> plan
-	nodeStatuses map[string]*NodeUpgradeStatus  // nodeID -> status
+	releases     map[string]*FirmwareRelease   // releaseID -> release
+	rollouts     map[string]*RolloutPlan       // rolloutID -> plan
+	nodeStatuses map[string]*NodeUpgradeStatus // nodeID -> status
 	mu           sync.RWMutex
 	logger       *logrus.Logger
 }
@@ -1271,10 +1271,10 @@ type OfflineHub struct {
 
 // OfflineHubConfig holds all offline capability configuration
 type OfflineHubConfig struct {
-	Cache      CacheConfig  `json:"cache"`
-	CRDT       CRDTConfig   `json:"crdt"`
-	MDNS       MDNSConfig   `json:"mdns"`
-	OTA        OTAConfig    `json:"ota"`
+	Cache CacheConfig `json:"cache"`
+	CRDT  CRDTConfig  `json:"crdt"`
+	MDNS  MDNSConfig  `json:"mdns"`
+	OTA   OTAConfig   `json:"ota"`
 }
 
 // DefaultOfflineHubConfig returns production-ready defaults

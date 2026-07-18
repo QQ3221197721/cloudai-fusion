@@ -43,14 +43,14 @@ const (
 
 // PSSConfig configures Pod Security Standards enforcement.
 type PSSConfig struct {
-	Profile   PSSProfile     `json:"profile"`
-	Enforce   bool           `json:"enforce"`
-	Audit     bool           `json:"audit"`
-	Warn      bool           `json:"warn"`
-	Version   string         `json:"version"`  // e.g. "v1.28", "latest"
-	ExemptNamespaces []string `json:"exempt_namespaces"`
-	ExemptUsers      []string `json:"exempt_users"`
-	ExemptRuntimes   []string `json:"exempt_runtime_classes"`
+	Profile          PSSProfile `json:"profile"`
+	Enforce          bool       `json:"enforce"`
+	Audit            bool       `json:"audit"`
+	Warn             bool       `json:"warn"`
+	Version          string     `json:"version"` // e.g. "v1.28", "latest"
+	ExemptNamespaces []string   `json:"exempt_namespaces"`
+	ExemptUsers      []string   `json:"exempt_users"`
+	ExemptRuntimes   []string   `json:"exempt_runtime_classes"`
 }
 
 // DefaultPSSConfig returns the default restricted PSS configuration.
@@ -143,12 +143,12 @@ func GenerateNamespaceLabels(cfg PSSConfig) map[string]string {
 // CosignConfig configures container image signature verification.
 type CosignConfig struct {
 	Enabled           bool     `json:"enabled"`
-	PublicKey         string   `json:"public_key,omitempty"`         // PEM-encoded public key
-	KeylessEnabled    bool     `json:"keyless_enabled"`             // Sigstore keyless signing
-	RekorURL          string   `json:"rekor_url"`                   // Transparency log URL
+	PublicKey         string   `json:"public_key,omitempty"` // PEM-encoded public key
+	KeylessEnabled    bool     `json:"keyless_enabled"`      // Sigstore keyless signing
+	RekorURL          string   `json:"rekor_url"`            // Transparency log URL
 	AllowedRegistries []string `json:"allowed_registries"`
-	Policy            string   `json:"policy"`                      // reject, warn, audit
-	FulcioURL         string   `json:"fulcio_url,omitempty"`        // Certificate authority URL
+	Policy            string   `json:"policy"`                       // reject, warn, audit
+	FulcioURL         string   `json:"fulcio_url,omitempty"`         // Certificate authority URL
 	AllowedIdentities []string `json:"allowed_identities,omitempty"` // Email/OIDC identities for keyless
 }
 
@@ -167,15 +167,15 @@ func DefaultCosignConfig() CosignConfig {
 
 // ImageVerificationResult holds the result of image signature verification.
 type ImageVerificationResult struct {
-	Image       string    `json:"image"`
-	Verified    bool      `json:"verified"`
-	Signer      string    `json:"signer,omitempty"`
-	SignedAt    time.Time `json:"signed_at,omitempty"`
-	Registry    string    `json:"registry"`
-	Digest      string    `json:"digest,omitempty"`
-	RekorEntry  string    `json:"rekor_entry,omitempty"`
-	Error       string    `json:"error,omitempty"`
-	VerifiedAt  time.Time `json:"verified_at"`
+	Image      string    `json:"image"`
+	Verified   bool      `json:"verified"`
+	Signer     string    `json:"signer,omitempty"`
+	SignedAt   time.Time `json:"signed_at,omitempty"`
+	Registry   string    `json:"registry"`
+	Digest     string    `json:"digest,omitempty"`
+	RekorEntry string    `json:"rekor_entry,omitempty"`
+	Error      string    `json:"error,omitempty"`
+	VerifiedAt time.Time `json:"verified_at"`
 }
 
 // ============================================================================
@@ -191,13 +191,13 @@ type HardeningConfig struct {
 
 // HardeningManager manages security hardening policies.
 type HardeningManager struct {
-	config       HardeningConfig
-	policies     map[string]*PSSPolicy
-	violations   []*PSSViolation
+	config        HardeningConfig
+	policies      map[string]*PSSPolicy
+	violations    []*PSSViolation
 	verifications []*ImageVerificationResult
-	signingKey   *ecdsa.PrivateKey // For simulation/testing
-	logger       *logrus.Logger
-	mu           sync.RWMutex
+	signingKey    *ecdsa.PrivateKey // For simulation/testing
+	logger        *logrus.Logger
+	mu            sync.RWMutex
 }
 
 // NewHardeningManager creates a new security hardening manager.
@@ -219,10 +219,10 @@ func NewHardeningManager(cfg HardeningConfig) *HardeningManager {
 	}
 
 	cfg.Logger.WithFields(logrus.Fields{
-		"pss_profile":   cfg.PSS.Profile,
-		"pss_enforce":   cfg.PSS.Enforce,
+		"pss_profile":    cfg.PSS.Profile,
+		"pss_enforce":    cfg.PSS.Enforce,
 		"cosign_enabled": cfg.Cosign.Enabled,
-		"cosign_policy": cfg.Cosign.Policy,
+		"cosign_policy":  cfg.Cosign.Policy,
 	}).Info("Security hardening manager initialized")
 
 	return hm

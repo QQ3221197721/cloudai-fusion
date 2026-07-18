@@ -73,8 +73,8 @@ type EnhancedStore struct {
 	*Store // embed the base store (primary/write)
 
 	// Read replicas for horizontal read scaling
-	replicas []*gorm.DB
-	replicaMu sync.RWMutex
+	replicas   []*gorm.DB
+	replicaMu  sync.RWMutex
 	replicaIdx uint64
 
 	// Pool statistics
@@ -91,21 +91,21 @@ type EnhancedStore struct {
 // PoolStats holds connection pool statistics.
 type PoolStats struct {
 	// Primary (write) pool stats
-	PrimaryOpenConns     int   `json:"primary_open_conns"`
-	PrimaryInUse         int   `json:"primary_in_use"`
-	PrimaryIdle          int   `json:"primary_idle"`
-	PrimaryWaitCount     int64 `json:"primary_wait_count"`
-	PrimaryWaitDuration  time.Duration `json:"primary_wait_duration"`
+	PrimaryOpenConns    int           `json:"primary_open_conns"`
+	PrimaryInUse        int           `json:"primary_in_use"`
+	PrimaryIdle         int           `json:"primary_idle"`
+	PrimaryWaitCount    int64         `json:"primary_wait_count"`
+	PrimaryWaitDuration time.Duration `json:"primary_wait_duration"`
 
 	// Replica pool stats (aggregated)
-	ReplicaCount         int   `json:"replica_count"`
-	ReplicaTotalOpen     int   `json:"replica_total_open"`
-	ReplicaTotalInUse    int   `json:"replica_total_in_use"`
+	ReplicaCount      int `json:"replica_count"`
+	ReplicaTotalOpen  int `json:"replica_total_open"`
+	ReplicaTotalInUse int `json:"replica_total_in_use"`
 
 	// Health status
-	PrimaryHealthy       bool  `json:"primary_healthy"`
-	HealthyReplicaCount  int   `json:"healthy_replica_count"`
-	LastHealthCheck      time.Time `json:"last_health_check"`
+	PrimaryHealthy      bool      `json:"primary_healthy"`
+	HealthyReplicaCount int       `json:"healthy_replica_count"`
+	LastHealthCheck     time.Time `json:"last_health_check"`
 }
 
 // NewEnhanced creates an EnhancedStore with production-grade connection pooling.
@@ -272,7 +272,7 @@ func (es *EnhancedStore) Close() error {
 	// Close replicas
 	for _, r := range es.replicas {
 		if sqlDB, err := r.DB(); err == nil {
-			sqlDB.Close()
+			_ = sqlDB.Close()
 		}
 	}
 

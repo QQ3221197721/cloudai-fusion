@@ -81,12 +81,12 @@ type ScheduleWorkloadRequest struct {
 
 // ScheduleWorkloadResponse is the response from ScheduleWorkload RPC.
 type ScheduleWorkloadResponse struct {
-	Accepted     bool   `json:"accepted"`
-	Decision     string `json:"decision"` // "scheduled", "queued", "rejected"
-	AssignedNode string `json:"assigned_node,omitempty"`
-	AssignedGPUs string `json:"assigned_gpus,omitempty"`
-	QueuePosition int32 `json:"queue_position,omitempty"`
-	Reason       string `json:"reason,omitempty"`
+	Accepted      bool   `json:"accepted"`
+	Decision      string `json:"decision"` // "scheduled", "queued", "rejected"
+	AssignedNode  string `json:"assigned_node,omitempty"`
+	AssignedGPUs  string `json:"assigned_gpus,omitempty"`
+	QueuePosition int32  `json:"queue_position,omitempty"`
+	Reason        string `json:"reason,omitempty"`
 }
 
 // QueueStatusRequest is the request for GetQueueStatus RPC.
@@ -105,9 +105,9 @@ type QueueStatusResponse struct {
 
 // PreemptWorkloadRequest is the request for PreemptWorkload RPC.
 type PreemptWorkloadRequest struct {
-	WorkloadID    string `json:"workload_id"`
-	Reason        string `json:"reason"`
-	PreemptorID   string `json:"preemptor_id,omitempty"`
+	WorkloadID  string `json:"workload_id"`
+	Reason      string `json:"reason"`
+	PreemptorID string `json:"preemptor_id,omitempty"`
 }
 
 // PreemptWorkloadResponse is the response from PreemptWorkload RPC.
@@ -207,10 +207,10 @@ type ControllerStatusRequest struct{}
 
 // ControllerStatusResponse is the response from GetControllerStatus RPC.
 type ControllerStatusResponse struct {
-	Started     bool               `json:"started"`
-	Healthy     bool               `json:"healthy"`
-	Uptime      string             `json:"uptime"`
-	Controllers []ControllerInfo   `json:"controllers"`
+	Started     bool             `json:"started"`
+	Healthy     bool             `json:"healthy"`
+	Uptime      string           `json:"uptime"`
+	Controllers []ControllerInfo `json:"controllers"`
 }
 
 // ControllerInfo describes a single controller's status.
@@ -269,11 +269,11 @@ func RegisterControlPlaneService(s *grpc.Server, svc ControlPlaneService, logger
 
 // ClientConfig holds gRPC client connection configuration.
 type ClientConfig struct {
-	Address     string        `json:"address"`
-	Timeout     time.Duration `json:"timeout"`
-	MaxRetries  int           `json:"max_retries"`
-	TLSEnabled  bool          `json:"tls_enabled"`
-	CertFile    string        `json:"cert_file,omitempty"`
+	Address    string        `json:"address"`
+	Timeout    time.Duration `json:"timeout"`
+	MaxRetries int           `json:"max_retries"`
+	TLSEnabled bool          `json:"tls_enabled"`
+	CertFile   string        `json:"cert_file,omitempty"`
 }
 
 // SchedulerClient is a gRPC client for the scheduler service.

@@ -34,10 +34,10 @@ const (
 type WorkloadStatus string
 
 const (
-	WasmStatusPending  WorkloadStatus = "pending"
-	WasmStatusRunning  WorkloadStatus = "running"
-	WasmStatusStopped  WorkloadStatus = "stopped"
-	WasmStatusFailed   WorkloadStatus = "failed"
+	WasmStatusPending WorkloadStatus = "pending"
+	WasmStatusRunning WorkloadStatus = "running"
+	WasmStatusStopped WorkloadStatus = "stopped"
+	WasmStatusFailed  WorkloadStatus = "failed"
 )
 
 // Config holds Wasm runtime configuration
@@ -49,39 +49,39 @@ type Config struct {
 	EnableNetworking bool        `json:"enable_networking"`
 	SandboxLevel     string      `json:"sandbox_level"` // strict, permissive
 	RegistryURL      string      `json:"registry_url"`
-	SpinEndpoint     string      `json:"spin_endpoint"` // Fermyon Spin API endpoint
+	SpinEndpoint     string      `json:"spin_endpoint"`     // Fermyon Spin API endpoint
 	ContainerdSocket string      `json:"containerd_socket"` // containerd CRI socket
 }
 
 // WasmModule represents a compiled Wasm module
 type WasmModule struct {
-	ID            string            `json:"id"`
-	Name          string            `json:"name"`
-	Version       string            `json:"version"`
-	Runtime       RuntimeType       `json:"runtime"`
-	SourceURL     string            `json:"source_url"`
-	Size          int64             `json:"size_bytes"`
-	Hash          string            `json:"hash_sha256"`
-	Capabilities  []string          `json:"capabilities"` // http, filesystem, etc.
-	Metadata      map[string]string `json:"metadata,omitempty"`
-	UploadedAt    time.Time         `json:"uploaded_at"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Version      string            `json:"version"`
+	Runtime      RuntimeType       `json:"runtime"`
+	SourceURL    string            `json:"source_url"`
+	Size         int64             `json:"size_bytes"`
+	Hash         string            `json:"hash_sha256"`
+	Capabilities []string          `json:"capabilities"` // http, filesystem, etc.
+	Metadata     map[string]string `json:"metadata,omitempty"`
+	UploadedAt   time.Time         `json:"uploaded_at"`
 }
 
 // WasmInstance represents a running Wasm instance
 type WasmInstance struct {
-	ID            string            `json:"id"`
-	ModuleID      string            `json:"module_id"`
-	ModuleName    string            `json:"module_name"`
-	ClusterID     string            `json:"cluster_id"`
-	NodeName      string            `json:"node_name"`
-	Status        WorkloadStatus    `json:"status"`
-	Runtime       RuntimeType       `json:"runtime"`
-	MemoryUsedKB  int64             `json:"memory_used_kb"`
-	CPUUsageMs    int64             `json:"cpu_usage_ms"`
-	RequestCount  int64             `json:"request_count"`
-	ColdStartMs   float64           `json:"cold_start_ms"`
-	StartedAt     time.Time         `json:"started_at"`
-	Labels        map[string]string `json:"labels,omitempty"`
+	ID           string            `json:"id"`
+	ModuleID     string            `json:"module_id"`
+	ModuleName   string            `json:"module_name"`
+	ClusterID    string            `json:"cluster_id"`
+	NodeName     string            `json:"node_name"`
+	Status       WorkloadStatus    `json:"status"`
+	Runtime      RuntimeType       `json:"runtime"`
+	MemoryUsedKB int64             `json:"memory_used_kb"`
+	CPUUsageMs   int64             `json:"cpu_usage_ms"`
+	RequestCount int64             `json:"request_count"`
+	ColdStartMs  float64           `json:"cold_start_ms"`
+	StartedAt    time.Time         `json:"started_at"`
+	Labels       map[string]string `json:"labels,omitempty"`
 }
 
 // WasmDeployRequest defines a Wasm deployment request
@@ -98,19 +98,19 @@ type WasmDeployRequest struct {
 
 // Trigger defines what activates a Wasm function
 type Trigger struct {
-	Type     string            `json:"type"` // http, timer, kafka, nats
-	Config   map[string]string `json:"config"`
+	Type   string            `json:"type"` // http, timer, kafka, nats
+	Config map[string]string `json:"config"`
 }
 
 // RuntimeMetrics aggregates Wasm runtime performance
 type RuntimeMetrics struct {
-	TotalModules       int     `json:"total_modules"`
-	RunningInstances   int     `json:"running_instances"`
-	AvgColdStartMs     float64 `json:"avg_cold_start_ms"`
-	P99ColdStartMs     float64 `json:"p99_cold_start_ms"`
-	AvgMemoryUsedKB    int64   `json:"avg_memory_used_kb"`
+	TotalModules        int     `json:"total_modules"`
+	RunningInstances    int     `json:"running_instances"`
+	AvgColdStartMs      float64 `json:"avg_cold_start_ms"`
+	P99ColdStartMs      float64 `json:"p99_cold_start_ms"`
+	AvgMemoryUsedKB     int64   `json:"avg_memory_used_kb"`
 	TotalRequestsPerSec float64 `json:"total_requests_per_sec"`
-	ComparedToDocker   string  `json:"compared_to_docker"`
+	ComparedToDocker    string  `json:"compared_to_docker"`
 }
 
 // ============================================================================
@@ -120,11 +120,11 @@ type RuntimeMetrics struct {
 // Manager manages WebAssembly workloads across clusters
 type Manager struct {
 	config             Config
-	modules            []*WasmModule           // in-memory cache
-	instances          []*WasmInstance         // in-memory cache
-	store              *store.Store            // DB persistence (nil = in-memory only)
-	httpClient         *http.Client            // for Spin/containerd HTTP API calls
-	pluginEcosystemHub *PluginEcosystemHub     // WASM plugin ecosystem
+	modules            []*WasmModule       // in-memory cache
+	instances          []*WasmInstance     // in-memory cache
+	store              *store.Store        // DB persistence (nil = in-memory only)
+	httpClient         *http.Client        // for Spin/containerd HTTP API calls
+	pluginEcosystemHub *PluginEcosystemHub // WASM plugin ecosystem
 	logger             *logrus.Logger
 	mu                 sync.RWMutex
 }
@@ -275,12 +275,12 @@ func (m *Manager) Deploy(ctx context.Context, req *WasmDeployRequest) ([]*WasmIn
 func (m *Manager) deployViaSpin(ctx context.Context, req *WasmDeployRequest, runtime RuntimeType) ([]*WasmInstance, error) {
 	// Spin Cloud Deploy API: POST /api/apps
 	payload, _ := json.Marshal(map[string]interface{}{
-		"name":     req.ModuleID,
-		"replicas": req.Replicas,
+		"name":        req.ModuleID,
+		"replicas":    req.Replicas,
 		"environment": req.Environment,
 		"resource_limits": map[string]interface{}{
-			"memory_mb":   req.MemoryLimitMB,
-			"cpu_millis":  req.CPULimitMillis,
+			"memory_mb":  req.MemoryLimitMB,
+			"cpu_millis": req.CPULimitMillis,
 		},
 	})
 
@@ -298,7 +298,7 @@ func (m *Manager) deployViaSpin(ctx context.Context, req *WasmDeployRequest, run
 		// Fallback to local tracking
 		return m.deployLocal(req, runtime), nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		body, _ := io.ReadAll(resp.Body)
@@ -360,7 +360,7 @@ func (m *Manager) deployViaContainerd(ctx context.Context, req *WasmDeployReques
 		m.logger.WithError(err).Warn("containerd API call failed, falling back to local tracking")
 		return m.deployLocal(req, runtime), nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Track instances regardless of containerd response
 	return m.deployLocal(req, runtime), nil
@@ -477,13 +477,13 @@ func (m *Manager) GetMetrics(ctx context.Context) (*RuntimeMetrics, error) {
 	}
 
 	return &RuntimeMetrics{
-		TotalModules:       len(m.modules),
-		RunningInstances:   running,
-		AvgColdStartMs:     avgColdStart,
-		P99ColdStartMs:     avgColdStart * 3.5,
-		AvgMemoryUsedKB:    avgMemory,
+		TotalModules:        len(m.modules),
+		RunningInstances:    running,
+		AvgColdStartMs:      avgColdStart,
+		P99ColdStartMs:      avgColdStart * 3.5,
+		AvgMemoryUsedKB:     avgMemory,
 		TotalRequestsPerSec: float64(running) * 120,
-		ComparedToDocker:   fmt.Sprintf("%.0fx faster cold start, %.0f%% less memory", 200.0/maxFloat(avgColdStart, 0.1), (1.0-float64(avgMemory)/51200.0)*100),
+		ComparedToDocker:    fmt.Sprintf("%.0fx faster cold start, %.0f%% less memory", 200.0/maxFloat(avgColdStart, 0.1), (1.0-float64(avgMemory)/51200.0)*100),
 	}, nil
 }
 

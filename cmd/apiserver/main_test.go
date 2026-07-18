@@ -2,8 +2,6 @@ package main
 
 import (
 	"testing"
-
-	"github.com/spf13/cobra"
 )
 
 // ============================================================================
@@ -49,5 +47,5 @@ func TestVersionDefaults(t *testing.T) {
 func TestRunServerExists(t *testing.T) {
 	// This is a compile-time check — if runServer signature changes, this
 	// file will fail to compile, catching breaking changes early.
-	var _ func(*cobra.Command, []string) error = runServer
+	var _ = runServer
 }

@@ -113,9 +113,9 @@ func TestSelfHeal_DetectFaults_Triggered(t *testing.T) {
 	engine := NewSelfHealingEngine(DefaultSelfHealConfig(), nil)
 
 	metrics := map[string]float64{
-		"node_cpu_percent":       98,   // > 95 → trigger node-cpu-high
-		"node_memory_percent":    85,   // < 90 → no trigger
-		"gpu_temperature_celsius": 95,  // > 90 → trigger gpu-temp-high
+		"node_cpu_percent":        98, // > 95 → trigger node-cpu-high
+		"node_memory_percent":     85, // < 90 → no trigger
+		"gpu_temperature_celsius": 95, // > 90 → trigger gpu-temp-high
 	}
 
 	faults, err := engine.DetectFaults(context.Background(), metrics)
@@ -159,9 +159,9 @@ func TestSelfHeal_DetectFaults_AllOperators(t *testing.T) {
 	})
 
 	metrics := map[string]float64{
-		"test_lt": 5,  // < 10 → trigger
-		"test_eq": 0,  // == 0 → trigger
-		"test_ne": 1,  // != 0 → trigger
+		"test_lt": 5, // < 10 → trigger
+		"test_eq": 0, // == 0 → trigger
+		"test_ne": 1, // != 0 → trigger
 	}
 
 	faults, err := engine.DetectFaults(context.Background(), metrics)
@@ -358,22 +358,35 @@ func TestSelfHeal_Remediate_Cooldown(t *testing.T) {
 
 func TestSelfHeal_AnalyzeRootCause_KnownPattern(t *testing.T) {
 	engine := NewSelfHealingEngine(DefaultSelfHealConfig(), nil)
+	ctx := context.Background()
 
-	inc := &Incident{
-		ID:       "inc-1",
-		Category: "pod",
-		FaultEvents: []string{"f1", "f2"},
+	// Real GPU faults whose metrics match the built-in "gpu-hardware" pattern
+	// symptoms (gpu_ecc_errors + gpu_temperature[_celsius]).
+	faults, err := engine.DetectFaults(ctx, map[string]float64{
+		"gpu_ecc_errors":          5,
+		"gpu_temperature_celsius": 95,
+	})
+	if err != nil {
+		t.Fatalf("DetectFaults: %v", err)
+	}
+	if len(faults) < 2 {
+		t.Fatalf("expected 2 GPU faults, got %d", len(faults))
+	}
+	inc := engine.CreateIncident(faults)
+	if inc == nil || inc.Category != "gpu" {
+		t.Fatalf("expected a gpu incident, got %+v", inc)
 	}
 
 	analysis := engine.AnalyzeRootCause(inc)
 	if analysis == nil {
 		t.Fatal("analysis should not be nil")
 	}
-	if analysis.ProbableCause == "" {
-		t.Error("probable cause should not be empty")
+	// Root cause is derived from real symptom overlap, not a canned value.
+	if analysis.ProbableCause != "GPU hardware degradation or thermal issue" {
+		t.Errorf("expected GPU hardware root cause, got %q", analysis.ProbableCause)
 	}
-	if analysis.Confidence <= 0 {
-		t.Error("confidence should be > 0 for matching pattern")
+	if analysis.Confidence < 0.99 {
+		t.Errorf("both gpu symptoms observed => confidence ~1.0, got %v", analysis.Confidence)
 	}
 	if analysis.RecommendedFix == "" {
 		t.Error("recommended fix should not be empty")
@@ -386,18 +399,43 @@ func TestSelfHeal_AnalyzeRootCause_KnownPattern(t *testing.T) {
 	}
 }
 
+// TestSelfHeal_AnalyzeRootCause_PartialMatch proves confidence scales with the
+// fraction of pattern symptoms actually observed (not a fixed value).
+func TestSelfHeal_AnalyzeRootCause_PartialMatch(t *testing.T) {
+	engine := NewSelfHealingEngine(DefaultSelfHealConfig(), nil)
+	ctx := context.Background()
+
+	// Only ONE of the two gpu-hardware symptoms present.
+	faults, err := engine.DetectFaults(ctx, map[string]float64{"gpu_ecc_errors": 3})
+	if err != nil {
+		t.Fatalf("DetectFaults: %v", err)
+	}
+	inc := engine.CreateIncident(faults)
+	if inc == nil {
+		t.Fatal("expected an incident")
+	}
+	analysis := engine.AnalyzeRootCause(inc)
+	if analysis.Confidence < 0.49 || analysis.Confidence > 0.51 {
+		t.Errorf("one of two symptoms => ~0.5 confidence, got %v", analysis.Confidence)
+	}
+}
+
 func TestSelfHeal_AnalyzeRootCause_UnknownPattern(t *testing.T) {
 	engine := NewSelfHealingEngine(DefaultSelfHealConfig(), nil)
 
+	// A category with no registered pattern must not be confidently matched.
 	inc := &Incident{
-		ID:       "inc-1",
-		Category: "unknown_category",
-		FaultEvents: []string{"f1"},
+		ID:          "inc-1",
+		Category:    "unknown_category",
+		FaultEvents: []string{"nonexistent"},
 	}
 
 	analysis := engine.AnalyzeRootCause(inc)
 	if analysis.Confidence >= 0.5 {
 		t.Errorf("unknown pattern should have low confidence, got %v", analysis.Confidence)
+	}
+	if analysis.ProbableCause != "Unknown - no matching pattern found" {
+		t.Errorf("expected unknown probable cause, got %q", analysis.ProbableCause)
 	}
 }
 

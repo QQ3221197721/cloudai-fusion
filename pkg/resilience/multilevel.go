@@ -331,10 +331,10 @@ type MultiLevelStates struct {
 // ============================================================================
 
 type slidingWindow struct {
-	window   time.Duration
-	events   []time.Time
-	mu       sync.Mutex
-	count_   atomic.Int64
+	window time.Duration
+	events []time.Time
+	mu     sync.Mutex
+	count_ atomic.Int64
 }
 
 func newSlidingWindow(window time.Duration) *slidingWindow {

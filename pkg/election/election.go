@@ -309,11 +309,11 @@ func newMemoryElector(cfg Config) *memoryElector {
 
 	if cfg.SplitBrainDetection {
 		e.splitBrainDetector = NewSplitBrainDetector(SplitBrainConfig{
-			CheckInterval:   cfg.SplitBrainCheckInterval,
-			LeaseDuration:   cfg.LeaseDuration,
-			MaxClockDrift:   2 * time.Second,
-			QuorumSize:      1, // single-node: quorum of 1
-			Logger:          cfg.Logger,
+			CheckInterval: cfg.SplitBrainCheckInterval,
+			LeaseDuration: cfg.LeaseDuration,
+			MaxClockDrift: 2 * time.Second,
+			QuorumSize:    1, // single-node: quorum of 1
+			Logger:        cfg.Logger,
 		})
 	}
 

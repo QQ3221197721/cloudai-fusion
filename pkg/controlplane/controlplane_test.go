@@ -27,7 +27,7 @@ func (r *stubReconciler) Reconcile(_ context.Context, req controller.Request) (c
 	return controller.Result{}, r.reconcileErr
 }
 func (r *stubReconciler) Name() string         { return r.name }
-func (r *stubReconciler) ResourceKind() string  { return r.kind }
+func (r *stubReconciler) ResourceKind() string { return r.kind }
 
 // ============================================================================
 // Config defaults

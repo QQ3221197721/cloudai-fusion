@@ -30,8 +30,8 @@ import (
 
 // PerformanceBudget defines the maximum acceptable latency for an operation
 type PerformanceBudget struct {
-	Name        string
-	MaxLatency  time.Duration
+	Name          string
+	MaxLatency    time.Duration
 	MinThroughput int // operations per second (0 = not checked)
 }
 
@@ -164,13 +164,13 @@ func TestBudget_SchedulingCycle(t *testing.T) {
 	iterations := 100
 	for i := 0; i < iterations; i++ {
 		wl := &scheduler.Workload{
-			ID:       fmt.Sprintf("budget-wl-%d", i),
-			Name:     "budget-test",
-			Type:     common.WorkloadTypeTraining,
-			Status:   common.WorkloadStatusQueued,
-			Priority: 5,
+			ID:              fmt.Sprintf("budget-wl-%d", i),
+			Name:            "budget-test",
+			Type:            common.WorkloadTypeTraining,
+			Status:          common.WorkloadStatusQueued,
+			Priority:        5,
 			ResourceRequest: common.ResourceRequest{GPUCount: 2},
-			QueuedAt: common.NowUTC(),
+			QueuedAt:        common.NowUTC(),
 		}
 		engine.SubmitWorkload(wl)
 		engine.RunSchedulingCycle(context.Background())
@@ -188,13 +188,13 @@ func TestBudget_WorkloadSubmission(t *testing.T) {
 	iterations := 10000
 	for i := 0; i < iterations; i++ {
 		wl := &scheduler.Workload{
-			ID:       fmt.Sprintf("submit-%d", i),
-			Name:     "submission-test",
-			Type:     common.WorkloadTypeInference,
-			Status:   common.WorkloadStatusQueued,
-			Priority: i % 10,
+			ID:              fmt.Sprintf("submit-%d", i),
+			Name:            "submission-test",
+			Type:            common.WorkloadTypeInference,
+			Status:          common.WorkloadStatusQueued,
+			Priority:        i % 10,
 			ResourceRequest: common.ResourceRequest{GPUCount: 1},
-			QueuedAt: common.NowUTC(),
+			QueuedAt:        common.NowUTC(),
 		}
 		engine.SubmitWorkload(wl)
 	}
@@ -329,13 +329,13 @@ func TestBudget_MemoryAllocation(t *testing.T) {
 	})
 	for i := 0; i < 1000; i++ {
 		engine.SubmitWorkload(&scheduler.Workload{
-			ID:       fmt.Sprintf("mem-wl-%d", i),
-			Name:     "memory-test",
-			Type:     common.WorkloadTypeTraining,
-			Status:   common.WorkloadStatusQueued,
-			Priority: i % 10,
+			ID:              fmt.Sprintf("mem-wl-%d", i),
+			Name:            "memory-test",
+			Type:            common.WorkloadTypeTraining,
+			Status:          common.WorkloadStatusQueued,
+			Priority:        i % 10,
 			ResourceRequest: common.ResourceRequest{GPUCount: 1},
-			QueuedAt: common.NowUTC(),
+			QueuedAt:        common.NowUTC(),
 		})
 	}
 

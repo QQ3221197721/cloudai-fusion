@@ -190,13 +190,13 @@ type SecurityScannerPlugin struct {
 
 // ScanResult holds vulnerability scan results.
 type ScanResult struct {
-	Image       string    `json:"image"`
-	Critical    int       `json:"critical"`
-	High        int       `json:"high"`
-	Medium      int       `json:"medium"`
-	Low         int       `json:"low"`
-	Passed      bool      `json:"passed"`
-	ScannedAt   time.Time `json:"scanned_at"`
+	Image     string    `json:"image"`
+	Critical  int       `json:"critical"`
+	High      int       `json:"high"`
+	Medium    int       `json:"medium"`
+	Low       int       `json:"low"`
+	Passed    bool      `json:"passed"`
+	ScannedAt time.Time `json:"scanned_at"`
 }
 
 // NewSecurityScannerPlugin creates a new security scanner plugin.
@@ -352,10 +352,10 @@ type SlackAlerterPlugin struct {
 
 // AlertRecord records a sent alert.
 type AlertRecord struct {
-	Severity  string    `json:"severity"`
-	Message   string    `json:"message"`
-	Channel   string    `json:"channel"`
-	SentAt    time.Time `json:"sent_at"`
+	Severity string    `json:"severity"`
+	Message  string    `json:"message"`
+	Channel  string    `json:"channel"`
+	SentAt   time.Time `json:"sent_at"`
 }
 
 // NewSlackAlerterPlugin creates a Slack alerter plugin.
@@ -409,11 +409,11 @@ func (p *SlackAlerterPlugin) Health(ctx context.Context) error { return nil }
 func RegisterExamplePlugins(registry *plugin.Registry) error {
 	examples := map[string]plugin.Factory{
 		"gpu-affinity-scheduler": NewGPUAffinityPlugin,
-		"cost-aware-scorer":     NewCostAwareScorerPlugin,
-		"security-scanner":      NewSecurityScannerPlugin,
-		"prometheus-collector":  NewPrometheusCollectorPlugin,
-		"oidc-authenticator":    NewOIDCAuthPlugin,
-		"slack-alerter":         NewSlackAlerterPlugin,
+		"cost-aware-scorer":      NewCostAwareScorerPlugin,
+		"security-scanner":       NewSecurityScannerPlugin,
+		"prometheus-collector":   NewPrometheusCollectorPlugin,
+		"oidc-authenticator":     NewOIDCAuthPlugin,
+		"slack-alerter":          NewSlackAlerterPlugin,
 	}
 
 	for name, factory := range examples {

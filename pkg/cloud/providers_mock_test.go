@@ -1085,8 +1085,8 @@ func TestCreateProvider_AllTypes(t *testing.T) {
 		{"gcp", false},
 		{"huawei", false},
 		{"tencent", false},
-		{"oracle", true},   // unsupported
-		{"unknown", true},  // unsupported
+		{"oracle", true},  // unsupported
+		{"unknown", true}, // unsupported
 	}
 
 	for _, tt := range tests {

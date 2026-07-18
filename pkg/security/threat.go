@@ -31,12 +31,12 @@ type ThreatDetectionConfig struct {
 
 // ThreatDetector provides rule-based security threat detection
 type ThreatDetector struct {
-	config       ThreatDetectionConfig
-	threats      []*ThreatEvent
-	auditWindow  []*AuditLogEntry // recent audit entries for analysis
-	rules        []detectionRule
-	logger       *logrus.Logger
-	mu           sync.RWMutex
+	config      ThreatDetectionConfig
+	threats     []*ThreatEvent
+	auditWindow []*AuditLogEntry // recent audit entries for analysis
+	rules       []detectionRule
+	logger      *logrus.Logger
+	mu          sync.RWMutex
 }
 
 // detectionRule defines a single threat detection rule
@@ -234,9 +234,9 @@ func (td *ThreatDetector) detectBruteForce(entries []*AuditLogEntry) *ThreatEven
 				Target:      "authentication-endpoint",
 				Description: fmt.Sprintf("Detected %d failed login attempts from IP %s within %v", count, ip, td.config.BruteForceWindow),
 				Evidence: map[string]interface{}{
-					"failed_count":  count,
-					"window":        td.config.BruteForceWindow.String(),
-					"source_ip":     ip,
+					"failed_count":   count,
+					"window":         td.config.BruteForceWindow.String(),
+					"source_ip":      ip,
 					"affected_users": keysFromMap(failedByUser),
 				},
 				Status:     "active",

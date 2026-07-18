@@ -150,8 +150,7 @@ type RaftNode struct {
 	peers map[string]*raftPeerState
 
 	// Timers
-	electionTimer  *time.Timer
-	heartbeatTimer *time.Timer
+	electionTimer *time.Timer
 
 	// Apply channel
 	applyCh chan *LogEntry
@@ -167,7 +166,6 @@ type raftPeerState struct {
 	peer      RaftPeer
 	nextIndex uint64
 	matchIdx  uint64
-	lastSeen  time.Time
 }
 
 // NewRaftNode creates a new Raft consensus node.
@@ -221,9 +219,9 @@ func (n *RaftNode) Start(ctx context.Context) error {
 	ctx, n.cancel = context.WithCancel(ctx)
 
 	n.logger.WithFields(logrus.Fields{
-		"node_id":  n.config.NodeID,
-		"peers":    len(n.config.Peers),
-		"role":     n.role.String(),
+		"node_id": n.config.NodeID,
+		"peers":   len(n.config.Peers),
+		"role":    n.role.String(),
 	}).Info("Starting Raft consensus node")
 
 	// Start as follower with randomized election timeout
@@ -723,14 +721,14 @@ func (n *RaftNode) randomElectionTimeout() time.Duration {
 
 // RaftStats holds runtime statistics for the Raft node.
 type RaftStats struct {
-	ElectionTimeouts       int64     `json:"election_timeouts"`
-	ElectionsStarted       int64     `json:"elections_started"`
-	ElectionsWon           int64     `json:"elections_won"`
-	HeartbeatsSent         int64     `json:"heartbeats_sent"`
-	AppendEntriesReceived  int64     `json:"append_entries_received"`
-	LogEntriesAppended     int64     `json:"log_entries_appended"`
-	EntriesCommitted       int64     `json:"entries_committed"`
-	LastLeaderElection     time.Time `json:"last_leader_election,omitempty"`
+	ElectionTimeouts      int64     `json:"election_timeouts"`
+	ElectionsStarted      int64     `json:"elections_started"`
+	ElectionsWon          int64     `json:"elections_won"`
+	HeartbeatsSent        int64     `json:"heartbeats_sent"`
+	AppendEntriesReceived int64     `json:"append_entries_received"`
+	LogEntriesAppended    int64     `json:"log_entries_appended"`
+	EntriesCommitted      int64     `json:"entries_committed"`
+	LastLeaderElection    time.Time `json:"last_leader_election,omitempty"`
 }
 
 // RaftStatus describes the current state of the Raft node.

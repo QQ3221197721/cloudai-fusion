@@ -54,11 +54,11 @@ const (
 type GPUType string
 
 const (
-	GPUTypeNvidiaA100  GPUType = "nvidia-a100"
-	GPUTypeNvidiaH100  GPUType = "nvidia-h100"
-	GPUTypeNvidiaH200  GPUType = "nvidia-h200"
-	GPUTypeNvidiaL40S  GPUType = "nvidia-l40s"
-	GPUTypeAMDMI300X   GPUType = "amd-mi300x"
+	GPUTypeNvidiaA100   GPUType = "nvidia-a100"
+	GPUTypeNvidiaH100   GPUType = "nvidia-h100"
+	GPUTypeNvidiaH200   GPUType = "nvidia-h200"
+	GPUTypeNvidiaL40S   GPUType = "nvidia-l40s"
+	GPUTypeAMDMI300X    GPUType = "amd-mi300x"
 	GPUTypeHuaweiAscend GPUType = "huawei-ascend-910b"
 )
 
@@ -78,11 +78,11 @@ const (
 type ClusterStatus string
 
 const (
-	ClusterStatusHealthy     ClusterStatus = "healthy"
-	ClusterStatusDegraded    ClusterStatus = "degraded"
-	ClusterStatusUnreachable ClusterStatus = "unreachable"
+	ClusterStatusHealthy      ClusterStatus = "healthy"
+	ClusterStatusDegraded     ClusterStatus = "degraded"
+	ClusterStatusUnreachable  ClusterStatus = "unreachable"
 	ClusterStatusProvisioning ClusterStatus = "provisioning"
-	ClusterStatusDeleting    ClusterStatus = "deleting"
+	ClusterStatusDeleting     ClusterStatus = "deleting"
 )
 
 // ============================================================================
@@ -91,25 +91,25 @@ const (
 
 // ResourceRequest specifies resource requirements for a workload
 type ResourceRequest struct {
-	CPUMillicores   int64  `json:"cpu_millicores"`
-	MemoryBytes     int64  `json:"memory_bytes"`
-	GPUCount        int    `json:"gpu_count"`
-	GPUType         GPUType `json:"gpu_type,omitempty"`
-	GPUMemoryBytes  int64  `json:"gpu_memory_bytes,omitempty"`
-	StorageBytes    int64  `json:"storage_bytes,omitempty"`
-	NetworkBandwidth int64  `json:"network_bandwidth_mbps,omitempty"`
+	CPUMillicores    int64   `json:"cpu_millicores"`
+	MemoryBytes      int64   `json:"memory_bytes"`
+	GPUCount         int     `json:"gpu_count"`
+	GPUType          GPUType `json:"gpu_type,omitempty"`
+	GPUMemoryBytes   int64   `json:"gpu_memory_bytes,omitempty"`
+	StorageBytes     int64   `json:"storage_bytes,omitempty"`
+	NetworkBandwidth int64   `json:"network_bandwidth_mbps,omitempty"`
 }
 
 // ResourceCapacity represents total available resources
 type ResourceCapacity struct {
-	TotalCPUMillicores   int64 `json:"total_cpu_millicores"`
-	UsedCPUMillicores    int64 `json:"used_cpu_millicores"`
-	TotalMemoryBytes     int64 `json:"total_memory_bytes"`
-	UsedMemoryBytes      int64 `json:"used_memory_bytes"`
-	TotalGPUCount        int   `json:"total_gpu_count"`
-	UsedGPUCount         int   `json:"used_gpu_count"`
-	TotalGPUMemoryBytes  int64 `json:"total_gpu_memory_bytes"`
-	UsedGPUMemoryBytes   int64 `json:"used_gpu_memory_bytes"`
+	TotalCPUMillicores  int64 `json:"total_cpu_millicores"`
+	UsedCPUMillicores   int64 `json:"used_cpu_millicores"`
+	TotalMemoryBytes    int64 `json:"total_memory_bytes"`
+	UsedMemoryBytes     int64 `json:"used_memory_bytes"`
+	TotalGPUCount       int   `json:"total_gpu_count"`
+	UsedGPUCount        int   `json:"used_gpu_count"`
+	TotalGPUMemoryBytes int64 `json:"total_gpu_memory_bytes"`
+	UsedGPUMemoryBytes  int64 `json:"used_gpu_memory_bytes"`
 }
 
 // GPUTopologyInfo describes GPU interconnection topology
@@ -122,14 +122,14 @@ type GPUTopologyInfo struct {
 
 // GPUDevice represents a single GPU device
 type GPUDevice struct {
-	Index          int     `json:"index"`
-	UUID           string  `json:"uuid"`
-	Name           string  `json:"name"`
-	Type           GPUType `json:"type"`
-	MemoryBytes    int64   `json:"memory_bytes"`
-	UsedMemoryBytes int64  `json:"used_memory_bytes"`
-	Utilization    float64 `json:"utilization_percent"`
-	Temperature    int     `json:"temperature_celsius"`
+	Index           int     `json:"index"`
+	UUID            string  `json:"uuid"`
+	Name            string  `json:"name"`
+	Type            GPUType `json:"type"`
+	MemoryBytes     int64   `json:"memory_bytes"`
+	UsedMemoryBytes int64   `json:"used_memory_bytes"`
+	Utilization     float64 `json:"utilization_percent"`
+	Temperature     int     `json:"temperature_celsius"`
 	PowerUsageWatts float64 `json:"power_usage_watts"`
 }
 

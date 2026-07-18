@@ -103,9 +103,9 @@ func TestRetry_ContextCancellation(t *testing.T) {
 func TestRetry_NonRetryableError(t *testing.T) {
 	cfg := RetryConfig{
 		MaxAttempts:    5,
-		InitialDelay:  1 * time.Millisecond,
-		MaxDelay:      5 * time.Millisecond,
-		Multiplier:    2.0,
+		InitialDelay:   1 * time.Millisecond,
+		MaxDelay:       5 * time.Millisecond,
+		Multiplier:     2.0,
 		RetryableCheck: func(err error) bool { return false },
 	}
 	calls := 0

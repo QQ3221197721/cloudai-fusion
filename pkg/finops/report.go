@@ -20,21 +20,19 @@ import (
 
 // CostAnalysisEngine provides comprehensive cost analysis and reporting.
 type CostAnalysisEngine struct {
-	costRecords      []CostRecord
-	budgets          map[string]*Budget
-	anomalies        []CostAnomaly
-	optimizations    []OptimizationSuggestion
-	config           CostAnalysisConfig
-	mu               sync.RWMutex
-	logger           *logrus.Logger
+	costRecords []CostRecord
+	budgets     map[string]*Budget
+	config      CostAnalysisConfig
+	mu          sync.RWMutex
+	logger      *logrus.Logger
 }
 
 // CostAnalysisConfig configures the cost analysis engine.
 type CostAnalysisConfig struct {
-	AnalysisWindow    time.Duration `json:"analysis_window" yaml:"analysisWindow"`
-	ForecastHorizon   int           `json:"forecast_horizon_days" yaml:"forecastHorizonDays"`
-	AnomalyThreshold  float64       `json:"anomaly_threshold" yaml:"anomalyThreshold"` // std dev multiplier
-	BudgetAlertPercent float64      `json:"budget_alert_percent" yaml:"budgetAlertPercent"` // e.g., 0.8 = 80%
+	AnalysisWindow     time.Duration `json:"analysis_window" yaml:"analysisWindow"`
+	ForecastHorizon    int           `json:"forecast_horizon_days" yaml:"forecastHorizonDays"`
+	AnomalyThreshold   float64       `json:"anomaly_threshold" yaml:"anomalyThreshold"`      // std dev multiplier
+	BudgetAlertPercent float64       `json:"budget_alert_percent" yaml:"budgetAlertPercent"` // e.g., 0.8 = 80%
 }
 
 // DefaultCostAnalysisConfig returns sensible defaults.
@@ -49,92 +47,92 @@ func DefaultCostAnalysisConfig() CostAnalysisConfig {
 
 // CostRecord represents a single cost data point.
 type CostRecord struct {
-	Date          time.Time         `json:"date"`
-	TotalCost     float64           `json:"total_cost"`
-	Currency      string            `json:"currency"`
+	Date          time.Time          `json:"date"`
+	TotalCost     float64            `json:"total_cost"`
+	Currency      string             `json:"currency"`
 	ByService     map[string]float64 `json:"by_service"`
 	ByResource    map[string]float64 `json:"by_resource_type"`
 	ByTeam        map[string]float64 `json:"by_team"`
 	ByProject     map[string]float64 `json:"by_project"`
 	ByRegion      map[string]float64 `json:"by_region"`
 	ByEnvironment map[string]float64 `json:"by_environment"` // dev, staging, prod
-	GPUCost       float64           `json:"gpu_cost"`
-	ComputeCost   float64           `json:"compute_cost"`
-	StorageCost   float64           `json:"storage_cost"`
-	NetworkCost   float64           `json:"network_cost"`
-	Provider      string            `json:"provider"`
+	GPUCost       float64            `json:"gpu_cost"`
+	ComputeCost   float64            `json:"compute_cost"`
+	StorageCost   float64            `json:"storage_cost"`
+	NetworkCost   float64            `json:"network_cost"`
+	Provider      string             `json:"provider"`
 }
 
 // Budget represents a cost budget for a team/project.
 type Budget struct {
-	Name          string    `json:"name"`
-	Type          string    `json:"type"` // team, project, service
-	MonthlyLimit  float64   `json:"monthly_limit"`
-	AlertPercent  float64   `json:"alert_percent"`
-	CurrentSpend  float64   `json:"current_spend"`
-	ForecastSpend float64   `json:"forecast_spend"`
-	Status        string    `json:"status"` // ok, warning, exceeded
-	Period        string    `json:"period"`
+	Name          string  `json:"name"`
+	Type          string  `json:"type"` // team, project, service
+	MonthlyLimit  float64 `json:"monthly_limit"`
+	AlertPercent  float64 `json:"alert_percent"`
+	CurrentSpend  float64 `json:"current_spend"`
+	ForecastSpend float64 `json:"forecast_spend"`
+	Status        string  `json:"status"` // ok, warning, exceeded
+	Period        string  `json:"period"`
 }
 
 // CostAnomaly represents a detected cost anomaly.
 type CostAnomaly struct {
-	Date          time.Time `json:"date"`
-	Service       string    `json:"service"`
-	ExpectedCost  float64   `json:"expected_cost"`
-	ActualCost    float64   `json:"actual_cost"`
-	Deviation     float64   `json:"deviation_percent"`
-	Severity      string    `json:"severity"` // low, medium, high, critical
-	Description   string    `json:"description"`
-	DetectedAt    time.Time `json:"detected_at"`
+	Date         time.Time `json:"date"`
+	Service      string    `json:"service"`
+	ExpectedCost float64   `json:"expected_cost"`
+	ActualCost   float64   `json:"actual_cost"`
+	Deviation    float64   `json:"deviation_percent"`
+	Severity     string    `json:"severity"` // low, medium, high, critical
+	Description  string    `json:"description"`
+	DetectedAt   time.Time `json:"detected_at"`
 }
 
 // OptimizationSuggestion represents a cost optimization recommendation.
 type OptimizationSuggestion struct {
 	ID              string  `json:"id"`
-	Category        string  `json:"category"`  // rightsizing, idle, ri, spot, storage
+	Category        string  `json:"category"` // rightsizing, idle, ri, spot, storage
 	Resource        string  `json:"resource"`
 	Description     string  `json:"description"`
 	EstimatedSaving float64 `json:"estimated_monthly_saving"`
-	Effort          string  `json:"effort"` // low, medium, high
-	Impact          string  `json:"impact"` // low, medium, high
+	Effort          string  `json:"effort"`     // low, medium, high
+	Impact          string  `json:"impact"`     // low, medium, high
 	Confidence      float64 `json:"confidence"` // 0-1
 }
 
 // CostReport is the comprehensive cost analysis report.
 type CostReport struct {
-	Period            string                  `json:"period"`
-	TotalCost         float64                 `json:"total_cost"`
-	PreviousPeriodCost float64                `json:"previous_period_cost"`
-	CostChange        float64                 `json:"cost_change_percent"`
-	Currency          string                  `json:"currency"`
+	Period             string  `json:"period"`
+	TotalCost          float64 `json:"total_cost"`
+	PreviousPeriodCost float64 `json:"previous_period_cost"`
+	CostChange         float64 `json:"cost_change_percent"`
+	Currency           string  `json:"currency"`
 
 	// Breakdown
-	ByService         map[string]float64      `json:"by_service"`
-	ByResource        map[string]float64      `json:"by_resource_type"`
-	ByTeam            map[string]float64      `json:"by_team"`
-	ByProject         map[string]float64      `json:"by_project"`
-	ByRegion          map[string]float64      `json:"by_region"`
-	ByEnvironment     map[string]float64      `json:"by_environment"`
+	ByService     map[string]float64 `json:"by_service"`
+	ByResource    map[string]float64 `json:"by_resource_type"`
+	ByTeam        map[string]float64 `json:"by_team"`
+	ByProject     map[string]float64 `json:"by_project"`
+	ByRegion      map[string]float64 `json:"by_region"`
+	ByEnvironment map[string]float64 `json:"by_environment"`
 
 	// GPU specific
-	GPUCostBreakdown  *GPUCostBreakdown       `json:"gpu_cost_breakdown"`
+	GPUCostBreakdown *GPUCostBreakdown `json:"gpu_cost_breakdown"`
 
 	// Trends
-	DailyTrend        []DailyCost             `json:"daily_trend"`
-	Forecast          []DailyCost             `json:"forecast"`
+	DailyTrend []DailyCost `json:"daily_trend"`
+	Forecast   []DailyCost `json:"forecast"`
 
 	// Analysis
-	TopCostDrivers    []CostDriver            `json:"top_cost_drivers"`
-	Anomalies         []CostAnomaly           `json:"anomalies"`
-	Optimizations     []OptimizationSuggestion `json:"optimizations"`
-	BudgetStatus      []*Budget               `json:"budget_status"`
+	TopCostDrivers []CostDriver             `json:"top_cost_drivers"`
+	Anomalies      []CostAnomaly            `json:"anomalies"`
+	Optimizations  []OptimizationSuggestion `json:"optimizations"`
+	BudgetStatus   []*Budget                `json:"budget_status"`
 
 	// Summary
-	TotalOptSavings   float64                 `json:"total_optimization_savings"`
-	EfficiencyScore   float64                 `json:"efficiency_score"` // 0-100
+	TotalOptSavings float64 `json:"total_optimization_savings"`
+	EfficiencyScore float64 `json:"efficiency_score"` // 0-100
 
-	GeneratedAt       time.Time               `json:"generated_at"`
+	GeneratedAt time.Time `json:"generated_at"`
 }
 
 // DailyCost represents cost for a single day.
@@ -155,12 +153,12 @@ type CostDriver struct {
 
 // GPUCostBreakdown provides detailed GPU cost analysis.
 type GPUCostBreakdown struct {
-	TotalGPUCost     float64            `json:"total_gpu_cost"`
-	PercentOfTotal   float64            `json:"percent_of_total"`
-	ByGPUType        map[string]float64 `json:"by_gpu_type"`
-	AvgUtilization   float64            `json:"avg_utilization"`
-	IdleGPUCost      float64            `json:"idle_gpu_cost"`
-	CostPerGPUHour   float64            `json:"cost_per_gpu_hour"`
+	TotalGPUCost   float64            `json:"total_gpu_cost"`
+	PercentOfTotal float64            `json:"percent_of_total"`
+	ByGPUType      map[string]float64 `json:"by_gpu_type"`
+	AvgUtilization float64            `json:"avg_utilization"`
+	IdleGPUCost    float64            `json:"idle_gpu_cost"`
+	CostPerGPUHour float64            `json:"cost_per_gpu_hour"`
 }
 
 // NewCostAnalysisEngine creates a new cost analysis engine.
@@ -510,7 +508,6 @@ func (e *CostAnalysisEngine) generateOptimizations(records []CostRecord, report 
 			Impact:          "high",
 			Confidence:      0.75,
 		})
-		idCounter++
 	}
 
 	// Sort by estimated savings
@@ -619,9 +616,10 @@ func (e *CostAnalysisEngine) calculateEfficiencyScore(report *CostReport) float6
 
 	// Penalize for budget overruns
 	for _, b := range report.BudgetStatus {
-		if b.Status == "exceeded" {
+		switch b.Status {
+		case "exceeded":
 			score -= 10
-		} else if b.Status == "warning" {
+		case "warning":
 			score -= 3
 		}
 	}

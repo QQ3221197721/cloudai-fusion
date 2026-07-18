@@ -15,11 +15,11 @@ import (
 type TenantStatus string
 
 const (
-	TenantStatusActive     TenantStatus = "active"
-	TenantStatusSuspended  TenantStatus = "suspended"
-	TenantStatusDeactivated TenantStatus = "deactivated"
+	TenantStatusActive       TenantStatus = "active"
+	TenantStatusSuspended    TenantStatus = "suspended"
+	TenantStatusDeactivated  TenantStatus = "deactivated"
 	TenantStatusProvisioning TenantStatus = "provisioning"
-	TenantStatusDeleting   TenantStatus = "deleting"
+	TenantStatusDeleting     TenantStatus = "deleting"
 )
 
 // TenantTier defines the subscription tier
@@ -34,22 +34,22 @@ const (
 
 // Tenant represents a tenant organization in the platform
 type Tenant struct {
-	ID            string            `json:"id"`
-	Name          string            `json:"name"`
-	DisplayName   string            `json:"display_name"`
-	Tier          TenantTier        `json:"tier"`
-	Status        TenantStatus      `json:"status"`
-	OwnerID       string            `json:"owner_id"`
-	OwnerEmail    string            `json:"owner_email"`
-	Namespaces    []string          `json:"namespaces"`
-	Labels        map[string]string `json:"labels,omitempty"`
-	Quota         ResourceQuota     `json:"quota"`
-	Network       NetworkIsolation  `json:"network"`
-	Encryption    EncryptionConfig  `json:"encryption"`
-	Billing       BillingConfig     `json:"billing"`
-	CreatedAt     time.Time         `json:"created_at"`
-	UpdatedAt     time.Time         `json:"updated_at"`
-	SuspendedAt   *time.Time        `json:"suspended_at,omitempty"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	DisplayName string            `json:"display_name"`
+	Tier        TenantTier        `json:"tier"`
+	Status      TenantStatus      `json:"status"`
+	OwnerID     string            `json:"owner_id"`
+	OwnerEmail  string            `json:"owner_email"`
+	Namespaces  []string          `json:"namespaces"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Quota       ResourceQuota     `json:"quota"`
+	Network     NetworkIsolation  `json:"network"`
+	Encryption  EncryptionConfig  `json:"encryption"`
+	Billing     BillingConfig     `json:"billing"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
+	SuspendedAt *time.Time        `json:"suspended_at,omitempty"`
 }
 
 // ============================================================================
@@ -59,22 +59,22 @@ type Tenant struct {
 // ResourceQuota defines resource limits for a tenant
 type ResourceQuota struct {
 	// Compute
-	MaxCPUMillicores  int64 `json:"max_cpu_millicores"`
-	MaxMemoryBytes    int64 `json:"max_memory_bytes"`
-	MaxGPUCount       int   `json:"max_gpu_count"`
-	MaxStorageBytes   int64 `json:"max_storage_bytes"`
+	MaxCPUMillicores int64 `json:"max_cpu_millicores"`
+	MaxMemoryBytes   int64 `json:"max_memory_bytes"`
+	MaxGPUCount      int   `json:"max_gpu_count"`
+	MaxStorageBytes  int64 `json:"max_storage_bytes"`
 
 	// Kubernetes objects
-	MaxPods           int `json:"max_pods"`
-	MaxServices       int `json:"max_services"`
-	MaxSecrets        int `json:"max_secrets"`
-	MaxConfigMaps     int `json:"max_configmaps"`
-	MaxPVCs           int `json:"max_pvcs"`
+	MaxPods       int `json:"max_pods"`
+	MaxServices   int `json:"max_services"`
+	MaxSecrets    int `json:"max_secrets"`
+	MaxConfigMaps int `json:"max_configmaps"`
+	MaxPVCs       int `json:"max_pvcs"`
 
 	// Workloads
-	MaxConcurrentJobs   int `json:"max_concurrent_jobs"`
-	MaxNamespaces       int `json:"max_namespaces"`
-	MaxClusters         int `json:"max_clusters"`
+	MaxConcurrentJobs int `json:"max_concurrent_jobs"`
+	MaxNamespaces     int `json:"max_namespaces"`
+	MaxClusters       int `json:"max_clusters"`
 
 	// Network
 	MaxIngressBandwidthMbps int `json:"max_ingress_bandwidth_mbps"`
@@ -83,20 +83,20 @@ type ResourceQuota struct {
 
 // QuotaUsage tracks current resource usage against the quota
 type QuotaUsage struct {
-	TenantID          string    `json:"tenant_id"`
-	CPUMillicores     int64     `json:"cpu_millicores"`
-	MemoryBytes       int64     `json:"memory_bytes"`
-	GPUCount          int       `json:"gpu_count"`
-	StorageBytes      int64     `json:"storage_bytes"`
-	Pods              int       `json:"pods"`
-	Services          int       `json:"services"`
-	Secrets           int       `json:"secrets"`
-	ConfigMaps        int       `json:"configmaps"`
-	PVCs              int       `json:"pvcs"`
-	ConcurrentJobs    int       `json:"concurrent_jobs"`
-	Namespaces        int       `json:"namespaces"`
-	Clusters          int       `json:"clusters"`
-	CollectedAt       time.Time `json:"collected_at"`
+	TenantID       string    `json:"tenant_id"`
+	CPUMillicores  int64     `json:"cpu_millicores"`
+	MemoryBytes    int64     `json:"memory_bytes"`
+	GPUCount       int       `json:"gpu_count"`
+	StorageBytes   int64     `json:"storage_bytes"`
+	Pods           int       `json:"pods"`
+	Services       int       `json:"services"`
+	Secrets        int       `json:"secrets"`
+	ConfigMaps     int       `json:"configmaps"`
+	PVCs           int       `json:"pvcs"`
+	ConcurrentJobs int       `json:"concurrent_jobs"`
+	Namespaces     int       `json:"namespaces"`
+	Clusters       int       `json:"clusters"`
+	CollectedAt    time.Time `json:"collected_at"`
 }
 
 // DefaultQuotaByTier returns default resource quotas for a tier
@@ -145,29 +145,29 @@ func DefaultQuotaByTier(tier TenantTier) ResourceQuota {
 
 // NetworkIsolation defines network isolation configuration
 type NetworkIsolation struct {
-	Enabled         bool              `json:"enabled"`
-	VPCEnabled      bool              `json:"vpc_enabled"`
-	VPCID           string            `json:"vpc_id,omitempty"`
-	VPCCidr         string            `json:"vpc_cidr,omitempty"`
-	SubnetCidrs     []string          `json:"subnet_cidrs,omitempty"`
-	NetworkPolicyEnabled bool         `json:"network_policy_enabled"`
-	AllowedCIDRs    []string          `json:"allowed_cidrs,omitempty"`
-	DeniedCIDRs     []string          `json:"denied_cidrs,omitempty"`
-	IngressRules    []NetworkRule     `json:"ingress_rules,omitempty"`
-	EgressRules     []NetworkRule     `json:"egress_rules,omitempty"`
-	DNSPolicy       string            `json:"dns_policy"` // isolated, shared, custom
-	ServiceMeshIsolation bool         `json:"service_mesh_isolation"`
+	Enabled              bool          `json:"enabled"`
+	VPCEnabled           bool          `json:"vpc_enabled"`
+	VPCID                string        `json:"vpc_id,omitempty"`
+	VPCCidr              string        `json:"vpc_cidr,omitempty"`
+	SubnetCidrs          []string      `json:"subnet_cidrs,omitempty"`
+	NetworkPolicyEnabled bool          `json:"network_policy_enabled"`
+	AllowedCIDRs         []string      `json:"allowed_cidrs,omitempty"`
+	DeniedCIDRs          []string      `json:"denied_cidrs,omitempty"`
+	IngressRules         []NetworkRule `json:"ingress_rules,omitempty"`
+	EgressRules          []NetworkRule `json:"egress_rules,omitempty"`
+	DNSPolicy            string        `json:"dns_policy"` // isolated, shared, custom
+	ServiceMeshIsolation bool          `json:"service_mesh_isolation"`
 }
 
 // NetworkRule defines a network access rule
 type NetworkRule struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
-	Protocol    string `json:"protocol"` // TCP, UDP, ICMP
+	Protocol    string `json:"protocol"`   // TCP, UDP, ICMP
 	PortRange   string `json:"port_range"` // e.g., "80", "8080-8090"
 	Source      string `json:"source"`     // CIDR or namespace selector
 	Destination string `json:"destination"`
-	Action      string `json:"action"`   // allow, deny
+	Action      string `json:"action"` // allow, deny
 }
 
 // ============================================================================
@@ -177,16 +177,16 @@ type NetworkRule struct {
 // EncryptionConfig defines tenant-specific encryption settings
 type EncryptionConfig struct {
 	Enabled          bool       `json:"enabled"`
-	Algorithm        string     `json:"algorithm"` // AES-256-GCM, AES-256-CBC, ChaCha20-Poly1305
+	Algorithm        string     `json:"algorithm"`    // AES-256-GCM, AES-256-CBC, ChaCha20-Poly1305
 	KeyProvider      string     `json:"key_provider"` // vault, aws-kms, azure-keyvault, gcp-kms, local
 	KeyID            string     `json:"key_id,omitempty"`
 	KeyVersion       int        `json:"key_version"`
 	RotationInterval string     `json:"rotation_interval"` // e.g., "90d", "30d"
 	LastRotatedAt    *time.Time `json:"last_rotated_at,omitempty"`
-	EncryptSecrets   bool       `json:"encrypt_secrets"`     // encrypt K8s secrets at rest
-	EncryptVolumes   bool       `json:"encrypt_volumes"`     // encrypt PVs
-	EncryptBackups   bool       `json:"encrypt_backups"`     // encrypt backup data
-	EncryptTransit   bool       `json:"encrypt_transit"`     // enforce mTLS between services
+	EncryptSecrets   bool       `json:"encrypt_secrets"` // encrypt K8s secrets at rest
+	EncryptVolumes   bool       `json:"encrypt_volumes"` // encrypt PVs
+	EncryptBackups   bool       `json:"encrypt_backups"` // encrypt backup data
+	EncryptTransit   bool       `json:"encrypt_transit"` // enforce mTLS between services
 }
 
 // EncryptionKey represents a tenant's encryption key
@@ -208,57 +208,57 @@ type EncryptionKey struct {
 
 // BillingConfig defines billing settings for a tenant
 type BillingConfig struct {
-	PlanID            string          `json:"plan_id"`
-	PaymentMethod     string          `json:"payment_method"` // credit-card, invoice, prepaid
-	BillingCycle      string          `json:"billing_cycle"`  // monthly, annual
-	Currency          string          `json:"currency"`       // USD, EUR, CNY
-	BudgetLimit       float64         `json:"budget_limit"`
-	AlertThresholds   []float64       `json:"alert_thresholds"` // e.g., [0.5, 0.8, 0.95]
-	AutoSuspendOnLimit bool           `json:"auto_suspend_on_limit"`
-	CostCenter        string          `json:"cost_center,omitempty"`
-	InvoiceEmail      string          `json:"invoice_email"`
+	PlanID             string    `json:"plan_id"`
+	PaymentMethod      string    `json:"payment_method"` // credit-card, invoice, prepaid
+	BillingCycle       string    `json:"billing_cycle"`  // monthly, annual
+	Currency           string    `json:"currency"`       // USD, EUR, CNY
+	BudgetLimit        float64   `json:"budget_limit"`
+	AlertThresholds    []float64 `json:"alert_thresholds"` // e.g., [0.5, 0.8, 0.95]
+	AutoSuspendOnLimit bool      `json:"auto_suspend_on_limit"`
+	CostCenter         string    `json:"cost_center,omitempty"`
+	InvoiceEmail       string    `json:"invoice_email"`
 }
 
 // ResourcePrice defines pricing for a resource type
 type ResourcePrice struct {
-	ResourceType string  `json:"resource_type"` // cpu, memory, gpu, storage, network, api-call
-	Unit         string  `json:"unit"`          // per-hour, per-gb-month, per-request
-	UnitPrice    float64 `json:"unit_price"`
-	Currency     string  `json:"currency"`
+	ResourceType string     `json:"resource_type"` // cpu, memory, gpu, storage, network, api-call
+	Unit         string     `json:"unit"`          // per-hour, per-gb-month, per-request
+	UnitPrice    float64    `json:"unit_price"`
+	Currency     string     `json:"currency"`
 	Tier         TenantTier `json:"tier"`
 }
 
 // UsageRecord represents a single metering record
 type UsageRecord struct {
-	ID           string    `json:"id"`
-	TenantID     string    `json:"tenant_id"`
-	ResourceType string    `json:"resource_type"`
-	Quantity     float64   `json:"quantity"`
-	Unit         string    `json:"unit"`
-	UnitPrice    float64   `json:"unit_price"`
-	TotalCost    float64   `json:"total_cost"`
-	Namespace    string    `json:"namespace,omitempty"`
-	ClusterID    string    `json:"cluster_id,omitempty"`
+	ID           string            `json:"id"`
+	TenantID     string            `json:"tenant_id"`
+	ResourceType string            `json:"resource_type"`
+	Quantity     float64           `json:"quantity"`
+	Unit         string            `json:"unit"`
+	UnitPrice    float64           `json:"unit_price"`
+	TotalCost    float64           `json:"total_cost"`
+	Namespace    string            `json:"namespace,omitempty"`
+	ClusterID    string            `json:"cluster_id,omitempty"`
 	Labels       map[string]string `json:"labels,omitempty"`
-	StartTime    time.Time `json:"start_time"`
-	EndTime      time.Time `json:"end_time"`
-	RecordedAt   time.Time `json:"recorded_at"`
+	StartTime    time.Time         `json:"start_time"`
+	EndTime      time.Time         `json:"end_time"`
+	RecordedAt   time.Time         `json:"recorded_at"`
 }
 
 // Invoice represents a billing invoice for a tenant
 type Invoice struct {
-	ID          string        `json:"id"`
-	TenantID    string        `json:"tenant_id"`
-	Period      string        `json:"period"` // e.g., "2026-03"
-	Status      string        `json:"status"` // draft, issued, paid, overdue
-	LineItems   []InvoiceItem `json:"line_items"`
-	Subtotal    float64       `json:"subtotal"`
-	Tax         float64       `json:"tax"`
-	Total       float64       `json:"total"`
-	Currency    string        `json:"currency"`
-	IssuedAt    time.Time     `json:"issued_at"`
-	DueAt       time.Time     `json:"due_at"`
-	PaidAt      *time.Time    `json:"paid_at,omitempty"`
+	ID        string        `json:"id"`
+	TenantID  string        `json:"tenant_id"`
+	Period    string        `json:"period"` // e.g., "2026-03"
+	Status    string        `json:"status"` // draft, issued, paid, overdue
+	LineItems []InvoiceItem `json:"line_items"`
+	Subtotal  float64       `json:"subtotal"`
+	Tax       float64       `json:"tax"`
+	Total     float64       `json:"total"`
+	Currency  string        `json:"currency"`
+	IssuedAt  time.Time     `json:"issued_at"`
+	DueAt     time.Time     `json:"due_at"`
+	PaidAt    *time.Time    `json:"paid_at,omitempty"`
 }
 
 // InvoiceItem represents a line item in an invoice
@@ -272,16 +272,16 @@ type InvoiceItem struct {
 
 // BillingSummary provides an overview of a tenant's billing
 type BillingSummary struct {
-	TenantID           string             `json:"tenant_id"`
-	Period             string             `json:"period"`
-	TotalCost          float64            `json:"total_cost"`
-	BudgetLimit        float64            `json:"budget_limit"`
-	BudgetUsedPercent  float64            `json:"budget_used_percent"`
-	CostByResource     map[string]float64 `json:"cost_by_resource"`
-	CostByNamespace    map[string]float64 `json:"cost_by_namespace"`
-	CostByCluster      map[string]float64 `json:"cost_by_cluster"`
-	DailyTrend         []DailyCost        `json:"daily_trend"`
-	ProjectedMonthlyCost float64          `json:"projected_monthly_cost"`
+	TenantID             string             `json:"tenant_id"`
+	Period               string             `json:"period"`
+	TotalCost            float64            `json:"total_cost"`
+	BudgetLimit          float64            `json:"budget_limit"`
+	BudgetUsedPercent    float64            `json:"budget_used_percent"`
+	CostByResource       map[string]float64 `json:"cost_by_resource"`
+	CostByNamespace      map[string]float64 `json:"cost_by_namespace"`
+	CostByCluster        map[string]float64 `json:"cost_by_cluster"`
+	DailyTrend           []DailyCost        `json:"daily_trend"`
+	ProjectedMonthlyCost float64            `json:"projected_monthly_cost"`
 }
 
 // DailyCost tracks cost for a single day
@@ -292,13 +292,13 @@ type DailyCost struct {
 
 // QuotaViolation records when a tenant exceeds their quota
 type QuotaViolation struct {
-	ID           string    `json:"id"`
-	TenantID     string    `json:"tenant_id"`
-	ResourceType string    `json:"resource_type"`
-	Current      float64   `json:"current"`
-	Limit        float64   `json:"limit"`
-	Severity     string    `json:"severity"` // warning, critical
-	Message      string    `json:"message"`
-	DetectedAt   time.Time `json:"detected_at"`
+	ID           string     `json:"id"`
+	TenantID     string     `json:"tenant_id"`
+	ResourceType string     `json:"resource_type"`
+	Current      float64    `json:"current"`
+	Limit        float64    `json:"limit"`
+	Severity     string     `json:"severity"` // warning, critical
+	Message      string     `json:"message"`
+	DetectedAt   time.Time  `json:"detected_at"`
 	ResolvedAt   *time.Time `json:"resolved_at,omitempty"`
 }

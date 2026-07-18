@@ -162,16 +162,16 @@ const (
 
 // SLAContract represents an SLA agreement for a tenant
 type SLAContract struct {
-	ID                    string           `json:"id"`
-	TenantID              string           `json:"tenant_id"`
-	Tier                  SLATier          `json:"tier"`
-	AvailabilityTarget    float64          `json:"availability_target"`
-	SupportHours          string           `json:"support_hours"`
+	ID                    string            `json:"id"`
+	TenantID              string            `json:"tenant_id"`
+	Tier                  SLATier           `json:"tier"`
+	AvailabilityTarget    float64           `json:"availability_target"`
+	SupportHours          string            `json:"support_hours"`
 	IncidentResponseTimes map[string]string `json:"incident_response_times"`
-	CreditPolicy          CreditPolicy     `json:"credit_policy"`
-	EffectiveFrom         time.Time        `json:"effective_from"`
-	EffectiveTo           time.Time        `json:"effective_to"`
-	Status                string           `json:"status"`
+	CreditPolicy          CreditPolicy      `json:"credit_policy"`
+	EffectiveFrom         time.Time         `json:"effective_from"`
+	EffectiveTo           time.Time         `json:"effective_to"`
+	Status                string            `json:"status"`
 }
 
 // CreditPolicy defines SLA credit compensation rules
@@ -256,26 +256,26 @@ const (
 
 // SupportTicket represents a customer support ticket
 type SupportTicket struct {
-	ID              string           `json:"id"`
-	TenantID        string           `json:"tenant_id"`
-	Title           string           `json:"title"`
-	Description     string           `json:"description"`
-	Priority        TicketPriority   `json:"priority"`
-	Status          TicketStatus     `json:"status"`
-	Category        TicketCategory   `json:"category"`
-	CreatedBy       string           `json:"created_by"`
-	AssignedTo      string           `json:"assigned_to,omitempty"`
-	Tags            []string         `json:"tags,omitempty"`
-	Comments        []TicketComment  `json:"comments"`
-	SLADeadline     *time.Time       `json:"sla_deadline,omitempty"`
-	SLABreached     bool             `json:"sla_breached"`
-	Resolution      string           `json:"resolution,omitempty"`
-	Satisfaction    *int             `json:"satisfaction,omitempty"`
-	CreatedAt       time.Time        `json:"created_at"`
-	UpdatedAt       time.Time        `json:"updated_at"`
-	ResolvedAt      *time.Time       `json:"resolved_at,omitempty"`
-	ClosedAt        *time.Time       `json:"closed_at,omitempty"`
-	FirstResponseAt *time.Time       `json:"first_response_at,omitempty"`
+	ID              string          `json:"id"`
+	TenantID        string          `json:"tenant_id"`
+	Title           string          `json:"title"`
+	Description     string          `json:"description"`
+	Priority        TicketPriority  `json:"priority"`
+	Status          TicketStatus    `json:"status"`
+	Category        TicketCategory  `json:"category"`
+	CreatedBy       string          `json:"created_by"`
+	AssignedTo      string          `json:"assigned_to,omitempty"`
+	Tags            []string        `json:"tags,omitempty"`
+	Comments        []TicketComment `json:"comments"`
+	SLADeadline     *time.Time      `json:"sla_deadline,omitempty"`
+	SLABreached     bool            `json:"sla_breached"`
+	Resolution      string          `json:"resolution,omitempty"`
+	Satisfaction    *int            `json:"satisfaction,omitempty"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+	ResolvedAt      *time.Time      `json:"resolved_at,omitempty"`
+	ClosedAt        *time.Time      `json:"closed_at,omitempty"`
+	FirstResponseAt *time.Time      `json:"first_response_at,omitempty"`
 }
 
 // TicketComment represents a comment on a support ticket

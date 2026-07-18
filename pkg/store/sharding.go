@@ -3,9 +3,9 @@
 // multi-tenant workload data, enabling efficient queries and data isolation.
 //
 // Sharding strategies:
-//   1. Tenant-based: each tenant's data is routed to a dedicated shard
-//   2. Time-based: data is partitioned by time period (day/month)
-//   3. Hybrid: tenant + time partition for optimal locality
+//  1. Tenant-based: each tenant's data is routed to a dedicated shard
+//  2. Time-based: data is partitioned by time period (day/month)
+//  3. Hybrid: tenant + time partition for optimal locality
 //
 // PostgreSQL native partitioning is used where possible (PARTITION BY RANGE).
 // Application-level sharding routes queries to the correct database.
@@ -15,7 +15,6 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -61,12 +60,11 @@ func DefaultShardConfig() ShardConfig {
 
 // ShardRouter determines which database shard to use for a given operation.
 type ShardRouter struct {
-	strategy  string
-	shards    []*gorm.DB
-	primary   *gorm.DB
-	config    ShardConfig
-	logger    *logrus.Logger
-	mu        sync.RWMutex
+	strategy string
+	shards   []*gorm.DB
+	primary  *gorm.DB
+	config   ShardConfig
+	logger   *logrus.Logger
 }
 
 // NewShardRouter creates a shard router based on configuration.

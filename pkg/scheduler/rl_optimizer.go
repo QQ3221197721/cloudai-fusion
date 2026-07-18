@@ -23,31 +23,31 @@ import (
 
 // RLOptimizerConfig holds RL optimizer configuration
 type RLOptimizerConfig struct {
-	LearningRate    float64 // alpha: how fast Q-values update (0.01-0.5)
-	DiscountFactor  float64 // gamma: importance of future rewards (0.8-0.99)
-	ExplorationRate float64 // epsilon: probability of random action (0.05-0.3)
+	LearningRate     float64 // alpha: how fast Q-values update (0.01-0.5)
+	DiscountFactor   float64 // gamma: importance of future rewards (0.8-0.99)
+	ExplorationRate  float64 // epsilon: probability of random action (0.05-0.3)
 	ExplorationDecay float64 // epsilon decay per episode (0.995-0.9999)
-	MinExploration  float64 // minimum epsilon floor (0.01-0.05)
+	MinExploration   float64 // minimum epsilon floor (0.01-0.05)
 }
 
 // RLOptimizer implements Q-learning for scheduling optimization
 type RLOptimizer struct {
 	config    RLOptimizerConfig
 	qTable    map[string]map[string]float64 // state → action → Q-value
-	episodes  int                            // total training episodes
-	rewards   []float64                      // reward history (sliding window)
-	avgReward float64                        // running average reward
+	episodes  int                           // total training episodes
+	rewards   []float64                     // reward history (sliding window)
+	avgReward float64                       // running average reward
 	logger    *logrus.Logger
 	mu        sync.RWMutex
 }
 
 // SchedulingState represents the discrete state observed by the RL agent
 type SchedulingState struct {
-	WorkloadType     string  // training, inference, fine-tuning
-	GPUCountBucket   string  // "1", "2-4", "5-8", "8+"
-	PriorityBucket   string  // "low", "medium", "high", "critical"
-	ClusterLoadLevel string  // "low" (<30%), "medium" (30-70%), "high" (>70%)
-	TimeOfDay        string  // "off-peak", "standard", "peak"
+	WorkloadType     string // training, inference, fine-tuning
+	GPUCountBucket   string // "1", "2-4", "5-8", "8+"
+	PriorityBucket   string // "low", "medium", "high", "critical"
+	ClusterLoadLevel string // "low" (<30%), "medium" (30-70%), "high" (>70%)
+	TimeOfDay        string // "off-peak", "standard", "peak"
 }
 
 // SchedulingAction represents a discrete action the RL agent can take
@@ -66,23 +66,38 @@ type SchedulingReward struct {
 	Preemptions       int     // number of preemptions caused: lower is better
 }
 
-// NewRLOptimizer creates a new Q-learning scheduling optimizer
+// DefaultRLOptimizerConfig returns the recommended online-learning defaults,
+// with exploration enabled. Use this for production; pass an explicit config to
+// NewRLOptimizer to override. An explicit ExplorationRate of 0 disables
+// exploration (pure exploitation), which the constructor respects.
+func DefaultRLOptimizerConfig() RLOptimizerConfig {
+	return RLOptimizerConfig{
+		LearningRate:     0.1,
+		DiscountFactor:   0.95,
+		ExplorationRate:  0.2,
+		ExplorationDecay: 0.999,
+		MinExploration:   0.02,
+	}
+}
+
+// NewRLOptimizer creates a Q-learning scheduling optimizer from cfg.
 func NewRLOptimizer(cfg RLOptimizerConfig) *RLOptimizer {
-	if cfg.LearningRate == 0 {
+	// LearningRate, DiscountFactor and ExplorationDecay of 0 are non-functional,
+	// so fall back to sane values for those.
+	if cfg.LearningRate <= 0 {
 		cfg.LearningRate = 0.1
 	}
-	if cfg.DiscountFactor == 0 {
+	if cfg.DiscountFactor <= 0 {
 		cfg.DiscountFactor = 0.95
 	}
-	if cfg.ExplorationRate == 0 {
-		cfg.ExplorationRate = 0.2
-	}
-	if cfg.ExplorationDecay == 0 {
+	if cfg.ExplorationDecay <= 0 {
 		cfg.ExplorationDecay = 0.999
 	}
-	if cfg.MinExploration == 0 {
-		cfg.MinExploration = 0.02
-	}
+	// ExplorationRate and MinExploration: 0 is a valid, meaningful choice (pure
+	// exploitation / no exploration floor), so it must be respected rather than
+	// treated as "unset". Only clamp out-of-range values.
+	cfg.ExplorationRate = clamp(cfg.ExplorationRate, 0, 1)
+	cfg.MinExploration = clamp(cfg.MinExploration, 0, 1)
 
 	return &RLOptimizer{
 		config:  cfg,
@@ -352,13 +367,13 @@ func (rl *RLOptimizer) GetStatistics() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"episodes":          rl.episodes,
-		"q_table_states":    stateCount,
-		"q_table_entries":   totalQEntries,
-		"exploration_rate":  rl.config.ExplorationRate,
-		"avg_reward":        rl.avgReward,
-		"learning_rate":     rl.config.LearningRate,
-		"discount_factor":   rl.config.DiscountFactor,
+		"episodes":         rl.episodes,
+		"q_table_states":   stateCount,
+		"q_table_entries":  totalQEntries,
+		"exploration_rate": rl.config.ExplorationRate,
+		"avg_reward":       rl.avgReward,
+		"learning_rate":    rl.config.LearningRate,
+		"discount_factor":  rl.config.DiscountFactor,
 	}
 }
 
@@ -368,35 +383,36 @@ func (rl *RLOptimizer) GetStatistics() map[string]interface{} {
 
 // NeuralPolicyConfig configures the neural network policy bridge.
 type NeuralPolicyConfig struct {
-	ONNXModelPath   string  // Path to exported ONNX model (from Python PPO/SAC trainer)
-	FallbackToQLearning bool // Fall back to Q-learning if ONNX loading fails
-	AIEngineAddr    string  // Python AI engine HTTP endpoint for remote inference
+	ONNXModelPath       string  // Path to exported ONNX model (from Python PPO/SAC trainer)
+	FallbackToQLearning bool    // Fall back to Q-learning if ONNX loading fails
+	AIEngineAddr        string  // Python AI engine HTTP endpoint for remote inference
 	ConfidenceThreshold float64 // Min confidence to use neural policy (0-1)
 }
 
 // NeuralPolicyBridge provides a unified interface for neural network-based
 // scheduling decisions. It supports two modes:
-//   1. Remote inference via AI engine HTTP API (PPO/SAC model served by Python)
-//   2. Fallback to tabular Q-learning when neural model is unavailable
+//  1. Remote inference via AI engine HTTP API (PPO/SAC model served by Python)
+//  2. Fallback to tabular Q-learning when neural model is unavailable
 //
 // The ONNX Runtime integration point is defined but actual ONNX loading
 // requires the onnxruntime-go CGo binding (github.com/yalue/onnxruntime_go),
 // which is optional. In production, the recommended path is remote inference
 // via the AI engine's /api/v1/rl/predict endpoint.
 type NeuralPolicyBridge struct {
-	config    NeuralPolicyConfig
-	qLearning *RLOptimizer
-	logger    *logrus.Logger
-	mu        sync.RWMutex
+	config      NeuralPolicyConfig
+	qLearning   *RLOptimizer
+	logger      *logrus.Logger
 	modelLoaded bool
+	httpClient  *http.Client // reused across remote inference calls (keep-alive)
 }
 
 // NewNeuralPolicyBridge creates a policy bridge with Q-learning fallback.
 func NewNeuralPolicyBridge(cfg NeuralPolicyConfig, qlCfg RLOptimizerConfig) *NeuralPolicyBridge {
 	bridge := &NeuralPolicyBridge{
-		config:    cfg,
-		qLearning: NewRLOptimizer(qlCfg),
-		logger:    logrus.StandardLogger(),
+		config:     cfg,
+		qLearning:  NewRLOptimizer(qlCfg),
+		logger:     logrus.StandardLogger(),
+		httpClient: &http.Client{Timeout: 2 * time.Second},
 	}
 
 	// Attempt to validate ONNX model path
@@ -416,8 +432,8 @@ func NewNeuralPolicyBridge(cfg NeuralPolicyConfig, qlCfg RLOptimizerConfig) *Neu
 // ContinuousAction represents the output of a neural policy (PPO/SAC).
 // Maps to the 3-dimensional continuous action space defined in the Python Gym env.
 type ContinuousAction struct {
-	NodePreference      float64 `json:"node_preference"`       // [0, 1] → node ranking selection
-	GPUShareRatio       float64 `json:"gpu_share_ratio"`        // [0, 1] → 0.25-1.0
+	NodePreference        float64 `json:"node_preference"`        // [0, 1] → node ranking selection
+	GPUShareRatio         float64 `json:"gpu_share_ratio"`        // [0, 1] → 0.25-1.0
 	PreemptionWillingness float64 `json:"preemption_willingness"` // [0, 1] → probability
 }
 
@@ -457,12 +473,11 @@ func (b *NeuralPolicyBridge) remoteInference(observation []float64) (*Continuous
 
 	url := fmt.Sprintf("%s/api/v1/rl/predict", b.config.AIEngineAddr)
 
-	client := &http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Post(url, "application/json", bytes.NewReader(jsonData))
+	resp, err := b.httpClient.Post(url, "application/json", bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("http request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("non-200 response: %d", resp.StatusCode)
@@ -513,7 +528,7 @@ func discreteToContinuous(action SchedulingAction) *ContinuousAction {
 	// Map node preference
 	switch action.NodePreference {
 	case "cheapest":
-		ca.NodePreference = 0.0  // pick top-ranked (cheapest)
+		ca.NodePreference = 0.0 // pick top-ranked (cheapest)
 	case "fastest":
 		ca.NodePreference = 0.25
 	case "balanced":

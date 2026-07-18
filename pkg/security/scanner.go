@@ -57,8 +57,8 @@ type trivyReport struct {
 }
 
 type trivyResult struct {
-	Target          string            `json:"Target"`
-	Vulnerabilities []trivyVulnEntry  `json:"Vulnerabilities"`
+	Target          string           `json:"Target"`
+	Vulnerabilities []trivyVulnEntry `json:"Vulnerabilities"`
 }
 
 type trivyVulnEntry struct {
@@ -79,7 +79,7 @@ type grypeReport struct {
 }
 
 type grypeMatch struct {
-	Vulnerability grypeVuln    `json:"vulnerability"`
+	Vulnerability grypeVuln     `json:"vulnerability"`
 	Artifact      grypeArtifact `json:"artifact"`
 }
 

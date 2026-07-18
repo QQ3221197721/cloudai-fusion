@@ -28,13 +28,13 @@ import (
 
 // IndexDefinition describes a database index for optimization.
 type IndexDefinition struct {
-	Name      string
-	Table     string
-	Columns   []string
-	Unique    bool
-	Partial   string // PostgreSQL partial index WHERE clause
-	Using     string // btree (default), hash, gin, gist
-	Comment   string
+	Name    string
+	Table   string
+	Columns []string
+	Unique  bool
+	Partial string // PostgreSQL partial index WHERE clause
+	Using   string // btree (default), hash, gin, gist
+	Comment string
 }
 
 // OptimalIndexes returns the recommended indexes for production workloads.
@@ -251,11 +251,11 @@ func DefaultBatchConfig() BatchConfig {
 
 // BatchInserter provides buffered batch inserts for high-throughput writes.
 type BatchInserter struct {
-	db      *gorm.DB
-	config  BatchConfig
-	buffer  []interface{}
-	mu      sync.Mutex
-	logger  *logrus.Logger
+	db     *gorm.DB
+	config BatchConfig
+	buffer []interface{}
+	mu     sync.Mutex
+	logger *logrus.Logger
 
 	// Metrics
 	totalInserted int64
@@ -349,13 +349,13 @@ func (bi *BatchInserter) Stats() map[string]int64 {
 
 // QueryPlan holds the result of EXPLAIN ANALYZE.
 type QueryPlan struct {
-	Query        string        `json:"query"`
-	PlanLines    []string      `json:"plan_lines"`
-	ExecutionMs  float64       `json:"execution_ms"`
-	PlanningMs   float64       `json:"planning_ms"`
-	AnalyzedAt   time.Time     `json:"analyzed_at"`
-	HasSeqScan   bool          `json:"has_seq_scan"`
-	HasSortMerge bool          `json:"has_sort_merge"`
+	Query        string    `json:"query"`
+	PlanLines    []string  `json:"plan_lines"`
+	ExecutionMs  float64   `json:"execution_ms"`
+	PlanningMs   float64   `json:"planning_ms"`
+	AnalyzedAt   time.Time `json:"analyzed_at"`
+	HasSeqScan   bool      `json:"has_seq_scan"`
+	HasSortMerge bool      `json:"has_sort_merge"`
 }
 
 // QueryAnalyzer provides EXPLAIN ANALYZE capability for performance tuning.
@@ -390,7 +390,7 @@ func (qa *QueryAnalyzer) Analyze(ctx context.Context, query string, args ...inte
 	if err != nil {
 		return nil, fmt.Errorf("EXPLAIN ANALYZE failed: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var line string
@@ -416,10 +416,10 @@ func (qa *QueryAnalyzer) Analyze(ctx context.Context, query string, args ...inte
 			plan.HasSortMerge = true
 		}
 		if strings.Contains(lower, "execution time") {
-			fmt.Sscanf(line, "  Execution Time: %f ms", &plan.ExecutionMs)
+			_, _ = fmt.Sscanf(line, "  Execution Time: %f ms", &plan.ExecutionMs)
 		}
 		if strings.Contains(lower, "planning time") {
-			fmt.Sscanf(line, "  Planning Time: %f ms", &plan.PlanningMs)
+			_, _ = fmt.Sscanf(line, "  Planning Time: %f ms", &plan.PlanningMs)
 		}
 	}
 
@@ -475,7 +475,7 @@ func (s *Store) ListWorkloadsOptimized(ctx context.Context, clusterID, status st
 	}
 
 	// Select only needed columns for list view (reduces I/O)
-	if err := q.Select("id, name, namespace, cluster_id, type, status, priority, framework, "+
+	if err := q.Select("id, name, namespace, cluster_id, type, status, priority, framework, " +
 		"gpu_type_required, gpu_count_required, assigned_node, started_at, completed_at, created_at, updated_at").
 		Offset(offset).Limit(limit).
 		Order("created_at DESC").
@@ -550,13 +550,13 @@ func (s *Store) CountWorkloadsByStatus(ctx context.Context, clusterID string) (m
 
 // PoolTuner automatically adjusts connection pool parameters based on load.
 type PoolTuner struct {
-	db            *gorm.DB
-	logger        *logrus.Logger
-	baseMaxOpen   int
-	baseMaxIdle   int
-	currentLoad   int64
+	db             *gorm.DB
+	logger         *logrus.Logger
+	baseMaxOpen    int
+	baseMaxIdle    int
+	currentLoad    int64
 	adjustInterval time.Duration
-	mu            sync.Mutex
+	mu             sync.Mutex
 }
 
 // NewPoolTuner creates a connection pool auto-tuner.

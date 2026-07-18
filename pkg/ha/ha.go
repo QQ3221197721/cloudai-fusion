@@ -27,7 +27,7 @@ import (
 type PostgreSQLMode string
 
 const (
-	PGModeStandalone PostgreSQLMode = "standalone"
+	PGModeStandalone  PostgreSQLMode = "standalone"
 	PGModeReplication PostgreSQLMode = "replication"
 	PGModeSynchronous PostgreSQLMode = "synchronous"
 )
@@ -41,16 +41,16 @@ type PostgreSQLHAConfig struct {
 	ReadReplicaPort  int            `json:"read_replica_port"`
 
 	// Connection pool settings
-	MaxOpenConns     int           `json:"max_open_conns"`
-	MaxIdleConns     int           `json:"max_idle_conns"`
-	ConnMaxLifetime  time.Duration `json:"conn_max_lifetime"`
-	ConnMaxIdleTime  time.Duration `json:"conn_max_idle_time"`
+	MaxOpenConns    int           `json:"max_open_conns"`
+	MaxIdleConns    int           `json:"max_idle_conns"`
+	ConnMaxLifetime time.Duration `json:"conn_max_lifetime"`
+	ConnMaxIdleTime time.Duration `json:"conn_max_idle_time"`
 
 	// Replication settings
 	SyncStandbyNames string `json:"sync_standby_names"` // synchronous_standby_names
-	WALLevel         string `json:"wal_level"`           // replica, logical
+	WALLevel         string `json:"wal_level"`          // replica, logical
 	MaxWALSenders    int    `json:"max_wal_senders"`
-	WALKeepSize      string `json:"wal_keep_size"`       // e.g. "1GB"
+	WALKeepSize      string `json:"wal_keep_size"` // e.g. "1GB"
 
 	// Failover settings
 	AutoFailover        bool          `json:"auto_failover"`
@@ -58,13 +58,13 @@ type PostgreSQLHAConfig struct {
 	HealthCheckInterval time.Duration `json:"health_check_interval"`
 
 	// Tuning
-	SharedBuffers         string `json:"shared_buffers"`
-	EffectiveCacheSize    string `json:"effective_cache_size"`
-	WorkMem               string `json:"work_mem"`
-	MaintenanceWorkMem    string `json:"maintenance_work_mem"`
-	MaxConnections        int    `json:"max_connections"`
-	CheckpointTimeout     string `json:"checkpoint_timeout"`
-	WALBuffers            string `json:"wal_buffers"`
+	SharedBuffers      string `json:"shared_buffers"`
+	EffectiveCacheSize string `json:"effective_cache_size"`
+	WorkMem            string `json:"work_mem"`
+	MaintenanceWorkMem string `json:"maintenance_work_mem"`
+	MaxConnections     int    `json:"max_connections"`
+	CheckpointTimeout  string `json:"checkpoint_timeout"`
+	WALBuffers         string `json:"wal_buffers"`
 }
 
 // DefaultPostgreSQLHAConfig returns production-ready PostgreSQL HA configuration.
@@ -82,7 +82,7 @@ func DefaultPostgreSQLHAConfig() PostgreSQLHAConfig {
 		ConnMaxIdleTime: 5 * time.Minute,
 
 		WALLevel:      "replica",
-		MaxWALSenders:  10,
+		MaxWALSenders: 10,
 		WALKeepSize:   "1GB",
 
 		AutoFailover:        true,
@@ -105,12 +105,12 @@ func DefaultPostgreSQLHAConfig() PostgreSQLHAConfig {
 
 // RedisSentinelConfig configures Redis Sentinel high availability.
 type RedisSentinelConfig struct {
-	Enabled      bool     `json:"enabled"`
-	MasterName   string   `json:"master_name"`
+	Enabled       bool     `json:"enabled"`
+	MasterName    string   `json:"master_name"`
 	SentinelAddrs []string `json:"sentinel_addrs"`
-	SentinelPort int      `json:"sentinel_port"`
-	Password     string   `json:"password,omitempty"`
-	DB           int      `json:"db"`
+	SentinelPort  int      `json:"sentinel_port"`
+	Password      string   `json:"password,omitempty"`
+	DB            int      `json:"db"`
 
 	// Sentinel quorum — min number of sentinels to agree on failover
 	Quorum int `json:"quorum"`
@@ -169,21 +169,21 @@ func DefaultRedisSentinelConfig() RedisSentinelConfig {
 type AZStrategy string
 
 const (
-	AZStrategySpread  AZStrategy = "spread"   // spread evenly across AZs
-	AZStrategyPacked  AZStrategy = "packed"   // pack into fewest AZs
-	AZStrategyPrimary AZStrategy = "primary"  // prefer primary AZ, spill to others
+	AZStrategySpread  AZStrategy = "spread"  // spread evenly across AZs
+	AZStrategyPacked  AZStrategy = "packed"  // pack into fewest AZs
+	AZStrategyPrimary AZStrategy = "primary" // prefer primary AZ, spill to others
 )
 
 // CrossAZConfig configures cross-AZ deployment.
 type CrossAZConfig struct {
-	Enabled              bool       `json:"enabled"`
-	Strategy             AZStrategy `json:"strategy"`
-	AvailabilityZones    []string   `json:"availability_zones"`
-	TopologyKey          string     `json:"topology_key"`
-	MaxSkew              int        `json:"max_skew"`
-	WhenUnsatisfiable    string     `json:"when_unsatisfiable"` // DoNotSchedule, ScheduleAnyway
-	PreferredAZ          string     `json:"preferred_az,omitempty"`
-	MinAZsForHA          int        `json:"min_azs_for_ha"`
+	Enabled           bool       `json:"enabled"`
+	Strategy          AZStrategy `json:"strategy"`
+	AvailabilityZones []string   `json:"availability_zones"`
+	TopologyKey       string     `json:"topology_key"`
+	MaxSkew           int        `json:"max_skew"`
+	WhenUnsatisfiable string     `json:"when_unsatisfiable"` // DoNotSchedule, ScheduleAnyway
+	PreferredAZ       string     `json:"preferred_az,omitempty"`
+	MinAZsForHA       int        `json:"min_azs_for_ha"`
 }
 
 // DefaultCrossAZConfig returns production cross-AZ deployment config.
@@ -226,12 +226,12 @@ const (
 
 // EndpointHealth represents health of a single endpoint.
 type EndpointHealth struct {
-	Address      string        `json:"address"`
-	Reachable    bool          `json:"reachable"`
-	Latency      time.Duration `json:"latency"`
-	Role         string        `json:"role"` // primary, replica, sentinel
+	Address        string        `json:"address"`
+	Reachable      bool          `json:"reachable"`
+	Latency        time.Duration `json:"latency"`
+	Role           string        `json:"role"` // primary, replica, sentinel
 	ReplicationLag time.Duration `json:"replication_lag,omitempty"`
-	LastSeen     time.Time     `json:"last_seen"`
+	LastSeen       time.Time     `json:"last_seen"`
 }
 
 // ============================================================================
@@ -248,12 +248,12 @@ type ManagerConfig struct {
 
 // Manager orchestrates high-availability infrastructure.
 type Manager struct {
-	config      ManagerConfig
-	components  map[string]*ComponentHealth
-	failovers   []*FailoverEvent
-	logger      *logrus.Logger
-	mu          sync.RWMutex
-	cancel      context.CancelFunc
+	config     ManagerConfig
+	components map[string]*ComponentHealth
+	failovers  []*FailoverEvent
+	logger     *logrus.Logger
+	mu         sync.RWMutex
+	cancel     context.CancelFunc
 }
 
 // FailoverEvent records a failover event.
@@ -293,9 +293,9 @@ func NewManager(cfg ManagerConfig) *Manager {
 	}
 
 	m.logger.WithFields(logrus.Fields{
-		"pg_mode":      cfg.PostgreSQL.Mode,
+		"pg_mode":        cfg.PostgreSQL.Mode,
 		"redis_sentinel": cfg.Redis.Enabled,
-		"cross_az":     cfg.CrossAZ.Enabled,
+		"cross_az":       cfg.CrossAZ.Enabled,
 	}).Info("HA manager initialized")
 
 	return m
@@ -406,11 +406,11 @@ func (m *Manager) TriggerFailover(ctx context.Context, component, reason string)
 	m.failovers = append(m.failovers, event)
 
 	m.logger.WithFields(logrus.Fields{
-		"component":     component,
-		"from":          event.FromEndpoint,
-		"to":            event.ToEndpoint,
-		"reason":        reason,
-		"duration":      event.Duration,
+		"component": component,
+		"from":      event.FromEndpoint,
+		"to":        event.ToEndpoint,
+		"reason":    reason,
+		"duration":  event.Duration,
 	}).Warn("Failover triggered")
 
 	return event, nil

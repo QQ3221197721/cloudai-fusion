@@ -42,13 +42,13 @@ type ExtensionPoint string
 
 const (
 	// --- Scheduler extension points (K8s scheduler framework style) ---
-	ExtSchedulerFilter  ExtensionPoint = "scheduler.filter"
-	ExtSchedulerScore   ExtensionPoint = "scheduler.score"
-	ExtSchedulerPreBind ExtensionPoint = "scheduler.prebind"
-	ExtSchedulerBind    ExtensionPoint = "scheduler.bind"
+	ExtSchedulerFilter   ExtensionPoint = "scheduler.filter"
+	ExtSchedulerScore    ExtensionPoint = "scheduler.score"
+	ExtSchedulerPreBind  ExtensionPoint = "scheduler.prebind"
+	ExtSchedulerBind     ExtensionPoint = "scheduler.bind"
 	ExtSchedulerPostBind ExtensionPoint = "scheduler.postbind"
-	ExtSchedulerReserve ExtensionPoint = "scheduler.reserve"
-	ExtSchedulerPermit  ExtensionPoint = "scheduler.permit"
+	ExtSchedulerReserve  ExtensionPoint = "scheduler.reserve"
+	ExtSchedulerPermit   ExtensionPoint = "scheduler.permit"
 
 	// --- Security extension points ---
 	ExtSecurityScanner       ExtensionPoint = "security.scanner"
@@ -136,14 +136,14 @@ type Plugin interface {
 
 // Status describes the runtime state of a loaded plugin.
 type Status struct {
-	Name        string        `json:"name"`
-	Version     string        `json:"version"`
-	Phase       Phase         `json:"phase"`
-	Healthy     bool          `json:"healthy"`
-	StartedAt   *time.Time    `json:"startedAt,omitempty"`
-	Uptime      time.Duration `json:"uptime,omitempty"`
-	LastError   string        `json:"lastError,omitempty"`
-	Extensions  []ExtensionPoint `json:"extensions"`
+	Name       string           `json:"name"`
+	Version    string           `json:"version"`
+	Phase      Phase            `json:"phase"`
+	Healthy    bool             `json:"healthy"`
+	StartedAt  *time.Time       `json:"startedAt,omitempty"`
+	Uptime     time.Duration    `json:"uptime,omitempty"`
+	LastError  string           `json:"lastError,omitempty"`
+	Extensions []ExtensionPoint `json:"extensions"`
 }
 
 // ============================================================================
@@ -168,9 +168,9 @@ const (
 
 // Result is returned by extension-point plugin methods.
 type Result struct {
-	Code    Code   `json:"code"`
-	Reason  string `json:"reason,omitempty"`
-	Plugin  string `json:"plugin,omitempty"`
+	Code   Code   `json:"code"`
+	Reason string `json:"reason,omitempty"`
+	Plugin string `json:"plugin,omitempty"`
 }
 
 // IsSuccess returns true if the result indicates success.
@@ -219,11 +219,11 @@ func NewBasePlugin(meta Metadata) BasePlugin {
 	return BasePlugin{meta: meta}
 }
 
-func (b *BasePlugin) Metadata() Metadata                                  { return b.meta }
+func (b *BasePlugin) Metadata() Metadata                                     { return b.meta }
 func (b *BasePlugin) Init(_ context.Context, _ map[string]interface{}) error { return nil }
-func (b *BasePlugin) Start(_ context.Context) error                        { return nil }
-func (b *BasePlugin) Stop(_ context.Context) error                         { return nil }
-func (b *BasePlugin) Health(_ context.Context) error                       { return nil }
+func (b *BasePlugin) Start(_ context.Context) error                          { return nil }
+func (b *BasePlugin) Stop(_ context.Context) error                           { return nil }
+func (b *BasePlugin) Health(_ context.Context) error                         { return nil }
 
 // ============================================================================
 // Plugin Factory

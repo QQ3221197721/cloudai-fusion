@@ -16,23 +16,23 @@ import (
 type QuotaResourceType string
 
 const (
-	QuotaCPU         QuotaResourceType = "cpu"
-	QuotaMemory      QuotaResourceType = "memory"
-	QuotaGPU         QuotaResourceType = "gpu"
-	QuotaGPUMemory   QuotaResourceType = "gpu_memory"
-	QuotaStorage     QuotaResourceType = "storage"
-	QuotaPods        QuotaResourceType = "pods"
-	QuotaServices    QuotaResourceType = "services"
-	QuotaNamespaces  QuotaResourceType = "namespaces"
-	QuotaClusters    QuotaResourceType = "clusters"
-	QuotaBandwidth   QuotaResourceType = "bandwidth"
+	QuotaCPU        QuotaResourceType = "cpu"
+	QuotaMemory     QuotaResourceType = "memory"
+	QuotaGPU        QuotaResourceType = "gpu"
+	QuotaGPUMemory  QuotaResourceType = "gpu_memory"
+	QuotaStorage    QuotaResourceType = "storage"
+	QuotaPods       QuotaResourceType = "pods"
+	QuotaServices   QuotaResourceType = "services"
+	QuotaNamespaces QuotaResourceType = "namespaces"
+	QuotaClusters   QuotaResourceType = "clusters"
+	QuotaBandwidth  QuotaResourceType = "bandwidth"
 )
 
 // QuotaEntry tracks a single resource quota with usage history.
 type QuotaEntry struct {
 	ResourceType QuotaResourceType `json:"resource_type"`
 	HardLimit    int64             `json:"hard_limit"`
-	SoftLimit    int64             `json:"soft_limit"`    // warning threshold
+	SoftLimit    int64             `json:"soft_limit"` // warning threshold
 	CurrentUsage int64             `json:"current_usage"`
 	PeakUsage    int64             `json:"peak_usage"`
 	Unit         string            `json:"unit"` // millicores, bytes, count, mbps
@@ -60,11 +60,11 @@ func (q *QuotaEntry) IsWarning() bool {
 
 // QuotaSnapshot captures the full quota state for a tenant at a point in time.
 type QuotaSnapshot struct {
-	TenantID    string                          `json:"tenant_id"`
-	TenantName  string                          `json:"tenant_name"`
-	Tier        TenantTier                      `json:"tier"`
-	Resources   map[QuotaResourceType]*QuotaEntry `json:"resources"`
-	CapturedAt  time.Time                       `json:"captured_at"`
+	TenantID   string                            `json:"tenant_id"`
+	TenantName string                            `json:"tenant_name"`
+	Tier       TenantTier                        `json:"tier"`
+	Resources  map[QuotaResourceType]*QuotaEntry `json:"resources"`
+	CapturedAt time.Time                         `json:"captured_at"`
 }
 
 // ============================================================================
@@ -73,24 +73,24 @@ type QuotaSnapshot struct {
 
 // CostAllocationReport represents a cost breakdown per tenant.
 type CostAllocationReport struct {
-	ID              string                `json:"id"`
-	PeriodStart     time.Time             `json:"period_start"`
-	PeriodEnd       time.Time             `json:"period_end"`
-	GeneratedAt     time.Time             `json:"generated_at"`
-	Currency        string                `json:"currency"`
-	TenantCosts     []TenantCostSummary   `json:"tenant_costs"`
-	TotalCost       float64               `json:"total_cost"`
-	UnallocatedCost float64               `json:"unallocated_cost"` // shared infra
+	ID              string              `json:"id"`
+	PeriodStart     time.Time           `json:"period_start"`
+	PeriodEnd       time.Time           `json:"period_end"`
+	GeneratedAt     time.Time           `json:"generated_at"`
+	Currency        string              `json:"currency"`
+	TenantCosts     []TenantCostSummary `json:"tenant_costs"`
+	TotalCost       float64             `json:"total_cost"`
+	UnallocatedCost float64             `json:"unallocated_cost"` // shared infra
 }
 
 // TenantCostSummary summarizes costs for a single tenant.
 type TenantCostSummary struct {
-	TenantID     string              `json:"tenant_id"`
-	TenantName   string              `json:"tenant_name"`
-	Tier         TenantTier          `json:"tier"`
+	TenantID      string             `json:"tenant_id"`
+	TenantName    string             `json:"tenant_name"`
+	Tier          TenantTier         `json:"tier"`
 	ResourceCosts []ResourceCostItem `json:"resource_costs"`
-	TotalCost    float64             `json:"total_cost"`
-	CostPercent  float64             `json:"cost_percent"` // % of total platform cost
+	TotalCost     float64            `json:"total_cost"`
+	CostPercent   float64            `json:"cost_percent"` // % of total platform cost
 }
 
 // ResourceCostItem breaks down cost for a single resource type.

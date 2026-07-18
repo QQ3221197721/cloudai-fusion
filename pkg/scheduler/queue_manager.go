@@ -23,14 +23,14 @@ import (
 
 // QueueManagerConfig holds queue management configuration
 type QueueManagerConfig struct {
-	PreemptionEnabled      bool    `json:"preemption_enabled"`
-	PreemptionGracePeriod  int     `json:"preemption_grace_period_sec"` // time to checkpoint before kill
-	DRFEnabled             bool    `json:"drf_enabled"`
-	CapacityEnabled        bool    `json:"capacity_enabled"`
-	GangSchedulingEnabled  bool    `json:"gang_scheduling_enabled"`
-	GangTimeoutSec         int     `json:"gang_timeout_sec"`           // max time to wait for all gang members
-	MaxQueueDepth          int     `json:"max_queue_depth"`            // max workloads in queue
-	StarvationThresholdSec int     `json:"starvation_threshold_sec"`   // promote starving workloads
+	PreemptionEnabled      bool `json:"preemption_enabled"`
+	PreemptionGracePeriod  int  `json:"preemption_grace_period_sec"` // time to checkpoint before kill
+	DRFEnabled             bool `json:"drf_enabled"`
+	CapacityEnabled        bool `json:"capacity_enabled"`
+	GangSchedulingEnabled  bool `json:"gang_scheduling_enabled"`
+	GangTimeoutSec         int  `json:"gang_timeout_sec"`         // max time to wait for all gang members
+	MaxQueueDepth          int  `json:"max_queue_depth"`          // max workloads in queue
+	StarvationThresholdSec int  `json:"starvation_threshold_sec"` // promote starving workloads
 }
 
 // DefaultQueueManagerConfig returns production-ready defaults
@@ -55,26 +55,26 @@ func DefaultQueueManagerConfig() QueueManagerConfig {
 type PriorityLevel int
 
 const (
-	PriorityBestEffort  PriorityLevel = 0   // can be preempted anytime
-	PriorityLow         PriorityLevel = 100
-	PriorityNormal      PriorityLevel = 500
-	PriorityHigh        PriorityLevel = 800
-	PriorityCritical    PriorityLevel = 1000 // never preempted
+	PriorityBestEffort PriorityLevel = 0 // can be preempted anytime
+	PriorityLow        PriorityLevel = 100
+	PriorityNormal     PriorityLevel = 500
+	PriorityHigh       PriorityLevel = 800
+	PriorityCritical   PriorityLevel = 1000 // never preempted
 )
 
 // QueuedWorkload wraps a Workload with queue metadata
 type QueuedWorkload struct {
-	Workload       *Workload     `json:"workload"`
-	QueueName      string        `json:"queue_name"`      // tenant/namespace queue
-	PriorityLevel  PriorityLevel `json:"priority_level"`
-	EnqueuedAt     time.Time     `json:"enqueued_at"`
-	Attempts       int           `json:"attempts"`         // scheduling attempts
-	GangID         string        `json:"gang_id,omitempty"` // gang scheduling group
-	GangSize       int           `json:"gang_size"`        // total members in gang
-	GangReady      bool          `json:"gang_ready"`       // all gang members queued
-	Preemptible    bool          `json:"preemptible"`      // can be preempted
-	PreemptedBy    string        `json:"preempted_by,omitempty"` // workload that preempted this
-	index          int           // for heap interface
+	Workload      *Workload     `json:"workload"`
+	QueueName     string        `json:"queue_name"` // tenant/namespace queue
+	PriorityLevel PriorityLevel `json:"priority_level"`
+	EnqueuedAt    time.Time     `json:"enqueued_at"`
+	Attempts      int           `json:"attempts"`               // scheduling attempts
+	GangID        string        `json:"gang_id,omitempty"`      // gang scheduling group
+	GangSize      int           `json:"gang_size"`              // total members in gang
+	GangReady     bool          `json:"gang_ready"`             // all gang members queued
+	Preemptible   bool          `json:"preemptible"`            // can be preempted
+	PreemptedBy   string        `json:"preempted_by,omitempty"` // workload that preempted this
+	index         int           // for heap interface
 }
 
 // PriorityQueue implements heap.Interface for QueuedWorkloads
@@ -111,14 +111,14 @@ func (pq *PriorityQueue) Pop() interface{} {
 
 // PreemptionDecision describes a preemption action
 type PreemptionDecision struct {
-	PreemptorID    string    `json:"preemptor_id"`
-	PreemptorName  string    `json:"preemptor_name"`
-	VictimID       string    `json:"victim_id"`
-	VictimName     string    `json:"victim_name"`
+	PreemptorID    string        `json:"preemptor_id"`
+	PreemptorName  string        `json:"preemptor_name"`
+	VictimID       string        `json:"victim_id"`
+	VictimName     string        `json:"victim_name"`
 	VictimPriority PriorityLevel `json:"victim_priority"`
-	Reason         string    `json:"reason"`
-	GracePeriodSec int       `json:"grace_period_sec"`
-	Timestamp      time.Time `json:"timestamp"`
+	Reason         string        `json:"reason"`
+	GracePeriodSec int           `json:"grace_period_sec"`
+	Timestamp      time.Time     `json:"timestamp"`
 }
 
 // ============================================================================
@@ -133,19 +133,19 @@ type TenantResourceUsage struct {
 	CPUAllocated     int64   `json:"cpu_allocated_millicores"`
 	MemAllocated     int64   `json:"mem_allocated_bytes"`
 	GPUShare         float64 `json:"gpu_share"`         // fraction of total GPU pool
-	CPUShare         float64 `json:"cpu_share"`          // fraction of total CPU pool
-	MemShare         float64 `json:"mem_share"`          // fraction of total memory pool
-	DominantShare    float64 `json:"dominant_share"`     // max of GPU/CPU/Mem shares
-	DominantResource string  `json:"dominant_resource"`  // "gpu", "cpu", or "memory"
+	CPUShare         float64 `json:"cpu_share"`         // fraction of total CPU pool
+	MemShare         float64 `json:"mem_share"`         // fraction of total memory pool
+	DominantShare    float64 `json:"dominant_share"`    // max of GPU/CPU/Mem shares
+	DominantResource string  `json:"dominant_resource"` // "gpu", "cpu", or "memory"
 	ActiveWorkloads  int     `json:"active_workloads"`
 }
 
 // DRFState holds the global DRF state
 type DRFState struct {
-	TotalGPUs     int                          `json:"total_gpus"`
-	TotalCPU      int64                        `json:"total_cpu_millicores"`
-	TotalMemory   int64                        `json:"total_memory_bytes"`
-	TenantUsage   map[string]*TenantResourceUsage `json:"tenant_usage"`
+	TotalGPUs   int                             `json:"total_gpus"`
+	TotalCPU    int64                           `json:"total_cpu_millicores"`
+	TotalMemory int64                           `json:"total_memory_bytes"`
+	TenantUsage map[string]*TenantResourceUsage `json:"tenant_usage"`
 }
 
 // ComputeDominantShare recalculates dominant resource shares for all tenants
@@ -195,24 +195,24 @@ func (drf *DRFState) SelectNextTenant() string {
 
 // TenantQuota defines resource quotas for a tenant
 type TenantQuota struct {
-	TenantID        string  `json:"tenant_id"`
-	TenantName      string  `json:"tenant_name"`
-	GPUQuota        int     `json:"gpu_quota"`          // guaranteed GPU count
-	GPULimit        int     `json:"gpu_limit"`          // max GPU count (with borrowing)
-	CPUQuotaMillis  int64   `json:"cpu_quota_millis"`   // guaranteed CPU
-	MemQuotaBytes   int64   `json:"mem_quota_bytes"`    // guaranteed memory
-	BorrowingEnabled bool   `json:"borrowing_enabled"`  // can use unused quota from others
-	LendingEnabled   bool   `json:"lending_enabled"`    // allows others to borrow unused quota
-	Weight          float64 `json:"weight"`             // fair-share weight (1.0 = equal)
-	MaxRunningJobs  int     `json:"max_running_jobs"`   // max concurrent workloads
+	TenantID         string  `json:"tenant_id"`
+	TenantName       string  `json:"tenant_name"`
+	GPUQuota         int     `json:"gpu_quota"`         // guaranteed GPU count
+	GPULimit         int     `json:"gpu_limit"`         // max GPU count (with borrowing)
+	CPUQuotaMillis   int64   `json:"cpu_quota_millis"`  // guaranteed CPU
+	MemQuotaBytes    int64   `json:"mem_quota_bytes"`   // guaranteed memory
+	BorrowingEnabled bool    `json:"borrowing_enabled"` // can use unused quota from others
+	LendingEnabled   bool    `json:"lending_enabled"`   // allows others to borrow unused quota
+	Weight           float64 `json:"weight"`            // fair-share weight (1.0 = equal)
+	MaxRunningJobs   int     `json:"max_running_jobs"`  // max concurrent workloads
 }
 
 // CapacityManager manages multi-tenant capacity quotas
 type CapacityManager struct {
-	quotas     map[string]*TenantQuota       // tenant_id → quota
-	usage      map[string]*TenantResourceUsage // tenant_id → current usage
-	totalGPUs  int
-	mu         sync.RWMutex
+	quotas    map[string]*TenantQuota         // tenant_id → quota
+	usage     map[string]*TenantResourceUsage // tenant_id → current usage
+	totalGPUs int
+	mu        sync.RWMutex
 }
 
 // NewCapacityManager creates a new capacity manager
@@ -237,11 +237,17 @@ func (cm *CapacityManager) SetQuota(quota *TenantQuota) {
 	}
 }
 
-// CanSchedule checks if a tenant can schedule a workload within their quota
+// CanSchedule checks if a tenant can schedule a workload within their quota.
+// This is an advisory read; use TryAllocate to atomically check and reserve
+// capacity without a check-then-act race.
 func (cm *CapacityManager) CanSchedule(tenantID string, gpuRequest int) (bool, string) {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
+	return cm.canScheduleLocked(tenantID, gpuRequest)
+}
 
+// canScheduleLocked implements the quota check. Caller must hold cm.mu.
+func (cm *CapacityManager) canScheduleLocked(tenantID string, gpuRequest int) (bool, string) {
 	quota, ok := cm.quotas[tenantID]
 	if !ok {
 		return false, "tenant has no quota configured"
@@ -284,11 +290,15 @@ func (cm *CapacityManager) calculateUnusedGPUs() int {
 	return cm.totalGPUs - totalAllocated
 }
 
-// AllocateResources records resource allocation for a tenant
+// AllocateResources records resource allocation for a tenant.
 func (cm *CapacityManager) AllocateResources(tenantID string, gpus int, cpuMillis int64, memBytes int64) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
+	cm.allocateLocked(tenantID, gpus, cpuMillis, memBytes)
+}
 
+// allocateLocked records an allocation. Caller must hold cm.mu.
+func (cm *CapacityManager) allocateLocked(tenantID string, gpus int, cpuMillis, memBytes int64) {
 	if _, ok := cm.usage[tenantID]; !ok {
 		cm.usage[tenantID] = &TenantResourceUsage{TenantID: tenantID}
 	}
@@ -296,6 +306,21 @@ func (cm *CapacityManager) AllocateResources(tenantID string, gpus int, cpuMilli
 	cm.usage[tenantID].CPUAllocated += cpuMillis
 	cm.usage[tenantID].MemAllocated += memBytes
 	cm.usage[tenantID].ActiveWorkloads++
+}
+
+// TryAllocate atomically checks the tenant's quota and, only if the request
+// fits, records the allocation — all under a single write lock. This closes the
+// check-then-act race between CanSchedule and AllocateResources, so a tenant can
+// never exceed its quota under concurrent scheduling.
+func (cm *CapacityManager) TryAllocate(tenantID string, gpus int, cpuMillis, memBytes int64) (bool, string) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	if ok, reason := cm.canScheduleLocked(tenantID, gpus); !ok {
+		return false, reason
+	}
+	cm.allocateLocked(tenantID, gpus, cpuMillis, memBytes)
+	return true, "allocated"
 }
 
 // ReleaseResources records resource deallocation for a tenant
@@ -352,7 +377,7 @@ type GangGroup struct {
 	TotalMembers    int               `json:"total_members"`
 	ReadyMembers    int               `json:"ready_members"`
 	Members         []*QueuedWorkload `json:"members"`
-	Status          string            `json:"status"`  // "waiting", "ready", "scheduled", "timeout"
+	Status          string            `json:"status"` // "waiting", "ready", "scheduled", "timeout"
 	TotalGPUsNeeded int               `json:"total_gpus_needed"`
 	CreatedAt       time.Time         `json:"created_at"`
 	Deadline        time.Time         `json:"deadline"` // gang timeout
@@ -360,10 +385,10 @@ type GangGroup struct {
 
 // GangScheduler manages gang scheduling groups
 type GangScheduler struct {
-	gangs     map[string]*GangGroup // gang_id → gang
-	timeout   time.Duration
-	logger    *logrus.Logger
-	mu        sync.RWMutex
+	gangs   map[string]*GangGroup // gang_id → gang
+	timeout time.Duration
+	logger  *logrus.Logger
+	mu      sync.RWMutex
 }
 
 // NewGangScheduler creates a new gang scheduler
@@ -410,8 +435,8 @@ func (gs *GangScheduler) RegisterGangMember(qw *QueuedWorkload) error {
 			m.GangReady = true
 		}
 		gs.logger.WithFields(logrus.Fields{
-			"gang_id":   qw.GangID,
-			"members":   gang.TotalMembers,
+			"gang_id":    qw.GangID,
+			"members":    gang.TotalMembers,
 			"total_gpus": gang.TotalGPUsNeeded,
 		}).Info("Gang group ready for scheduling")
 	}
@@ -501,14 +526,14 @@ func (gs *GangScheduler) GetGangs() []*GangGroup {
 
 // QueueManager orchestrates all queue management features
 type QueueManager struct {
-	config          QueueManagerConfig
-	priorityQueue   PriorityQueue
-	gangScheduler   *GangScheduler
-	capacityMgr     *CapacityManager
-	drfState        *DRFState
-	preemptions     []PreemptionDecision
-	logger          *logrus.Logger
-	mu              sync.RWMutex
+	config        QueueManagerConfig
+	priorityQueue PriorityQueue
+	gangScheduler *GangScheduler
+	capacityMgr   *CapacityManager
+	drfState      *DRFState
+	preemptions   []PreemptionDecision
+	logger        *logrus.Logger
+	mu            sync.RWMutex
 }
 
 // NewQueueManager creates a new unified queue manager
@@ -593,7 +618,7 @@ func (qm *QueueManager) DequeueWithDRF() *QueuedWorkload {
 	bestTenant := qm.drfState.SelectNextTenant()
 
 	// Find highest priority workload from that tenant
-	var bestIdx int = -1
+	var bestIdx = -1
 	var bestPriority PriorityLevel = -1
 
 	for i, qw := range qm.priorityQueue {
@@ -710,14 +735,14 @@ func (qm *QueueManager) PromoteStarvedWorkloads() int {
 
 // QueueStatus returns comprehensive queue status
 type QueueStatus struct {
-	TotalQueued       int                       `json:"total_queued"`
-	ByPriority        map[string]int            `json:"by_priority"`
-	ByQueue           map[string]int            `json:"by_queue"`
-	GangGroups        []*GangGroup              `json:"gang_groups"`
-	TenantQuotas      map[string]*TenantQuota   `json:"tenant_quotas"`
+	TotalQueued       int                             `json:"total_queued"`
+	ByPriority        map[string]int                  `json:"by_priority"`
+	ByQueue           map[string]int                  `json:"by_queue"`
+	GangGroups        []*GangGroup                    `json:"gang_groups"`
+	TenantQuotas      map[string]*TenantQuota         `json:"tenant_quotas"`
 	TenantUsage       map[string]*TenantResourceUsage `json:"tenant_usage"`
-	RecentPreemptions []PreemptionDecision      `json:"recent_preemptions"`
-	DRFState          *DRFState                 `json:"drf_state,omitempty"`
+	RecentPreemptions []PreemptionDecision            `json:"recent_preemptions"`
+	DRFState          *DRFState                       `json:"drf_state,omitempty"`
 }
 
 // GetQueueStatus returns the current queue status

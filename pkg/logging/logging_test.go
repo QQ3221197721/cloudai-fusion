@@ -45,7 +45,7 @@ func TestNew_DefaultLevel(t *testing.T) {
 func TestWithContext_NilContext(t *testing.T) {
 	var buf bytes.Buffer
 	l := New(Config{Level: "info", Output: &buf, Component: "api"})
-	entry := l.WithContext(nil)
+	entry := l.WithContext(context.TODO())
 	entry.Info("nil ctx")
 
 	out := buf.String()

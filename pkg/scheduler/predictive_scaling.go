@@ -53,12 +53,12 @@ func DefaultPredictiveScalingConfig() PredictiveScalingConfig {
 
 // LoadDataPoint represents a single resource utilization measurement
 type LoadDataPoint struct {
-	Timestamp      time.Time `json:"timestamp"`
-	GPUUtilization float64   `json:"gpu_utilization"`
-	GPUMemoryUsage float64   `json:"gpu_memory_usage"`
-	QueueDepth     int       `json:"queue_depth"`
-	ActiveWorkloads int      `json:"active_workloads"`
-	RequestRate    float64   `json:"request_rate"` // requests/sec for inference
+	Timestamp       time.Time `json:"timestamp"`
+	GPUUtilization  float64   `json:"gpu_utilization"`
+	GPUMemoryUsage  float64   `json:"gpu_memory_usage"`
+	QueueDepth      int       `json:"queue_depth"`
+	ActiveWorkloads int       `json:"active_workloads"`
+	RequestRate     float64   `json:"request_rate"` // requests/sec for inference
 }
 
 // LoadForecast represents a predicted future load
@@ -76,15 +76,15 @@ type LoadForecast struct {
 
 // ScalingRecommendation represents a proactive scaling suggestion
 type ScalingRecommendation struct {
-	Timestamp        time.Time     `json:"timestamp"`
-	CurrentGPUs      int           `json:"current_gpus"`
-	RecommendedGPUs  int           `json:"recommended_gpus"`
-	PredictedPeakUtil float64      `json:"predicted_peak_utilization"`
-	Confidence       float64       `json:"confidence"`
-	Reason           string        `json:"reason"`
-	ScaleAction      string        `json:"scale_action"` // "scale_up", "scale_down", "maintain"
-	LeadTimeMin      int           `json:"lead_time_min"`
-	Forecasts        []LoadForecast `json:"forecasts,omitempty"`
+	Timestamp         time.Time      `json:"timestamp"`
+	CurrentGPUs       int            `json:"current_gpus"`
+	RecommendedGPUs   int            `json:"recommended_gpus"`
+	PredictedPeakUtil float64        `json:"predicted_peak_utilization"`
+	Confidence        float64        `json:"confidence"`
+	Reason            string         `json:"reason"`
+	ScaleAction       string         `json:"scale_action"` // "scale_up", "scale_down", "maintain"
+	LeadTimeMin       int            `json:"lead_time_min"`
+	Forecasts         []LoadForecast `json:"forecasts,omitempty"`
 }
 
 // ============================================================================
@@ -204,18 +204,18 @@ func (hw *HoltWinters) Forecast(stepsAhead int, currentSeasonIdx int) []float64 
 
 // PredictiveScaler manages predictive scaling decisions
 type PredictiveScaler struct {
-	config      PredictiveScalingConfig
-	history     []LoadDataPoint
-	forecaster  *HoltWinters
+	config       PredictiveScalingConfig
+	history      []LoadDataPoint
+	forecaster   *HoltWinters
 	lastForecast []LoadForecast
-	logger      *logrus.Logger
-	mu          sync.RWMutex
+	logger       *logrus.Logger
+	mu           sync.RWMutex
 }
 
 // NewPredictiveScaler creates a new predictive scaling manager
 func NewPredictiveScaler(cfg PredictiveScalingConfig) *PredictiveScaler {
 	return &PredictiveScaler{
-		config: cfg,
+		config:  cfg,
 		history: make([]LoadDataPoint, 0, 1024),
 		forecaster: NewHoltWinters(
 			cfg.SmoothingAlpha,

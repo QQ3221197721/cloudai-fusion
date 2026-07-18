@@ -57,23 +57,23 @@ type Manager struct {
 	logger      *logrus.Logger
 
 	// Event recorder for audit trail
-	events     []Event
-	eventMu    sync.RWMutex
-	maxEvents  int
+	events    []Event
+	eventMu   sync.RWMutex
+	maxEvents int
 
 	// Leader Election — only the leader runs reconciliation
-	elector    election.LeaderElector
-	isLeader   bool
+	elector  election.LeaderElector
+	isLeader bool
 
 	// Health state
-	started    bool
-	healthy    bool
-	startTime  time.Time
+	started   bool
+	healthy   bool
+	startTime time.Time
 
 	// Lifecycle
-	cancel     context.CancelFunc
-	wg         sync.WaitGroup
-	mu         sync.RWMutex
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+	mu     sync.RWMutex
 }
 
 // NewManager creates a new controller manager.
@@ -434,11 +434,11 @@ func (m *Manager) Status() ManagerStatus {
 	for name, entry := range m.controllers {
 		metrics := entry.queue.Metrics()
 		controllers = append(controllers, ControllerStatus{
-			Name:         name,
-			ResourceKind: entry.reconciler.ResourceKind(),
-			QueueDepth:   metrics.CurrentDepth,
-			InFlight:     metrics.InFlight,
-			TotalAdded:   metrics.TotalAdded,
+			Name:           name,
+			ResourceKind:   entry.reconciler.ResourceKind(),
+			QueueDepth:     metrics.CurrentDepth,
+			InFlight:       metrics.InFlight,
+			TotalAdded:     metrics.TotalAdded,
 			TotalProcessed: metrics.TotalProcessed,
 			TotalRequeued:  metrics.TotalRequeued,
 		})
@@ -462,13 +462,13 @@ func (m *Manager) Status() ManagerStatus {
 
 // ManagerStatus describes the overall status of the controller manager.
 type ManagerStatus struct {
-	Started        bool                    `json:"started"`
-	Healthy        bool                    `json:"healthy"`
-	IsLeader       bool                    `json:"is_leader"`
-	Uptime         time.Duration           `json:"uptime"`
-	Controllers    []ControllerStatus      `json:"controllers"`
-	TotalEvents    int64                   `json:"total_events"`
-	ElectionStats  *election.ElectionStats `json:"election_stats,omitempty"`
+	Started       bool                    `json:"started"`
+	Healthy       bool                    `json:"healthy"`
+	IsLeader      bool                    `json:"is_leader"`
+	Uptime        time.Duration           `json:"uptime"`
+	Controllers   []ControllerStatus      `json:"controllers"`
+	TotalEvents   int64                   `json:"total_events"`
+	ElectionStats *election.ElectionStats `json:"election_stats,omitempty"`
 }
 
 // ControllerStatus describes the status of a single controller.

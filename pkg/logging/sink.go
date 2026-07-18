@@ -42,7 +42,6 @@ type LokiSink struct {
 	buffer []lokiEntry
 	mu     sync.Mutex
 	done   chan struct{}
-	labels string // pre-formatted label string
 }
 
 type lokiEntry struct {
@@ -162,7 +161,7 @@ func (s *LokiSink) flush() {
 	if err != nil {
 		return
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // Close flushes remaining entries and stops the background loop.
@@ -254,14 +253,17 @@ func (s *FileRotationSink) Write(p []byte) (n int, err error) {
 }
 
 func (s *FileRotationSink) rotate() error {
-	s.file.Close()
+	_ = s.file.Close()
 
 	// Rename current file with timestamp
 	ts := time.Now().Format("20060102-150405")
 	ext := filepath.Ext(s.config.FilePath)
 	base := s.config.FilePath[:len(s.config.FilePath)-len(ext)]
 	backupName := fmt.Sprintf("%s-%s%s", base, ts, ext)
-	os.Rename(s.config.FilePath, backupName)
+	if err := os.Rename(s.config.FilePath, backupName); err != nil {
+		_ = s.openFile()
+		return fmt.Errorf("failed to rotate log file: %w", err)
+	}
 
 	// Clean old backups
 	s.cleanOldBackups()
@@ -292,7 +294,7 @@ func (s *FileRotationSink) cleanOldBackups() {
 	if len(backups) > s.config.MaxBackups {
 		toRemove := len(backups) - s.config.MaxBackups
 		for i := 0; i < toRemove; i++ {
-			os.Remove(filepath.Join(dir, backups[i].Name()))
+			_ = os.Remove(filepath.Join(dir, backups[i].Name()))
 		}
 	}
 }
@@ -368,7 +370,7 @@ func (b *SinkBuilder) Build() io.Writer {
 // Close closes all closable sinks.
 func (b *SinkBuilder) Close() error {
 	for _, c := range b.closers {
-		c.Close()
+		_ = c.Close()
 	}
 	return nil
 }

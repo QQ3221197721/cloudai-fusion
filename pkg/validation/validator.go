@@ -28,15 +28,13 @@ func NewResult() *Result {
 }
 
 // AddError appends a field validation error.
-func (r *Result) AddError(field, message string) *Result {
+func (r *Result) AddError(field, message string) {
 	r.Errors = append(r.Errors, FieldError{Field: field, Message: message})
-	return r
 }
 
 // AddErrorf appends a formatted field validation error.
-func (r *Result) AddErrorf(field, format string, args ...interface{}) *Result {
+func (r *Result) AddErrorf(field, format string, args ...interface{}) {
 	r.Errors = append(r.Errors, FieldError{Field: field, Message: fmt.Sprintf(format, args...)})
-	return r
 }
 
 // HasErrors returns true if there are validation errors.
@@ -76,9 +74,8 @@ func (r *Result) Error() string {
 // ============================================================================
 
 var (
-	dnsNameRegex     = regexp.MustCompile(`^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?$`)
-	k8sLabelKeyRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9._\-/]{0,62}$`)
-	semverRegex      = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$`)
+	dnsNameRegex = regexp.MustCompile(`^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?$`)
+	semverRegex  = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$`)
 )
 
 // ValidateDNSName checks if a string is a valid DNS subdomain name.

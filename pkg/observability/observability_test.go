@@ -2,6 +2,9 @@ package observability
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -229,14 +232,22 @@ func TestCreateRunbook(t *testing.T) {
 }
 
 func TestExecuteRunbook(t *testing.T) {
+	// Runbook calls this real HTTP endpoint; the result must reflect the
+	// actual response rather than a canned value.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthy"))
+	}))
+	defer srv.Close()
+
 	mgr := NewManager(DefaultManagerConfig())
 	ctx := context.Background()
 
 	rb, _ := mgr.CreateRunbook(ctx, &Runbook{
 		Name: "test-runbook",
 		Steps: []RunbookStep{
-			{Order: 1, Name: "Step 1", Type: StepTypeCommand},
-			{Order: 2, Name: "Step 2", Type: StepTypeHTTP},
+			{Order: 1, Name: "Health Check", Type: StepTypeHTTP, Webhook: srv.URL},
+			{Order: 2, Name: "Manual Ack", Type: StepTypeManual},
 		},
 		Owner: "test",
 	})
@@ -249,7 +260,93 @@ func TestExecuteRunbook(t *testing.T) {
 		t.Errorf("expected success, got %s", exec.Status)
 	}
 	if len(exec.Steps) != 2 {
-		t.Errorf("expected 2 step results, got %d", len(exec.Steps))
+		t.Fatalf("expected 2 step results, got %d", len(exec.Steps))
+	}
+	if exec.Steps[0].Status != "success" {
+		t.Errorf("http step: expected success, got %s (%s)", exec.Steps[0].Status, exec.Steps[0].Error)
+	}
+	if !strings.Contains(exec.Steps[0].Output, "healthy") {
+		t.Errorf("http step should capture real body 'healthy', got %q", exec.Steps[0].Output)
+	}
+	if exec.Steps[0].Duration <= 0 {
+		t.Error("expected a real (positive) measured step duration")
+	}
+	if exec.Steps[1].Status != "manual" {
+		t.Errorf("manual step: expected 'manual', got %s", exec.Steps[1].Status)
+	}
+}
+
+// TestExecuteRunbookHTTPFailure verifies a failing endpoint yields a failed run
+// (proving the engine reacts to real responses instead of always succeeding).
+func TestExecuteRunbookHTTPFailure(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	mgr := NewManager(DefaultManagerConfig())
+	ctx := context.Background()
+	rb, _ := mgr.CreateRunbook(ctx, &Runbook{
+		Name:  "failing-runbook",
+		Steps: []RunbookStep{{Order: 1, Name: "Bad Endpoint", Type: StepTypeHTTP, Webhook: srv.URL}},
+		Owner: "test",
+	})
+
+	exec, err := mgr.ExecuteRunbook(ctx, rb.ID, "admin")
+	if err != nil {
+		t.Fatalf("ExecuteRunbook failed: %v", err)
+	}
+	if exec.Status != ExecutionFailed {
+		t.Errorf("expected failed execution for HTTP 500, got %s", exec.Status)
+	}
+	if exec.Steps[0].Error == "" {
+		t.Error("expected a non-empty error for the failing HTTP step")
+	}
+}
+
+// TestExecuteRunbookCommand verifies command steps run for real and capture
+// actual stdout when host execution is enabled.
+func TestExecuteRunbookCommand(t *testing.T) {
+	cfg := DefaultManagerConfig()
+	cfg.AllowCommandExecution = true
+	mgr := NewManager(cfg)
+	ctx := context.Background()
+
+	rb, _ := mgr.CreateRunbook(ctx, &Runbook{
+		Name:  "cmd-runbook",
+		Steps: []RunbookStep{{Order: 1, Name: "echo", Type: StepTypeCommand, Command: "echo runbook-marker-42"}},
+		Owner: "test",
+	})
+
+	exec, err := mgr.ExecuteRunbook(ctx, rb.ID, "admin")
+	if err != nil {
+		t.Fatalf("ExecuteRunbook failed: %v", err)
+	}
+	if exec.Status != ExecutionSuccess {
+		t.Errorf("expected success, got %s", exec.Status)
+	}
+	if !strings.Contains(exec.Steps[0].Output, "runbook-marker-42") {
+		t.Errorf("command step should capture real stdout, got %q", exec.Steps[0].Output)
+	}
+}
+
+// TestExecuteRunbookCommandSkipped verifies that with host execution disabled
+// (the default) command steps are transparently skipped, never faked success.
+func TestExecuteRunbookCommandSkipped(t *testing.T) {
+	mgr := NewManager(DefaultManagerConfig())
+	ctx := context.Background()
+	rb, _ := mgr.CreateRunbook(ctx, &Runbook{
+		Name:  "skip-runbook",
+		Steps: []RunbookStep{{Order: 1, Name: "throttle", Type: StepTypeCommand, Command: "echo x"}},
+		Owner: "test",
+	})
+
+	exec, err := mgr.ExecuteRunbook(ctx, rb.ID, "admin")
+	if err != nil {
+		t.Fatalf("ExecuteRunbook failed: %v", err)
+	}
+	if exec.Steps[0].Status != "skipped" {
+		t.Errorf("expected command step skipped when execution disabled, got %s", exec.Steps[0].Status)
 	}
 }
 
@@ -278,9 +375,9 @@ func TestCreateIncident(t *testing.T) {
 	ctx := context.Background()
 
 	incident, err := mgr.CreateIncident(ctx, &Incident{
-		Title:     "Production database connection pool exhaustion",
-		Severity:  SeverityP1High,
-		Commander: "alice",
+		Title:      "Production database connection pool exhaustion",
+		Severity:   SeverityP1High,
+		Commander:  "alice",
 		Responders: []string{"alice", "bob"},
 	})
 	if err != nil {
@@ -299,8 +396,8 @@ func TestIncidentLifecycle(t *testing.T) {
 	ctx := context.Background()
 
 	incident, _ := mgr.CreateIncident(ctx, &Incident{
-		Title:    "API Server Down",
-		Severity: SeverityP0Critical,
+		Title:     "API Server Down",
+		Severity:  SeverityP0Critical,
 		Commander: "alice",
 	})
 
@@ -333,8 +430,8 @@ func TestAddRetrospective(t *testing.T) {
 	ctx := context.Background()
 
 	incident, _ := mgr.CreateIncident(ctx, &Incident{
-		Title:    "Cache Failure",
-		Severity: SeverityP1High,
+		Title:     "Cache Failure",
+		Severity:  SeverityP1High,
 		Commander: "bob",
 	})
 

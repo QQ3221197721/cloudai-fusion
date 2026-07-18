@@ -215,14 +215,14 @@ var _ cloud.CloudService = (*MockCloudService)(nil)
 // ============================================================================
 
 type MockSecurityService struct {
-	ListPoliciesFunc          func(ctx context.Context) ([]*security.SecurityPolicy, error)
-	CreatePolicyFunc          func(ctx context.Context, p *security.SecurityPolicy) error
-	GetPolicyFunc             func(ctx context.Context, id string) (*security.SecurityPolicy, error)
-	RunVulnerabilityScanFunc  func(ctx context.Context, cid, st string) (*security.VulnerabilityScan, error)
-	GetComplianceReportFunc   func(ctx context.Context, cid, fw string) (*security.ComplianceReport, error)
-	GetAuditLogsFunc          func(ctx context.Context, limit int) ([]*security.AuditLogEntry, error)
-	GetThreatsFunc            func(ctx context.Context) ([]*security.ThreatEvent, error)
-	Calls                     []string
+	ListPoliciesFunc         func(ctx context.Context) ([]*security.SecurityPolicy, error)
+	CreatePolicyFunc         func(ctx context.Context, p *security.SecurityPolicy) error
+	GetPolicyFunc            func(ctx context.Context, id string) (*security.SecurityPolicy, error)
+	RunVulnerabilityScanFunc func(ctx context.Context, cid, st string) (*security.VulnerabilityScan, error)
+	GetComplianceReportFunc  func(ctx context.Context, cid, fw string) (*security.ComplianceReport, error)
+	GetAuditLogsFunc         func(ctx context.Context, limit int) ([]*security.AuditLogEntry, error)
+	GetThreatsFunc           func(ctx context.Context) ([]*security.ThreatEvent, error)
+	Calls                    []string
 }
 
 func (m *MockSecurityService) ListPolicies(ctx context.Context) ([]*security.SecurityPolicy, error) {
@@ -430,16 +430,16 @@ var _ mesh.MeshService = (*MockMeshService)(nil)
 // ============================================================================
 
 type MockWasmService struct {
-	ListModulesFunc        func(ctx context.Context) ([]*wasm.WasmModule, error)
-	RegisterModuleFunc     func(ctx context.Context, m *wasm.WasmModule) error
-	DeployFunc             func(ctx context.Context, req *wasm.WasmDeployRequest) ([]*wasm.WasmInstance, error)
-	ListInstancesFunc      func(ctx context.Context) ([]*wasm.WasmInstance, error)
-	StopInstanceFunc       func(ctx context.Context, id string) error
-	DeleteInstanceFunc     func(ctx context.Context, id string) error
+	ListModulesFunc         func(ctx context.Context) ([]*wasm.WasmModule, error)
+	RegisterModuleFunc      func(ctx context.Context, m *wasm.WasmModule) error
+	DeployFunc              func(ctx context.Context, req *wasm.WasmDeployRequest) ([]*wasm.WasmInstance, error)
+	ListInstancesFunc       func(ctx context.Context) ([]*wasm.WasmInstance, error)
+	StopInstanceFunc        func(ctx context.Context, id string) error
+	DeleteInstanceFunc      func(ctx context.Context, id string) error
 	InstanceHealthCheckFunc func(ctx context.Context, id string) (*wasm.InstanceHealth, error)
-	GetMetricsFunc         func(ctx context.Context) (*wasm.RuntimeMetrics, error)
-	CheckRuntimeHealthFunc func(ctx context.Context) (*wasm.RuntimeHealth, error)
-	Calls                  []string
+	GetMetricsFunc          func(ctx context.Context) (*wasm.RuntimeMetrics, error)
+	CheckRuntimeHealthFunc  func(ctx context.Context) (*wasm.RuntimeHealth, error)
+	Calls                   []string
 }
 
 func (m *MockWasmService) ListModules(ctx context.Context) ([]*wasm.WasmModule, error) {
@@ -529,12 +529,12 @@ type MockEdgeService struct {
 	HeartbeatFunc          func(ctx context.Context, nodeID string, usage *edge.EdgeResourceUsage) error
 	StartSyncLoopFunc      func(ctx context.Context)
 	// Enhanced methods
-	GetOfflineStatusFunc   func(ctx context.Context, nodeID string) (*edge.SyncStatus, error)
-	DrainOfflineQueueFunc  func(ctx context.Context, nodeID string) (int, error)
+	GetOfflineStatusFunc     func(ctx context.Context, nodeID string) (*edge.SyncStatus, error)
+	DrainOfflineQueueFunc    func(ctx context.Context, nodeID string) (int, error)
 	OptimizeModelForEdgeFunc func(ctx context.Context, req *edge.EdgeDeployRequest) (*edge.QuantizationType, *edge.PowerBudgetResult, error)
-	RemoveNodeFunc         func(ctx context.Context, nodeID string) error
-	GetNodeHealthFunc      func(ctx context.Context, nodeID string) (map[string]interface{}, error)
-	Calls                  []string
+	RemoveNodeFunc           func(ctx context.Context, nodeID string) error
+	GetNodeHealthFunc        func(ctx context.Context, nodeID string) (map[string]interface{}, error)
+	Calls                    []string
 }
 
 func (m *MockEdgeService) GetTopology(ctx context.Context) (map[string]interface{}, error) {
@@ -650,18 +650,18 @@ var _ edge.EdgeService = (*MockEdgeService)(nil)
 // ============================================================================
 
 type MockKubeClient struct {
-	ListNodesFunc      func(ctx context.Context) ([]k8s.Node, error)
-	GetNodeFunc        func(ctx context.Context, name string) (*k8s.Node, error)
-	GetNodeResourcesFunc func(ctx context.Context) ([]k8s.NodeResourceInfo, error)
-	ListPodsFunc       func(ctx context.Context, ns string) ([]k8s.Pod, error)
-	CreatePodFunc      func(ctx context.Context, ns string, pod *k8s.Pod) (*k8s.Pod, error)
-	DeletePodFunc      func(ctx context.Context, ns, name string) error
-	BindPodFunc        func(ctx context.Context, ns, pod, node string) error
-	DoRawRequestFunc   func(ctx context.Context, method, path string) ([]byte, int, error)
+	ListNodesFunc            func(ctx context.Context) ([]k8s.Node, error)
+	GetNodeFunc              func(ctx context.Context, name string) (*k8s.Node, error)
+	GetNodeResourcesFunc     func(ctx context.Context) ([]k8s.NodeResourceInfo, error)
+	ListPodsFunc             func(ctx context.Context, ns string) ([]k8s.Pod, error)
+	CreatePodFunc            func(ctx context.Context, ns string, pod *k8s.Pod) (*k8s.Pod, error)
+	DeletePodFunc            func(ctx context.Context, ns, name string) error
+	BindPodFunc              func(ctx context.Context, ns, pod, node string) error
+	DoRawRequestFunc         func(ctx context.Context, method, path string) ([]byte, int, error)
 	DoRawRequestWithBodyFunc func(ctx context.Context, method, path string, body []byte) ([]byte, int, error)
-	HealthyFunc        func(ctx context.Context) bool
-	VersionFunc        func(ctx context.Context) (string, error)
-	Calls              []string
+	HealthyFunc              func(ctx context.Context) bool
+	VersionFunc              func(ctx context.Context) (string, error)
+	Calls                    []string
 }
 
 func (m *MockKubeClient) APIServer() string { return "https://mock-k8s:6443" }

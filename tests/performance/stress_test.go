@@ -611,11 +611,11 @@ func TestPerformanceBudget_APILatency(t *testing.T) {
 	})
 
 	budgets := []struct {
-		name      string
-		method    string
-		path      string
-		body      string
-		maxP99Ms  float64
+		name     string
+		method   string
+		path     string
+		body     string
+		maxP99Ms float64
 	}{
 		{"health_check", "GET", "/healthz", "", 5},
 		{"version", "GET", "/version", "", 5},

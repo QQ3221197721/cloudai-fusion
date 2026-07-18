@@ -182,14 +182,14 @@ type TxnOperation struct {
 
 // DistributedTxn represents a single distributed transaction managed by 2PC.
 type DistributedTxn struct {
-	ID           string                       `json:"id"`
-	Phase        TxnPhase                     `json:"phase"`
-	Operations   []TxnOperation               `json:"operations"`
-	Votes        map[string]TxnVote           `json:"votes"`
-	CreatedAt    time.Time                    `json:"created_at"`
-	PreparedAt   *time.Time                   `json:"prepared_at,omitempty"`
-	CompletedAt  *time.Time                   `json:"completed_at,omitempty"`
-	Error        string                       `json:"error,omitempty"`
+	ID          string             `json:"id"`
+	Phase       TxnPhase           `json:"phase"`
+	Operations  []TxnOperation     `json:"operations"`
+	Votes       map[string]TxnVote `json:"votes"`
+	CreatedAt   time.Time          `json:"created_at"`
+	PreparedAt  *time.Time         `json:"prepared_at,omitempty"`
+	CompletedAt *time.Time         `json:"completed_at,omitempty"`
+	Error       string             `json:"error,omitempty"`
 }
 
 // ============================================================================
@@ -592,10 +592,10 @@ func generateTxnID() string {
 
 // MemoryParticipant is an in-memory 2PC participant for development/testing.
 type MemoryParticipant struct {
-	name       string
-	prepared   map[string][]TxnOperation
-	committed  map[string]bool
-	mu         sync.Mutex
+	name      string
+	prepared  map[string][]TxnOperation
+	committed map[string]bool
+	mu        sync.Mutex
 }
 
 // NewMemoryParticipant creates a new in-memory participant.

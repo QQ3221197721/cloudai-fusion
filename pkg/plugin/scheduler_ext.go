@@ -33,21 +33,21 @@ type NodeInfo struct {
 
 // WorkloadInfo is a minimal representation of the workload being scheduled.
 type WorkloadInfo struct {
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	Namespace       string            `json:"namespace"`
-	Type            string            `json:"type"`
-	Priority        int               `json:"priority"`
-	Framework       string            `json:"framework"`
-	GPUCount        int               `json:"gpuCount"`
-	GPUMemoryMB     int64             `json:"gpuMemoryMb"`
-	CPUMillis       int64             `json:"cpuMillis"`
-	MemoryMB        int64             `json:"memoryMb"`
-	RequireNVLink   bool              `json:"requireNvlink"`
-	PreferredNodes  []string          `json:"preferredNodes,omitempty"`
-	AvoidNodes      []string          `json:"avoidNodes,omitempty"`
-	MaxCostPerHour  float64           `json:"maxCostPerHour,omitempty"`
-	Labels          map[string]string `json:"labels,omitempty"`
+	ID             string            `json:"id"`
+	Name           string            `json:"name"`
+	Namespace      string            `json:"namespace"`
+	Type           string            `json:"type"`
+	Priority       int               `json:"priority"`
+	Framework      string            `json:"framework"`
+	GPUCount       int               `json:"gpuCount"`
+	GPUMemoryMB    int64             `json:"gpuMemoryMb"`
+	CPUMillis      int64             `json:"cpuMillis"`
+	MemoryMB       int64             `json:"memoryMb"`
+	RequireNVLink  bool              `json:"requireNvlink"`
+	PreferredNodes []string          `json:"preferredNodes,omitempty"`
+	AvoidNodes     []string          `json:"avoidNodes,omitempty"`
+	MaxCostPerHour float64           `json:"maxCostPerHour,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
 }
 
 // CycleState is a per-scheduling-cycle shared state that plugins can read and

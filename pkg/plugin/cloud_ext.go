@@ -111,8 +111,8 @@ type AuthenticatorPlugin interface {
 // AuthzRequest is an authorization check request.
 type AuthzRequest struct {
 	Identity   *AuthIdentity `json:"identity"`
-	Action     string        `json:"action"`     // "get", "list", "create", "update", "delete"
-	Resource   string        `json:"resource"`   // "clusters", "workloads", "policies"
+	Action     string        `json:"action"`   // "get", "list", "create", "update", "delete"
+	Resource   string        `json:"resource"` // "clusters", "workloads", "policies"
 	ResourceID string        `json:"resourceId,omitempty"`
 	Namespace  string        `json:"namespace,omitempty"`
 }

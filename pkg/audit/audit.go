@@ -45,26 +45,26 @@ const (
 
 // AuditEvent represents a single audited operation.
 type AuditEvent struct {
-	ID            string            `json:"id"`
-	Timestamp     time.Time         `json:"timestamp"`
-	TenantID      string            `json:"tenant_id,omitempty"`
-	UserID        string            `json:"user_id"`
-	Username      string            `json:"username"`
-	IPAddress     string            `json:"ip_address"`
-	UserAgent     string            `json:"user_agent,omitempty"`
-	Action        string            `json:"action"`     // e.g. "create_workload", "delete_cluster"
-	Resource      string            `json:"resource"`   // e.g. "workload", "cluster", "user"
-	ResourceID    string            `json:"resource_id"`
-	Category      EventCategory     `json:"category"`
-	Severity      EventSeverity     `json:"severity"`
-	Result        string            `json:"result"`     // success, failure, denied
-	StatusCode    int               `json:"status_code,omitempty"`
-	ErrorMessage  string            `json:"error_message,omitempty"`
-	RequestBody   string            `json:"request_body,omitempty"`  // sanitized
-	ResponseBody  string            `json:"response_body,omitempty"` // sanitized
-	Metadata      map[string]string `json:"metadata,omitempty"`
-	SessionID     string            `json:"session_id,omitempty"`
-	TraceID       string            `json:"trace_id,omitempty"`
+	ID           string            `json:"id"`
+	Timestamp    time.Time         `json:"timestamp"`
+	TenantID     string            `json:"tenant_id,omitempty"`
+	UserID       string            `json:"user_id"`
+	Username     string            `json:"username"`
+	IPAddress    string            `json:"ip_address"`
+	UserAgent    string            `json:"user_agent,omitempty"`
+	Action       string            `json:"action"`   // e.g. "create_workload", "delete_cluster"
+	Resource     string            `json:"resource"` // e.g. "workload", "cluster", "user"
+	ResourceID   string            `json:"resource_id"`
+	Category     EventCategory     `json:"category"`
+	Severity     EventSeverity     `json:"severity"`
+	Result       string            `json:"result"` // success, failure, denied
+	StatusCode   int               `json:"status_code,omitempty"`
+	ErrorMessage string            `json:"error_message,omitempty"`
+	RequestBody  string            `json:"request_body,omitempty"`  // sanitized
+	ResponseBody string            `json:"response_body,omitempty"` // sanitized
+	Metadata     map[string]string `json:"metadata,omitempty"`
+	SessionID    string            `json:"session_id,omitempty"`
+	TraceID      string            `json:"trace_id,omitempty"`
 }
 
 // ============================================================================
@@ -75,23 +75,23 @@ type AuditEvent struct {
 type ComplianceFramework string
 
 const (
-	FrameworkMLPS3 ComplianceFramework = "mlps3"  // 等保三级
-	FrameworkSOC2  ComplianceFramework = "soc2"   // SOC2 Type II
+	FrameworkMLPS3    ComplianceFramework = "mlps3" // 等保三级
+	FrameworkSOC2     ComplianceFramework = "soc2"  // SOC2 Type II
 	FrameworkISO27001 ComplianceFramework = "iso27001"
-	FrameworkGDPR  ComplianceFramework = "gdpr"
+	FrameworkGDPR     ComplianceFramework = "gdpr"
 )
 
 // ComplianceControl represents a single control check.
 type ComplianceControl struct {
-	ID          string `json:"id"`
+	ID          string              `json:"id"`
 	Framework   ComplianceFramework `json:"framework"`
-	Category    string `json:"category"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Status      string `json:"status"` // pass, fail, warning, not_applicable
-	Evidence    string `json:"evidence,omitempty"`
-	Remediation string `json:"remediation,omitempty"`
-	Severity    string `json:"severity"` // critical, high, medium, low
+	Category    string              `json:"category"`
+	Title       string              `json:"title"`
+	Description string              `json:"description"`
+	Status      string              `json:"status"` // pass, fail, warning, not_applicable
+	Evidence    string              `json:"evidence,omitempty"`
+	Remediation string              `json:"remediation,omitempty"`
+	Severity    string              `json:"severity"` // critical, high, medium, low
 }
 
 // ComplianceReport aggregates control checks into a compliance report.
@@ -106,7 +106,7 @@ type ComplianceReport struct {
 	Passed      int                 `json:"passed"`
 	Failed      int                 `json:"failed"`
 	Warnings    int                 `json:"warnings"`
-	Score       float64             `json:"score"` // 0-100
+	Score       float64             `json:"score"`  // 0-100
 	Status      string              `json:"status"` // compliant, non_compliant, partial
 }
 
@@ -116,8 +116,8 @@ type ComplianceReport struct {
 
 // ManagerConfig configures the audit manager.
 type ManagerConfig struct {
-	RetentionDays int           `json:"retention_days"`
-	MaxEvents     int           `json:"max_events"`
+	RetentionDays int `json:"retention_days"`
+	MaxEvents     int `json:"max_events"`
 	Logger        *logrus.Logger
 }
 

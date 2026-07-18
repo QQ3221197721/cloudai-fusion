@@ -38,12 +38,12 @@ type ManagerConfig struct {
 type PolicyType string
 
 const (
-	PolicyTypeNetwork    PolicyType = "network"
-	PolicyTypeRBAC       PolicyType = "rbac"
+	PolicyTypeNetwork     PolicyType = "network"
+	PolicyTypeRBAC        PolicyType = "rbac"
 	PolicyTypePodSecurity PolicyType = "pod-security"
-	PolicyTypeCompliance PolicyType = "compliance"
-	PolicyTypeSecret     PolicyType = "secret"
-	PolicyTypeImage      PolicyType = "image"
+	PolicyTypeCompliance  PolicyType = "compliance"
+	PolicyTypeSecret      PolicyType = "secret"
+	PolicyTypeImage       PolicyType = "image"
 )
 
 // EnforcementMode defines how a policy is enforced
@@ -85,26 +85,26 @@ type PolicyRule struct {
 
 // VulnerabilityScan represents a vulnerability scan result
 type VulnerabilityScan struct {
-	ID           string              `json:"id"`
-	ClusterID    string              `json:"cluster_id"`
-	ScanType     string              `json:"scan_type"` // image, config, runtime
-	Status       string              `json:"status"`    // pending, running, completed, failed
-	StartedAt    time.Time           `json:"started_at"`
-	CompletedAt  *time.Time          `json:"completed_at,omitempty"`
-	Findings     []VulnerabilityFinding `json:"findings,omitempty"`
-	Summary      ScanSummary         `json:"summary"`
+	ID          string                 `json:"id"`
+	ClusterID   string                 `json:"cluster_id"`
+	ScanType    string                 `json:"scan_type"` // image, config, runtime
+	Status      string                 `json:"status"`    // pending, running, completed, failed
+	StartedAt   time.Time              `json:"started_at"`
+	CompletedAt *time.Time             `json:"completed_at,omitempty"`
+	Findings    []VulnerabilityFinding `json:"findings,omitempty"`
+	Summary     ScanSummary            `json:"summary"`
 }
 
 // VulnerabilityFinding represents a single vulnerability
 type VulnerabilityFinding struct {
-	ID          string `json:"id"`
-	Severity    string `json:"severity"` // critical, high, medium, low
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Resource    string `json:"resource"`
-	Namespace   string `json:"namespace,omitempty"`
-	CVE         string `json:"cve,omitempty"`
-	Remediation string `json:"remediation,omitempty"`
+	ID          string    `json:"id"`
+	Severity    string    `json:"severity"` // critical, high, medium, low
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Resource    string    `json:"resource"`
+	Namespace   string    `json:"namespace,omitempty"`
+	CVE         string    `json:"cve,omitempty"`
+	Remediation string    `json:"remediation,omitempty"`
 	DetectedAt  time.Time `json:"detected_at"`
 }
 
@@ -120,16 +120,16 @@ type ScanSummary struct {
 
 // ComplianceReport represents a compliance audit report
 type ComplianceReport struct {
-	ID           string              `json:"id"`
-	ClusterID    string              `json:"cluster_id"`
-	Framework    string              `json:"framework"` // CIS, NIST, SOC2, PCI-DSS, HIPAA
-	Status       string              `json:"status"`
-	Score        float64             `json:"score"`
-	Passed       int                 `json:"passed"`
-	Failed       int                 `json:"failed"`
-	Warnings     int                 `json:"warnings"`
-	Checks       []ComplianceCheck   `json:"checks,omitempty"`
-	GeneratedAt  time.Time           `json:"generated_at"`
+	ID          string            `json:"id"`
+	ClusterID   string            `json:"cluster_id"`
+	Framework   string            `json:"framework"` // CIS, NIST, SOC2, PCI-DSS, HIPAA
+	Status      string            `json:"status"`
+	Score       float64           `json:"score"`
+	Passed      int               `json:"passed"`
+	Failed      int               `json:"failed"`
+	Warnings    int               `json:"warnings"`
+	Checks      []ComplianceCheck `json:"checks,omitempty"`
+	GeneratedAt time.Time         `json:"generated_at"`
 }
 
 // ComplianceCheck represents a single compliance check
@@ -144,34 +144,34 @@ type ComplianceCheck struct {
 
 // AuditLogEntry represents a security audit log entry
 type AuditLogEntry struct {
-	ID           string            `json:"id"`
-	Timestamp    time.Time         `json:"timestamp"`
-	UserID       string            `json:"user_id"`
-	Username     string            `json:"username"`
-	Action       string            `json:"action"`
-	ResourceType string            `json:"resource_type"`
-	ResourceID   string            `json:"resource_id"`
-	ResourceName string            `json:"resource_name"`
-	ClusterID    string            `json:"cluster_id,omitempty"`
-	IPAddress    string            `json:"ip_address"`
-	UserAgent    string            `json:"user_agent,omitempty"`
-	Status       string            `json:"status"` // success, failure
+	ID           string                 `json:"id"`
+	Timestamp    time.Time              `json:"timestamp"`
+	UserID       string                 `json:"user_id"`
+	Username     string                 `json:"username"`
+	Action       string                 `json:"action"`
+	ResourceType string                 `json:"resource_type"`
+	ResourceID   string                 `json:"resource_id"`
+	ResourceName string                 `json:"resource_name"`
+	ClusterID    string                 `json:"cluster_id,omitempty"`
+	IPAddress    string                 `json:"ip_address"`
+	UserAgent    string                 `json:"user_agent,omitempty"`
+	Status       string                 `json:"status"` // success, failure
 	Details      map[string]interface{} `json:"details,omitempty"`
 }
 
 // ThreatEvent represents a detected security threat
 type ThreatEvent struct {
-	ID          string            `json:"id"`
-	ClusterID   string            `json:"cluster_id"`
-	Severity    string            `json:"severity"`
-	Type        string            `json:"type"` // intrusion, privilege-escalation, data-exfiltration, etc.
-	Source      string            `json:"source"`
-	Target      string            `json:"target"`
-	Description string            `json:"description"`
+	ID          string                 `json:"id"`
+	ClusterID   string                 `json:"cluster_id"`
+	Severity    string                 `json:"severity"`
+	Type        string                 `json:"type"` // intrusion, privilege-escalation, data-exfiltration, etc.
+	Source      string                 `json:"source"`
+	Target      string                 `json:"target"`
+	Description string                 `json:"description"`
 	Evidence    map[string]interface{} `json:"evidence,omitempty"`
-	Status      string            `json:"status"` // active, investigating, resolved, false-positive
-	DetectedAt  time.Time         `json:"detected_at"`
-	ResolvedAt  *time.Time        `json:"resolved_at,omitempty"`
+	Status      string                 `json:"status"` // active, investigating, resolved, false-positive
+	DetectedAt  time.Time              `json:"detected_at"`
+	ResolvedAt  *time.Time             `json:"resolved_at,omitempty"`
 }
 
 // ============================================================================
@@ -186,15 +186,15 @@ type Manager struct {
 	clusterManager *cluster.Manager
 	dbURL          string
 	// Injected dependencies
-	store          *store.Store          // DB persistence (nil = in-memory fallback)
-	k8sClient      *k8s.Client           // K8s API (nil = no cluster scanning)
-	scanner        *Scanner              // Trivy/Grype + pod spec scanning
-	compliance     *ComplianceEngine     // CIS/NIST benchmark engine
-	threatDetector *ThreatDetector       // Rule-based threat detection
-	federation     *FederationManager    // OIDC/SAML identity federation
+	store          *store.Store       // DB persistence (nil = in-memory fallback)
+	k8sClient      *k8s.Client        // K8s API (nil = no cluster scanning)
+	scanner        *Scanner           // Trivy/Grype + pod spec scanning
+	compliance     *ComplianceEngine  // CIS/NIST benchmark engine
+	threatDetector *ThreatDetector    // Rule-based threat detection
+	federation     *FederationManager // OIDC/SAML identity federation
 	// Plugin architecture (Problem #12)
-	pluginRegistry *plugin.Registry              // plugin registry for security extensions
-	securityChain  *plugin.SecurityPluginChain   // security plugin chain (Scanner/PolicyEnforcer/Auditor/ThreatDetector)
+	pluginRegistry *plugin.Registry            // plugin registry for security extensions
+	securityChain  *plugin.SecurityPluginChain // security plugin chain (Scanner/PolicyEnforcer/Auditor/ThreatDetector)
 	logger         *logrus.Logger
 	mu             sync.RWMutex
 }
@@ -571,19 +571,19 @@ func (m *Manager) executeScan(ctx context.Context, scan *VulnerabilityScan) {
 			{
 				ID: common.NewUUID(), Severity: "high", Title: "Container running as root",
 				Description: "Pod nginx-deployment runs container as root user",
-				Resource: "deployment/nginx-deployment", Namespace: "default",
+				Resource:    "deployment/nginx-deployment", Namespace: "default",
 				Remediation: "Set securityContext.runAsNonRoot: true", DetectedAt: now,
 			},
 			{
 				ID: common.NewUUID(), Severity: "medium", Title: "Missing resource limits",
 				Description: "Container does not have resource limits defined",
-				Resource: "deployment/api-gateway", Namespace: "production",
+				Resource:    "deployment/api-gateway", Namespace: "production",
 				Remediation: "Set resources.limits for CPU and memory", DetectedAt: now,
 			},
 			{
 				ID: common.NewUUID(), Severity: "low", Title: "Image tag not pinned",
 				Description: "Container image uses :latest tag",
-				Resource: "deployment/worker", Namespace: "default",
+				Resource:    "deployment/worker", Namespace: "default",
 				Remediation: "Pin image to specific version/digest", DetectedAt: now,
 			},
 		}
@@ -647,7 +647,7 @@ func defaultSecurityPolicies() []*SecurityPolicy {
 		{
 			ID: "policy-pod-security", Name: "Pod Security Standards",
 			Description: "Enforce Kubernetes Pod Security Standards",
-			Type: PolicyTypePodSecurity, Scope: "global",
+			Type:        PolicyTypePodSecurity, Scope: "global",
 			Enforcement: EnforcementEnforce, Status: "active",
 			Rules: []PolicyRule{
 				{ID: "pss-1", Name: "No privileged containers", Condition: "pod.spec.containers[].securityContext.privileged != true", Action: "deny"},
@@ -659,7 +659,7 @@ func defaultSecurityPolicies() []*SecurityPolicy {
 		{
 			ID: "policy-network", Name: "Default Network Policy",
 			Description: "Restrict inter-namespace traffic by default",
-			Type: PolicyTypeNetwork, Scope: "global",
+			Type:        PolicyTypeNetwork, Scope: "global",
 			Enforcement: EnforcementAudit, Status: "active",
 			Rules: []PolicyRule{
 				{ID: "net-1", Name: "Deny cross-namespace ingress", Condition: "ingress.from.namespace != self.namespace", Action: "deny"},
@@ -670,7 +670,7 @@ func defaultSecurityPolicies() []*SecurityPolicy {
 		{
 			ID: "policy-image", Name: "Image Security Policy",
 			Description: "Enforce container image security standards",
-			Type: PolicyTypeImage, Scope: "global",
+			Type:        PolicyTypeImage, Scope: "global",
 			Enforcement: EnforcementWarn, Status: "active",
 			Rules: []PolicyRule{
 				{ID: "img-1", Name: "No latest tag", Condition: "image.tag != 'latest'", Action: "warn"},

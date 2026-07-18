@@ -28,20 +28,20 @@ type PluginLanguage string
 
 const (
 	LangRust           PluginLanguage = "rust"
-	LangGo             PluginLanguage = "go"            // via TinyGo
+	LangGo             PluginLanguage = "go" // via TinyGo
 	LangAssemblyScript PluginLanguage = "assemblyscript"
 	LangC              PluginLanguage = "c"
 	LangCPP            PluginLanguage = "cpp"
 	LangZig            PluginLanguage = "zig"
-	LangPython         PluginLanguage = "python"        // via Componentize-py
-	LangJavaScript     PluginLanguage = "javascript"    // via javy
+	LangPython         PluginLanguage = "python"     // via Componentize-py
+	LangJavaScript     PluginLanguage = "javascript" // via javy
 )
 
 // LanguageToolchain describes build toolchain for a source language
 type LanguageToolchain struct {
 	Language       PluginLanguage `json:"language"`
-	CompilerCmd    string         `json:"compiler_cmd"`    // e.g., "cargo build --target wasm32-wasi"
-	TargetTriple   string         `json:"target_triple"`   // e.g., "wasm32-wasi"
+	CompilerCmd    string         `json:"compiler_cmd"`  // e.g., "cargo build --target wasm32-wasi"
+	TargetTriple   string         `json:"target_triple"` // e.g., "wasm32-wasi"
 	WASISupport    bool           `json:"wasi_support"`
 	ComponentModel bool           `json:"component_model"` // WASM Component Model support
 	AvgBinaryKB    int            `json:"avg_binary_kb"`   // typical output size
@@ -134,57 +134,57 @@ const (
 
 // SandboxProfile defines the security profile for a WASM plugin sandbox
 type SandboxProfile struct {
-	Name               string            `json:"name"`
-	AllowedCapabilities []WASICapability `json:"allowed_capabilities"`
-	DeniedCapabilities  []WASICapability `json:"denied_capabilities"`
-	MemoryLimitMB      int               `json:"memory_limit_mb"`
-	CPULimitMillis     int               `json:"cpu_limit_millis"`
-	MaxOpenFiles       int               `json:"max_open_files"`
-	MaxNetworkConns    int               `json:"max_network_connections"`
-	AllowedHosts       []string          `json:"allowed_hosts"`         // network allowlist
-	DeniedHosts        []string          `json:"denied_hosts"`          // network denylist
-	FSMountPoints      []FSMount         `json:"fs_mount_points"`       // virtual filesystem
-	EnvVars            map[string]string `json:"env_vars"`              // allowed env vars
-	ExecutionTimeoutMs int               `json:"execution_timeout_ms"`
-	EnableProfiling    bool              `json:"enable_profiling"`
+	Name                string            `json:"name"`
+	AllowedCapabilities []WASICapability  `json:"allowed_capabilities"`
+	DeniedCapabilities  []WASICapability  `json:"denied_capabilities"`
+	MemoryLimitMB       int               `json:"memory_limit_mb"`
+	CPULimitMillis      int               `json:"cpu_limit_millis"`
+	MaxOpenFiles        int               `json:"max_open_files"`
+	MaxNetworkConns     int               `json:"max_network_connections"`
+	AllowedHosts        []string          `json:"allowed_hosts"`   // network allowlist
+	DeniedHosts         []string          `json:"denied_hosts"`    // network denylist
+	FSMountPoints       []FSMount         `json:"fs_mount_points"` // virtual filesystem
+	EnvVars             map[string]string `json:"env_vars"`        // allowed env vars
+	ExecutionTimeoutMs  int               `json:"execution_timeout_ms"`
+	EnableProfiling     bool              `json:"enable_profiling"`
 }
 
 // FSMount defines a virtual filesystem mount for the sandbox
 type FSMount struct {
-	GuestPath  string `json:"guest_path"`  // path inside WASM sandbox
-	HostPath   string `json:"host_path"`   // path on host (or virtual)
-	ReadOnly   bool   `json:"read_only"`
+	GuestPath string `json:"guest_path"` // path inside WASM sandbox
+	HostPath  string `json:"host_path"`  // path on host (or virtual)
+	ReadOnly  bool   `json:"read_only"`
 }
 
 // PredefinedSandboxProfiles returns built-in security profiles
 func PredefinedSandboxProfiles() map[string]*SandboxProfile {
 	return map[string]*SandboxProfile{
 		"minimal": {
-			Name:               "minimal",
+			Name:                "minimal",
 			AllowedCapabilities: []WASICapability{CapClockMonotonic, CapRandom, CapLogging},
-			MemoryLimitMB:      32,
-			CPULimitMillis:     100,
-			MaxOpenFiles:       0,
-			MaxNetworkConns:    0,
-			ExecutionTimeoutMs: 5000,
+			MemoryLimitMB:       32,
+			CPULimitMillis:      100,
+			MaxOpenFiles:        0,
+			MaxNetworkConns:     0,
+			ExecutionTimeoutMs:  5000,
 		},
 		"standard": {
-			Name:               "standard",
+			Name:                "standard",
 			AllowedCapabilities: []WASICapability{CapClockMonotonic, CapClockWall, CapRandom, CapStdio, CapLogging, CapEnvironment, CapHTTPOutgoing, CapKeyValueStore},
-			MemoryLimitMB:      128,
-			CPULimitMillis:     1000,
-			MaxOpenFiles:       10,
-			MaxNetworkConns:    5,
-			ExecutionTimeoutMs: 30000,
+			MemoryLimitMB:       128,
+			CPULimitMillis:      1000,
+			MaxOpenFiles:        10,
+			MaxNetworkConns:     5,
+			ExecutionTimeoutMs:  30000,
 		},
 		"privileged": {
-			Name:               "privileged",
+			Name:                "privileged",
 			AllowedCapabilities: []WASICapability{CapFilesystemRead, CapFilesystemWrite, CapNetworkOutbound, CapNetworkInbound, CapEnvironment, CapClockWall, CapClockMonotonic, CapRandom, CapStdio, CapHTTPOutgoing, CapHTTPIncoming, CapKeyValueStore, CapMessaging, CapLogging},
-			MemoryLimitMB:      512,
-			CPULimitMillis:     4000,
-			MaxOpenFiles:       100,
-			MaxNetworkConns:    50,
-			ExecutionTimeoutMs: 60000,
+			MemoryLimitMB:       512,
+			CPULimitMillis:      4000,
+			MaxOpenFiles:        100,
+			MaxNetworkConns:     50,
+			ExecutionTimeoutMs:  60000,
 		},
 	}
 }
@@ -277,20 +277,20 @@ func (s *SandboxManager) ListProfiles() []*SandboxProfile {
 
 // HotSwapConfig configures the hot-swap mechanism
 type HotSwapConfig struct {
-	DrainTimeoutSec    int  `json:"drain_timeout_sec"`
-	HealthCheckAfterMs int  `json:"health_check_after_ms"`
-	RollbackOnFailure  bool `json:"rollback_on_failure"`
-	MaxConcurrentSwaps int  `json:"max_concurrent_swaps"`
+	DrainTimeoutSec      int  `json:"drain_timeout_sec"`
+	HealthCheckAfterMs   int  `json:"health_check_after_ms"`
+	RollbackOnFailure    bool `json:"rollback_on_failure"`
+	MaxConcurrentSwaps   int  `json:"max_concurrent_swaps"`
 	GracefulDrainEnabled bool `json:"graceful_drain_enabled"`
 }
 
 // DefaultHotSwapConfig returns production defaults
 func DefaultHotSwapConfig() HotSwapConfig {
 	return HotSwapConfig{
-		DrainTimeoutSec:    30,
-		HealthCheckAfterMs: 5000,
-		RollbackOnFailure:  true,
-		MaxConcurrentSwaps: 5,
+		DrainTimeoutSec:      30,
+		HealthCheckAfterMs:   5000,
+		RollbackOnFailure:    true,
+		MaxConcurrentSwaps:   5,
 		GracefulDrainEnabled: true,
 	}
 }
@@ -300,10 +300,10 @@ type SwapState string
 
 const (
 	SwapPending    SwapState = "pending"
-	SwapDraining   SwapState = "draining"     // draining old instance
-	SwapLoading    SwapState = "loading"       // loading new module
-	SwapValidating SwapState = "validating"    // health check on new instance
-	SwapSwitching  SwapState = "switching"     // atomic pointer swap
+	SwapDraining   SwapState = "draining"   // draining old instance
+	SwapLoading    SwapState = "loading"    // loading new module
+	SwapValidating SwapState = "validating" // health check on new instance
+	SwapSwitching  SwapState = "switching"  // atomic pointer swap
 	SwapComplete   SwapState = "complete"
 	SwapRolledBack SwapState = "rolled_back"
 	SwapFailed     SwapState = "failed"
@@ -311,17 +311,17 @@ const (
 
 // SwapOperation represents an in-progress hot-swap
 type SwapOperation struct {
-	ID              string    `json:"id"`
-	InstanceID      string    `json:"instance_id"`
-	OldModuleID     string    `json:"old_module_id"`
-	NewModuleID     string    `json:"new_module_id"`
-	OldVersion      string    `json:"old_version"`
-	NewVersion      string    `json:"new_version"`
-	State           SwapState `json:"state"`
-	StartedAt       time.Time `json:"started_at"`
+	ID              string     `json:"id"`
+	InstanceID      string     `json:"instance_id"`
+	OldModuleID     string     `json:"old_module_id"`
+	NewModuleID     string     `json:"new_module_id"`
+	OldVersion      string     `json:"old_version"`
+	NewVersion      string     `json:"new_version"`
+	State           SwapState  `json:"state"`
+	StartedAt       time.Time  `json:"started_at"`
 	CompletedAt     *time.Time `json:"completed_at,omitempty"`
-	RequestsDrained int64     `json:"requests_drained"`
-	Error           string    `json:"error,omitempty"`
+	RequestsDrained int64      `json:"requests_drained"`
+	Error           string     `json:"error,omitempty"`
 }
 
 // HotSwapManager manages zero-downtime plugin updates
@@ -439,7 +439,7 @@ func (h *HotSwapManager) ListOperations() []*SwapOperation {
 
 // MarketplaceConfig configures the plugin marketplace
 type MarketplaceConfig struct {
-	RegistryURL       string `json:"registry_url"`        // OCI registry for plugins
+	RegistryURL       string `json:"registry_url"` // OCI registry for plugins
 	CacheDir          string `json:"cache_dir"`
 	VerifySignatures  bool   `json:"verify_signatures"`
 	AllowUntrusted    bool   `json:"allow_untrusted"`
@@ -461,31 +461,31 @@ func DefaultMarketplaceConfig() MarketplaceConfig {
 
 // PluginManifest describes a plugin in the marketplace
 type PluginManifest struct {
-	Name             string            `json:"name"`
-	DisplayName      string            `json:"display_name"`
-	Version          string            `json:"version"`
-	Description      string            `json:"description"`
-	Author           string            `json:"author"`
-	License          string            `json:"license"`
-	Language         PluginLanguage    `json:"language"`
-	Runtime          RuntimeType       `json:"runtime"`
-	Capabilities     []WASICapability  `json:"capabilities"`
-	SandboxProfile   string            `json:"sandbox_profile"`
-	MinPlatformVer   string            `json:"min_platform_version"`
-	Dependencies     []PluginDep       `json:"dependencies,omitempty"`
-	Tags             []string          `json:"tags"`
-	Category         string            `json:"category"` // scheduler, security, monitoring, auth, integration
-	Downloads        int64             `json:"downloads"`
-	Rating           float64           `json:"rating"` // 0-5
-	Verified         bool              `json:"verified"`
-	Deprecated       bool              `json:"deprecated"`
-	Homepage         string            `json:"homepage,omitempty"`
-	Repository       string            `json:"repository,omitempty"`
-	BinarySizeBytes  int64             `json:"binary_size_bytes"`
-	ChecksumSHA256   string            `json:"checksum_sha256"`
-	PublishedAt      time.Time         `json:"published_at"`
-	UpdatedAt        time.Time         `json:"updated_at"`
-	Metadata         map[string]string `json:"metadata,omitempty"`
+	Name            string            `json:"name"`
+	DisplayName     string            `json:"display_name"`
+	Version         string            `json:"version"`
+	Description     string            `json:"description"`
+	Author          string            `json:"author"`
+	License         string            `json:"license"`
+	Language        PluginLanguage    `json:"language"`
+	Runtime         RuntimeType       `json:"runtime"`
+	Capabilities    []WASICapability  `json:"capabilities"`
+	SandboxProfile  string            `json:"sandbox_profile"`
+	MinPlatformVer  string            `json:"min_platform_version"`
+	Dependencies    []PluginDep       `json:"dependencies,omitempty"`
+	Tags            []string          `json:"tags"`
+	Category        string            `json:"category"` // scheduler, security, monitoring, auth, integration
+	Downloads       int64             `json:"downloads"`
+	Rating          float64           `json:"rating"` // 0-5
+	Verified        bool              `json:"verified"`
+	Deprecated      bool              `json:"deprecated"`
+	Homepage        string            `json:"homepage,omitempty"`
+	Repository      string            `json:"repository,omitempty"`
+	BinarySizeBytes int64             `json:"binary_size_bytes"`
+	ChecksumSHA256  string            `json:"checksum_sha256"`
+	PublishedAt     time.Time         `json:"published_at"`
+	UpdatedAt       time.Time         `json:"updated_at"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
 }
 
 // PluginDep represents a plugin dependency
@@ -504,13 +504,13 @@ type MarketplaceSearchResult struct {
 
 // InstalledPlugin tracks a locally installed plugin
 type InstalledPlugin struct {
-	Manifest       *PluginManifest `json:"manifest"`
-	InstalledAt    time.Time       `json:"installed_at"`
-	UpdatedAt      time.Time       `json:"updated_at"`
-	LocalPath      string          `json:"local_path"`
-	IsActive       bool            `json:"is_active"`
-	InstanceCount  int             `json:"instance_count"`
-	AutoUpdate     bool            `json:"auto_update"`
+	Manifest      *PluginManifest `json:"manifest"`
+	InstalledAt   time.Time       `json:"installed_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+	LocalPath     string          `json:"local_path"`
+	IsActive      bool            `json:"is_active"`
+	InstanceCount int             `json:"instance_count"`
+	AutoUpdate    bool            `json:"auto_update"`
 }
 
 // PluginMarketplace manages plugin discovery, installation, and updates
@@ -542,7 +542,7 @@ func (mp *PluginMarketplace) seedBuiltinPlugins() {
 			Version: "1.0.0", Description: "Scheduler filter for GPU topology-aware placement",
 			Author: "CloudAI Fusion", License: "Apache-2.0", Language: LangRust,
 			Runtime: RuntimeWasmtime, Category: "scheduler",
-			Capabilities: []WASICapability{CapLogging, CapKeyValueStore},
+			Capabilities:   []WASICapability{CapLogging, CapKeyValueStore},
 			SandboxProfile: "minimal", Tags: []string{"gpu", "scheduler", "topology"},
 			Verified: true, Rating: 4.8, Downloads: 15200,
 			BinarySizeBytes: 256 * 1024, PublishedAt: time.Now().UTC().Add(-90 * 24 * time.Hour),
@@ -552,7 +552,7 @@ func (mp *PluginMarketplace) seedBuiltinPlugins() {
 			Version: "2.1.0", Description: "Open Policy Agent integration for admission control",
 			Author: "CloudAI Fusion", License: "Apache-2.0", Language: LangGo,
 			Runtime: RuntimeWasmEdge, Category: "security",
-			Capabilities: []WASICapability{CapLogging, CapHTTPOutgoing, CapEnvironment},
+			Capabilities:   []WASICapability{CapLogging, CapHTTPOutgoing, CapEnvironment},
 			SandboxProfile: "standard", Tags: []string{"opa", "policy", "admission", "security"},
 			Verified: true, Rating: 4.9, Downloads: 32100,
 			BinarySizeBytes: 512 * 1024, PublishedAt: time.Now().UTC().Add(-60 * 24 * time.Hour),
@@ -562,7 +562,7 @@ func (mp *PluginMarketplace) seedBuiltinPlugins() {
 			Version: "1.2.0", Description: "ML-based cost anomaly detection for multi-cloud",
 			Author: "Community", License: "MIT", Language: LangAssemblyScript,
 			Runtime: RuntimeSpin, Category: "monitoring",
-			Capabilities: []WASICapability{CapLogging, CapClockWall, CapKeyValueStore},
+			Capabilities:   []WASICapability{CapLogging, CapClockWall, CapKeyValueStore},
 			SandboxProfile: "standard", Tags: []string{"cost", "anomaly", "ml", "monitoring"},
 			Verified: false, Rating: 4.2, Downloads: 8700,
 			BinarySizeBytes: 64 * 1024, PublishedAt: time.Now().UTC().Add(-30 * 24 * time.Hour),
@@ -572,7 +572,7 @@ func (mp *PluginMarketplace) seedBuiltinPlugins() {
 			Version: "1.0.0", Description: "LDAP/Active Directory authentication plugin",
 			Author: "Community", License: "Apache-2.0", Language: LangRust,
 			Runtime: RuntimeWasmtime, Category: "auth",
-			Capabilities: []WASICapability{CapLogging, CapNetworkOutbound, CapEnvironment},
+			Capabilities:   []WASICapability{CapLogging, CapNetworkOutbound, CapEnvironment},
 			SandboxProfile: "standard", Tags: []string{"ldap", "auth", "active-directory"},
 			Verified: true, Rating: 4.5, Downloads: 12400,
 			BinarySizeBytes: 384 * 1024, PublishedAt: time.Now().UTC().Add(-45 * 24 * time.Hour),
@@ -582,7 +582,7 @@ func (mp *PluginMarketplace) seedBuiltinPlugins() {
 			Version: "1.3.0", Description: "Export custom metrics to Prometheus",
 			Author: "CloudAI Fusion", License: "Apache-2.0", Language: LangRust,
 			Runtime: RuntimeWasmtime, Category: "monitoring",
-			Capabilities: []WASICapability{CapLogging, CapHTTPIncoming, CapHTTPOutgoing},
+			Capabilities:   []WASICapability{CapLogging, CapHTTPIncoming, CapHTTPOutgoing},
 			SandboxProfile: "standard", Tags: []string{"prometheus", "metrics", "monitoring"},
 			Verified: true, Rating: 4.7, Downloads: 28500,
 			BinarySizeBytes: 196 * 1024, PublishedAt: time.Now().UTC().Add(-75 * 24 * time.Hour),

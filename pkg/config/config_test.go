@@ -299,7 +299,7 @@ func TestIsInsecureDefault(t *testing.T) {
 		{"dev-fallback-secret-not-for-production", true},
 		{"your-secret-here-xxx", true},
 		{"replace-me-with-real-key", true},
-		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", false},  // 31 chars, not 32 — skip repeated-char check
+		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", false},   // 31 chars, not 32 — skip repeated-char check
 		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true}, // 34 repeated chars
 		{"xK9#mP2$vL7@nQ4!bR8&wJ5^tF3*hY6", false},
 		{"my-strong-prod-key-2024", false},

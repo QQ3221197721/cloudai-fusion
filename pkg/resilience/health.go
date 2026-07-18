@@ -53,20 +53,20 @@ type HealthChecker func(ctx context.Context) HealthCheckResult
 
 // HealthCheckResult holds the result of a single health check.
 type HealthCheckResult struct {
-	Status    HealthStatus          `json:"status"`
-	Message   string                `json:"message,omitempty"`
-	Duration  time.Duration         `json:"duration"`
-	Timestamp time.Time             `json:"timestamp"`
-	Details   map[string]string     `json:"details,omitempty"`
+	Status    HealthStatus      `json:"status"`
+	Message   string            `json:"message,omitempty"`
+	Duration  time.Duration     `json:"duration"`
+	Timestamp time.Time         `json:"timestamp"`
+	Details   map[string]string `json:"details,omitempty"`
 }
 
 // HealthReport is the aggregated health report for the entire service.
 type HealthReport struct {
-	Status     HealthStatus                  `json:"status"`
-	Checks     map[string]HealthCheckResult  `json:"checks"`
-	Uptime     time.Duration                 `json:"uptime"`
-	Version    string                        `json:"version,omitempty"`
-	Timestamp  time.Time                     `json:"timestamp"`
+	Status    HealthStatus                 `json:"status"`
+	Checks    map[string]HealthCheckResult `json:"checks"`
+	Uptime    time.Duration                `json:"uptime"`
+	Version   string                       `json:"version,omitempty"`
+	Timestamp time.Time                    `json:"timestamp"`
 }
 
 // ============================================================================
@@ -111,7 +111,6 @@ type HealthManager struct {
 	startupChecks   map[string]HealthChecker
 
 	// Cached results
-	lastReport    atomic.Value // stores *HealthReport
 	lastLiveness  atomic.Value // stores *HealthReport
 	lastReadiness atomic.Value // stores *HealthReport
 
@@ -483,7 +482,7 @@ func HTTPHealthChecker(url string, expectedStatus int) HealthChecker {
 				Details: map[string]string{"url": url},
 			}
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != expectedStatus {
 			return HealthCheckResult{

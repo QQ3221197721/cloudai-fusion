@@ -130,7 +130,7 @@ func (w *WebhookPlugin) Call(ctx context.Context, req *WebhookRequest) (*Webhook
 		}
 		return nil, fmt.Errorf("webhook %q: HTTP call failed: %w", w.cfg.Name, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
@@ -161,7 +161,7 @@ func (w *WebhookPlugin) Health(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("webhook %q health check failed: %w", w.cfg.Name, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 500 {
 		return fmt.Errorf("webhook %q returned HTTP %d", w.cfg.Name, resp.StatusCode)
 	}

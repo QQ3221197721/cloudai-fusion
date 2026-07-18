@@ -116,13 +116,13 @@ func NewEngine(cfg EngineConfig) (*Engine, error) {
 	}
 
 	e := &Engine{
-		config:  cfg,
-		policy:  defaultPolicy(),
-		queue:   make([]*Workload, 0),
-		running: make(map[string]*Workload),
+		config:           cfg,
+		policy:           defaultPolicy(),
+		queue:            make([]*Workload, 0),
+		running:          make(map[string]*Workload),
 		k8sClient:        cfg.K8sClient,
 		topology:         NewTopologyDiscoverer("", ""),
-		rlOptimizer:      NewRLOptimizer(RLOptimizerConfig{}),
+		rlOptimizer:      NewRLOptimizer(DefaultRLOptimizerConfig()),
 		gpuSharing:       NewGPUSharingManager(GPUSharingConfig{}),
 		elasticInference: NewElasticInferenceManager(DefaultElasticInferenceConfig()),
 		predictiveScaler: NewPredictiveScaler(DefaultPredictiveScalingConfig()),
@@ -143,15 +143,15 @@ func NewEngine(cfg EngineConfig) (*Engine, error) {
 
 func defaultPolicy() *SchedulingPolicy {
 	return &SchedulingPolicy{
-		Name:              "default",
-		PreemptionEnabled: true,
-		GPUShareEnabled:   true,
-		TopologyAware:     true,
-		CostOptimize:      true,
-		MaxGPUUtilization: 85.0,
+		Name:                "default",
+		PreemptionEnabled:   true,
+		GPUShareEnabled:     true,
+		TopologyAware:       true,
+		CostOptimize:        true,
+		MaxGPUUtilization:   85.0,
 		SpotInstanceEnabled: true,
-		FairnessWeight:    0.3,
-		EfficiencyWeight:  0.7,
+		FairnessWeight:      0.3,
+		EfficiencyWeight:    0.7,
 	}
 }
 
@@ -805,11 +805,11 @@ func (e *Engine) LoadSnapshot() error {
 // NodeWatchCache provides a cached view of K8s node resources.
 // The cache is refreshed on a configurable interval instead of every scheduling tick.
 type NodeWatchCache struct {
-	nodes             []NodeScore
-	lastFullSync      time.Time
-	fullSyncInterval  time.Duration
-	mu                sync.RWMutex
-	logger            *logrus.Logger
+	nodes            []NodeScore
+	lastFullSync     time.Time
+	fullSyncInterval time.Duration
+	mu               sync.RWMutex
+	logger           *logrus.Logger
 }
 
 // NewNodeWatchCache creates a new node watch cache.

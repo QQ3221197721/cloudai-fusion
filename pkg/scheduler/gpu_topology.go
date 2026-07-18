@@ -40,14 +40,14 @@ type TopologyCache struct {
 
 // NodeGPUTopology holds complete GPU topology for a node
 type NodeGPUTopology struct {
-	NodeName    string              `json:"node_name"`
-	GPUs        []DiscoveredGPU     `json:"gpus"`
-	NVLinks     []NVLinkConnection  `json:"nvlink_connections"`
-	NUMANodes   map[int][]int       `json:"numa_nodes"` // NUMA node → GPU indices
-	P2PMatrix   map[string]string   `json:"p2p_matrix"` // "0-1" → "NVL" | "PHB" | "SYS"
-	TotalGPUs   int                 `json:"total_gpus"`
-	HasNVLink   bool                `json:"has_nvlink"`
-	HasNVSwitch bool                `json:"has_nvswitch"`
+	NodeName    string             `json:"node_name"`
+	GPUs        []DiscoveredGPU    `json:"gpus"`
+	NVLinks     []NVLinkConnection `json:"nvlink_connections"`
+	NUMANodes   map[int][]int      `json:"numa_nodes"` // NUMA node → GPU indices
+	P2PMatrix   map[string]string  `json:"p2p_matrix"` // "0-1" → "NVL" | "PHB" | "SYS"
+	TotalGPUs   int                `json:"total_gpus"`
+	HasNVLink   bool               `json:"has_nvlink"`
+	HasNVSwitch bool               `json:"has_nvswitch"`
 }
 
 // DiscoveredGPU represents a discovered GPU device with full details
@@ -354,7 +354,7 @@ func (td *TopologyDiscoverer) queryDCGMTopology(ctx context.Context) ([]Discover
 	if err != nil {
 		return nil, fmt.Errorf("DCGM scrape failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("DCGM returned HTTP %d", resp.StatusCode)

@@ -137,12 +137,12 @@ type Endpoint struct {
 
 // FailoverEvent describes a failover or recovery event.
 type FailoverEvent struct {
-	Type       string    `json:"type"` // "failover" or "recovery"
-	Timestamp  time.Time `json:"timestamp"`
-	FromID     string    `json:"from_id,omitempty"`
-	ToID       string    `json:"to_id,omitempty"`
-	Reason     string    `json:"reason"`
-	Duration   time.Duration `json:"duration,omitempty"`
+	Type      string        `json:"type"` // "failover" or "recovery"
+	Timestamp time.Time     `json:"timestamp"`
+	FromID    string        `json:"from_id,omitempty"`
+	ToID      string        `json:"to_id,omitempty"`
+	Reason    string        `json:"reason"`
+	Duration  time.Duration `json:"duration,omitempty"`
 }
 
 // ============================================================================
@@ -156,8 +156,8 @@ type FailoverManager struct {
 	endpoints []*Endpoint
 
 	// Active endpoint(s)
-	primary    *Endpoint
-	activeSet  []*Endpoint
+	primary   *Endpoint
+	activeSet []*Endpoint
 
 	// Stats
 	failoverCount  atomic.Int64
@@ -516,13 +516,13 @@ func (fm *FailoverManager) rebuildActiveSet() {
 
 // FailoverStats returns failover statistics.
 type FailoverStats struct {
-	Strategy      string                `json:"strategy"`
-	TotalEndpoints int                  `json:"total_endpoints"`
-	HealthyCount   int                  `json:"healthy_count"`
-	UnhealthyCount int                  `json:"unhealthy_count"`
-	FailoverCount  int64                `json:"failover_count"`
-	RecoveryCount  int64                `json:"recovery_count"`
-	Endpoints      []EndpointStatus     `json:"endpoints"`
+	Strategy       string           `json:"strategy"`
+	TotalEndpoints int              `json:"total_endpoints"`
+	HealthyCount   int              `json:"healthy_count"`
+	UnhealthyCount int              `json:"unhealthy_count"`
+	FailoverCount  int64            `json:"failover_count"`
+	RecoveryCount  int64            `json:"recovery_count"`
+	Endpoints      []EndpointStatus `json:"endpoints"`
 }
 
 // EndpointStatus describes the current status of an endpoint.

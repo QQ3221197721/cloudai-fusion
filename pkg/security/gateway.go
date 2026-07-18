@@ -24,18 +24,18 @@ import (
 
 // APIKey represents an API key for external consumers.
 type APIKey struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Key         string    `json:"key"` // hashed in storage
-	Prefix      string    `json:"prefix"` // first 8 chars for identification
-	OwnerID     string    `json:"owner_id"`
-	Plan        string    `json:"plan"` // free, basic, pro, enterprise
-	Scopes      []string  `json:"scopes"` // allowed API scopes
-	RateLimit   int       `json:"rate_limit"` // requests per minute
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
-	Enabled     bool      `json:"enabled"`
-	LastUsedAt  *time.Time `json:"last_used_at,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	Key        string     `json:"key"`    // hashed in storage
+	Prefix     string     `json:"prefix"` // first 8 chars for identification
+	OwnerID    string     `json:"owner_id"`
+	Plan       string     `json:"plan"`       // free, basic, pro, enterprise
+	Scopes     []string   `json:"scopes"`     // allowed API scopes
+	RateLimit  int        `json:"rate_limit"` // requests per minute
+	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
+	Enabled    bool       `json:"enabled"`
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
 }
 
 // IsExpired returns true if the key has expired.
@@ -52,7 +52,7 @@ func (k *APIKey) IsExpired() bool {
 
 // IPAccessList manages IP allowlists and blocklists.
 type IPAccessList struct {
-	AllowCIDRs  []string `json:"allow_cidrs,omitempty"`  // if set, only these allowed
+	AllowCIDRs  []string `json:"allow_cidrs,omitempty"` // if set, only these allowed
 	BlockCIDRs  []string `json:"block_cidrs,omitempty"`
 	BlockIPs    []string `json:"block_ips,omitempty"`
 	parsedAllow []*net.IPNet
@@ -141,9 +141,9 @@ type WAFRule struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
-	Target      string `json:"target"` // path, query, header, body, user-agent
-	Pattern     string `json:"pattern"` // regex
-	Action      string `json:"action"` // block, log, challenge
+	Target      string `json:"target"`   // path, query, header, body, user-agent
+	Pattern     string `json:"pattern"`  // regex
+	Action      string `json:"action"`   // block, log, challenge
 	Severity    string `json:"severity"` // critical, high, medium, low
 	Enabled     bool   `json:"enabled"`
 	compiled    *regexp.Regexp

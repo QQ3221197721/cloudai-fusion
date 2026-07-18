@@ -2,6 +2,7 @@ package feature
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -214,6 +215,59 @@ func TestIsEnabled_Percentage(t *testing.T) {
 	// With 50% rollout over 1000 calls, expect between 350-650
 	if enabled < 300 || enabled > 700 {
 		t.Errorf("50%% rollout: got %d/1000 enabled, expected ~500", enabled)
+	}
+}
+
+func TestIsEnabledFor_Consistency(t *testing.T) {
+	m := NewManager(Config{})
+	m.SetFlag("auto_scaling", true, "test")
+	m.mu.Lock()
+	m.flags["auto_scaling"].Percentage = 50
+	m.mu.Unlock()
+
+	// Same entity -> identical decision across many calls (sticky bucket).
+	want := m.IsEnabledFor("auto_scaling", "user-42")
+	for i := 0; i < 1000; i++ {
+		if m.IsEnabledFor("auto_scaling", "user-42") != want {
+			t.Fatalf("decision for user-42 flipped across calls (want stable %v)", want)
+		}
+	}
+
+	// Distribution across many distinct entities should be ~50%.
+	enabled := 0
+	const n = 10000
+	for i := 0; i < n; i++ {
+		if m.IsEnabledFor("auto_scaling", fmt.Sprintf("user-%d", i)) {
+			enabled++
+		}
+	}
+	if enabled < n*40/100 || enabled > n*60/100 {
+		t.Errorf("50%% rollout over %d entities: got %d enabled, want ~%d", n, enabled, n/2)
+	}
+}
+
+func TestIsEnabledFor_MonotonicRollout(t *testing.T) {
+	m := NewManager(Config{})
+	m.SetFlag("auto_scaling", true, "test")
+
+	setPct := func(p int) {
+		m.mu.Lock()
+		m.flags["auto_scaling"].Percentage = p
+		m.mu.Unlock()
+	}
+
+	// Entities enabled at 50% must stay enabled at 80% (no cohort churn).
+	setPct(50)
+	enabledAt50 := make(map[string]bool)
+	for i := 0; i < 3000; i++ {
+		e := fmt.Sprintf("user-%d", i)
+		enabledAt50[e] = m.IsEnabledFor("auto_scaling", e)
+	}
+	setPct(80)
+	for e, was := range enabledAt50 {
+		if was && !m.IsEnabledFor("auto_scaling", e) {
+			t.Fatalf("entity %s enabled at 50%% but disabled at 80%% — rollout not monotonic", e)
+		}
 	}
 }
 

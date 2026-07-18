@@ -22,26 +22,26 @@ import (
 type RuntimeState string
 
 const (
-	StateOnline      RuntimeState = "online"       // connected to cloud, normal operation
+	StateOnline        RuntimeState = "online"        // connected to cloud, normal operation
 	StateDisconnecting RuntimeState = "disconnecting" // heartbeat lost, waiting grace period
-	StateOffline     RuntimeState = "offline"       // fully disconnected, autonomous mode
-	StateRecovering  RuntimeState = "recovering"    // reconnecting, syncing buffered data
-	StateDegraded    RuntimeState = "degraded"      // online but with reduced capability
-	StateFailed      RuntimeState = "failed"        // unrecoverable local failure
+	StateOffline       RuntimeState = "offline"       // fully disconnected, autonomous mode
+	StateRecovering    RuntimeState = "recovering"    // reconnecting, syncing buffered data
+	StateDegraded      RuntimeState = "degraded"      // online but with reduced capability
+	StateFailed        RuntimeState = "failed"        // unrecoverable local failure
 )
 
 // RuntimeEvent triggers a state transition.
 type RuntimeEvent string
 
 const (
-	EventHeartbeatLost    RuntimeEvent = "heartbeat_lost"
-	EventHeartbeatTimeout RuntimeEvent = "heartbeat_timeout"
-	EventReconnected      RuntimeEvent = "reconnected"
-	EventSyncComplete     RuntimeEvent = "sync_complete"
-	EventResourceCritical RuntimeEvent = "resource_critical"
+	EventHeartbeatLost     RuntimeEvent = "heartbeat_lost"
+	EventHeartbeatTimeout  RuntimeEvent = "heartbeat_timeout"
+	EventReconnected       RuntimeEvent = "reconnected"
+	EventSyncComplete      RuntimeEvent = "sync_complete"
+	EventResourceCritical  RuntimeEvent = "resource_critical"
 	EventResourceRecovered RuntimeEvent = "resource_recovered"
-	EventHealthCheckFail  RuntimeEvent = "health_check_fail"
-	EventFatalError       RuntimeEvent = "fatal_error"
+	EventHealthCheckFail   RuntimeEvent = "health_check_fail"
+	EventFatalError        RuntimeEvent = "fatal_error"
 )
 
 // StateTransition records a state change.
@@ -55,14 +55,14 @@ type StateTransition struct {
 
 // OfflineRuntimeConfig configures the offline runtime.
 type OfflineRuntimeConfig struct {
-	GracePeriod           time.Duration `json:"grace_period"`             // before transitioning to offline
-	HealthCheckInterval   time.Duration `json:"health_check_interval"`
-	MaxOfflineDuration    time.Duration `json:"max_offline_duration"`     // auto-degrade after this
-	LocalDecisionEnabled  bool          `json:"local_decision_enabled"`   // allow local scheduling
-	MaxLocalDecisions     int           `json:"max_local_decisions"`      // per offline session
+	GracePeriod           time.Duration      `json:"grace_period"` // before transitioning to offline
+	HealthCheckInterval   time.Duration      `json:"health_check_interval"`
+	MaxOfflineDuration    time.Duration      `json:"max_offline_duration"`   // auto-degrade after this
+	LocalDecisionEnabled  bool               `json:"local_decision_enabled"` // allow local scheduling
+	MaxLocalDecisions     int                `json:"max_local_decisions"`    // per offline session
 	ResourceThresholds    ResourceThresholds `json:"resource_thresholds"`
-	SyncBatchSize         int           `json:"sync_batch_size"`          // ops per sync batch
-	TransitionHistorySize int           `json:"transition_history_size"`
+	SyncBatchSize         int                `json:"sync_batch_size"` // ops per sync batch
+	TransitionHistorySize int                `json:"transition_history_size"`
 }
 
 // ResourceThresholds defines critical resource levels.
@@ -77,11 +77,11 @@ type ResourceThresholds struct {
 // DefaultOfflineRuntimeConfig returns production-ready defaults.
 func DefaultOfflineRuntimeConfig() OfflineRuntimeConfig {
 	return OfflineRuntimeConfig{
-		GracePeriod:         30 * time.Second,
-		HealthCheckInterval: 15 * time.Second,
-		MaxOfflineDuration:  72 * time.Hour,
+		GracePeriod:          30 * time.Second,
+		HealthCheckInterval:  15 * time.Second,
+		MaxOfflineDuration:   72 * time.Hour,
 		LocalDecisionEnabled: true,
-		MaxLocalDecisions:   1000,
+		MaxLocalDecisions:    1000,
 		ResourceThresholds: ResourceThresholds{
 			CPUCriticalPercent:    95,
 			MemoryCriticalPercent: 95,
@@ -96,17 +96,17 @@ func DefaultOfflineRuntimeConfig() OfflineRuntimeConfig {
 
 // OfflineRuntime manages the offline lifecycle of an edge node.
 type OfflineRuntime struct {
-	config          OfflineRuntimeConfig
-	nodeID          string
-	state           RuntimeState
-	stateEnteredAt  time.Time
-	offlineSince    *time.Time
-	transitions     []StateTransition
-	localDecisions  int
-	healthHistory   []HealthSnapshot
-	decisionEngine  *LocalDecisionEngine
-	mu              sync.RWMutex
-	logger          *logrus.Logger
+	config         OfflineRuntimeConfig
+	nodeID         string
+	state          RuntimeState
+	stateEnteredAt time.Time
+	offlineSince   *time.Time
+	transitions    []StateTransition
+	localDecisions int
+	healthHistory  []HealthSnapshot
+	decisionEngine *LocalDecisionEngine
+	mu             sync.RWMutex
+	logger         *logrus.Logger
 }
 
 // HealthSnapshot captures node health at a point in time.
@@ -207,9 +207,9 @@ func (r *OfflineRuntime) nextState(current RuntimeState, event RuntimeEvent) (Ru
 			EventFatalError:       StateFailed,
 		},
 		StateRecovering: {
-			EventSyncComplete:      StateOnline,
-			EventHeartbeatLost:     StateOffline,
-			EventResourceCritical:  StateDegraded,
+			EventSyncComplete:     StateOnline,
+			EventHeartbeatLost:    StateOffline,
+			EventResourceCritical: StateDegraded,
 		},
 		StateDegraded: {
 			EventResourceRecovered: StateOnline,
@@ -217,7 +217,7 @@ func (r *OfflineRuntime) nextState(current RuntimeState, event RuntimeEvent) (Ru
 			EventFatalError:        StateFailed,
 		},
 		StateFailed: {
-			EventReconnected:      StateRecovering,
+			EventReconnected:       StateRecovering,
 			EventResourceRecovered: StateDegraded,
 		},
 	}
@@ -310,12 +310,12 @@ func (r *OfflineRuntime) GetStatus() map[string]interface{} {
 	defer r.mu.RUnlock()
 
 	status := map[string]interface{}{
-		"node_id":           r.nodeID,
-		"state":             r.state,
-		"state_entered_at":  r.stateEnteredAt,
-		"local_decisions":   r.localDecisions,
-		"transition_count":  len(r.transitions),
-		"health_checks":     len(r.healthHistory),
+		"node_id":          r.nodeID,
+		"state":            r.state,
+		"state_entered_at": r.stateEnteredAt,
+		"local_decisions":  r.localDecisions,
+		"transition_count": len(r.transitions),
+		"health_checks":    len(r.healthHistory),
 	}
 	if r.offlineSince != nil {
 		status["offline_since"] = r.offlineSince
@@ -366,11 +366,11 @@ func (r *OfflineRuntime) RunHealthLoop(ctx context.Context, usageFn func() *Edge
 
 // LocalDecisionEngine makes scheduling decisions locally when disconnected.
 type LocalDecisionEngine struct {
-	maxDecisions   int
-	decisions      []LocalDecision
-	policies       []DecisionPolicy
-	mu             sync.RWMutex
-	logger         *logrus.Logger
+	maxDecisions int
+	decisions    []LocalDecision
+	policies     []DecisionPolicy
+	mu           sync.RWMutex
+	logger       *logrus.Logger
 }
 
 // LocalDecision records a local scheduling decision.
@@ -387,13 +387,13 @@ type LocalDecision struct {
 
 // DecisionPolicy defines a rule for local decisions.
 type DecisionPolicy struct {
-	Name        string  `json:"name"`
-	Priority    int     `json:"priority"`    // lower = higher priority
-	MaxCPU      float64 `json:"max_cpu"`     // max CPU% before denying
-	MaxMemory   float64 `json:"max_memory"`  // max memory% before denying
-	MaxGPU      float64 `json:"max_gpu"`     // max GPU% before denying
-	MaxPower    float64 `json:"max_power_watts"`
-	AllowTypes  []string `json:"allow_types"` // allowed workload types
+	Name       string   `json:"name"`
+	Priority   int      `json:"priority"`   // lower = higher priority
+	MaxCPU     float64  `json:"max_cpu"`    // max CPU% before denying
+	MaxMemory  float64  `json:"max_memory"` // max memory% before denying
+	MaxGPU     float64  `json:"max_gpu"`    // max GPU% before denying
+	MaxPower   float64  `json:"max_power_watts"`
+	AllowTypes []string `json:"allow_types"` // allowed workload types
 }
 
 // NewLocalDecisionEngine creates a new local decision engine.
@@ -551,11 +551,11 @@ func (e *LocalDecisionEngine) Stats() map[string]interface{} {
 
 // HealthChecker performs periodic self-diagnostics on the edge node.
 type HealthChecker struct {
-	nodeID     string
-	checks     []HealthCheckFunc
-	results    []HealthCheckResult
-	mu         sync.RWMutex
-	logger     *logrus.Logger
+	nodeID  string
+	checks  []HealthCheckFunc
+	results []HealthCheckResult
+	mu      sync.RWMutex
+	logger  *logrus.Logger
 }
 
 // HealthCheckFunc is a function that performs a health check.
@@ -567,12 +567,12 @@ type HealthCheckFunc struct {
 
 // HealthCheckResult contains the result of a health check.
 type HealthCheckResult struct {
-	Name        string    `json:"name"`
-	Category    string    `json:"category"`
-	Status      string    `json:"status"` // pass, warn, fail
-	Message     string    `json:"message"`
-	Latency     time.Duration `json:"latency"`
-	CheckedAt   time.Time `json:"checked_at"`
+	Name      string        `json:"name"`
+	Category  string        `json:"category"`
+	Status    string        `json:"status"` // pass, warn, fail
+	Message   string        `json:"message"`
+	Latency   time.Duration `json:"latency"`
+	CheckedAt time.Time     `json:"checked_at"`
 }
 
 // NewHealthChecker creates a health checker with standard checks.
@@ -666,14 +666,14 @@ func (hc *HealthChecker) Summary() map[string]interface{} {
 		score = math.Round((float64(pass)+float64(warn)*0.5)/float64(total)*100*10) / 10
 	}
 	return map[string]interface{}{
-		"node_id":    hc.nodeID,
-		"total":      total,
-		"pass":       pass,
-		"warn":       warn,
-		"fail":       fail,
-		"healthy":    fail == 0,
-		"score":      score,
-		"results":    hc.results,
+		"node_id": hc.nodeID,
+		"total":   total,
+		"pass":    pass,
+		"warn":    warn,
+		"fail":    fail,
+		"healthy": fail == 0,
+		"score":   score,
+		"results": hc.results,
 	}
 }
 

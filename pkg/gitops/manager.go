@@ -54,13 +54,14 @@ func DefaultManagerConfig() ManagerConfig {
 // Manager orchestrates GitOps workflows including sync, promotion,
 // drift detection, and Terraform module management.
 type Manager struct {
-	config      ManagerConfig
-	apps        map[string]*Application
-	pipelines   map[string]*PromotionPipeline
+	config       ManagerConfig
+	apps         map[string]*Application
+	pipelines    map[string]*PromotionPipeline
 	driftReports map[string]*DriftReport
-	tfModules   map[string]*TerraformModule
-	logger      *logrus.Logger
-	mu          sync.RWMutex
+	tfModules    map[string]*TerraformModule
+	driftScanner DriftScanner
+	logger       *logrus.Logger
+	mu           sync.RWMutex
 }
 
 // NewManager creates a new GitOps manager.
@@ -73,6 +74,20 @@ func NewManager(cfg ManagerConfig) *Manager {
 		tfModules:    make(map[string]*TerraformModule),
 		logger:       logrus.StandardLogger(),
 	}
+}
+
+// DriftScanner compares an application's desired state (from Git) against its
+// live state (in the target cluster) and returns the detected drifts. It is the
+// integration point for ArgoCD / Flux / `kubectl diff` backends.
+type DriftScanner interface {
+	Scan(ctx context.Context, app *Application) ([]DriftDetail, error)
+}
+
+// SetDriftScanner installs the live-state comparison backend used by DetectDrift.
+func (m *Manager) SetDriftScanner(s DriftScanner) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.driftScanner = s
 }
 
 // ============================================================================
@@ -346,7 +361,7 @@ func (m *Manager) RollbackPromotion(ctx context.Context, pipelineID string) (*Pr
 	pipeline.CompletedAt = &now
 
 	m.logger.WithFields(logrus.Fields{
-		"pipeline_id":  pipelineID,
+		"pipeline_id":      pipelineID,
 		"rolled_back_from": pipeline.Stages[pipeline.CurrentStage].Name,
 	}).Warn("Promotion pipeline rolled back")
 
@@ -378,49 +393,62 @@ func (m *Manager) DetectDrift(ctx context.Context, appID string) (*DriftReport, 
 		return nil, ctx.Err()
 	}
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	app, ok := m.apps[appID]
 	if !ok {
+		m.mu.Unlock()
 		return nil, fmt.Errorf("application '%s' not found", appID)
 	}
+	scanner := m.driftScanner
+	autoRemediate := m.config.AutoRemediateDrift
+	m.mu.Unlock()
 
-	now := common.NowUTC()
+	// Real drift detection requires a live-state source; without one we cannot
+	// honestly claim the application is in sync.
+	if scanner == nil {
+		return nil, fmt.Errorf("drift detection unavailable for '%s': no drift scanner configured", app.Name)
+	}
+
+	// Compare desired (Git) vs live (cluster) state. Scan performs I/O, so it
+	// runs without the manager lock held.
+	drifts, err := scanner.Scan(ctx, app)
+	if err != nil {
+		return nil, fmt.Errorf("drift scan failed for '%s': %w", app.Name, err)
+	}
+
 	report := &DriftReport{
 		ID:            common.NewUUID(),
 		ApplicationID: appID,
-		DetectedAt:    now,
-		Drifts:        make([]DriftDetail, 0),
-		AutoRemediate: m.config.AutoRemediateDrift,
-		Status:        DriftDetected,
+		DetectedAt:    common.NowUTC(),
+		Drifts:        drifts,
+		AutoRemediate: autoRemediate,
 	}
 
-	// In production, this would:
-	// - ArgoCD: GET /api/v1/applications/{name}?refresh=hard → compare desired vs live
-	// - Flux: kubectl get kustomization <name> -o json → check .status.conditions
-	// - Alternatively: run `kubectl diff -f <manifests>` against live cluster
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	switch {
+	case len(drifts) == 0:
+		report.Status = DriftNone
+		app.SyncStatus = SyncStatusSynced
+	case autoRemediate:
+		report.Status = DriftRemediated
+		remediatedAt := common.NowUTC()
+		report.RemediatedAt = &remediatedAt
+		app.SyncStatus = SyncStatusSynced
+		m.logger.WithField("app_id", appID).Info("Auto-remediating drift")
+	default:
+		report.Status = DriftDetected
+		app.SyncStatus = SyncStatusOutOfSync
+	}
+	m.driftReports[report.ID] = report
 
 	m.logger.WithFields(logrus.Fields{
 		"app_id":   appID,
 		"app_name": app.Name,
 		"engine":   app.Engine,
+		"drifts":   len(drifts),
+		"status":   report.Status,
 	}).Info("Drift detection completed")
 
-	// If no drift found, mark app as synced
-	if len(report.Drifts) == 0 {
-		app.SyncStatus = SyncStatusSynced
-	} else {
-		app.SyncStatus = SyncStatusOutOfSync
-		// Auto-remediate if enabled
-		if m.config.AutoRemediateDrift {
-			m.logger.WithField("app_id", appID).Info("Auto-remediating drift")
-			report.Status = DriftRemediated
-			remediatedAt := common.NowUTC()
-			report.RemediatedAt = &remediatedAt
-		}
-	}
-
-	m.driftReports[report.ID] = report
 	return report, nil
 }
 
@@ -528,7 +556,7 @@ func (m *Manager) PlanTerraformModule(ctx context.Context, moduleID string) (*Te
 	module.PlanOutput = result.PlanOutput
 
 	m.logger.WithFields(logrus.Fields{
-		"module_id":  moduleID,
+		"module_id":   moduleID,
 		"has_changes": result.HasChanges,
 	}).Info("Terraform plan completed")
 

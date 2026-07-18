@@ -32,9 +32,9 @@ func NewAliyunProvider(cfg config.CloudProviderConfig) (*AliyunProvider, error) 
 	return p, nil
 }
 
-func (p *AliyunProvider) Name() string                    { return p.name }
-func (p *AliyunProvider) Type() common.CloudProviderType  { return common.CloudProviderAliyun }
-func (p *AliyunProvider) Region() string                  { return p.region }
+func (p *AliyunProvider) Name() string                   { return p.name }
+func (p *AliyunProvider) Type() common.CloudProviderType { return common.CloudProviderAliyun }
+func (p *AliyunProvider) Region() string                 { return p.region }
 
 func (p *AliyunProvider) Ping(ctx context.Context) error {
 	if p.client == nil {
@@ -238,9 +238,9 @@ func NewAWSProvider(cfg config.CloudProviderConfig) (*AWSProvider, error) {
 	return p, nil
 }
 
-func (p *AWSProvider) Name() string                    { return p.name }
-func (p *AWSProvider) Type() common.CloudProviderType  { return common.CloudProviderAWS }
-func (p *AWSProvider) Region() string                  { return p.region }
+func (p *AWSProvider) Name() string                   { return p.name }
+func (p *AWSProvider) Type() common.CloudProviderType { return common.CloudProviderAWS }
+func (p *AWSProvider) Region() string                 { return p.region }
 
 func (p *AWSProvider) Ping(ctx context.Context) error {
 	if p.client == nil {
@@ -462,9 +462,9 @@ func NewAzureProvider(cfg config.CloudProviderConfig) (*AzureProvider, error) {
 	return p, nil
 }
 
-func (p *AzureProvider) Name() string                    { return p.name }
-func (p *AzureProvider) Type() common.CloudProviderType  { return common.CloudProviderAzure }
-func (p *AzureProvider) Region() string                  { return p.region }
+func (p *AzureProvider) Name() string                   { return p.name }
+func (p *AzureProvider) Type() common.CloudProviderType { return common.CloudProviderAzure }
+func (p *AzureProvider) Region() string                 { return p.region }
 
 func (p *AzureProvider) Ping(ctx context.Context) error {
 	if p.client == nil {

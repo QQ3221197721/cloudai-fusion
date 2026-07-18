@@ -52,10 +52,10 @@ type Config struct {
 type Role string
 
 const (
-	RoleAdmin    Role = "admin"
-	RoleOperator Role = "operator"
+	RoleAdmin     Role = "admin"
+	RoleOperator  Role = "operator"
 	RoleDeveloper Role = "developer"
-	RoleViewer   Role = "viewer"
+	RoleViewer    Role = "viewer"
 )
 
 // Permission defines granular permissions

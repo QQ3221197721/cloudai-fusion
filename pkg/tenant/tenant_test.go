@@ -420,12 +420,12 @@ func TestUpdateNetworkIsolation(t *testing.T) {
 	tenant := createTestTenant(t, m, "net-test", TierPro)
 
 	newNet := NetworkIsolation{
-		Enabled:         true,
-		VPCEnabled:      true,
-		VPCID:           "vpc-12345",
-		VPCCidr:         "10.99.0.0/16",
-		DNSPolicy:       "custom",
-		AllowedCIDRs:    []string{"10.0.0.0/8"},
+		Enabled:      true,
+		VPCEnabled:   true,
+		VPCID:        "vpc-12345",
+		VPCCidr:      "10.99.0.0/16",
+		DNSPolicy:    "custom",
+		AllowedCIDRs: []string{"10.0.0.0/8"},
 	}
 
 	err := m.UpdateNetworkIsolation(context.Background(), tenant.ID, newNet)

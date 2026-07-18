@@ -132,10 +132,10 @@ func (s *Subscription) IsActive() bool {
 
 const (
 	// Cluster lifecycle events
-	TopicClusterCreated   = "cluster.created"
-	TopicClusterUpdated   = "cluster.updated"
-	TopicClusterDeleted   = "cluster.deleted"
-	TopicClusterHealth    = "cluster.health"
+	TopicClusterCreated = "cluster.created"
+	TopicClusterUpdated = "cluster.updated"
+	TopicClusterDeleted = "cluster.deleted"
+	TopicClusterHealth  = "cluster.health"
 
 	// Workload lifecycle events
 	TopicWorkloadCreated   = "workload.created"
@@ -145,9 +145,9 @@ const (
 	TopicWorkloadFailed    = "workload.failed"
 
 	// Security events
-	TopicSecurityPolicyApplied  = "security.policy.applied"
-	TopicSecurityViolation      = "security.violation"
-	TopicSecurityScanCompleted  = "security.scan.completed"
+	TopicSecurityPolicyApplied = "security.policy.applied"
+	TopicSecurityViolation     = "security.violation"
+	TopicSecurityScanCompleted = "security.scan.completed"
 
 	// Scheduling events
 	TopicScheduleRequest  = "scheduler.request"

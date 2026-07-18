@@ -35,7 +35,6 @@ type Logger struct {
 	*logrus.Logger
 	component string
 	sampler   *LogSampler // nil = no sampling
-	mu        sync.RWMutex
 }
 
 // Config configures the logger.
@@ -68,7 +67,7 @@ func New(cfg Config) *Logger {
 		})
 	default:
 		l.SetFormatter(&logrus.JSONFormatter{
-			TimestampFormat:  time.RFC3339Nano,
+			TimestampFormat: time.RFC3339Nano,
 			FieldMap: logrus.FieldMap{
 				logrus.FieldKeyTime:  "timestamp",
 				logrus.FieldKeyLevel: "level",
@@ -183,13 +182,15 @@ func (l *Logger) LevelHandler() http.Handler {
 		switch r.Method {
 		case http.MethodGet:
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{"level": l.GetLevel()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"level": l.GetLevel()})
 
 		case http.MethodPut, http.MethodPost:
 			newLevel := r.URL.Query().Get("level")
 			if newLevel == "" {
 				// Try reading from body
-				var body struct{ Level string `json:"level"` }
+				var body struct {
+					Level string `json:"level"`
+				}
 				if json.NewDecoder(r.Body).Decode(&body) == nil {
 					newLevel = body.Level
 				}
@@ -203,7 +204,7 @@ func (l *Logger) LevelHandler() http.Handler {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{"level": l.GetLevel()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"level": l.GetLevel()})
 
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -238,8 +239,8 @@ func DefaultSamplerConfig() SamplerConfig {
 
 // LogSampler implements log sampling to prevent log flooding.
 type LogSampler struct {
-	config     SamplerConfig
-	counters   sync.Map // key -> *samplerCounter
+	config   SamplerConfig
+	counters sync.Map // key -> *samplerCounter
 }
 
 type samplerCounter struct {

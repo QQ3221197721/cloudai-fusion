@@ -36,7 +36,7 @@ func NewResourceQuotaFilterPlugin() (plugin.Plugin, error) {
 			Tags:     map[string]string{"category": "governance", "tier": "production"},
 		}),
 		quotas: map[string]int{
-			"ml-training": 32,
+			"ml-training":  32,
 			"ml-inference": 16,
 			"research":     8,
 			"default":      4,
@@ -127,9 +127,9 @@ type GangSchedulingPlugin struct {
 }
 
 type gangState struct {
-	TotalMembers    int
-	ScheduledNodes  map[string]string // member_id → node_name
-	PendingMembers  int
+	TotalMembers   int
+	ScheduledNodes map[string]string // member_id → node_name
+	PendingMembers int
 }
 
 // NewGangSchedulingPlugin creates a gang scheduling plugin.

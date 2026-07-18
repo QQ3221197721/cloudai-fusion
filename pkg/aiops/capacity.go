@@ -32,14 +32,14 @@ type CapacityPlanner struct {
 
 // CapacityPlanConfig configures the capacity planner.
 type CapacityPlanConfig struct {
-	HistoryWindow      time.Duration `json:"history_window" yaml:"historyWindow"`              // e.g., 30 days
-	ForecastHorizon    int           `json:"forecast_horizon_days" yaml:"forecastHorizonDays"` // e.g., 90 days
-	SafetyMargin       float64       `json:"safety_margin" yaml:"safetyMargin"`                // e.g., 0.2 = 20%
-	CPUThreshold       float64       `json:"cpu_threshold" yaml:"cpuThreshold"`                // trigger at 80%
-	MemoryThreshold    float64       `json:"memory_threshold" yaml:"memoryThreshold"`          // trigger at 85%
-	GPUThreshold       float64       `json:"gpu_threshold" yaml:"gpuThreshold"`                // trigger at 75%
-	StorageThreshold   float64       `json:"storage_threshold" yaml:"storageThreshold"`        // trigger at 85%
-	MinLeadTimeDays    int           `json:"min_lead_time_days" yaml:"minLeadTimeDays"`        // e.g., 14 days
+	HistoryWindow    time.Duration `json:"history_window" yaml:"historyWindow"`              // e.g., 30 days
+	ForecastHorizon  int           `json:"forecast_horizon_days" yaml:"forecastHorizonDays"` // e.g., 90 days
+	SafetyMargin     float64       `json:"safety_margin" yaml:"safetyMargin"`                // e.g., 0.2 = 20%
+	CPUThreshold     float64       `json:"cpu_threshold" yaml:"cpuThreshold"`                // trigger at 80%
+	MemoryThreshold  float64       `json:"memory_threshold" yaml:"memoryThreshold"`          // trigger at 85%
+	GPUThreshold     float64       `json:"gpu_threshold" yaml:"gpuThreshold"`                // trigger at 75%
+	StorageThreshold float64       `json:"storage_threshold" yaml:"storageThreshold"`        // trigger at 85%
+	MinLeadTimeDays  int           `json:"min_lead_time_days" yaml:"minLeadTimeDays"`        // e.g., 14 days
 }
 
 // DefaultCapacityPlanConfig returns sensible defaults.
@@ -58,18 +58,18 @@ func DefaultCapacityPlanConfig() CapacityPlanConfig {
 
 // ResourceSnapshot captures cluster resource state at a point in time.
 type ResourceSnapshot struct {
-	Timestamp    time.Time `json:"timestamp"`
-	ClusterID    string    `json:"cluster_id"`
+	Timestamp time.Time `json:"timestamp"`
+	ClusterID string    `json:"cluster_id"`
 
 	// CPU
-	CPUCapacity    int64   `json:"cpu_capacity_millicores"`
-	CPURequested   int64   `json:"cpu_requested_millicores"`
-	CPUUsed        int64   `json:"cpu_used_millicores"`
+	CPUCapacity  int64 `json:"cpu_capacity_millicores"`
+	CPURequested int64 `json:"cpu_requested_millicores"`
+	CPUUsed      int64 `json:"cpu_used_millicores"`
 
 	// Memory
-	MemCapacity    int64   `json:"mem_capacity_bytes"`
-	MemRequested   int64   `json:"mem_requested_bytes"`
-	MemUsed        int64   `json:"mem_used_bytes"`
+	MemCapacity  int64 `json:"mem_capacity_bytes"`
+	MemRequested int64 `json:"mem_requested_bytes"`
+	MemUsed      int64 `json:"mem_used_bytes"`
 
 	// GPU
 	GPUCapacity    int     `json:"gpu_capacity"`
@@ -77,57 +77,57 @@ type ResourceSnapshot struct {
 	GPUUtilization float64 `json:"gpu_utilization_percent"`
 
 	// Storage
-	StorageCapacity int64  `json:"storage_capacity_bytes"`
-	StorageUsed     int64  `json:"storage_used_bytes"`
+	StorageCapacity int64 `json:"storage_capacity_bytes"`
+	StorageUsed     int64 `json:"storage_used_bytes"`
 
 	// Workloads
-	PodCount       int     `json:"pod_count"`
-	NodeCount      int     `json:"node_count"`
-	PendingPods    int     `json:"pending_pods"` // pods waiting for resources
+	PodCount    int `json:"pod_count"`
+	NodeCount   int `json:"node_count"`
+	PendingPods int `json:"pending_pods"` // pods waiting for resources
 }
 
 // ClusterCapacity represents current cluster capacity information.
 type ClusterCapacity struct {
-	ClusterID     string    `json:"cluster_id"`
-	ClusterName   string    `json:"cluster_name"`
-	Provider      string    `json:"provider"`
-	Region        string    `json:"region"`
-	NodeCount     int       `json:"node_count"`
-	NodeTypes     map[string]int `json:"node_types"` // instanceType → count
+	ClusterID   string         `json:"cluster_id"`
+	ClusterName string         `json:"cluster_name"`
+	Provider    string         `json:"provider"`
+	Region      string         `json:"region"`
+	NodeCount   int            `json:"node_count"`
+	NodeTypes   map[string]int `json:"node_types"` // instanceType → count
 
 	// Current utilization
-	CPUUtilization    float64 `json:"cpu_utilization"`
-	MemUtilization    float64 `json:"mem_utilization"`
-	GPUUtilization    float64 `json:"gpu_utilization"`
+	CPUUtilization     float64 `json:"cpu_utilization"`
+	MemUtilization     float64 `json:"mem_utilization"`
+	GPUUtilization     float64 `json:"gpu_utilization"`
 	StorageUtilization float64 `json:"storage_utilization"`
 
 	// Capacity
-	TotalCPU      int64  `json:"total_cpu_millicores"`
-	TotalMemory   int64  `json:"total_memory_bytes"`
-	TotalGPU      int    `json:"total_gpu"`
-	TotalStorage  int64  `json:"total_storage_bytes"`
+	TotalCPU     int64 `json:"total_cpu_millicores"`
+	TotalMemory  int64 `json:"total_memory_bytes"`
+	TotalGPU     int   `json:"total_gpu"`
+	TotalStorage int64 `json:"total_storage_bytes"`
 
 	// Constraints
-	MaxNodes      int    `json:"max_nodes"`
-	MaxPods       int    `json:"max_pods"`
+	MaxNodes int `json:"max_nodes"`
+	MaxPods  int `json:"max_pods"`
 }
 
 // CapacityPlan represents a capacity expansion/optimization plan.
 type CapacityPlan struct {
-	ID              string                 `json:"id"`
-	ClusterID       string                 `json:"cluster_id"`
-	Type            string                 `json:"type"` // expansion, optimization, rightsizing
-	Priority        string                 `json:"priority"` // critical, high, medium, low
-	Recommendations []CapacityRecommendation `json:"recommendations"`
-	Forecast        *ResourceForecast      `json:"forecast"`
-	EstimatedCost   float64                `json:"estimated_monthly_cost"`
-	TimeToExhaustion *time.Duration        `json:"time_to_exhaustion,omitempty"`
-	CreatedAt       time.Time              `json:"created_at"`
+	ID               string                   `json:"id"`
+	ClusterID        string                   `json:"cluster_id"`
+	Type             string                   `json:"type"`     // expansion, optimization, rightsizing
+	Priority         string                   `json:"priority"` // critical, high, medium, low
+	Recommendations  []CapacityRecommendation `json:"recommendations"`
+	Forecast         *ResourceForecast        `json:"forecast"`
+	EstimatedCost    float64                  `json:"estimated_monthly_cost"`
+	TimeToExhaustion *time.Duration           `json:"time_to_exhaustion,omitempty"`
+	CreatedAt        time.Time                `json:"created_at"`
 }
 
 // CapacityRecommendation is a single recommendation within a plan.
 type CapacityRecommendation struct {
-	Action        string  `json:"action"`       // add_nodes, remove_nodes, upgrade_nodes, add_storage
+	Action        string  `json:"action"`        // add_nodes, remove_nodes, upgrade_nodes, add_storage
 	ResourceType  string  `json:"resource_type"` // cpu, memory, gpu, storage
 	InstanceType  string  `json:"instance_type,omitempty"`
 	Count         int     `json:"count"`
@@ -313,11 +313,11 @@ func (p *CapacityPlanner) ForecastDemand(ctx context.Context, clusterID string) 
 	forecast.Confidence = dataConf*0.5 + stabilityConf*0.5
 
 	p.logger.WithFields(logrus.Fields{
-		"cluster":    clusterID,
-		"horizon":    p.config.ForecastHorizon,
-		"confidence": fmt.Sprintf("%.0f%%", forecast.Confidence*100),
-		"cpu_exhaust":  forecast.CPUExhaust,
-		"gpu_exhaust":  forecast.GPUExhaust,
+		"cluster":     clusterID,
+		"horizon":     p.config.ForecastHorizon,
+		"confidence":  fmt.Sprintf("%.0f%%", forecast.Confidence*100),
+		"cpu_exhaust": forecast.CPUExhaust,
+		"gpu_exhaust": forecast.GPUExhaust,
 	}).Info("Capacity forecast generated")
 
 	return forecast, nil
@@ -522,13 +522,13 @@ func (p *CapacityPlanner) GetCapacityOverview() *CapacityOverview {
 
 	for id, cluster := range p.clusters {
 		summary := &ClusterCapacitySummary{
-			ClusterID:     id,
-			ClusterName:   cluster.ClusterName,
-			NodeCount:     cluster.NodeCount,
-			CPUUtil:       cluster.CPUUtilization,
-			MemUtil:       cluster.MemUtilization,
-			GPUUtil:       cluster.GPUUtilization,
-			StorageUtil:   cluster.StorageUtilization,
+			ClusterID:   id,
+			ClusterName: cluster.ClusterName,
+			NodeCount:   cluster.NodeCount,
+			CPUUtil:     cluster.CPUUtilization,
+			MemUtil:     cluster.MemUtilization,
+			GPUUtil:     cluster.GPUUtilization,
+			StorageUtil: cluster.StorageUtilization,
 		}
 
 		// Determine status

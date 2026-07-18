@@ -99,10 +99,10 @@ func TestMemoryTSDB_WriteAndQuery(t *testing.T) {
 	}
 
 	result, err := db.Query(ctx, Query{
-		MetricName: MetricGPUUtilization,
+		MetricName:    MetricGPUUtilization,
 		LabelMatchers: map[string]string{"cluster": "prod"},
-		Start: now.Add(-3 * time.Minute),
-		End:   now.Add(time.Minute),
+		Start:         now.Add(-3 * time.Minute),
+		End:           now.Add(time.Minute),
 	})
 	if err != nil {
 		t.Fatalf("Query: %v", err)

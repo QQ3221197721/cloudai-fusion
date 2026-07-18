@@ -359,10 +359,10 @@ func TestValidateConfigValid(t *testing.T) {
 func TestValidateConfigNoReplicas(t *testing.T) {
 	cfg := ManagerConfig{
 		PostgreSQL: PostgreSQLHAConfig{
-			Mode:           PGModeReplication,
-			MaxOpenConns:   100,
+			Mode:         PGModeReplication,
+			MaxOpenConns: 100,
 		},
-		Redis: DefaultRedisSentinelConfig(),
+		Redis:   DefaultRedisSentinelConfig(),
 		CrossAZ: DefaultCrossAZConfig(),
 	}
 	issues := ValidateConfig(cfg)

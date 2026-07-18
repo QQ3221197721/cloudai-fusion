@@ -42,9 +42,12 @@ type clientLimiter struct {
 
 // RateLimiter manages per-client token-bucket rate limiters.
 type RateLimiter struct {
-	clients map[string]*clientLimiter
-	mu      sync.Mutex
-	config  RateLimitConfig
+	clients  map[string]*clientLimiter
+	mu       sync.Mutex
+	config   RateLimitConfig
+	stopCh   chan struct{}
+	stopOnce sync.Once
+	doneCh   chan struct{} // closed when cleanup exits
 }
 
 // NewRateLimiter creates a new RateLimiter and starts a background cleanup goroutine.
@@ -52,6 +55,8 @@ func NewRateLimiter(cfg RateLimitConfig) *RateLimiter {
 	rl := &RateLimiter{
 		clients: make(map[string]*clientLimiter),
 		config:  cfg,
+		stopCh:  make(chan struct{}),
+		doneCh:  make(chan struct{}),
 	}
 	go rl.cleanup()
 	return rl
@@ -74,17 +79,32 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 
 // cleanup periodically removes idle client limiters.
 func (rl *RateLimiter) cleanup() {
+	defer close(rl.doneCh)
 	ticker := time.NewTicker(rl.config.CleanupInterval)
 	defer ticker.Stop()
-	for range ticker.C {
-		rl.mu.Lock()
-		for key, cl := range rl.clients {
-			if time.Since(cl.lastSeen) > rl.config.MaxAge {
-				delete(rl.clients, key)
+	for {
+		select {
+		case <-rl.stopCh:
+			return
+		case <-ticker.C:
+			rl.mu.Lock()
+			for key, cl := range rl.clients {
+				if time.Since(cl.lastSeen) > rl.config.MaxAge {
+					delete(rl.clients, key)
+				}
 			}
+			rl.mu.Unlock()
 		}
-		rl.mu.Unlock()
 	}
+}
+
+// Close stops the background cleanup goroutine and waits for it to exit.
+// It is safe to call multiple times.
+func (rl *RateLimiter) Close() {
+	rl.stopOnce.Do(func() {
+		close(rl.stopCh)
+		<-rl.doneCh
+	})
 }
 
 // Middleware returns a Gin middleware that enforces per-IP rate limiting.
@@ -137,4 +157,3 @@ func EndpointRateLimit(rps float64, burst int) gin.HandlerFunc {
 	})
 	return rl.Middleware()
 }
-

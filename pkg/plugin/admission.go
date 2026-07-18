@@ -38,26 +38,26 @@ const (
 type AdmissionDecision string
 
 const (
-	DecisionAllow  AdmissionDecision = "allow"
-	DecisionDeny   AdmissionDecision = "deny"
-	DecisionPatch  AdmissionDecision = "patch"  // mutation only
-	DecisionSkip   AdmissionDecision = "skip"   // webhook chose not to act
+	DecisionAllow AdmissionDecision = "allow"
+	DecisionDeny  AdmissionDecision = "deny"
+	DecisionPatch AdmissionDecision = "patch" // mutation only
+	DecisionSkip  AdmissionDecision = "skip"  // webhook chose not to act
 )
 
 // AdmissionRequest represents a resource admission request
 type AdmissionRequest struct {
-	UID        string            `json:"uid"`
-	Kind       ResourceKind      `json:"kind"`
-	Resource   string            `json:"resource"`
-	Namespace  string            `json:"namespace"`
-	Name       string            `json:"name"`
-	Operation  OperationType     `json:"operation"`
-	Object     json.RawMessage   `json:"object"`
-	OldObject  json.RawMessage   `json:"old_object,omitempty"`
-	UserInfo   AdmissionUserInfo `json:"user_info"`
-	DryRun     bool              `json:"dry_run"`
-	Options    map[string]string `json:"options,omitempty"`
-	RequestedAt time.Time        `json:"requested_at"`
+	UID         string            `json:"uid"`
+	Kind        ResourceKind      `json:"kind"`
+	Resource    string            `json:"resource"`
+	Namespace   string            `json:"namespace"`
+	Name        string            `json:"name"`
+	Operation   OperationType     `json:"operation"`
+	Object      json.RawMessage   `json:"object"`
+	OldObject   json.RawMessage   `json:"old_object,omitempty"`
+	UserInfo    AdmissionUserInfo `json:"user_info"`
+	DryRun      bool              `json:"dry_run"`
+	Options     map[string]string `json:"options,omitempty"`
+	RequestedAt time.Time         `json:"requested_at"`
 }
 
 // AdmissionUserInfo identifies the user making the request
@@ -86,13 +86,13 @@ const (
 
 // AdmissionResponse represents the response from admission evaluation
 type AdmissionResponse struct {
-	UID       string            `json:"uid"`
-	Allowed   bool              `json:"allowed"`
-	Decision  AdmissionDecision `json:"decision"`
-	Reason    string            `json:"reason,omitempty"`
-	Patch     json.RawMessage   `json:"patch,omitempty"`
-	PatchType string            `json:"patch_type,omitempty"` // JSONPatch, MergePatch
-	Warnings  []string          `json:"warnings,omitempty"`
+	UID              string            `json:"uid"`
+	Allowed          bool              `json:"allowed"`
+	Decision         AdmissionDecision `json:"decision"`
+	Reason           string            `json:"reason,omitempty"`
+	Patch            json.RawMessage   `json:"patch,omitempty"`
+	PatchType        string            `json:"patch_type,omitempty"` // JSONPatch, MergePatch
+	Warnings         []string          `json:"warnings,omitempty"`
 	AuditAnnotations map[string]string `json:"audit_annotations,omitempty"`
 	EvaluatedBy      string            `json:"evaluated_by"`
 	LatencyMs        float64           `json:"latency_ms"`
@@ -108,25 +108,25 @@ const (
 
 // MatchCondition defines when an admission webhook should be invoked
 type MatchCondition struct {
-	Name       string          `json:"name"`
-	Expression string          `json:"expression"` // CEL expression
+	Name       string `json:"name"`
+	Expression string `json:"expression"` // CEL expression
 }
 
 // AdmissionWebhookConfig describes a registered admission webhook
 type AdmissionWebhookConfig struct {
-	Name            string            `json:"name"`
-	Phase           AdmissionPhase    `json:"phase"` // validation or mutation
-	URL             string            `json:"url"`
-	FailurePolicy   FailurePolicyType `json:"failure_policy"`
-	TimeoutSeconds  int               `json:"timeout_seconds"`
-	MatchRules      []MatchRule       `json:"match_rules"`
-	MatchConditions []MatchCondition  `json:"match_conditions,omitempty"`
-	SideEffects     string            `json:"side_effects"` // None, NoneOnDryRun
-	Priority        int               `json:"priority"`     // lower = earlier
+	Name              string            `json:"name"`
+	Phase             AdmissionPhase    `json:"phase"` // validation or mutation
+	URL               string            `json:"url"`
+	FailurePolicy     FailurePolicyType `json:"failure_policy"`
+	TimeoutSeconds    int               `json:"timeout_seconds"`
+	MatchRules        []MatchRule       `json:"match_rules"`
+	MatchConditions   []MatchCondition  `json:"match_conditions,omitempty"`
+	SideEffects       string            `json:"side_effects"` // None, NoneOnDryRun
+	Priority          int               `json:"priority"`     // lower = earlier
 	NamespaceSelector map[string]string `json:"namespace_selector,omitempty"`
-	CABundle        string            `json:"ca_bundle,omitempty"`
-	Enabled         bool              `json:"enabled"`
-	RegisteredAt    time.Time         `json:"registered_at"`
+	CABundle          string            `json:"ca_bundle,omitempty"`
+	Enabled           bool              `json:"enabled"`
+	RegisteredAt      time.Time         `json:"registered_at"`
 }
 
 // MatchRule defines which resources trigger this webhook
@@ -524,17 +524,17 @@ func (ac *AdmissionChain) GetStats() map[string]interface{} {
 
 // CRDDefinition describes a Custom Resource Definition
 type CRDDefinition struct {
-	Group       string            `json:"group"`
-	Version     string            `json:"version"`
-	Kind        string            `json:"kind"`
-	Plural      string            `json:"plural"`
-	Scope       string            `json:"scope"` // Namespaced, Cluster
-	ShortNames  []string          `json:"short_names,omitempty"`
-	Categories  []string          `json:"categories,omitempty"`
-	Columns     []CRDColumn       `json:"additional_printer_columns,omitempty"`
-	Schema      json.RawMessage   `json:"schema,omitempty"` // OpenAPI v3 schema
-	Subresources CRDSubresources  `json:"subresources,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
+	Group        string          `json:"group"`
+	Version      string          `json:"version"`
+	Kind         string          `json:"kind"`
+	Plural       string          `json:"plural"`
+	Scope        string          `json:"scope"` // Namespaced, Cluster
+	ShortNames   []string        `json:"short_names,omitempty"`
+	Categories   []string        `json:"categories,omitempty"`
+	Columns      []CRDColumn     `json:"additional_printer_columns,omitempty"`
+	Schema       json.RawMessage `json:"schema,omitempty"` // OpenAPI v3 schema
+	Subresources CRDSubresources `json:"subresources,omitempty"`
+	CreatedAt    time.Time       `json:"created_at"`
 }
 
 // CRDColumn defines an additional printer column for kubectl output
@@ -548,9 +548,9 @@ type CRDColumn struct {
 
 // CRDSubresources defines subresources for the CRD
 type CRDSubresources struct {
-	StatusEnabled bool `json:"status_enabled"`
-	ScaleEnabled  bool `json:"scale_enabled"`
-	ScaleSpecPath string `json:"scale_spec_path,omitempty"`
+	StatusEnabled   bool   `json:"status_enabled"`
+	ScaleEnabled    bool   `json:"scale_enabled"`
+	ScaleSpecPath   string `json:"scale_spec_path,omitempty"`
 	ScaleStatusPath string `json:"scale_status_path,omitempty"`
 }
 
@@ -798,11 +798,11 @@ func (op *CRDOperator) GetOperatorStats() map[string]interface{} {
 func PredefinedCRDs() []*CRDDefinition {
 	return []*CRDDefinition{
 		{
-			Group:   "ai.cloudai-fusion.io",
-			Version: "v1alpha1",
-			Kind:    "AIWorkload",
-			Plural:  "aiworkloads",
-			Scope:   "Namespaced",
+			Group:      "ai.cloudai-fusion.io",
+			Version:    "v1alpha1",
+			Kind:       "AIWorkload",
+			Plural:     "aiworkloads",
+			Scope:      "Namespaced",
 			ShortNames: []string{"aiw"},
 			Categories: []string{"cloudai", "ai"},
 			Columns: []CRDColumn{
@@ -813,11 +813,11 @@ func PredefinedCRDs() []*CRDDefinition {
 			},
 		},
 		{
-			Group:   "ai.cloudai-fusion.io",
-			Version: "v1alpha1",
-			Kind:    "GPUPool",
-			Plural:  "gpupools",
-			Scope:   "Cluster",
+			Group:      "ai.cloudai-fusion.io",
+			Version:    "v1alpha1",
+			Kind:       "GPUPool",
+			Plural:     "gpupools",
+			Scope:      "Cluster",
 			ShortNames: []string{"gp"},
 			Categories: []string{"cloudai", "gpu"},
 			Columns: []CRDColumn{
@@ -827,11 +827,11 @@ func PredefinedCRDs() []*CRDDefinition {
 			},
 		},
 		{
-			Group:   "edge.cloudai-fusion.io",
-			Version: "v1alpha1",
-			Kind:    "EdgeCluster",
-			Plural:  "edgeclusters",
-			Scope:   "Cluster",
+			Group:      "edge.cloudai-fusion.io",
+			Version:    "v1alpha1",
+			Kind:       "EdgeCluster",
+			Plural:     "edgeclusters",
+			Scope:      "Cluster",
 			ShortNames: []string{"ec"},
 			Categories: []string{"cloudai", "edge"},
 			Columns: []CRDColumn{
@@ -841,11 +841,11 @@ func PredefinedCRDs() []*CRDDefinition {
 			},
 		},
 		{
-			Group:   "wasm.cloudai-fusion.io",
-			Version: "v1alpha1",
-			Kind:    "WasmFunction",
-			Plural:  "wasmfunctions",
-			Scope:   "Namespaced",
+			Group:      "wasm.cloudai-fusion.io",
+			Version:    "v1alpha1",
+			Kind:       "WasmFunction",
+			Plural:     "wasmfunctions",
+			Scope:      "Namespaced",
 			ShortNames: []string{"wf"},
 			Categories: []string{"cloudai", "wasm"},
 			Columns: []CRDColumn{
@@ -855,11 +855,11 @@ func PredefinedCRDs() []*CRDDefinition {
 			},
 		},
 		{
-			Group:   "policy.cloudai-fusion.io",
-			Version: "v1alpha1",
-			Kind:    "SecurityConstraint",
-			Plural:  "securityconstraints",
-			Scope:   "Cluster",
+			Group:      "policy.cloudai-fusion.io",
+			Version:    "v1alpha1",
+			Kind:       "SecurityConstraint",
+			Plural:     "securityconstraints",
+			Scope:      "Cluster",
 			ShortNames: []string{"sc"},
 			Categories: []string{"cloudai", "security"},
 			Columns: []CRDColumn{
@@ -886,37 +886,37 @@ const (
 
 // ConstraintTemplate defines a policy constraint template (Gatekeeper-style)
 type ConstraintTemplate struct {
-	Name        string           `json:"name"`
-	Kind        string           `json:"kind"`
-	Engine      PolicyEngineType `json:"engine"`
-	Description string           `json:"description"`
-	Rego        string           `json:"rego,omitempty"`        // OPA Rego policy
-	CEL         string           `json:"cel,omitempty"`         // CEL expression
-	Parameters  json.RawMessage  `json:"parameters,omitempty"`  // parameter schema
-	Targets     []PolicyTarget   `json:"targets"`
+	Name        string            `json:"name"`
+	Kind        string            `json:"kind"`
+	Engine      PolicyEngineType  `json:"engine"`
+	Description string            `json:"description"`
+	Rego        string            `json:"rego,omitempty"`       // OPA Rego policy
+	CEL         string            `json:"cel,omitempty"`        // CEL expression
+	Parameters  json.RawMessage   `json:"parameters,omitempty"` // parameter schema
+	Targets     []PolicyTarget    `json:"targets"`
 	Labels      map[string]string `json:"labels,omitempty"`
-	CreatedAt   time.Time        `json:"created_at"`
-	Hash        string           `json:"hash"`
+	CreatedAt   time.Time         `json:"created_at"`
+	Hash        string            `json:"hash"`
 }
 
 // PolicyTarget defines what resources a constraint applies to
 type PolicyTarget struct {
-	Target     string   `json:"target"` // admission.k8s.gatekeeper.sh
-	Rego       string   `json:"rego,omitempty"`
-	APIGroups  []string `json:"api_groups"`
-	Kinds      []string `json:"kinds"`
-	Namespaces []string `json:"namespaces,omitempty"`
+	Target             string   `json:"target"` // admission.k8s.gatekeeper.sh
+	Rego               string   `json:"rego,omitempty"`
+	APIGroups          []string `json:"api_groups"`
+	Kinds              []string `json:"kinds"`
+	Namespaces         []string `json:"namespaces,omitempty"`
 	ExcludedNamespaces []string `json:"excluded_namespaces,omitempty"`
 }
 
 // PolicyConstraint is an instance of a ConstraintTemplate with parameters
 type PolicyConstraint struct {
-	Name             string            `json:"name"`
-	TemplateName     string            `json:"template_name"`
-	Parameters       map[string]interface{} `json:"parameters"`
-	Match            PolicyMatch       `json:"match"`
-	EnforcementAction string           `json:"enforcement_action"` // deny, dryrun, warn
-	CreatedAt        time.Time         `json:"created_at"`
+	Name              string                 `json:"name"`
+	TemplateName      string                 `json:"template_name"`
+	Parameters        map[string]interface{} `json:"parameters"`
+	Match             PolicyMatch            `json:"match"`
+	EnforcementAction string                 `json:"enforcement_action"` // deny, dryrun, warn
+	CreatedAt         time.Time              `json:"created_at"`
 }
 
 // PolicyMatch defines which resources the constraint applies to
@@ -935,12 +935,12 @@ type PolicyMatchKind struct {
 
 // PolicyEvaluation is the result of evaluating a policy
 type PolicyEvaluation struct {
-	ConstraintName string `json:"constraint_name"`
-	TemplateName   string `json:"template_name"`
-	Allowed        bool   `json:"allowed"`
+	ConstraintName string            `json:"constraint_name"`
+	TemplateName   string            `json:"template_name"`
+	Allowed        bool              `json:"allowed"`
 	Violations     []PolicyViolation `json:"violations,omitempty"`
-	EvaluatedAt    time.Time `json:"evaluated_at"`
-	LatencyMs      float64   `json:"latency_ms"`
+	EvaluatedAt    time.Time         `json:"evaluated_at"`
+	LatencyMs      float64           `json:"latency_ms"`
 }
 
 // PolicyViolation describes a policy violation
@@ -954,12 +954,12 @@ type PolicyViolation struct {
 
 // PolicyEngine manages OPA/Gatekeeper policy evaluation
 type PolicyEngine struct {
-	templates   map[string]*ConstraintTemplate
-	constraints map[string]*PolicyConstraint
-	violations  []PolicyViolation
+	templates     map[string]*ConstraintTemplate
+	constraints   map[string]*PolicyConstraint
+	violations    []PolicyViolation
 	maxViolations int
-	mu          sync.RWMutex
-	logger      *logrus.Logger
+	mu            sync.RWMutex
+	logger        *logrus.Logger
 }
 
 // NewPolicyEngine creates a new policy engine
@@ -1101,60 +1101,247 @@ func (pe *PolicyEngine) EvaluatePolicy(ctx context.Context, resource json.RawMes
 	return results
 }
 
-// evaluateConstraint evaluates a single constraint against a resource
-func (pe *PolicyEngine) evaluateConstraint(tmpl *ConstraintTemplate, constraint *PolicyConstraint, resource json.RawMessage) []PolicyViolation {
+// evaluateConstraint evaluates a single constraint against a resource using the
+// structured parameters carried by the constraint (Gatekeeper-style). Common
+// policy intents — required labels/annotations, allowed image repositories,
+// immutable image tags and replica bounds — are enforced for real against the
+// resource JSON. This is engine-independent: OPA/Gatekeeper/CEL templates all
+// surface their intent through the constraint parameters evaluated here.
+func (pe *PolicyEngine) evaluateConstraint(_ *ConstraintTemplate, constraint *PolicyConstraint, resource json.RawMessage) []PolicyViolation {
+	var obj map[string]interface{}
+	if len(resource) > 0 {
+		if err := json.Unmarshal(resource, &obj); err != nil {
+			return []PolicyViolation{{
+				Message:    fmt.Sprintf("resource is not valid JSON: %v", err),
+				Severity:   "high",
+				Constraint: constraint.Name,
+			}}
+		}
+	}
+
 	var violations []PolicyViolation
+	params := constraint.Parameters
 
-	// Simulate policy evaluation based on engine type
-	switch tmpl.Engine {
-	case PolicyEngineOPA:
-		// In production, this would call the OPA REST API or embedded OPA engine
-		// POST /v1/data/{package}/violation with input document
-		if tmpl.Rego != "" {
-			// Simulated: parse basic deny rules
-			violations = pe.simulateOPAEval(tmpl, constraint, resource)
+	// Required labels: every listed key must be present on metadata.labels.
+	if required := paramStrings(params, "labels"); len(required) > 0 {
+		labels := resStringMap(obj, "metadata", "labels")
+		for _, key := range required {
+			if _, ok := labels[key]; !ok {
+				violations = append(violations, PolicyViolation{
+					Message:    fmt.Sprintf("missing required label %q", key),
+					Severity:   "medium",
+					Field:      "metadata.labels",
+					Constraint: constraint.Name,
+				})
+			}
 		}
+	}
 
-	case PolicyEngineGatekeeper:
-		// Gatekeeper uses OPA under the hood but with ConstraintTemplate CRDs
-		if len(tmpl.Targets) > 0 {
-			violations = pe.simulateGatekeeperEval(tmpl, constraint, resource)
+	// Required annotations.
+	if required := paramStrings(params, "annotations"); len(required) > 0 {
+		annotations := resStringMap(obj, "metadata", "annotations")
+		for _, key := range required {
+			if _, ok := annotations[key]; !ok {
+				violations = append(violations, PolicyViolation{
+					Message:    fmt.Sprintf("missing required annotation %q", key),
+					Severity:   "low",
+					Field:      "metadata.annotations",
+					Constraint: constraint.Name,
+				})
+			}
 		}
+	}
 
-	case PolicyEngineCEL:
-		// K8s CEL validation rules
-		if tmpl.CEL != "" {
-			violations = pe.simulateCELEval(tmpl, constraint, resource)
+	// Allowed image repositories: each container image must match an allowed prefix.
+	if allowed := paramStrings(params, "repos"); len(allowed) > 0 {
+		for _, img := range resContainerImages(obj) {
+			if !strHasAnyPrefix(img, allowed) {
+				violations = append(violations, PolicyViolation{
+					Message:    fmt.Sprintf("container image %q is not from an allowed repository", img),
+					Severity:   "high",
+					Field:      "spec.containers[].image",
+					Constraint: constraint.Name,
+				})
+			}
+		}
+	}
+
+	// Disallow mutable ":latest" (or untagged) images when requested.
+	if paramBool(params, "blockLatestTag") {
+		for _, img := range resContainerImages(obj) {
+			base := imageBaseSegment(img)
+			if strings.HasSuffix(img, ":latest") || !strings.Contains(base, ":") {
+				violations = append(violations, PolicyViolation{
+					Message:    fmt.Sprintf("container image %q must use an immutable tag (not ':latest')", img),
+					Severity:   "medium",
+					Field:      "spec.containers[].image",
+					Constraint: constraint.Name,
+				})
+			}
+		}
+	}
+
+	// Replica bounds for workload resources.
+	if replicas, ok := resFloat(obj, "spec", "replicas"); ok {
+		if maxR, ok := paramFloat(params, "maxReplicas"); ok && replicas > maxR {
+			violations = append(violations, PolicyViolation{
+				Message:    fmt.Sprintf("replicas %d exceeds maximum %d", int(replicas), int(maxR)),
+				Severity:   "medium",
+				Field:      "spec.replicas",
+				Constraint: constraint.Name,
+			})
+		}
+		if minR, ok := paramFloat(params, "minReplicas"); ok && replicas < minR {
+			violations = append(violations, PolicyViolation{
+				Message:    fmt.Sprintf("replicas %d is below minimum %d", int(replicas), int(minR)),
+				Severity:   "medium",
+				Field:      "spec.replicas",
+				Constraint: constraint.Name,
+			})
 		}
 	}
 
 	return violations
 }
 
-// simulateOPAEval simulates OPA Rego policy evaluation
-func (pe *PolicyEngine) simulateOPAEval(tmpl *ConstraintTemplate, constraint *PolicyConstraint, _ json.RawMessage) []PolicyViolation {
-	// In production: POST to OPA at /v1/data/{package}/deny
-	// For now, validate that the Rego policy is non-empty and well-formed
-	if strings.Contains(tmpl.Rego, "deny") || strings.Contains(tmpl.Rego, "violation") {
-		pe.logger.WithField("template", tmpl.Name).Debug("OPA policy evaluated (simulated)")
+// paramStrings extracts a []string from a constraint parameter encoded as
+// []string, []interface{} of strings, or a comma-separated string.
+func paramStrings(params map[string]interface{}, key string) []string {
+	if params == nil {
+		return nil
 	}
-	return nil // no violations in simulation
+	switch v := params[key].(type) {
+	case []string:
+		return v
+	case []interface{}:
+		out := make([]string, 0, len(v))
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	case string:
+		out := make([]string, 0)
+		for _, p := range strings.Split(v, ",") {
+			if p = strings.TrimSpace(p); p != "" {
+				out = append(out, p)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
 }
 
-// simulateGatekeeperEval simulates Gatekeeper constraint evaluation
-func (pe *PolicyEngine) simulateGatekeeperEval(tmpl *ConstraintTemplate, constraint *PolicyConstraint, _ json.RawMessage) []PolicyViolation {
-	pe.logger.WithFields(logrus.Fields{
-		"template": tmpl.Name, "constraint": constraint.Name,
-	}).Debug("Gatekeeper constraint evaluated (simulated)")
-	return nil
+func paramBool(params map[string]interface{}, key string) bool {
+	if params == nil {
+		return false
+	}
+	b, _ := params[key].(bool)
+	return b
 }
 
-// simulateCELEval simulates CEL expression evaluation
-func (pe *PolicyEngine) simulateCELEval(tmpl *ConstraintTemplate, constraint *PolicyConstraint, _ json.RawMessage) []PolicyViolation {
-	pe.logger.WithFields(logrus.Fields{
-		"template": tmpl.Name, "cel": tmpl.CEL,
-	}).Debug("CEL expression evaluated (simulated)")
-	return nil
+func paramFloat(params map[string]interface{}, key string) (float64, bool) {
+	if params == nil {
+		return 0, false
+	}
+	switch v := params[key].(type) {
+	case float64:
+		return v, true
+	case int:
+		return float64(v), true
+	default:
+		return 0, false
+	}
+}
+
+// resMap navigates obj[path...] returning the nested object, or nil.
+func resMap(obj map[string]interface{}, path ...string) map[string]interface{} {
+	cur := obj
+	for _, p := range path {
+		next, ok := cur[p].(map[string]interface{})
+		if !ok {
+			return nil
+		}
+		cur = next
+	}
+	return cur
+}
+
+// resStringMap navigates obj[path...] and returns it as a map[string]string.
+func resStringMap(obj map[string]interface{}, path ...string) map[string]string {
+	cur := resMap(obj, path...)
+	if cur == nil {
+		return nil
+	}
+	out := make(map[string]string, len(cur))
+	for k, v := range cur {
+		if s, ok := v.(string); ok {
+			out[k] = s
+		}
+	}
+	return out
+}
+
+// resFloat returns a numeric field at obj[path...].
+func resFloat(obj map[string]interface{}, path ...string) (float64, bool) {
+	if len(path) == 0 {
+		return 0, false
+	}
+	parent := resMap(obj, path[:len(path)-1]...)
+	if parent == nil {
+		return 0, false
+	}
+	f, ok := parent[path[len(path)-1]].(float64)
+	return f, ok
+}
+
+// resContainerImages collects container images from both bare Pod specs and
+// workload templates (Deployment/StatefulSet/etc.).
+func resContainerImages(obj map[string]interface{}) []string {
+	var images []string
+	specs := []map[string]interface{}{
+		resMap(obj, "spec"),
+		resMap(obj, "spec", "template", "spec"),
+	}
+	for _, spec := range specs {
+		if spec == nil {
+			continue
+		}
+		for _, field := range []string{"containers", "initContainers"} {
+			list, ok := spec[field].([]interface{})
+			if !ok {
+				continue
+			}
+			for _, c := range list {
+				if cm, ok := c.(map[string]interface{}); ok {
+					if img, ok := cm["image"].(string); ok && img != "" {
+						images = append(images, img)
+					}
+				}
+			}
+		}
+	}
+	return images
+}
+
+func strHasAnyPrefix(s string, prefixes []string) bool {
+	for _, p := range prefixes {
+		if strings.HasPrefix(s, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// imageBaseSegment returns the substring after the final '/', so a ':' tag
+// separator is not confused with the ':' in a registry host:port.
+func imageBaseSegment(image string) string {
+	if idx := strings.LastIndex(image, "/"); idx >= 0 {
+		return image[idx+1:]
+	}
+	return image
 }
 
 func (pe *PolicyEngine) constraintMatchesKind(c *PolicyConstraint, kind ResourceKind) bool {

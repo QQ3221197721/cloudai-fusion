@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glebarez/sqlite"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -16,11 +18,12 @@ import (
 
 // Config holds database connection configuration
 type Config struct {
-	DSN            string
-	MaxOpenConns   int
-	MaxIdleConns   int
+	DSN             string
+	MaxOpenConns    int
+	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
-	LogLevel       string // silent, error, warn, info
+	LogLevel        string // silent, error, warn, info
+	Driver          string // "postgres" (default) or "sqlite" (pure-Go, e.g. tests)
 }
 
 // Store wraps GORM DB and provides typed query methods
@@ -41,7 +44,15 @@ func New(cfg Config) (*Store, error) {
 		gormLogLevel = logger.Error
 	}
 
-	db, err := gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{
+	var dialector gorm.Dialector
+	switch cfg.Driver {
+	case "sqlite":
+		dialector = sqlite.Open(cfg.DSN)
+	default:
+		dialector = postgres.Open(cfg.DSN)
+	}
+
+	db, err := gorm.Open(dialector, &gorm.Config{
 		Logger: logger.Default.LogMode(gormLogLevel),
 	})
 	if err != nil {
@@ -353,14 +364,12 @@ func (s *Store) DeleteSecurityPolicy(id string) error {
 	return s.db.Where("id = ?", id).Delete(&SecurityPolicyModel{}).Error
 }
 
-// newUUID generates a UUID (avoiding circular import with common)
+// newUUID generates a random RFC-4122 UUID. A collision-free identifier is
+// required because it backs primary keys (e.g. workload_events.id); the previous
+// time-derived implementation could produce duplicate IDs for records created
+// within the same time window, failing the unique constraint under rapid writes.
 func newUUID() string {
-	return fmt.Sprintf("%x-%x-%x-%x-%x",
-		time.Now().UnixNano()&0xFFFFFFFF,
-		time.Now().UnixNano()>>32&0xFFFF,
-		0x4000|time.Now().UnixNano()>>48&0x0FFF,
-		0x8000|time.Now().UnixNano()>>60&0x3FFF,
-		time.Now().UnixNano()&0xFFFFFFFFFFFF)
+	return uuid.NewString()
 }
 
 // ============================================================================

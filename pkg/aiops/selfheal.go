@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,25 +21,26 @@ import (
 // SelfHealingEngine detects faults, performs automated remediation, and
 // conducts root cause analysis to maintain system health autonomously.
 type SelfHealingEngine struct {
-	detectors       map[string]*FaultDetector
-	playbooks       map[string]*RemediationPlaybook
-	incidents       []*Incident
-	rootCauseDB     map[string]*RootCausePattern
-	healthProbes    map[string]*HealthProbe
-	config          SelfHealConfig
-	mu              sync.RWMutex
-	logger          *logrus.Logger
+	detectors    map[string]*FaultDetector
+	playbooks    map[string]*RemediationPlaybook
+	incidents    []*Incident
+	faultEvents  map[string]*FaultEvent // stored by ID for root-cause lookup
+	rootCauseDB  map[string]*RootCausePattern
+	healthProbes map[string]*HealthProbe
+	config       SelfHealConfig
+	mu           sync.RWMutex
+	logger       *logrus.Logger
 }
 
 // SelfHealConfig configures the self-healing engine.
 type SelfHealConfig struct {
-	DetectionInterval    time.Duration `json:"detection_interval" yaml:"detectionInterval"`       // e.g., 15s
-	MaxAutoRemediations  int           `json:"max_auto_remediations" yaml:"maxAutoRemediations"` // per hour
-	EscalationTimeout    time.Duration `json:"escalation_timeout" yaml:"escalationTimeout"`       // e.g., 10min
-	CorrelationWindow    time.Duration `json:"correlation_window" yaml:"correlationWindow"`       // e.g., 5min
-	MaxRetries           int           `json:"max_retries" yaml:"maxRetries"`
-	EnableAutoRemediate  bool          `json:"enable_auto_remediate" yaml:"enableAutoRemediate"`
-	DryRunMode           bool          `json:"dry_run_mode" yaml:"dryRunMode"`
+	DetectionInterval   time.Duration `json:"detection_interval" yaml:"detectionInterval"`      // e.g., 15s
+	MaxAutoRemediations int           `json:"max_auto_remediations" yaml:"maxAutoRemediations"` // per hour
+	EscalationTimeout   time.Duration `json:"escalation_timeout" yaml:"escalationTimeout"`      // e.g., 10min
+	CorrelationWindow   time.Duration `json:"correlation_window" yaml:"correlationWindow"`      // e.g., 5min
+	MaxRetries          int           `json:"max_retries" yaml:"maxRetries"`
+	EnableAutoRemediate bool          `json:"enable_auto_remediate" yaml:"enableAutoRemediate"`
+	DryRunMode          bool          `json:"dry_run_mode" yaml:"dryRunMode"`
 }
 
 // DefaultSelfHealConfig returns sensible defaults.
@@ -73,25 +75,26 @@ type FaultDetector struct {
 
 // FaultCondition defines when a fault is detected.
 type FaultCondition struct {
-	MetricName    string        `json:"metric_name"`
-	Operator      string        `json:"operator"` // gt, lt, eq, ne
-	Threshold     float64       `json:"threshold"`
-	Duration      time.Duration `json:"duration"` // must exceed for this long
-	Occurrences   int           `json:"occurrences"` // within duration window
+	MetricName  string        `json:"metric_name"`
+	Operator    string        `json:"operator"` // gt, lt, eq, ne
+	Threshold   float64       `json:"threshold"`
+	Duration    time.Duration `json:"duration"`    // must exceed for this long
+	Occurrences int           `json:"occurrences"` // within duration window
 }
 
 // FaultEvent represents a detected fault.
 type FaultEvent struct {
-	ID            string    `json:"id"`
-	DetectorID    string    `json:"detector_id"`
-	DetectorName  string    `json:"detector_name"`
-	Category      string    `json:"category"`
-	Severity      string    `json:"severity"`
-	Resource      string    `json:"resource"` // affected resource
-	Description   string    `json:"description"`
-	MetricValue   float64   `json:"metric_value"`
-	DetectedAt    time.Time `json:"detected_at"`
-	Correlated    []string  `json:"correlated_events,omitempty"` // related event IDs
+	ID           string    `json:"id"`
+	DetectorID   string    `json:"detector_id"`
+	DetectorName string    `json:"detector_name"`
+	Category     string    `json:"category"`
+	Metric       string    `json:"metric"` // triggering metric name (for symptom matching)
+	Severity     string    `json:"severity"`
+	Resource     string    `json:"resource"` // affected resource
+	Description  string    `json:"description"`
+	MetricValue  float64   `json:"metric_value"`
+	DetectedAt   time.Time `json:"detected_at"`
+	Correlated   []string  `json:"correlated_events,omitempty"` // related event IDs
 }
 
 // HealthProbe defines an active health check.
@@ -106,7 +109,7 @@ type HealthProbe struct {
 	FailureCount  int           `json:"failure_count"`
 	ConsecFails   int           `json:"consecutive_failures"`
 	FailThreshold int           `json:"failure_threshold"` // consec failures to trigger alert
-	LastResult    string        `json:"last_result"` // success, failure, timeout
+	LastResult    string        `json:"last_result"`       // success, failure, timeout
 	LastCheckTime time.Time     `json:"last_check_time"`
 }
 
@@ -116,50 +119,50 @@ type HealthProbe struct {
 
 // RemediationPlaybook defines automated repair actions.
 type RemediationPlaybook struct {
-	ID             string             `json:"id"`
-	Name           string             `json:"name"`
-	Description    string             `json:"description"`
-	Trigger        string             `json:"trigger"` // fault detector ID pattern
-	Steps          []RemediationStep  `json:"steps"`
-	MaxExecutions  int                `json:"max_executions_per_hour"`
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description"`
+	Trigger         string            `json:"trigger"` // fault detector ID pattern
+	Steps           []RemediationStep `json:"steps"`
+	MaxExecutions   int               `json:"max_executions_per_hour"`
 	RequireApproval bool              `json:"require_approval"`
-	Cooldown       time.Duration      `json:"cooldown"`
-	LastExecution  time.Time          `json:"last_execution"`
-	ExecutionCount int                `json:"execution_count"`
+	Cooldown        time.Duration     `json:"cooldown"`
+	LastExecution   time.Time         `json:"last_execution"`
+	ExecutionCount  int               `json:"execution_count"`
 }
 
 // RemediationStep is a single action in a playbook.
 type RemediationStep struct {
-	Name        string            `json:"name"`
-	Action      string            `json:"action"` // restart_pod, scale_up, drain_node, rollback, cordon_node, exec_command
-	Target      string            `json:"target"`
-	Parameters  map[string]string `json:"parameters,omitempty"`
-	Timeout     time.Duration     `json:"timeout"`
-	OnFailure   string            `json:"on_failure"` // continue, abort, escalate
-	Condition   string            `json:"condition,omitempty"` // optional pre-condition
+	Name       string            `json:"name"`
+	Action     string            `json:"action"` // restart_pod, scale_up, drain_node, rollback, cordon_node, exec_command
+	Target     string            `json:"target"`
+	Parameters map[string]string `json:"parameters,omitempty"`
+	Timeout    time.Duration     `json:"timeout"`
+	OnFailure  string            `json:"on_failure"`          // continue, abort, escalate
+	Condition  string            `json:"condition,omitempty"` // optional pre-condition
 }
 
 // RemediationResult holds the outcome of a playbook execution.
 type RemediationResult struct {
-	PlaybookID    string         `json:"playbook_id"`
-	PlaybookName  string         `json:"playbook_name"`
-	IncidentID    string         `json:"incident_id"`
-	Success       bool           `json:"success"`
-	StepResults   []StepResult   `json:"step_results"`
-	StartedAt     time.Time      `json:"started_at"`
-	CompletedAt   time.Time      `json:"completed_at"`
-	Duration      time.Duration  `json:"duration"`
-	DryRun        bool           `json:"dry_run"`
+	PlaybookID   string        `json:"playbook_id"`
+	PlaybookName string        `json:"playbook_name"`
+	IncidentID   string        `json:"incident_id"`
+	Success      bool          `json:"success"`
+	StepResults  []StepResult  `json:"step_results"`
+	StartedAt    time.Time     `json:"started_at"`
+	CompletedAt  time.Time     `json:"completed_at"`
+	Duration     time.Duration `json:"duration"`
+	DryRun       bool          `json:"dry_run"`
 }
 
 // StepResult holds the outcome of a single remediation step.
 type StepResult struct {
-	StepName    string        `json:"step_name"`
-	Action      string        `json:"action"`
-	Success     bool          `json:"success"`
-	Output      string        `json:"output,omitempty"`
-	Error       string        `json:"error,omitempty"`
-	Duration    time.Duration `json:"duration"`
+	StepName string        `json:"step_name"`
+	Action   string        `json:"action"`
+	Success  bool          `json:"success"`
+	Output   string        `json:"output,omitempty"`
+	Error    string        `json:"error,omitempty"`
+	Duration time.Duration `json:"duration"`
 }
 
 // ============================================================================
@@ -168,19 +171,19 @@ type StepResult struct {
 
 // Incident represents a detected and tracked incident.
 type Incident struct {
-	ID             string            `json:"id"`
-	Title          string            `json:"title"`
-	Severity       string            `json:"severity"`
-	Status         string            `json:"status"` // open, investigating, remediating, resolved, escalated
-	Category       string            `json:"category"`
-	AffectedResources []string       `json:"affected_resources"`
-	FaultEvents    []string          `json:"fault_events"` // event IDs
-	RootCause      *RootCauseAnalysis `json:"root_cause,omitempty"`
-	Remediation    *RemediationResult `json:"remediation,omitempty"`
-	Timeline       []IncidentEvent   `json:"timeline"`
-	CreatedAt      time.Time         `json:"created_at"`
-	ResolvedAt     *time.Time        `json:"resolved_at,omitempty"`
-	TTR            time.Duration     `json:"time_to_resolve,omitempty"`
+	ID                string             `json:"id"`
+	Title             string             `json:"title"`
+	Severity          string             `json:"severity"`
+	Status            string             `json:"status"` // open, investigating, remediating, resolved, escalated
+	Category          string             `json:"category"`
+	AffectedResources []string           `json:"affected_resources"`
+	FaultEvents       []string           `json:"fault_events"` // event IDs
+	RootCause         *RootCauseAnalysis `json:"root_cause,omitempty"`
+	Remediation       *RemediationResult `json:"remediation,omitempty"`
+	Timeline          []IncidentEvent    `json:"timeline"`
+	CreatedAt         time.Time          `json:"created_at"`
+	ResolvedAt        *time.Time         `json:"resolved_at,omitempty"`
+	TTR               time.Duration      `json:"time_to_resolve,omitempty"`
 }
 
 // IncidentEvent records a timeline entry.
@@ -235,6 +238,7 @@ func NewSelfHealingEngine(cfg SelfHealConfig, logger *logrus.Logger) *SelfHealin
 	engine := &SelfHealingEngine{
 		detectors:    make(map[string]*FaultDetector),
 		playbooks:    make(map[string]*RemediationPlaybook),
+		faultEvents:  make(map[string]*FaultEvent),
 		rootCauseDB:  make(map[string]*RootCausePattern),
 		healthProbes: make(map[string]*HealthProbe),
 		config:       cfg,
@@ -302,10 +306,11 @@ func (e *SelfHealingEngine) DetectFaults(ctx context.Context, metrics map[string
 
 		if triggered {
 			fault := &FaultEvent{
-				ID:           fmt.Sprintf("fault-%d", time.Now().UnixNano()),
+				ID:           fmt.Sprintf("fault-%s-%d", detector.ID, time.Now().UnixNano()),
 				DetectorID:   detector.ID,
 				DetectorName: detector.Name,
 				Category:     detector.Category,
+				Metric:       detector.Condition.MetricName,
 				Severity:     detector.Severity,
 				Description:  fmt.Sprintf("%s: %s %s %.2f (actual: %.2f)", detector.Name, detector.Condition.MetricName, detector.Condition.Operator, detector.Condition.Threshold, value),
 				MetricValue:  value,
@@ -352,6 +357,7 @@ func (e *SelfHealingEngine) CreateIncident(faults []*FaultEvent) *Incident {
 	resources := make([]string, 0)
 	for i, f := range faults {
 		eventIDs[i] = f.ID
+		e.faultEvents[f.ID] = f
 		if f.Resource != "" {
 			resources = append(resources, f.Resource)
 		}
@@ -501,40 +507,45 @@ func (e *SelfHealingEngine) Remediate(ctx context.Context, incident *Incident) (
 
 // AnalyzeRootCause performs root cause analysis on an incident.
 func (e *SelfHealingEngine) AnalyzeRootCause(incident *Incident) *RootCauseAnalysis {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
 	analysis := &RootCauseAnalysis{
 		AnalyzedAt: time.Now(),
 	}
 
-	// Match against known patterns
+	// Collect the metrics actually observed in this incident's fault events.
+	observed := make([]string, 0, len(incident.FaultEvents))
+	for _, id := range incident.FaultEvents {
+		if f, ok := e.faultEvents[id]; ok && f.Metric != "" {
+			observed = append(observed, f.Metric)
+		}
+	}
+
+	// Match same-category patterns by the fraction of their symptom metrics that
+	// are actually present among the observed metrics. Symptom and metric names
+	// may differ in qualification (e.g. "memory_percent" vs "node_memory_percent"),
+	// so a substring match on either side counts.
 	var bestMatch *RootCausePattern
 	bestScore := 0.0
-
 	for _, pattern := range e.rootCauseDB {
-		if pattern.Category != incident.Category {
+		if pattern.Category != incident.Category || len(pattern.Symptoms) == 0 {
 			continue
 		}
-
-		score := 0.0
+		matched := 0
 		for _, symptom := range pattern.Symptoms {
-			for _, eventID := range incident.FaultEvents {
-				if eventID != "" {
-					// Simplified symptom matching
-					score += 0.3
-				}
+			if metricMatchesSymptom(observed, symptom) {
+				matched++
 			}
-			_ = symptom
 		}
-
+		score := float64(matched) / float64(len(pattern.Symptoms))
 		if score > bestScore {
 			bestScore = score
 			bestMatch = pattern
 		}
 	}
 
-	if bestMatch != nil {
+	if bestMatch != nil && bestScore > 0 {
 		analysis.ProbableCause = bestMatch.RootCause
 		analysis.Confidence = bestScore
 		analysis.RecommendedFix = bestMatch.Fix
@@ -543,9 +554,9 @@ func (e *SelfHealingEngine) AnalyzeRootCause(incident *Incident) *RootCauseAnaly
 		analysis.Evidence = []string{
 			fmt.Sprintf("Matched pattern: %s", bestMatch.Name),
 			fmt.Sprintf("Category: %s", bestMatch.Category),
+			fmt.Sprintf("Symptom match: %.0f%% of expected metrics observed (%v)", bestScore*100, observed),
 			fmt.Sprintf("Historical occurrences: %d", bestMatch.Occurrences),
 		}
-
 		bestMatch.Occurrences++
 	} else {
 		analysis.ProbableCause = "Unknown - no matching pattern found"
@@ -565,6 +576,18 @@ func (e *SelfHealingEngine) AnalyzeRootCause(incident *Incident) *RootCauseAnaly
 	})
 
 	return analysis
+}
+
+// metricMatchesSymptom reports whether any observed metric name corresponds to
+// the given pattern symptom, tolerating qualification differences by matching
+// when either name contains the other.
+func metricMatchesSymptom(observed []string, symptom string) bool {
+	for _, m := range observed {
+		if m == symptom || strings.Contains(m, symptom) || strings.Contains(symptom, m) {
+			return true
+		}
+	}
+	return false
 }
 
 // GetIncidents returns incidents filtered by status.
@@ -720,7 +743,7 @@ func (e *SelfHealingEngine) registerDefaultPlaybooks() {
 	defaults := []*RemediationPlaybook{
 		{
 			ID: "pb-pod-restart", Name: "Pod Restart Recovery", Trigger: "pod",
-			Description: "Restart failing pods and scale up if needed",
+			Description:   "Restart failing pods and scale up if needed",
 			MaxExecutions: 5, Cooldown: 5 * time.Minute,
 			Steps: []RemediationStep{
 				{Name: "Restart failing pods", Action: "restart_pod", Target: "{{affected_pod}}", Timeout: 2 * time.Minute, OnFailure: "continue"},
@@ -730,7 +753,7 @@ func (e *SelfHealingEngine) registerDefaultPlaybooks() {
 		},
 		{
 			ID: "pb-node-drain", Name: "Node Drain & Cordon", Trigger: "node",
-			Description: "Cordon and drain unhealthy node",
+			Description:   "Cordon and drain unhealthy node",
 			MaxExecutions: 3, Cooldown: 10 * time.Minute,
 			Steps: []RemediationStep{
 				{Name: "Cordon node", Action: "cordon_node", Target: "{{affected_node}}", Timeout: 30 * time.Second, OnFailure: "abort"},
@@ -739,7 +762,7 @@ func (e *SelfHealingEngine) registerDefaultPlaybooks() {
 		},
 		{
 			ID: "pb-gpu-throttle", Name: "GPU Thermal Throttle", Trigger: "gpu",
-			Description: "Reduce GPU workload when temperature is critical",
+			Description:   "Reduce GPU workload when temperature is critical",
 			MaxExecutions: 10, Cooldown: 2 * time.Minute,
 			Steps: []RemediationStep{
 				{Name: "Reduce GPU power limit", Action: "exec_command", Target: "{{gpu_node}}", Parameters: map[string]string{"cmd": "nvidia-smi -pl 200"}, Timeout: 30 * time.Second, OnFailure: "continue"},
@@ -748,7 +771,7 @@ func (e *SelfHealingEngine) registerDefaultPlaybooks() {
 		},
 		{
 			ID: "pb-service-rollback", Name: "Service Rollback", Trigger: "service",
-			Description: "Rollback to last known good version on high error rate",
+			Description:   "Rollback to last known good version on high error rate",
 			MaxExecutions: 2, Cooldown: 15 * time.Minute, RequireApproval: true,
 			Steps: []RemediationStep{
 				{Name: "Identify last good version", Action: "get_last_stable", Target: "{{service}}", Timeout: 30 * time.Second, OnFailure: "abort"},

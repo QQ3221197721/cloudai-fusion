@@ -21,19 +21,19 @@ import (
 // RIRecommendationEngine analyzes resource usage patterns and recommends
 // optimal Reserved Instance purchases to maximize cost savings.
 type RIRecommendationEngine struct {
-	usageRecords     map[string][]UsageRecord    // instanceType → usage records
-	riInventory      map[string][]*ReservedInstance
-	recommendations  []*RIRecommendation
-	config           RIConfig
-	mu               sync.RWMutex
-	logger           *logrus.Logger
+	usageRecords    map[string][]UsageRecord // instanceType → usage records
+	riInventory     map[string][]*ReservedInstance
+	recommendations []*RIRecommendation
+	config          RIConfig
+	mu              sync.RWMutex
+	logger          *logrus.Logger
 }
 
 // RIConfig configures the RI recommendation engine.
 type RIConfig struct {
-	AnalysisWindow     time.Duration `json:"analysis_window" yaml:"analysisWindow"`         // e.g., 30 days
-	MinUtilization     float64       `json:"min_utilization" yaml:"minUtilization"`           // e.g., 0.7
-	TargetCoverage     float64       `json:"target_coverage" yaml:"targetCoverage"`           // e.g., 0.8
+	AnalysisWindow     time.Duration `json:"analysis_window" yaml:"analysisWindow"`          // e.g., 30 days
+	MinUtilization     float64       `json:"min_utilization" yaml:"minUtilization"`          // e.g., 0.7
+	TargetCoverage     float64       `json:"target_coverage" yaml:"targetCoverage"`          // e.g., 0.8
 	BreakEvenThreshold float64       `json:"break_even_threshold" yaml:"breakEvenThreshold"` // months
 	MaxCommitmentYears int           `json:"max_commitment_years" yaml:"maxCommitmentYears"` // 1 or 3
 	IncludeGPU         bool          `json:"include_gpu" yaml:"includeGPU"`
@@ -66,16 +66,16 @@ type UsageRecord struct {
 
 // ReservedInstance represents an existing RI commitment.
 type ReservedInstance struct {
-	ID             string    `json:"id"`
-	InstanceType   string    `json:"instance_type"`
-	Count          int       `json:"count"`
-	Term           string    `json:"term"` // "1yr", "3yr"
-	PaymentOption  string    `json:"payment_option"` // "all_upfront", "partial_upfront", "no_upfront"
-	HourlyRate     float64   `json:"hourly_rate"`
-	TotalCost      float64   `json:"total_cost"`
-	Utilization    float64   `json:"utilization"`
-	ExpiresAt      time.Time `json:"expires_at"`
-	Region         string    `json:"region"`
+	ID            string    `json:"id"`
+	InstanceType  string    `json:"instance_type"`
+	Count         int       `json:"count"`
+	Term          string    `json:"term"`           // "1yr", "3yr"
+	PaymentOption string    `json:"payment_option"` // "all_upfront", "partial_upfront", "no_upfront"
+	HourlyRate    float64   `json:"hourly_rate"`
+	TotalCost     float64   `json:"total_cost"`
+	Utilization   float64   `json:"utilization"`
+	ExpiresAt     time.Time `json:"expires_at"`
+	Region        string    `json:"region"`
 }
 
 // RIRecommendation represents a purchase recommendation.
@@ -99,13 +99,13 @@ type RIRecommendation struct {
 
 // RICoverageReport shows current RI coverage analysis.
 type RICoverageReport struct {
-	TotalInstances   int                        `json:"total_instances"`
-	CoveredByRI      int                        `json:"covered_by_ri"`
-	CoveragePercent  float64                    `json:"coverage_percent"`
-	MonthlySavings   float64                    `json:"monthly_savings"`
-	WastedRI         int                        `json:"wasted_ri"` // unused RI capacity
-	ByType           map[string]*TypeCoverage   `json:"by_type"`
-	GeneratedAt      time.Time                  `json:"generated_at"`
+	TotalInstances  int                      `json:"total_instances"`
+	CoveredByRI     int                      `json:"covered_by_ri"`
+	CoveragePercent float64                  `json:"coverage_percent"`
+	MonthlySavings  float64                  `json:"monthly_savings"`
+	WastedRI        int                      `json:"wasted_ri"` // unused RI capacity
+	ByType          map[string]*TypeCoverage `json:"by_type"`
+	GeneratedAt     time.Time                `json:"generated_at"`
 }
 
 // TypeCoverage shows coverage for a specific instance type.

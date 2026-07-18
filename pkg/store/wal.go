@@ -163,9 +163,9 @@ type WAL struct {
 	config WALConfig
 
 	// In-memory storage (production: file-backed segments)
-	records    []WALRecord
-	sequence   atomic.Uint64
-	batchBuf   []WALRecord
+	records  []WALRecord
+	sequence atomic.Uint64
+	batchBuf []WALRecord
 
 	// Checkpoint tracking
 	lastCheckpoint  uint64
@@ -499,14 +499,14 @@ func (w *WAL) Len() int {
 
 // WALStats holds runtime statistics for the WAL.
 type WALStats struct {
-	RecordsWritten   int64 `json:"records_written"`
-	RecordsCompacted int64 `json:"records_compacted"`
-	BytesWritten     int64 `json:"bytes_written"`
-	BatchesFlushed   int64 `json:"batches_flushed"`
-	SyncsForceed     int64 `json:"syncs_forced"`
-	CheckpointsDone  int64 `json:"checkpoints_done"`
-	RecoveryCycles   int64 `json:"recovery_cycles"`
-	CurrentSize      int   `json:"current_size"`
+	RecordsWritten   int64  `json:"records_written"`
+	RecordsCompacted int64  `json:"records_compacted"`
+	BytesWritten     int64  `json:"bytes_written"`
+	BatchesFlushed   int64  `json:"batches_flushed"`
+	SyncsForceed     int64  `json:"syncs_forced"`
+	CheckpointsDone  int64  `json:"checkpoints_done"`
+	RecoveryCycles   int64  `json:"recovery_cycles"`
+	CurrentSize      int    `json:"current_size"`
 	LastSequence     uint64 `json:"last_sequence"`
 }
 

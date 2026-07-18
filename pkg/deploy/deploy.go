@@ -401,14 +401,14 @@ func DefaultRollbackConfig() RollbackConfig {
 
 // RollbackEvent records a rollback action.
 type RollbackEvent struct {
-	Component     string          `json:"component"`
-	FromVersion   string          `json:"from_version"`
-	ToVersion     string          `json:"to_version"`
-	Reason        string          `json:"reason"`
-	ErrorRate     float64         `json:"error_rate"`
-	P99LatencyMs  float64         `json:"p99_latency_ms"`
-	Timestamp     time.Time       `json:"timestamp"`
-	Automatic     bool            `json:"automatic"`
+	Component    string    `json:"component"`
+	FromVersion  string    `json:"from_version"`
+	ToVersion    string    `json:"to_version"`
+	Reason       string    `json:"reason"`
+	ErrorRate    float64   `json:"error_rate"`
+	P99LatencyMs float64   `json:"p99_latency_ms"`
+	Timestamp    time.Time `json:"timestamp"`
+	Automatic    bool      `json:"automatic"`
 }
 
 // RollbackController monitors deployments and triggers automatic rollback.
@@ -533,7 +533,7 @@ func (rc *RollbackController) RunMonitorLoop(ctx context.Context, components []s
 			return
 		case <-ticker.C:
 			for _, component := range components {
-				rc.CheckHealth(ctx, component)
+				_, _ = rc.CheckHealth(ctx, component)
 			}
 		}
 	}

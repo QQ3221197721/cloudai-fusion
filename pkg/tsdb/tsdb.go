@@ -180,7 +180,7 @@ type memoryTSDB struct {
 	logger *logrus.Logger
 
 	// Stats
-	totalWrites int64
+	totalWrites  int64
 	totalQueries int64
 }
 
@@ -459,15 +459,15 @@ func (db *vmTSDB) Healthy(ctx context.Context) bool {
 
 const (
 	// GPU metrics
-	MetricGPUUtilization    = "cloudai_gpu_utilization_percent"
-	MetricGPUMemoryUsed     = "cloudai_gpu_memory_used_bytes"
-	MetricGPUTemperature    = "cloudai_gpu_temperature_celsius"
-	MetricGPUPowerWatts     = "cloudai_gpu_power_watts"
+	MetricGPUUtilization = "cloudai_gpu_utilization_percent"
+	MetricGPUMemoryUsed  = "cloudai_gpu_memory_used_bytes"
+	MetricGPUTemperature = "cloudai_gpu_temperature_celsius"
+	MetricGPUPowerWatts  = "cloudai_gpu_power_watts"
 
 	// Node metrics
-	MetricNodeCPUUsage      = "cloudai_node_cpu_usage_percent"
-	MetricNodeMemoryUsage   = "cloudai_node_memory_usage_percent"
-	MetricNodeDiskUsage     = "cloudai_node_disk_usage_percent"
+	MetricNodeCPUUsage       = "cloudai_node_cpu_usage_percent"
+	MetricNodeMemoryUsage    = "cloudai_node_memory_usage_percent"
+	MetricNodeDiskUsage      = "cloudai_node_disk_usage_percent"
 	MetricNodeNetworkRxBytes = "cloudai_node_network_rx_bytes"
 	MetricNodeNetworkTxBytes = "cloudai_node_network_tx_bytes"
 
@@ -476,11 +476,11 @@ const (
 	MetricWorkloadQueueTime = "cloudai_workload_queue_time_seconds"
 
 	// Cluster metrics
-	MetricClusterNodeCount  = "cloudai_cluster_node_count"
-	MetricClusterGPUCount   = "cloudai_cluster_gpu_count"
+	MetricClusterNodeCount = "cloudai_cluster_node_count"
+	MetricClusterGPUCount  = "cloudai_cluster_gpu_count"
 
 	// API metrics
-	MetricAPIRequestTotal   = "cloudai_api_request_total"
+	MetricAPIRequestTotal    = "cloudai_api_request_total"
 	MetricAPIRequestDuration = "cloudai_api_request_duration_seconds"
 )
 

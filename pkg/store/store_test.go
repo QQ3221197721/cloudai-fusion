@@ -98,7 +98,7 @@ func TestWorkloadModel_Fields(t *testing.T) {
 				ClusterID: "c1", Type: "training", Status: "pending",
 				Priority: 10, Framework: "pytorch", Image: "pytorch:2.0",
 				ResourceRequest: `{"gpu_count":8}`,
-				CreatedAt: now, UpdatedAt: now,
+				CreatedAt:       now, UpdatedAt: now,
 			},
 			status: "pending",
 		},

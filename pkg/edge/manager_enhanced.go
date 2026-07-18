@@ -4,8 +4,6 @@ package edge
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 
 	apperrors "github.com/cloudai-fusion/cloudai-fusion/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -222,15 +220,6 @@ func (m *Manager) getOrCreateOfflineQueue(nodeID string) *OfflineQueue {
 	return queue
 }
 
-// Helper function to read HTTP response body
-func readResponseBody(resp *http.Response) ([]byte, error) {
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-	return body, nil
-}
-
 // ============================================================================
 // Phase 2: Edge Collaboration & Offline Capability Handlers
 // ============================================================================
@@ -278,7 +267,7 @@ func (m *Manager) HandleEdgeCollaboration(ctx context.Context, action string, pa
 		}
 		return map[string]interface{}{
 			"forwarded_messages": len(msgs),
-			"state":             m.edgeCollabHub.Autonomy.GetNodeAutonomyState(nodeID),
+			"state":              m.edgeCollabHub.Autonomy.GetNodeAutonomyState(nodeID),
 		}, nil
 
 	case "diff_status":

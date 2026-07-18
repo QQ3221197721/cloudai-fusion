@@ -21,22 +21,22 @@ import (
 type BackupType string
 
 const (
-	BackupTypeFull        BackupType = "full"
-	BackupTypeIncremental BackupType = "incremental"
+	BackupTypeFull         BackupType = "full"
+	BackupTypeIncremental  BackupType = "incremental"
 	BackupTypeDifferential BackupType = "differential"
-	BackupTypeSnapshot    BackupType = "snapshot"
+	BackupTypeSnapshot     BackupType = "snapshot"
 )
 
 // BackupStatus defines the lifecycle state of a backup.
 type BackupStatus string
 
 const (
-	BackupStatusPending    BackupStatus = "pending"
-	BackupStatusRunning    BackupStatus = "running"
-	BackupStatusCompleted  BackupStatus = "completed"
-	BackupStatusFailed     BackupStatus = "failed"
-	BackupStatusExpired    BackupStatus = "expired"
-	BackupStatusDeleted    BackupStatus = "deleted"
+	BackupStatusPending   BackupStatus = "pending"
+	BackupStatusRunning   BackupStatus = "running"
+	BackupStatusCompleted BackupStatus = "completed"
+	BackupStatusFailed    BackupStatus = "failed"
+	BackupStatusExpired   BackupStatus = "expired"
+	BackupStatusDeleted   BackupStatus = "deleted"
 )
 
 // BackupTarget specifies what to back up.
@@ -54,20 +54,20 @@ const (
 
 // Backup represents a single backup record.
 type Backup struct {
-	ID            string        `json:"id"`
-	Name          string        `json:"name"`
-	Type          BackupType    `json:"type"`
-	Target        BackupTarget  `json:"target"`
-	Status        BackupStatus  `json:"status"`
-	SizeBytes     int64         `json:"size_bytes"`
-	Region        string        `json:"region"`
-	StoragePath   string        `json:"storage_path"`
-	Checksum      string        `json:"checksum"` // SHA-256
-	EncryptionKey string        `json:"encryption_key,omitempty"`
-	CreatedAt     time.Time     `json:"created_at"`
-	CompletedAt   *time.Time    `json:"completed_at,omitempty"`
-	ExpiresAt     time.Time     `json:"expires_at"`
-	Duration      time.Duration `json:"duration,omitempty"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Type          BackupType        `json:"type"`
+	Target        BackupTarget      `json:"target"`
+	Status        BackupStatus      `json:"status"`
+	SizeBytes     int64             `json:"size_bytes"`
+	Region        string            `json:"region"`
+	StoragePath   string            `json:"storage_path"`
+	Checksum      string            `json:"checksum"` // SHA-256
+	EncryptionKey string            `json:"encryption_key,omitempty"`
+	CreatedAt     time.Time         `json:"created_at"`
+	CompletedAt   *time.Time        `json:"completed_at,omitempty"`
+	ExpiresAt     time.Time         `json:"expires_at"`
+	Duration      time.Duration     `json:"duration,omitempty"`
 	Metadata      map[string]string `json:"metadata,omitempty"`
 }
 
@@ -126,28 +126,28 @@ const (
 
 // DRRegion represents a disaster-recovery region configuration.
 type DRRegion struct {
-	ID              string       `json:"id"`
-	Name            string       `json:"name"`
-	Provider        string       `json:"provider"` // aws, aliyun, etc.
-	Location        string       `json:"location"` // us-east-1, cn-hangzhou, etc.
-	Status          RegionStatus `json:"status"`
-	IsPrimary       bool         `json:"is_primary"`
-	RPOMinutes      int          `json:"rpo_minutes"` // Recovery Point Objective
-	RTOMinutes      int          `json:"rto_minutes"` // Recovery Time Objective
-	ReplicationLag  time.Duration `json:"replication_lag,omitempty"`
-	LastSyncAt      *time.Time   `json:"last_sync_at,omitempty"`
-	Endpoint        string       `json:"endpoint,omitempty"`
+	ID             string        `json:"id"`
+	Name           string        `json:"name"`
+	Provider       string        `json:"provider"` // aws, aliyun, etc.
+	Location       string        `json:"location"` // us-east-1, cn-hangzhou, etc.
+	Status         RegionStatus  `json:"status"`
+	IsPrimary      bool          `json:"is_primary"`
+	RPOMinutes     int           `json:"rpo_minutes"` // Recovery Point Objective
+	RTOMinutes     int           `json:"rto_minutes"` // Recovery Time Objective
+	ReplicationLag time.Duration `json:"replication_lag,omitempty"`
+	LastSyncAt     *time.Time    `json:"last_sync_at,omitempty"`
+	Endpoint       string        `json:"endpoint,omitempty"`
 }
 
 // ReplicationConfig defines cross-region replication settings.
 type ReplicationConfig struct {
-	SourceRegionID   string       `json:"source_region_id"`
-	TargetRegionID   string       `json:"target_region_id"`
-	Mode             string       `json:"mode"` // async, semi_sync, sync
-	FailoverMode     FailoverMode `json:"failover_mode"`
-	HealthCheckSecs  int          `json:"health_check_seconds"`
-	MaxLagSeconds    int          `json:"max_lag_seconds"`
-	Enabled          bool         `json:"enabled"`
+	SourceRegionID  string       `json:"source_region_id"`
+	TargetRegionID  string       `json:"target_region_id"`
+	Mode            string       `json:"mode"` // async, semi_sync, sync
+	FailoverMode    FailoverMode `json:"failover_mode"`
+	HealthCheckSecs int          `json:"health_check_seconds"`
+	MaxLagSeconds   int          `json:"max_lag_seconds"`
+	Enabled         bool         `json:"enabled"`
 }
 
 // ============================================================================
@@ -207,14 +207,14 @@ type ManagerConfig struct {
 
 // Manager provides disaster recovery operations.
 type Manager struct {
-	config      ManagerConfig
-	backups     map[string]*Backup
-	schedules   map[string]*BackupSchedule
-	regions     map[string]*DRRegion
+	config       ManagerConfig
+	backups      map[string]*Backup
+	schedules    map[string]*BackupSchedule
+	regions      map[string]*DRRegion
 	replications []*ReplicationConfig
-	drills      []*RecoveryDrill
-	logger      *logrus.Logger
-	mu          sync.RWMutex
+	drills       []*RecoveryDrill
+	logger       *logrus.Logger
+	mu           sync.RWMutex
 }
 
 // NewManager creates a new disaster recovery manager.
@@ -720,9 +720,10 @@ func (m *Manager) CompleteDrill(drillID string, rpoAchieved, rtoAchieved time.Du
 	// Score based on step pass rate
 	passed := 0
 	for _, s := range drill.Steps {
-		if s.Status == "passed" {
+		switch s.Status {
+		case "passed":
 			passed++
-		} else if s.Status == "failed" {
+		case "failed":
 			drill.Status = DrillStatusFailed
 		}
 	}
@@ -785,14 +786,15 @@ func (m *Manager) GetDRSummary() map[string]interface{} {
 	var totalBackupSize int64
 
 	for _, b := range m.backups {
-		if b.Status == BackupStatusCompleted {
+		switch b.Status {
+		case BackupStatusCompleted:
 			completedBackups++
 			totalBackupSize += b.SizeBytes
 			if latestBackupTime == nil || b.CreatedAt.After(*latestBackupTime) {
 				t := b.CreatedAt
 				latestBackupTime = &t
 			}
-		} else if b.Status == BackupStatusFailed {
+		case BackupStatusFailed:
 			failedBackups++
 		}
 	}

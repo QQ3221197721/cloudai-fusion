@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -30,39 +29,39 @@ type ManagerConfig struct {
 
 // CreateWorkloadRequest defines the API request to create a workload
 type CreateWorkloadRequest struct {
-	Name            string              `json:"name" binding:"required"`
-	Namespace       string              `json:"namespace"`
-	ClusterID       string              `json:"cluster_id" binding:"required"`
-	Type            string              `json:"type" binding:"required"` // training, inference, fine-tuning, batch, serving
-	Priority        int                 `json:"priority"`
-	Framework       string              `json:"framework"`       // pytorch, tensorflow, jax
-	ModelName       string              `json:"model_name"`
-	Image           string              `json:"image" binding:"required"`
-	Command         string              `json:"command"`
+	Name            string                 `json:"name" binding:"required"`
+	Namespace       string                 `json:"namespace"`
+	ClusterID       string                 `json:"cluster_id" binding:"required"`
+	Type            string                 `json:"type" binding:"required"` // training, inference, fine-tuning, batch, serving
+	Priority        int                    `json:"priority"`
+	Framework       string                 `json:"framework"` // pytorch, tensorflow, jax
+	ModelName       string                 `json:"model_name"`
+	Image           string                 `json:"image" binding:"required"`
+	Command         string                 `json:"command"`
 	ResourceRequest common.ResourceRequest `json:"resource_request" binding:"required"`
-	EnvVars         map[string]string   `json:"env_vars,omitempty"`
+	EnvVars         map[string]string      `json:"env_vars,omitempty"`
 }
 
 // WorkloadResponse is the API response for workload operations
 type WorkloadResponse struct {
-	ID              string              `json:"id"`
-	Name            string              `json:"name"`
-	Namespace       string              `json:"namespace"`
-	ClusterID       string              `json:"cluster_id"`
-	Type            string              `json:"type"`
-	Status          string              `json:"status"`
-	Priority        int                 `json:"priority"`
-	Framework       string              `json:"framework"`
-	ModelName       string              `json:"model_name,omitempty"`
-	Image           string              `json:"image"`
+	ID              string                 `json:"id"`
+	Name            string                 `json:"name"`
+	Namespace       string                 `json:"namespace"`
+	ClusterID       string                 `json:"cluster_id"`
+	Type            string                 `json:"type"`
+	Status          string                 `json:"status"`
+	Priority        int                    `json:"priority"`
+	Framework       string                 `json:"framework"`
+	ModelName       string                 `json:"model_name,omitempty"`
+	Image           string                 `json:"image"`
 	ResourceRequest common.ResourceRequest `json:"resource_request"`
-	AssignedNode    string              `json:"assigned_node,omitempty"`
-	AssignedGPUs    string              `json:"assigned_gpus,omitempty"`
-	StartedAt       *time.Time          `json:"started_at,omitempty"`
-	CompletedAt     *time.Time          `json:"completed_at,omitempty"`
-	ErrorMessage    string              `json:"error_message,omitempty"`
-	CreatedAt       time.Time           `json:"created_at"`
-	UpdatedAt       time.Time           `json:"updated_at"`
+	AssignedNode    string                 `json:"assigned_node,omitempty"`
+	AssignedGPUs    string                 `json:"assigned_gpus,omitempty"`
+	StartedAt       *time.Time             `json:"started_at,omitempty"`
+	CompletedAt     *time.Time             `json:"completed_at,omitempty"`
+	ErrorMessage    string                 `json:"error_message,omitempty"`
+	CreatedAt       time.Time              `json:"created_at"`
+	UpdatedAt       time.Time              `json:"updated_at"`
 }
 
 // WorkloadStatusUpdate defines a status transition request
@@ -108,7 +107,6 @@ func isValidTransition(from, to string) bool {
 type Manager struct {
 	store  *store.Store
 	logger *logrus.Logger
-	mu     sync.RWMutex
 }
 
 // NewManager creates a new workload manager
@@ -301,13 +299,17 @@ func (m *Manager) UpdateStatus(ctx context.Context, id string, update *WorkloadS
 	switch update.Status {
 	case "running":
 		model.StartedAt = &now
-		m.store.UpdateWorkload(model)
+		if err := m.store.UpdateWorkload(model); err != nil {
+			m.logger.WithError(err).Error("failed to persist workload status")
+		}
 	case "succeeded", "failed", "cancelled":
 		model.CompletedAt = &now
 		if update.Message != "" {
 			model.ErrorMessage = update.Message
 		}
-		m.store.UpdateWorkload(model)
+		if err := m.store.UpdateWorkload(model); err != nil {
+			m.logger.WithError(err).Error("failed to persist workload status")
+		}
 	}
 
 	m.logger.WithFields(logrus.Fields{

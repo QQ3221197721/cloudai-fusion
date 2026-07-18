@@ -105,7 +105,7 @@ func TestAuthenticateSSO(t *testing.T) {
 	m.ConfigureSSO(context.Background(), &SSOConfig{
 		TenantID: "t1", Name: "Test IdP", Protocol: SSOProtocolSAML,
 		RoleMapping: map[string]string{"admins": "admin"},
-		SAML: &SAMLConfig{EntityID: "https://idp.test", SSOURL: "https://idp.test/sso"},
+		SAML:        &SAMLConfig{EntityID: "https://idp.test", SSOURL: "https://idp.test/sso"},
 	})
 
 	configs := m.ListSSOConfigs(context.Background(), "t1")

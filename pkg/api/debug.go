@@ -233,17 +233,17 @@ func handleDebugInfo(cfg DebugConfig) gin.HandlerFunc {
 		runtime.ReadMemStats(&memStats)
 
 		c.JSON(http.StatusOK, gin.H{
-			"service":      "cloudai-apiserver",
-			"language":     "go",
-			"go_version":   runtime.Version(),
-			"version":      cfg.Version,
-			"uptime":       time.Since(cfg.StartedAt).String(),
-			"started_at":   cfg.StartedAt.Format(time.RFC3339),
-			"goroutines":   runtime.NumGoroutine(),
-			"num_cpu":      runtime.NumCPU(),
-			"gomaxprocs":   runtime.GOMAXPROCS(0),
-			"os":           runtime.GOOS,
-			"arch":         runtime.GOARCH,
+			"service":    "cloudai-apiserver",
+			"language":   "go",
+			"go_version": runtime.Version(),
+			"version":    cfg.Version,
+			"uptime":     time.Since(cfg.StartedAt).String(),
+			"started_at": cfg.StartedAt.Format(time.RFC3339),
+			"goroutines": runtime.NumGoroutine(),
+			"num_cpu":    runtime.NumCPU(),
+			"gomaxprocs": runtime.GOMAXPROCS(0),
+			"os":         runtime.GOOS,
+			"arch":       runtime.GOARCH,
 			"memory": gin.H{
 				"alloc_mb":       memStats.Alloc / 1024 / 1024,
 				"total_alloc_mb": memStats.TotalAlloc / 1024 / 1024,
@@ -356,7 +356,7 @@ func handleDebugServices() gin.HandlerFunc {
 				result.Status = "unreachable"
 				result.Error = err.Error()
 			} else {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				if resp.StatusCode == 200 {
 					result.Status = "healthy"
 				} else {
@@ -390,11 +390,11 @@ func handleDebugTracing() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"service":     "apiserver",
-			"language":    "go",
-			"trace_id":    traceID,
-			"request_id":  logging.RequestIDFromContext(c.Request.Context()),
-			"propagation": "W3C TraceContext (traceparent/tracestate)",
+			"service":       "apiserver",
+			"language":      "go",
+			"trace_id":      traceID,
+			"request_id":    logging.RequestIDFromContext(c.Request.Context()),
+			"propagation":   "W3C TraceContext (traceparent/tracestate)",
 			"otlp_endpoint": os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"),
 			"how_to_verify": gin.H{
 				"step1": "Call any Go API endpoint → note X-Trace-ID in response header",
@@ -437,22 +437,22 @@ func handleMemoryStats() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"heap": gin.H{
-				"alloc_mb":    m.HeapAlloc / 1024 / 1024,
-				"sys_mb":      m.HeapSys / 1024 / 1024,
-				"idle_mb":     m.HeapIdle / 1024 / 1024,
-				"inuse_mb":    m.HeapInuse / 1024 / 1024,
-				"objects":     m.HeapObjects,
+				"alloc_mb": m.HeapAlloc / 1024 / 1024,
+				"sys_mb":   m.HeapSys / 1024 / 1024,
+				"idle_mb":  m.HeapIdle / 1024 / 1024,
+				"inuse_mb": m.HeapInuse / 1024 / 1024,
+				"objects":  m.HeapObjects,
 			},
 			"stack": gin.H{
 				"inuse_mb": m.StackInuse / 1024 / 1024,
 				"sys_mb":   m.StackSys / 1024 / 1024,
 			},
 			"gc": gin.H{
-				"num_gc":           m.NumGC,
-				"pause_total_ms":   float64(m.PauseTotalNs) / 1e6,
-				"last_pause_ms":    float64(m.PauseNs[(m.NumGC+255)%256]) / 1e6,
-				"gc_cpu_fraction":  fmt.Sprintf("%.4f%%", m.GCCPUFraction*100),
-				"next_gc_mb":       m.NextGC / 1024 / 1024,
+				"num_gc":          m.NumGC,
+				"pause_total_ms":  float64(m.PauseTotalNs) / 1e6,
+				"last_pause_ms":   float64(m.PauseNs[(m.NumGC+255)%256]) / 1e6,
+				"gc_cpu_fraction": fmt.Sprintf("%.4f%%", m.GCCPUFraction*100),
+				"next_gc_mb":      m.NextGC / 1024 / 1024,
 			},
 			"total": gin.H{
 				"total_alloc_mb": m.TotalAlloc / 1024 / 1024,
@@ -518,12 +518,4 @@ func handleDebugEnv() gin.HandlerFunc {
 			"variables": ordered,
 		})
 	}
-}
-
-// min returns the smaller of a and b.
-func minDebug(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

@@ -107,14 +107,14 @@ func FuzzSandboxProfileJSON(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, name string, memMB, cpuMillis, maxFiles, maxNet, timeoutMs int, profiling bool) {
 		profile := &SandboxProfile{
-			Name:               name,
+			Name:                name,
 			AllowedCapabilities: []WASICapability{CapRandom, CapLogging},
-			MemoryLimitMB:      memMB,
-			CPULimitMillis:     cpuMillis,
-			MaxOpenFiles:       maxFiles,
-			MaxNetworkConns:    maxNet,
-			ExecutionTimeoutMs: timeoutMs,
-			EnableProfiling:    profiling,
+			MemoryLimitMB:       memMB,
+			CPULimitMillis:      cpuMillis,
+			MaxOpenFiles:        maxFiles,
+			MaxNetworkConns:     maxNet,
+			ExecutionTimeoutMs:  timeoutMs,
+			EnableProfiling:     profiling,
 		}
 
 		data, err := json.Marshal(profile)

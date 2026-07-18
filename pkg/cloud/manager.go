@@ -55,20 +55,20 @@ type Provider interface {
 
 // ClusterInfo represents a Kubernetes cluster from any cloud provider
 type ClusterInfo struct {
-	ID                string                `json:"id"`
-	Name              string                `json:"name"`
+	ID                string                   `json:"id"`
+	Name              string                   `json:"name"`
 	Provider          common.CloudProviderType `json:"provider"`
-	Region            string                `json:"region"`
-	KubernetesVersion string               `json:"kubernetes_version"`
-	Status            string                `json:"status"`
-	Endpoint          string                `json:"endpoint"`
-	NodeCount         int                   `json:"node_count"`
-	GPUNodeCount      int                   `json:"gpu_node_count"`
-	TotalCPU          int64                 `json:"total_cpu_millicores"`
-	TotalMemory       int64                 `json:"total_memory_bytes"`
-	TotalGPU          int                   `json:"total_gpu"`
-	CreatedAt         string                `json:"created_at"`
-	Tags              map[string]string     `json:"tags,omitempty"`
+	Region            string                   `json:"region"`
+	KubernetesVersion string                   `json:"kubernetes_version"`
+	Status            string                   `json:"status"`
+	Endpoint          string                   `json:"endpoint"`
+	NodeCount         int                      `json:"node_count"`
+	GPUNodeCount      int                      `json:"gpu_node_count"`
+	TotalCPU          int64                    `json:"total_cpu_millicores"`
+	TotalMemory       int64                    `json:"total_memory_bytes"`
+	TotalGPU          int                      `json:"total_gpu"`
+	CreatedAt         string                   `json:"created_at"`
+	Tags              map[string]string        `json:"tags,omitempty"`
 }
 
 // CreateClusterRequest defines parameters for creating a new cluster
@@ -80,14 +80,14 @@ type CreateClusterRequest struct {
 	GPUNodeCount      int               `json:"gpu_node_count"`
 	GPUNodeType       string            `json:"gpu_node_type"`
 	VPCConfig         *VPCConfig        `json:"vpc_config,omitempty"`
-	Tags              map[string]string  `json:"tags,omitempty"`
+	Tags              map[string]string `json:"tags,omitempty"`
 }
 
 // VPCConfig defines VPC/network configuration
 type VPCConfig struct {
-	VPCID    string   `json:"vpc_id,omitempty"`
+	VPCID     string   `json:"vpc_id,omitempty"`
 	SubnetIDs []string `json:"subnet_ids,omitempty"`
-	CIDR     string   `json:"cidr,omitempty"`
+	CIDR      string   `json:"cidr,omitempty"`
 }
 
 // NodeInfo represents a single node in a cluster
@@ -119,14 +119,14 @@ type NodeCondition struct {
 
 // NodeMetrics holds real-time node resource metrics
 type NodeMetrics struct {
-	NodeID           string  `json:"node_id"`
-	CPUUsagePercent  float64 `json:"cpu_usage_percent"`
+	NodeID             string  `json:"node_id"`
+	CPUUsagePercent    float64 `json:"cpu_usage_percent"`
 	MemoryUsagePercent float64 `json:"memory_usage_percent"`
-	GPUUtilization   float64 `json:"gpu_utilization_percent"`
-	GPUMemoryUsage   float64 `json:"gpu_memory_usage_percent"`
-	DiskUsagePercent float64 `json:"disk_usage_percent"`
-	NetworkRxBytes   int64   `json:"network_rx_bytes_per_sec"`
-	NetworkTxBytes   int64   `json:"network_tx_bytes_per_sec"`
+	GPUUtilization     float64 `json:"gpu_utilization_percent"`
+	GPUMemoryUsage     float64 `json:"gpu_memory_usage_percent"`
+	DiskUsagePercent   float64 `json:"disk_usage_percent"`
+	NetworkRxBytes     int64   `json:"network_rx_bytes_per_sec"`
+	NetworkTxBytes     int64   `json:"network_tx_bytes_per_sec"`
 }
 
 // GPUInstanceInfo describes an available GPU instance type
@@ -154,15 +154,15 @@ type GPUPricing struct {
 
 // CostSummary provides cost breakdown for a time period
 type CostSummary struct {
-	TotalCost     float64           `json:"total_cost"`
-	Currency      string            `json:"currency"`
-	Period        string            `json:"period"`
-	ByService     map[string]float64 `json:"by_service"`
+	TotalCost      float64            `json:"total_cost"`
+	Currency       string             `json:"currency"`
+	Period         string             `json:"period"`
+	ByService      map[string]float64 `json:"by_service"`
 	ByResourceType map[string]float64 `json:"by_resource_type"`
-	GPUCost       float64           `json:"gpu_cost"`
-	ComputeCost   float64           `json:"compute_cost"`
-	StorageCost   float64           `json:"storage_cost"`
-	NetworkCost   float64           `json:"network_cost"`
+	GPUCost        float64            `json:"gpu_cost"`
+	ComputeCost    float64            `json:"compute_cost"`
+	StorageCost    float64            `json:"storage_cost"`
+	NetworkCost    float64            `json:"network_cost"`
 }
 
 // ============================================================================

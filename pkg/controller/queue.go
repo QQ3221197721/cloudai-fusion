@@ -31,16 +31,15 @@ type WorkQueue struct {
 	baseDelay time.Duration // initial backoff delay (default 5ms)
 	maxDelay  time.Duration // maximum backoff delay (default 1000s)
 
-	mu        sync.Mutex
-	cond      *sync.Cond
-	shutdown  bool
-	draining  bool
-	metrics   QueueMetrics
+	mu       sync.Mutex
+	cond     *sync.Cond
+	shutdown bool
+	metrics  QueueMetrics
 }
 
 // delayedItem wraps a request with its scheduled processing time.
 type delayedItem struct {
-	req   Request
+	req     Request
 	readyAt time.Time
 }
 

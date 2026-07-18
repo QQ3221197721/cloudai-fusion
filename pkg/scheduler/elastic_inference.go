@@ -25,25 +25,25 @@ type InferenceMode string
 
 const (
 	InferenceModeBatch     InferenceMode = "batch"     // high throughput, higher latency
-	InferenceModeStreaming  InferenceMode = "streaming" // low latency, lower throughput
+	InferenceModeStreaming InferenceMode = "streaming" // low latency, lower throughput
 	InferenceModeAdaptive  InferenceMode = "adaptive"  // auto-switch based on load
 )
 
 // ElasticInferenceConfig holds configuration for the elastic inference engine
 type ElasticInferenceConfig struct {
-	DefaultMode           InferenceMode `json:"default_mode"`
-	MaxBatchSize          int           `json:"max_batch_size"`           // max requests per batch
-	BatchTimeoutMs        int           `json:"batch_timeout_ms"`        // max wait time to fill a batch
-	StreamingConcurrency  int           `json:"streaming_concurrency"`   // max concurrent streaming requests
-	LatencySLAMs          int           `json:"latency_sla_ms"`          // P99 latency SLA in milliseconds
-	ThroughputTarget      float64       `json:"throughput_target"`       // target requests/sec
-	AdaptiveThreshold     float64       `json:"adaptive_threshold"`      // load threshold to switch modes
-	ScaleUpThreshold      float64       `json:"scale_up_threshold"`      // GPU utilization to trigger scale-up
-	ScaleDownThreshold    float64       `json:"scale_down_threshold"`    // GPU utilization to trigger scale-down
-	ScaleUpCooldownSec    int           `json:"scale_up_cooldown_sec"`
-	ScaleDownCooldownSec  int           `json:"scale_down_cooldown_sec"`
-	MinReplicas           int           `json:"min_replicas"`
-	MaxReplicas           int           `json:"max_replicas"`
+	DefaultMode          InferenceMode `json:"default_mode"`
+	MaxBatchSize         int           `json:"max_batch_size"`        // max requests per batch
+	BatchTimeoutMs       int           `json:"batch_timeout_ms"`      // max wait time to fill a batch
+	StreamingConcurrency int           `json:"streaming_concurrency"` // max concurrent streaming requests
+	LatencySLAMs         int           `json:"latency_sla_ms"`        // P99 latency SLA in milliseconds
+	ThroughputTarget     float64       `json:"throughput_target"`     // target requests/sec
+	AdaptiveThreshold    float64       `json:"adaptive_threshold"`    // load threshold to switch modes
+	ScaleUpThreshold     float64       `json:"scale_up_threshold"`    // GPU utilization to trigger scale-up
+	ScaleDownThreshold   float64       `json:"scale_down_threshold"`  // GPU utilization to trigger scale-down
+	ScaleUpCooldownSec   int           `json:"scale_up_cooldown_sec"`
+	ScaleDownCooldownSec int           `json:"scale_down_cooldown_sec"`
+	MinReplicas          int           `json:"min_replicas"`
+	MaxReplicas          int           `json:"max_replicas"`
 }
 
 // DefaultElasticInferenceConfig returns production-ready defaults
@@ -71,58 +71,58 @@ func DefaultElasticInferenceConfig() ElasticInferenceConfig {
 
 // InferenceEndpoint represents a deployed inference service
 type InferenceEndpoint struct {
-	ID              string         `json:"id"`
-	Name            string         `json:"name"`
-	ModelName       string         `json:"model_name"`
-	ModelVersion    string         `json:"model_version"`
-	Mode            InferenceMode  `json:"mode"`
-	Replicas        int            `json:"replicas"`
-	DesiredReplicas int            `json:"desired_replicas"`
-	GPUType         string         `json:"gpu_type"`
-	GPUPerReplica   int            `json:"gpu_per_replica"`
-	GPUShareMode    GPUShareMode   `json:"gpu_share_mode"`
-	BatchConfig     *BatchConfig   `json:"batch_config,omitempty"`
-	StreamConfig    *StreamConfig  `json:"stream_config,omitempty"`
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	ModelName       string            `json:"model_name"`
+	ModelVersion    string            `json:"model_version"`
+	Mode            InferenceMode     `json:"mode"`
+	Replicas        int               `json:"replicas"`
+	DesiredReplicas int               `json:"desired_replicas"`
+	GPUType         string            `json:"gpu_type"`
+	GPUPerReplica   int               `json:"gpu_per_replica"`
+	GPUShareMode    GPUShareMode      `json:"gpu_share_mode"`
+	BatchConfig     *BatchConfig      `json:"batch_config,omitempty"`
+	StreamConfig    *StreamConfig     `json:"stream_config,omitempty"`
 	Metrics         *InferenceMetrics `json:"metrics,omitempty"`
-	Status          string         `json:"status"` // "running", "scaling", "degraded"
-	CreatedAt       time.Time      `json:"created_at"`
-	LastScaledAt    time.Time      `json:"last_scaled_at"`
+	Status          string            `json:"status"` // "running", "scaling", "degraded"
+	CreatedAt       time.Time         `json:"created_at"`
+	LastScaledAt    time.Time         `json:"last_scaled_at"`
 }
 
 // BatchConfig holds batch inference specific settings
 type BatchConfig struct {
-	MaxBatchSize    int   `json:"max_batch_size"`
-	BatchTimeoutMs  int   `json:"batch_timeout_ms"`
-	DynamicBatching bool  `json:"dynamic_batching"` // auto-adjust batch size
-	PaddingEnabled  bool  `json:"padding_enabled"`  // pad sequences to uniform length
+	MaxBatchSize    int     `json:"max_batch_size"`
+	BatchTimeoutMs  int     `json:"batch_timeout_ms"`
+	DynamicBatching bool    `json:"dynamic_batching"`  // auto-adjust batch size
+	PaddingEnabled  bool    `json:"padding_enabled"`   // pad sequences to uniform length
 	MaxPaddingRatio float64 `json:"max_padding_ratio"` // max wasted compute from padding
 }
 
 // StreamConfig holds streaming inference specific settings
 type StreamConfig struct {
-	MaxConcurrency    int   `json:"max_concurrency"`
-	RequestTimeoutMs  int   `json:"request_timeout_ms"`
-	KeepAliveMs       int   `json:"keep_alive_ms"`
-	TokenStreaming     bool  `json:"token_streaming"`    // stream tokens for LLMs
-	MaxTokensPerSec   int   `json:"max_tokens_per_sec"` // rate limit for token generation
+	MaxConcurrency   int  `json:"max_concurrency"`
+	RequestTimeoutMs int  `json:"request_timeout_ms"`
+	KeepAliveMs      int  `json:"keep_alive_ms"`
+	TokenStreaming   bool `json:"token_streaming"`    // stream tokens for LLMs
+	MaxTokensPerSec  int  `json:"max_tokens_per_sec"` // rate limit for token generation
 }
 
 // InferenceMetrics tracks real-time inference performance
 type InferenceMetrics struct {
-	RequestsPerSec     float64        `json:"requests_per_sec"`
-	AvgLatencyMs       float64        `json:"avg_latency_ms"`
-	P50LatencyMs       float64        `json:"p50_latency_ms"`
-	P95LatencyMs       float64        `json:"p95_latency_ms"`
-	P99LatencyMs       float64        `json:"p99_latency_ms"`
-	GPUUtilization     float64        `json:"gpu_utilization_percent"`
-	GPUMemoryUsage     float64        `json:"gpu_memory_usage_percent"`
-	BatchFillRate      float64        `json:"batch_fill_rate"`       // avg batch utilization
-	QueueDepth         int            `json:"queue_depth"`           // pending requests
-	ErrorRate          float64        `json:"error_rate"`
-	TotalRequests      int64          `json:"total_requests"`
-	CurrentMode        InferenceMode  `json:"current_mode"`
-	TokensPerSec       float64        `json:"tokens_per_sec,omitempty"` // for LLM serving
-	TimeToFirstTokenMs float64        `json:"time_to_first_token_ms,omitempty"`
+	RequestsPerSec     float64       `json:"requests_per_sec"`
+	AvgLatencyMs       float64       `json:"avg_latency_ms"`
+	P50LatencyMs       float64       `json:"p50_latency_ms"`
+	P95LatencyMs       float64       `json:"p95_latency_ms"`
+	P99LatencyMs       float64       `json:"p99_latency_ms"`
+	GPUUtilization     float64       `json:"gpu_utilization_percent"`
+	GPUMemoryUsage     float64       `json:"gpu_memory_usage_percent"`
+	BatchFillRate      float64       `json:"batch_fill_rate"` // avg batch utilization
+	QueueDepth         int           `json:"queue_depth"`     // pending requests
+	ErrorRate          float64       `json:"error_rate"`
+	TotalRequests      int64         `json:"total_requests"`
+	CurrentMode        InferenceMode `json:"current_mode"`
+	TokensPerSec       float64       `json:"tokens_per_sec,omitempty"` // for LLM serving
+	TimeToFirstTokenMs float64       `json:"time_to_first_token_ms,omitempty"`
 }
 
 // ============================================================================
@@ -173,7 +173,7 @@ func (eim *ElasticInferenceManager) CreateEndpoint(name, modelName, modelVersion
 			MaxConcurrency:   eim.config.StreamingConcurrency,
 			RequestTimeoutMs: eim.config.LatencySLAMs * 5,
 			KeepAliveMs:      30000,
-			TokenStreaming:    true,
+			TokenStreaming:   true,
 			MaxTokensPerSec:  500,
 		},
 		Metrics: &InferenceMetrics{

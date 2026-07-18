@@ -158,9 +158,9 @@ func NewIOChaos(name, namespace string, action string, durationSec int) *ChaosMe
 
 func TestChaosMesh_CRDGeneration(t *testing.T) {
 	tests := []struct {
-		name     string
-		chaos    *ChaosMeshExperiment
-		expKind  string
+		name    string
+		chaos   *ChaosMeshExperiment
+		expKind string
 	}{
 		{
 			name:    "network_partition",
@@ -268,9 +268,9 @@ func TestChaos_NetworkPartition(t *testing.T) {
 
 func TestChaos_CircuitBreakerResilience(t *testing.T) {
 	cb := resilience.NewCircuitBreaker(resilience.CircuitBreakerConfig{
-		FailureThreshold:   3,
-		SuccessThreshold:   2,
-		Timeout:            200 * time.Millisecond,
+		FailureThreshold:    3,
+		SuccessThreshold:    2,
+		Timeout:             200 * time.Millisecond,
 		MaxHalfOpenRequests: 2,
 	})
 

@@ -24,26 +24,26 @@ import (
 type SyncPriority int
 
 const (
-	SyncPriorityCritical SyncPriority = 0  // system alerts, security events
-	SyncPriorityHigh     SyncPriority = 1  // model updates, config changes
-	SyncPriorityNormal   SyncPriority = 2  // metrics, inference results
-	SyncPriorityLow      SyncPriority = 3  // logs, telemetry
-	SyncPriorityBulk     SyncPriority = 4  // bulk data, analytics
+	SyncPriorityCritical SyncPriority = 0 // system alerts, security events
+	SyncPriorityHigh     SyncPriority = 1 // model updates, config changes
+	SyncPriorityNormal   SyncPriority = 2 // metrics, inference results
+	SyncPriorityLow      SyncPriority = 3 // logs, telemetry
+	SyncPriorityBulk     SyncPriority = 4 // bulk data, analytics
 )
 
 // SyncEngineConfig configures the enhanced sync engine.
 type SyncEngineConfig struct {
-	MaxQueueSize          int           `json:"max_queue_size"`
-	BatchSize             int           `json:"batch_size"`
-	FlushInterval         time.Duration `json:"flush_interval"`
-	CompressionEnabled    bool          `json:"compression_enabled"`
-	CompressionThreshold  int           `json:"compression_threshold_bytes"` // min size to compress
-	DeltaSyncEnabled      bool          `json:"delta_sync_enabled"`
-	VectorClockEnabled    bool          `json:"vector_clock_enabled"`
-	MaxRetries            int           `json:"max_retries"`
-	BackoffMultiplier     float64       `json:"backoff_multiplier"`
-	AdaptiveScheduling    bool          `json:"adaptive_scheduling"`
-	BandwidthBudgetMbps   float64       `json:"bandwidth_budget_mbps"` // 0 = unlimited
+	MaxQueueSize         int           `json:"max_queue_size"`
+	BatchSize            int           `json:"batch_size"`
+	FlushInterval        time.Duration `json:"flush_interval"`
+	CompressionEnabled   bool          `json:"compression_enabled"`
+	CompressionThreshold int           `json:"compression_threshold_bytes"` // min size to compress
+	DeltaSyncEnabled     bool          `json:"delta_sync_enabled"`
+	VectorClockEnabled   bool          `json:"vector_clock_enabled"`
+	MaxRetries           int           `json:"max_retries"`
+	BackoffMultiplier    float64       `json:"backoff_multiplier"`
+	AdaptiveScheduling   bool          `json:"adaptive_scheduling"`
+	BandwidthBudgetMbps  float64       `json:"bandwidth_budget_mbps"` // 0 = unlimited
 }
 
 // DefaultSyncEngineConfig returns production defaults.
@@ -65,21 +65,21 @@ func DefaultSyncEngineConfig() SyncEngineConfig {
 
 // SyncItem represents a single item to be synchronized.
 type SyncItem struct {
-	ID            string                 `json:"id"`
-	NodeID        string                 `json:"node_id"`
-	Priority      SyncPriority           `json:"priority"`
-	Direction     SyncDirection          `json:"direction"`
-	DataType      string                 `json:"data_type"` // model, config, metrics, logs, events
-	Key           string                 `json:"key"`
-	Payload       map[string]interface{} `json:"payload"`
-	SizeBytes     int64                  `json:"size_bytes"`
-	Compressed    bool                   `json:"compressed"`
-	CompressedSize int64                 `json:"compressed_size"`
-	VectorClock   *VectorClock           `json:"vector_clock,omitempty"`
-	CreatedAt     time.Time              `json:"created_at"`
-	RetryCount    int                    `json:"retry_count"`
-	NextRetryAt   *time.Time             `json:"next_retry_at,omitempty"`
-	Status        string                 `json:"status"` // queued, sending, sent, failed, conflicted
+	ID             string                 `json:"id"`
+	NodeID         string                 `json:"node_id"`
+	Priority       SyncPriority           `json:"priority"`
+	Direction      SyncDirection          `json:"direction"`
+	DataType       string                 `json:"data_type"` // model, config, metrics, logs, events
+	Key            string                 `json:"key"`
+	Payload        map[string]interface{} `json:"payload"`
+	SizeBytes      int64                  `json:"size_bytes"`
+	Compressed     bool                   `json:"compressed"`
+	CompressedSize int64                  `json:"compressed_size"`
+	VectorClock    *VectorClock           `json:"vector_clock,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
+	RetryCount     int                    `json:"retry_count"`
+	NextRetryAt    *time.Time             `json:"next_retry_at,omitempty"`
+	Status         string                 `json:"status"` // queued, sending, sent, failed, conflicted
 }
 
 // ============================================================================
@@ -258,10 +258,10 @@ func copyMap(m map[string]interface{}) map[string]interface{} {
 
 // PrioritySyncQueue orders sync items by priority and age.
 type PrioritySyncQueue struct {
-	items      []*SyncItem
-	maxSize    int
-	mu         sync.Mutex
-	stats      SyncQueueStats
+	items   []*SyncItem
+	maxSize int
+	mu      sync.Mutex
+	stats   SyncQueueStats
 }
 
 // SyncQueueStats tracks queue performance.
@@ -518,15 +518,15 @@ func (e *EnhancedSyncEngine) GetStatus() map[string]interface{} {
 
 	stats := e.queue.Stats()
 	return map[string]interface{}{
-		"node_id":          e.nodeID,
-		"queue_size":       stats.CurrentSize,
-		"total_enqueued":   stats.TotalEnqueued,
-		"total_dequeued":   stats.TotalDequeued,
-		"total_dropped":    stats.TotalDropped,
-		"delta_enabled":    e.config.DeltaSyncEnabled,
-		"compression":      e.config.CompressionEnabled,
-		"vector_clock":     e.vectorClock.Clocks,
-		"flush_interval":   e.config.FlushInterval.String(),
-		"batch_size":       e.config.BatchSize,
+		"node_id":        e.nodeID,
+		"queue_size":     stats.CurrentSize,
+		"total_enqueued": stats.TotalEnqueued,
+		"total_dequeued": stats.TotalDequeued,
+		"total_dropped":  stats.TotalDropped,
+		"delta_enabled":  e.config.DeltaSyncEnabled,
+		"compression":    e.config.CompressionEnabled,
+		"vector_clock":   e.vectorClock.Clocks,
+		"flush_interval": e.config.FlushInterval.String(),
+		"batch_size":     e.config.BatchSize,
 	}
 }

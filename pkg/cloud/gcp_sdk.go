@@ -25,14 +25,14 @@ type GCPAPIClient struct {
 
 // GCPServiceAccountKey represents the JSON key file structure
 type GCPServiceAccountKey struct {
-	Type        string `json:"type"`
-	ProjectID   string `json:"project_id"`
+	Type         string `json:"type"`
+	ProjectID    string `json:"project_id"`
 	PrivateKeyID string `json:"private_key_id"`
-	PrivateKey  string `json:"private_key"`
-	ClientEmail string `json:"client_email"`
-	ClientID    string `json:"client_id"`
-	AuthURI     string `json:"auth_uri"`
-	TokenURI    string `json:"token_uri"`
+	PrivateKey   string `json:"private_key"`
+	ClientEmail  string `json:"client_email"`
+	ClientID     string `json:"client_id"`
+	AuthURI      string `json:"auth_uri"`
+	TokenURI     string `json:"token_uri"`
 }
 
 // NewGCPAPIClient creates a new GCP GKE API client from service account JSON

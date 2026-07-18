@@ -33,14 +33,14 @@ type SpotPredictionEngine struct {
 
 // SpotPredictionConfig configures the prediction engine.
 type SpotPredictionConfig struct {
-	PriceHistoryWindow    time.Duration `json:"price_history_window" yaml:"priceHistoryWindow"`       // e.g., 7*24h
-	PredictionHorizon     time.Duration `json:"prediction_horizon" yaml:"predictionHorizon"`           // e.g., 2h
-	InterruptionThreshold float64       `json:"interruption_threshold" yaml:"interruptionThreshold"`   // e.g., 0.7
-	MaxBidMultiplier      float64       `json:"max_bid_multiplier" yaml:"maxBidMultiplier"`            // e.g., 1.5
-	MigrationLeadTime     time.Duration `json:"migration_lead_time" yaml:"migrationLeadTime"`          // e.g., 10min
+	PriceHistoryWindow    time.Duration `json:"price_history_window" yaml:"priceHistoryWindow"`      // e.g., 7*24h
+	PredictionHorizon     time.Duration `json:"prediction_horizon" yaml:"predictionHorizon"`         // e.g., 2h
+	InterruptionThreshold float64       `json:"interruption_threshold" yaml:"interruptionThreshold"` // e.g., 0.7
+	MaxBidMultiplier      float64       `json:"max_bid_multiplier" yaml:"maxBidMultiplier"`          // e.g., 1.5
+	MigrationLeadTime     time.Duration `json:"migration_lead_time" yaml:"migrationLeadTime"`        // e.g., 10min
 	EnableAutoMigration   bool          `json:"enable_auto_migration" yaml:"enableAutoMigration"`
-	VolatilityWeight      float64       `json:"volatility_weight" yaml:"volatilityWeight"`             // 0-1
-	TrendWeight           float64       `json:"trend_weight" yaml:"trendWeight"`                       // 0-1
+	VolatilityWeight      float64       `json:"volatility_weight" yaml:"volatilityWeight"` // 0-1
+	TrendWeight           float64       `json:"trend_weight" yaml:"trendWeight"`           // 0-1
 }
 
 // DefaultSpotPredictionConfig returns sensible defaults.
@@ -68,29 +68,29 @@ type SpotPricePoint struct {
 
 // SpotPrediction holds the predicted interruption probability and analysis.
 type SpotPrediction struct {
-	InstanceType       string    `json:"instance_type"`
-	Zone               string    `json:"zone"`
-	InterruptionProb   float64   `json:"interruption_probability"` // 0-1
-	ConfidenceInterval [2]float64 `json:"confidence_interval"`     // [low, high]
-	PredictedPrice     float64   `json:"predicted_price"`
-	CurrentPrice       float64   `json:"current_price"`
-	OnDemandPrice      float64   `json:"on_demand_price"`
-	Volatility         float64   `json:"volatility"`
-	Trend              string    `json:"trend"` // rising, falling, stable
+	InstanceType       string        `json:"instance_type"`
+	Zone               string        `json:"zone"`
+	InterruptionProb   float64       `json:"interruption_probability"` // 0-1
+	ConfidenceInterval [2]float64    `json:"confidence_interval"`      // [low, high]
+	PredictedPrice     float64       `json:"predicted_price"`
+	CurrentPrice       float64       `json:"current_price"`
+	OnDemandPrice      float64       `json:"on_demand_price"`
+	Volatility         float64       `json:"volatility"`
+	Trend              string        `json:"trend"` // rising, falling, stable
 	TimeToInterruption time.Duration `json:"time_to_interruption,omitempty"`
-	RecommendedAction  string    `json:"recommended_action"` // hold, migrate, bid_higher
-	PredictedAt        time.Time `json:"predicted_at"`
+	RecommendedAction  string        `json:"recommended_action"` // hold, migrate, bid_higher
+	PredictedAt        time.Time     `json:"predicted_at"`
 }
 
 // BidStrategy defines a bidding strategy for spot instances.
 type BidStrategy struct {
-	InstanceType    string  `json:"instance_type"`
-	MaxBid          float64 `json:"max_bid"`
-	CurrentBid      float64 `json:"current_bid"`
-	TargetSavings   float64 `json:"target_savings_percent"` // e.g., 0.6 = 60% savings
-	Strategy        string  `json:"strategy"`               // aggressive, moderate, conservative
-	FallbackType    string  `json:"fallback_instance_type"`
-	AutoAdjust      bool    `json:"auto_adjust"`
+	InstanceType  string  `json:"instance_type"`
+	MaxBid        float64 `json:"max_bid"`
+	CurrentBid    float64 `json:"current_bid"`
+	TargetSavings float64 `json:"target_savings_percent"` // e.g., 0.6 = 60% savings
+	Strategy      string  `json:"strategy"`               // aggressive, moderate, conservative
+	FallbackType  string  `json:"fallback_instance_type"`
+	AutoAdjust    bool    `json:"auto_adjust"`
 }
 
 // MigrationPlan describes a planned workload migration from a spot instance.
@@ -193,7 +193,7 @@ func (e *SpotPredictionEngine) Predict(ctx context.Context, instanceType string)
 		e.config.TrendWeight*trendScore
 
 	// Adjust for price proximity to on-demand (closer = higher risk of interruption)
-	proximityFactor := math.Pow(priceRatio, 2)
+	proximityFactor := priceRatio * priceRatio
 	interruptionProb = interruptionProb*0.7 + proximityFactor*0.3
 	interruptionProb = math.Max(0, math.Min(1, interruptionProb))
 
@@ -240,11 +240,11 @@ func (e *SpotPredictionEngine) Predict(ctx context.Context, instanceType string)
 	e.mu.Unlock()
 
 	e.logger.WithFields(logrus.Fields{
-		"instance_type":      instanceType,
-		"interruption_prob":  fmt.Sprintf("%.2f%%", interruptionProb*100),
-		"action":             action,
-		"volatility":         fmt.Sprintf("%.4f", volatility),
-		"trend":              trendLabel,
+		"instance_type":     instanceType,
+		"interruption_prob": fmt.Sprintf("%.2f%%", interruptionProb*100),
+		"action":            action,
+		"volatility":        fmt.Sprintf("%.4f", volatility),
+		"trend":             trendLabel,
 	}).Info("Spot interruption prediction generated")
 
 	return prediction, nil
@@ -285,9 +285,9 @@ func (e *SpotPredictionEngine) OptimizeBidStrategy(instanceType string, targetSa
 	currentSpot := pred.CurrentPrice
 
 	// Calculate optimal bid based on target savings and interruption risk
-	minBid := currentSpot * 1.05                           // at least 5% above current
-	maxBid := onDemand * e.config.MaxBidMultiplier          // never exceed max multiplier of on-demand
-	targetBid := onDemand * (1 - targetSavings)             // price to achieve target savings
+	minBid := currentSpot * 1.05                   // at least 5% above current
+	maxBid := onDemand * e.config.MaxBidMultiplier // never exceed max multiplier of on-demand
+	targetBid := onDemand * (1 - targetSavings)    // price to achieve target savings
 
 	optimalBid := math.Max(minBid, targetBid)
 	optimalBid = math.Min(optimalBid, maxBid)
