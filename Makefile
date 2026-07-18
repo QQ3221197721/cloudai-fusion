@@ -29,6 +29,14 @@ CMD_DIR := cmd
 REGISTRY ?= ghcr.io/cloudai-fusion
 IMAGE_TAG ?= $(VERSION)
 
+# Supply-chain verification (cosign keyless signatures + SLSA provenance).
+# Override to match your registry/repo, e.g.:
+#   make verify-signatures GHCR_REPO=QQ3221197721/cloudai-fusion IMAGE_TAG=sha-abc1234
+GHCR_REPO ?= QQ3221197721/cloudai-fusion
+GHCR_IMAGE_PREFIX ?= ghcr.io/$(GHCR_REPO)
+COSIGN_ISSUER ?= https://token.actions.githubusercontent.com
+COSIGN_IDENTITY_REGEXP ?= ^https://github.com/$(GHCR_REPO)/\.github/workflows/.+
+
 # ============================================================================
 # Build Targets
 # ============================================================================
@@ -372,14 +380,25 @@ tag: ## Create a semver git tag (usage: make tag V=v0.2.0)
 	@echo "Tag $(V) created. Push with: git push origin $(V)"
 
 .PHONY: verify-signatures
-verify-signatures: ## Verify cosign signatures on container images
-	@for img in apiserver scheduler agent; do \
-		echo "Verifying $$img..."; \
+verify-signatures: ## Verify keyless cosign signatures on all 4 container images
+	@for img in apiserver scheduler agent ai-engine; do \
+		echo "==> Verifying cosign signature: $$img"; \
 		cosign verify \
-			--certificate-identity-regexp="https://github.com/cloudai-fusion/.*" \
-			--certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-			$(REGISTRY)/$$img:$(IMAGE_TAG); \
+			--certificate-identity-regexp="$(COSIGN_IDENTITY_REGEXP)" \
+			--certificate-oidc-issuer="$(COSIGN_ISSUER)" \
+			$(GHCR_IMAGE_PREFIX)/$$img:$(IMAGE_TAG) || exit 1; \
 	done
+	@echo "All image signatures verified."
+
+.PHONY: verify-provenance
+verify-provenance: ## Verify SLSA L3 provenance on all 4 images (requires slsa-verifier)
+	@command -v slsa-verifier >/dev/null 2>&1 || { echo "install: go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest"; exit 1; }
+	@for img in apiserver scheduler agent ai-engine; do \
+		echo "==> Verifying SLSA provenance: $$img"; \
+		slsa-verifier verify-image "$(GHCR_IMAGE_PREFIX)/$$img:$(IMAGE_TAG)" \
+			--source-uri "github.com/$(GHCR_REPO)" || exit 1; \
+	done
+	@echo "All image SLSA provenance verified."
 
 .PHONY: clean
 clean: ## Clean build artifacts

@@ -2,6 +2,13 @@
 
 > **Purpose**: Rapid diagnosis and resolution of common platform issues
 
+> **"startup blocked by run_mode policy" / API server exits at boot** — This is
+> **expected** when `CLOUDAI_RUN_MODE=production` and a subsystem is only available as a
+> simulation (e.g. `messaging.producer(driver=memory)`). Fix by provisioning the real
+> dependency (Redis / NATS / Kafka / Kubernetes) or, for non-prod, lower
+> `CLOUDAI_RUN_MODE`. Inspect exactly what is simulated via `GET /api/v1/capabilities`
+> and `/readyz`.
+
 ## Table of Contents
 
 - [1. Diagnostic Workflow](#1-diagnostic-workflow)

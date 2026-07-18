@@ -16,6 +16,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/k8s"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/plugin"
@@ -460,9 +461,19 @@ func (e *Engine) getCandidateNodes(ctx context.Context, workload *Workload) []No
 	}
 	// Tier 2: Direct K8s API call (expensive, but needed on first call)
 	if candidates := e.candidatesFromK8s(ctx); len(candidates) > 0 {
+		_ = capability.Report("scheduler.nodes", "k8s", capability.ModeReal, "kubernetes node source")
 		e.nodeCache.UpdateNodes(candidates) // warm the cache
 		return candidates
 	}
+	// Tier 3: No real node source. Never fabricate nodes in production.
+	if capability.Policy().IsProduction() {
+		_ = capability.Report("scheduler.nodes", "none", capability.ModeSimulated,
+			"no Kubernetes node source connected; production refuses simulated nodes")
+		e.logger.Error("scheduler has no real node source (K8s not connected); returning zero candidates in production")
+		return nil
+	}
+	_ = capability.Report("scheduler.nodes", "sim", capability.ModeSimulated,
+		"Kubernetes not connected; using simulated candidates (non-production)")
 	return e.simulatedCandidates()
 }
 

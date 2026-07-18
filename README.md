@@ -1,238 +1,221 @@
 <p align="center">
   <h1 align="center">CloudAI Fusion</h1>
   <p align="center">Cloud-Native AI Unified Management Platform</p>
-  <p align="center">
-    <a href="https://github.com/cloudai-fusion/cloudai-fusion/actions"><img src="https://github.com/cloudai-fusion/cloudai-fusion/workflows/CloudAI%20Fusion%20CI%2FCD/badge.svg" alt="CI"></a>
-    <a href="https://codecov.io/gh/cloudai-fusion/cloudai-fusion"><img src="https://codecov.io/gh/cloudai-fusion/cloudai-fusion/branch/main/graph/badge.svg" alt="Coverage"></a>
-    <a href="https://goreportcard.com/report/github.com/cloudai-fusion/cloudai-fusion"><img src="https://goreportcard.com/badge/github.com/cloudai-fusion/cloudai-fusion" alt="Go Report"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
-    <a href="https://github.com/cloudai-fusion/cloudai-fusion/releases"><img src="https://img.shields.io/github/v/release/cloudai-fusion/cloudai-fusion" alt="Release"></a>
-  </p>
+  <p align="center"><em>Honest by design: it refuses to pretend a fake backend is real.</em></p>
 </p>
 
 ---
 
-**CloudAI Fusion** is an open-source platform that unifies cloud-native infrastructure management with AI-powered resource scheduling. It solves three core enterprise pain points:
+**CloudAI Fusion** unifies cloud-native infrastructure management with AI-assisted GPU
+scheduling across multiple clouds. It is built around one principle that most
+"platform" projects ignore: **a component is either backed by a real dependency, or it
+says so — and in production it refuses to run on a simulation.**
 
-- **Cloud-native deployment complexity** — 68% of enterprises struggle with cluster management
-- **Multi-cloud security fragmentation** — 86% of organizations use multi-cloud but face siloed security
-- **AI resource waste** — GPU utilization under 30% in traditional deployment models
+## Why this project is different: Run Modes & Capability Transparency
+
+Every external-dependency boundary (cache, messaging, consensus, GitOps, scheduling,
+cloud, DB) reports whether it is running on a **real** backend or a **simulated**
+in-memory fallback. A single `run_mode` setting governs what is allowed:
+
+| Run mode | Simulated backends | Use case |
+|----------|-------------------|----------|
+| `simulation` | allowed (expected) | local dev, unit/integration tests |
+| `degraded` | allowed but surfaced loudly (warnings + `/readyz`) | staging |
+| `production` | **forbidden — process refuses to boot** | production |
+
+- **`GET /api/v1/capabilities`** returns, per subsystem, `real` vs `simulated` + the active run mode.
+- **`/readyz`** reports simulated backends and fails readiness in production.
+- At startup, `capability.Enforce()` aborts a production boot if *any* subsystem is simulated.
+
+```jsonc
+// GET /api/v1/capabilities  (run_mode=degraded, no infra attached)
+{
+  "run_mode": "degraded",
+  "all_real": false,
+  "simulated_count": 1,
+  "backends": [
+    {"component": "messaging.producer", "mode": "simulated", "driver": "memory",
+     "detail": "nats backend requested but server unreachable"}
+  ]
+}
+```
+
+> In production, that same state makes the API server **exit 1 at boot** instead of
+> serving fake data. This is the core guarantee of the platform.
+
+## What is real vs. simulated
+
+Real drivers are used automatically when the dependency is reachable; otherwise the
+component falls back to an in-memory simulation **and reports it** (allowed only outside
+production).
+
+| Subsystem | Real implementation | Library | When dependency is absent |
+|-----------|--------------------|---------|---------------------------|
+| **Database** | PostgreSQL (migrations, optimistic locking, transactional events) | GORM | login/register disabled; server degrades |
+| **Cache / Lock / PubSub** | Redis (SET NX + Lua locks, SCAN, real pub/sub) | `redis/go-redis` | in-memory (single-process) |
+| **Messaging (durable)** | NATS (queue groups) / Kafka (consumer groups, acks=all) | `nats.go` / `IBM/sarama` | in-memory (non-durable) |
+| **Leader election / HA** | Kubernetes `Lease` leader election | `client-go/leaderelection` | in-memory single-node |
+| **Kubernetes** | real clusters (in-cluster / kubeconfig / token) | `client-go` | scheduler returns **no** candidates in prod (no fake nodes) |
+| **Multi-cloud** | AWS EKS, Alibaba ACK, Azure AKS, GCP GKE, Huawei CCE, Tencent TKE | official cloud SDKs | provider registered in stub mode (no creds) |
+| **GitOps** | ArgoCD (REST sync API) | net/http | simulated (Flux client not yet linked) |
+| **AI / LLM** | OpenAI / DashScope / Ollama / vLLM; optional PyTorch/SB3 RL | OpenAI-compatible + `torch`/`stable-baselines3` | rule-based heuristics (honestly reported at `/api/v1/models/status`) |
+
+Components still simulated-when-unconfigured (and therefore blocked in production):
+**etcd election, Flux sync, cross-cluster failover, in-memory Raft**. Progress is
+measured objectively by `/api/v1/capabilities`, not by marketing claims.
 
 ## Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-Cloud Management** | Unified API for Alibaba Cloud ACK, AWS EKS, Azure AKS, GCP GKE, Huawei CCE, Tencent TKE |
-| **GPU Topology-Aware Scheduling** | NVLink-aware placement, fine-grained GPU sharing, preemption, RL-based optimization |
-| **4 AI Agents** | Scheduling optimizer, security monitor, cost analyzer, operations automator |
-| **LLM Integration** | OpenAI GPT-4o / DashScope Qwen-Max / Ollama / vLLM with graceful fallback |
-| **AI Chat Assistant** | Conversational operations assistant with LLM-powered incident analysis |
-| **eBPF Service Mesh** | Sidecarless networking via Istio Ambient / Cilium with <1% overhead |
-| **Wasm Runtime** | Millisecond cold-start functions for serverless & edge workloads |
-| **Edge-Cloud Architecture** | Three-tier (Cloud → Edge → Terminal) with 50B-parameter edge model support |
-| **Security & Compliance** | Pod security, network policies, CIS benchmarks, vulnerability scanning, threat detection |
-| **Full Observability** | Prometheus metrics, OpenTelemetry tracing, Grafana dashboards, intelligent alerting |
-| **Feature Toggles** | Runtime feature flags with profiles (minimal / standard / full) for modular deployment |
-| **Docker Optimized** | Multi-stage builds, distroless images for Go services, GPU image reduced from 5-8GB to ~2-3GB |
+| **Run-mode honesty framework** | `simulation`/`degraded`/`production` + capability registry + fail-fast boot |
+| **Multi-Cloud Management** | Unified API over 6 clouds via official SDKs |
+| **GPU Topology-Aware Scheduling** | NVLink-aware placement, GPU sharing (MPS/MIG), preemption, RL scoring |
+| **4 AI Agents** | Scheduling, security, cost, operations — LLM-enhanced with rule-based fallback |
+| **Real messaging & HA** | NATS/Kafka drivers, Kubernetes Lease leader election |
+| **Security & Compliance** | JWT + RBAC (4 roles), OIDC federation, CIS checks, threat detection, audit log |
+| **DevSecOps supply chain** | SAST, dep/secret/IaC scanning, SBOM, cosign signing, SLSA L3 provenance |
+| **Full Observability** | Prometheus metrics, OpenTelemetry tracing, Grafana, intelligent alerting |
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         CloudAI Fusion                              │
+│                          CloudAI Fusion                              │
 ├─────────────┬──────────────┬─────────────┬─────────────────────────┤
 │  API Server │  Scheduler   │    Agent    │      AI Engine          │
 │   (Go/Gin)  │ (GPU-aware)  │ (DaemonSet) │   (Python/FastAPI)     │
 ├─────────────┴──────────────┴─────────────┴─────────────────────────┤
+│  runmode + capability registry (real-vs-simulated policy & report)  │
+├───────┬───────┬─────────┬──────────┬─────────┬──────┬──────┬───────┤
 │  Auth │ Cloud │ Cluster │ Security │ Monitor │ Mesh │ Wasm │ Edge  │
 ├───────┴───────┴─────────┴──────────┴─────────┴──────┴──────┴───────┤
-│            PostgreSQL  │  Redis  │  Kafka  │  NATS  │  Prometheus     │
+│  PostgreSQL │ Redis │ Kafka │ NATS │ Kubernetes │ Prometheus         │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+See [docs/architecture.md](docs/architecture.md) for component and data-flow detail.
+
 ## Quick Start
 
-### Prerequisites
+### Local (dev / simulation mode)
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (with Docker Compose)
-
-### Run (one command)
-
-**Windows:**
 ```bash
+git clone https://github.com/QQ3221197721/cloudai-fusion.git
 cd cloudai-fusion
-start.bat
+go build ./...
+
+# Dev mode (run_mode defaults to simulation): boots with in-memory fallbacks.
+go run ./cmd/apiserver --config cloudai-fusion.yaml
 ```
 
-**Linux / macOS:**
 ```bash
-cd cloudai-fusion
-chmod +x start.sh && ./start.sh
-```
-
-This starts all services (API Server, Scheduler, Agent, AI Engine, PostgreSQL, Redis, Kafka, NATS, Prometheus, Grafana, Jaeger).
-
-### Verify
-
-```bash
-# Health check
 curl http://localhost:8080/healthz
-
-# Login (get JWT token)
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-
-# List clusters (use token from login response)
-curl http://localhost:8080/api/v1/clusters \
-  -H "Authorization: Bearer <token>"
+curl http://localhost:8080/api/v1/capabilities   # see what's real vs simulated
 ```
 
-### Service Endpoints
+### Production (real backends required)
 
-| Service | URL |
-|---------|-----|
-| API Server | http://localhost:8080 |
-| AI Engine | http://localhost:8090 |
-| Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3000 (admin / cloudai) |
-| Jaeger | http://localhost:16686 |
+```bash
+export CLOUDAI_RUN_MODE=production
+export CLOUDAI_DB_PASSWORD=...        # real PostgreSQL
+export CLOUDAI_REDIS_ADDR=...         # real Redis
+export CLOUDAI_NATS_URL=...           # real NATS (or Kafka)
+export CLOUDAI_JWT_SECRET=...         # 32+ byte, high-entropy
+go run ./cmd/apiserver --config cloudai-fusion.yaml
+# If any backend is only available as a simulation, the process refuses to boot.
+```
+
+Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
+
+## DevSecOps & Supply-Chain Security
+
+CI (`.github/workflows/ci.yml`) + the dedicated security pipeline
+(`.github/workflows/devsecops.yml`) enforce:
+
+| Stage | Tooling |
+|-------|---------|
+| SAST | `gosec` (SARIF → GitHub Security) |
+| Dependency vulns | `govulncheck` (Go, reachability-aware), `pip-audit` (Python), Dependency Review |
+| Secret scanning | `gitleaks` (allowlist for documented demo values) |
+| Semantic analysis | CodeQL (Go) |
+| IaC / container config | Trivy (fs + config) |
+| SBOM | Syft (SPDX) |
+| Image signing | **cosign keyless** (Sigstore/Fulcio/Rekor), by digest |
+| Provenance | **BuildKit SLSA provenance** + **SLSA L3** via `slsa-github-generator` |
+| Dependency updates | Dependabot (gomod, pip, github-actions, docker) |
+
+Verify published images locally:
+
+```bash
+make verify-signatures   GHCR_REPO=QQ3221197721/cloudai-fusion IMAGE_TAG=<tag>  # cosign
+make verify-provenance   GHCR_REPO=QQ3221197721/cloudai-fusion IMAGE_TAG=<tag>  # slsa-verifier
+```
+
+## API Overview
+
+Full spec: [`api/openapi.yaml`](api/openapi.yaml).
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /healthz` / `GET /readyz` | Liveness / readiness (readyz gates on simulated backends) |
+| `GET /api/v1/capabilities` | **Honest real-vs-simulated status of every subsystem** |
+| `GET /api/v1/features` | Runtime feature flags |
+| `POST /api/v1/auth/login` `POST /api/v1/auth/refresh` | JWT auth (refresh validates a real token identity) |
+| `GET /api/v1/clusters` `GET /api/v1/providers` | Cluster & cloud provider management |
+| `POST /api/v1/workloads` | Submit AI workload (state machine + events) |
+| `GET /api/v1/security/policies` `GET /api/v1/monitoring/alerts/events` | Security & monitoring |
+| `GET /api/v1/cost/summary` `GET /api/v1/mesh/status` `GET /api/v1/edge/topology` | Cost / mesh / edge |
+| **AI Engine** (:8090) | `POST /scheduling/optimize`, `POST /anomaly/detect`, `POST /chat`, `GET /models/status` |
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Backend | Go 1.25, Gin, Cobra, Viper, GORM |
-| AI Engine | Python 3.11, FastAPI, PyTorch, TensorFlow, NumPy, scikit-learn, OpenAI SDK |
-| Container | Kubernetes 1.30+, Istio Ambient, Cilium eBPF |
-| Database | PostgreSQL 16, Redis 7 |
-| Messaging | Apache Kafka, NATS |
-| Monitoring | Prometheus, Grafana, OpenTelemetry, Jaeger |
-| CI/CD | GitHub Actions, Docker, Helm 3 |
+| AI Engine | Python 3.11, FastAPI, NumPy, scikit-learn; optional PyTorch / stable-baselines3 |
+| Data / messaging | PostgreSQL 16, Redis 7 (`go-redis`), Kafka (`sarama`), NATS (`nats.go`) |
+| Orchestration | Kubernetes (`client-go`), Lease leader election, Istio Ambient / Cilium |
+| Supply chain | cosign, SLSA (`slsa-github-generator`), Syft, gosec, govulncheck, gitleaks, Trivy |
+| Observability | Prometheus, Grafana, OpenTelemetry, Jaeger |
+
+## Testing & Verification Status
+
+- **Unit + component tests** (Go `./pkg/...`, `./cmd/...`, e2e, integration; Python `ai/`) pass locally.
+- The e2e suite drives the **real production HTTP stack over real (pure-Go) SQLite** — auth,
+  workload state machine + events, security-policy CRUD, monitoring, optimistic-lock races.
+- **Integration against live NATS/Kafka/Kubernetes/ArgoCD requires those services** (Docker/kind).
+  Without them the drivers are real code, unit-tested and honesty-gated; the platform reports
+  them as simulated rather than pretending they work.
 
 ## Project Structure
 
 ```
 cloudai-fusion/
-├── cmd/                          # Service entry points
-│   ├── apiserver/                # API Server
-│   ├── scheduler/                # GPU Scheduler
-│   ├── agent/                    # Node Agent
-│   └── healthcheck/              # Lightweight healthcheck binary (for distroless)
-├── pkg/                          # Go packages (48 packages, 47/47 tests pass)
-│   ├── api/                      # HTTP routes, handlers, debug endpoints (6-layer auth)
-│   ├── auth/                     # JWT + RBAC + OIDC federation (4 roles, 20+ perms)
-│   ├── cache/                    # Redis cache + distributed lock + PubSub
-│   ├── cloud/                    # Multi-cloud providers (6 clouds)
-│   ├── cluster/                  # Kubernetes cluster management
-│   ├── config/                   # Unified configuration + JWT secret validation
-│   ├── edge/                     # Edge-cloud architecture + 50B model quantization
-│   ├── feature/                  # Runtime feature toggles (minimal/standard/full)
-│   ├── mesh/                     # eBPF service mesh
-│   ├── monitor/                  # Prometheus metrics & alerting
-│   ├── scheduler/                # GPU scheduling + queue snapshot persistence
-│   ├── security/                 # Policy, scanning, compliance, threats
-│   ├── store/                    # Database layer (GORM)
-│   └── wasm/                     # WebAssembly container runtime
-├── ai/                           # Python AI components
-│   ├── agents/                   # Multi-agent FastAPI server + LLM client
-│   ├── anomaly/                  # Anomaly detection engine
-│   └── scheduler/                # RL scheduling optimizer
-├── deploy/helm/                  # Helm chart (7 templates)
-├── docker/                       # Dockerfiles (5 services, distroless + multi-stage)
-├── monitoring/                   # Prometheus + Grafana configs
-├── scripts/                      # env-generate, diagnose, setup-gpu, deploy-cloud
-├── api/                          # OpenAPI 3.1 specification
-├── .devcontainer/                # Dev Container (Go + Python + full toolchain)
-├── docker-compose.yml            # Full-stack local deployment (profiles support)
-├── docker-compose.gpu.yml        # GPU overlay (NVIDIA runtime)
-├── Makefile                      # Build, test, deploy, diagnose commands
-└── start.bat / start.sh          # One-click start (--gpu, --minimal flags)
+├── cmd/            # apiserver, scheduler, agent, healthcheck
+├── pkg/
+│   ├── runmode/    # run-mode policy (simulation/degraded/production)
+│   ├── capability/ # real-vs-simulated registry + fail-fast enforcement
+│   ├── cache/      # Redis (go-redis) cache/lock/pubsub + memory fallback
+│   ├── messaging/  # NATS (nats.go) + Kafka (sarama) + memory fallback
+│   ├── election/   # Kubernetes Lease leader election (client-go)
+│   ├── gitops/     # ArgoCD REST client
+│   ├── scheduler/  # GPU scheduling (real K8s nodes; no fake nodes in prod)
+│   ├── cloud/ cluster/ security/ monitor/ mesh/ edge/ ...
+├── ai/             # Python AI engine (agents, anomaly, RL scheduler)
+├── .github/workflows/  # ci.yml + devsecops.yml
+├── deploy/helm/    # Helm chart
+└── docs/           # architecture, quickstart, guides
 ```
-
-## Development
-
-```bash
-# First-time setup (generate .env with secure secrets)
-make setup
-
-# Build all Go binaries
-make build
-
-# Run tests
-make test
-
-# Run tests with coverage report
-make coverage-report
-
-# Run linter
-make lint
-
-# Build Docker images (optimized: distroless for Go, multi-stage for AI)
-make docker-build
-
-# Deploy to Kubernetes
-make helm-install
-
-# Start with GPU support
-./start.sh --gpu          # Linux / macOS
-start.bat --gpu           # Windows (WSL2 + NVIDIA)
-
-# Start minimal mode (core services only)
-./start.sh --minimal
-
-# Health diagnostics
-make diagnose
-
-# Feature flag management
-make features-list
-```
-
-## API Overview
-
-Full specification: [`api/openapi.yaml`](api/openapi.yaml)
-
-| Endpoint Group | Description |
-|---------------|-------------|
-| `POST /api/v1/auth/login` | JWT authentication |
-| `GET /api/v1/clusters` | List managed K8s clusters |
-| `GET /api/v1/providers` | List cloud providers |
-| `POST /api/v1/workloads` | Submit AI workload |
-| `GET /api/v1/security/policies` | Security policies |
-| `GET /api/v1/monitoring/alerts/events` | Alert events |
-| `GET /api/v1/cost/summary` | Cost analysis |
-| `GET /api/v1/mesh/status` | Service mesh status |
-| `POST /api/v1/wasm/deploy` | Deploy Wasm function |
-| `GET /api/v1/edge/topology` | Edge-cloud topology |
-| **AI Engine** (port 8090) | |
-| `POST /api/v1/scheduling/optimize` | LLM-enhanced GPU scheduling |
-| `POST /api/v1/anomaly/detect` | Anomaly detection + threat analysis |
-| `POST /api/v1/cost/analyze` | Cost optimization with LLM insights |
-| `GET /api/v1/insights` | Dynamic AI-powered insights |
-| `GET /api/v1/models/status` | Honest model & LLM status |
-| `POST /api/v1/chat` | Conversational AI assistant |
-| `POST /api/v1/ops/incident` | Incident root cause analysis |
-| `POST /api/v1/ops/scaling` | Predictive scaling |
-| `GET /api/v1/ops/history` | Incident history |
-| **Debug** (requires `CLOUDAI_DEBUG_ENABLED=true` + JWT admin) | |
-| `GET /debug/info` | Runtime information |
-| `GET /debug/pprof/` | Go pprof (rate-limited) |
-| `PUT /debug/log-level` | Dynamic log level |
-| `GET /debug/services` | Cross-service health probe |
 
 ## Roadmap
 
-| Version | Timeline | Focus |
-|---------|----------|-------|
-| **v0.1 MVP** | 2026 Q2 | Core management, basic scheduling, auth, monitoring |
-| **v1.0** | 2026 Q3 | Multi-cloud SDK integration, Istio Ambient, AIOps |
-| **v2.0** | 2026 Q4 | Full Agent system, edge deployment, cost optimization |
-| **v3.0** | 2027 H1 | Cross-cloud security, heterogeneous scheduling, plugin ecosystem |
+| Version | Focus |
+|---------|-------|
+| **Current** | Run-mode honesty framework, real Redis/NATS/Kafka/K8s-Lease/ArgoCD, DevSecOps + SLSA |
+| **Next** | Real Flux client, cross-cluster failover, hashicorp/raft consensus, live-infra integration CI |
 
-## Contributing
+## Contributing / License
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## License
-
-[Apache License 2.0](LICENSE)
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+Licensed under the [Apache License 2.0](LICENSE).

@@ -1,0 +1,27 @@
+# gitleaks configuration for CloudAI Fusion.
+# Extends the default ruleset and allowlists KNOWN non-secret demo/test values
+# (documented defaults, bcrypt seed hash, test fixtures) so the secret scan
+# fails only on REAL leaked credentials.
+title = "CloudAI Fusion gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known non-secret demo/test defaults and fixtures"
+regexes = [
+  # Documented demo login used in README / quickstart / init-db seed.
+  '''admin123''',
+  # bcrypt hash of the seeded demo admin (scripts/init-db.sql) — not a live secret.
+  '''\$2[aby]\$[0-9]{2}\$[./A-Za-z0-9]{53}''',
+  # JWT secret used only in tests/e2e fixtures.
+  '''test-secret-0123456789''',
+]
+paths = [
+  '''\.env\.example$''',
+  '''(^|/)scripts/init-db\.sql$''',
+  '''(^|/)README\.md$''',
+  '''(^|/)docs/.*\.md$''',
+  '''.*_test\.go$''',
+  '''(^|/)deploy/helm/.*\.yaml$''',
+]

@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 )
 
 // ============================================================================
@@ -365,31 +367,70 @@ func (q *memoryQueue) Close() error {
 // Factory
 // ============================================================================
 
-// NewProducer creates a message producer based on configuration.
+// NewProducer creates a message producer based on configuration. It connects to
+// the real backend (NATS/Kafka) when reachable and registers a "real" capability;
+// if the backend is unreachable it falls back to the in-memory producer and
+// registers "simulated" (rejected at boot under run_mode=production).
 func NewProducer(cfg Config, logger *logrus.Logger) Producer {
 	switch cfg.Backend {
-	case "kafka":
-		logger.Info("Kafka producer initialized (using in-memory fallback — add sarama dependency)")
-		return NewMemoryProducer(cfg, logger)
 	case "nats":
-		logger.Info("NATS producer initialized (using in-memory fallback — add nats.go dependency)")
-		return NewMemoryProducer(cfg, logger)
+		if p, err := newNATSProducer(cfg, logger); err == nil {
+			_ = capability.Report("messaging.producer", "nats", capability.ModeReal, cfg.NATSURL)
+			logger.WithField("url", cfg.NATSURL).Info("NATS producer connected")
+			return p
+		} else {
+			_ = capability.Report("messaging.producer", "memory", capability.ModeSimulated,
+				fmt.Sprintf("NATS unavailable at %q: %v", cfg.NATSURL, err))
+			logger.WithError(err).Warn("NATS producer unavailable — using in-memory fallback")
+			return NewMemoryProducer(cfg, logger)
+		}
+	case "kafka":
+		if p, err := newKafkaProducer(cfg, logger); err == nil {
+			_ = capability.Report("messaging.producer", "kafka", capability.ModeReal, cfg.KafkaBrokers)
+			logger.WithField("brokers", cfg.KafkaBrokers).Info("Kafka producer connected")
+			return p
+		} else {
+			_ = capability.Report("messaging.producer", "memory", capability.ModeSimulated,
+				fmt.Sprintf("Kafka unavailable at %q: %v", cfg.KafkaBrokers, err))
+			logger.WithError(err).Warn("Kafka producer unavailable — using in-memory fallback")
+			return NewMemoryProducer(cfg, logger)
+		}
 	default:
+		_ = capability.Report("messaging.producer", "memory", capability.ModeSimulated,
+			"in-memory producer (non-durable, single-process)")
 		logger.Info("Using in-memory message producer")
 		return NewMemoryProducer(cfg, logger)
 	}
 }
 
-// NewConsumer creates a message consumer based on configuration.
+// NewConsumer creates a message consumer based on configuration (see NewProducer).
 func NewConsumer(cfg Config, logger *logrus.Logger) Consumer {
 	switch cfg.Backend {
-	case "kafka":
-		logger.Info("Kafka consumer initialized (using in-memory fallback — add sarama dependency)")
-		return NewMemoryConsumer(cfg, logger)
 	case "nats":
-		logger.Info("NATS consumer initialized (using in-memory fallback — add nats.go dependency)")
-		return NewMemoryConsumer(cfg, logger)
+		if c, err := newNATSConsumer(cfg, logger); err == nil {
+			_ = capability.Report("messaging.consumer", "nats", capability.ModeReal, cfg.NATSURL)
+			logger.WithField("url", cfg.NATSURL).Info("NATS consumer connected")
+			return c
+		} else {
+			_ = capability.Report("messaging.consumer", "memory", capability.ModeSimulated,
+				fmt.Sprintf("NATS unavailable at %q: %v", cfg.NATSURL, err))
+			logger.WithError(err).Warn("NATS consumer unavailable — using in-memory fallback")
+			return NewMemoryConsumer(cfg, logger)
+		}
+	case "kafka":
+		if c, err := newKafkaConsumer(cfg, logger); err == nil {
+			_ = capability.Report("messaging.consumer", "kafka", capability.ModeReal, cfg.KafkaBrokers)
+			logger.WithField("brokers", cfg.KafkaBrokers).Info("Kafka consumer connected")
+			return c
+		} else {
+			_ = capability.Report("messaging.consumer", "memory", capability.ModeSimulated,
+				fmt.Sprintf("Kafka unavailable at %q: %v", cfg.KafkaBrokers, err))
+			logger.WithError(err).Warn("Kafka consumer unavailable — using in-memory fallback")
+			return NewMemoryConsumer(cfg, logger)
+		}
 	default:
+		_ = capability.Report("messaging.consumer", "memory", capability.ModeSimulated,
+			"in-memory consumer (non-durable, single-process)")
 		logger.Info("Using in-memory message consumer")
 		return NewMemoryConsumer(cfg, logger)
 	}

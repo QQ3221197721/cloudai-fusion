@@ -14,6 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode"
 )
 
 // Config holds all configuration for CloudAI Fusion services
@@ -74,6 +76,12 @@ type Config struct {
 	// Individual flags can be overridden via CLOUDAI_FF_<KEY>=true|false env vars.
 	FeatureProfile string `mapstructure:"feature_profile"`
 
+	// RunMode governs how the platform treats simulated/in-memory fallbacks:
+	//   "simulation" | "degraded" | "production". Empty derives from Env
+	// (production env => production mode). In production, simulated backends
+	// are forbidden and the process refuses to boot on them.
+	RunMode string `mapstructure:"run_mode"`
+
 	// Cloud Providers
 	CloudProviders []CloudProviderConfig `mapstructure:"cloud_providers"`
 
@@ -107,6 +115,16 @@ func (c *Config) DatabaseDSN() string {
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=UTC",
 		c.DBHost, c.DBUser, c.DBPassword, c.DBName, c.DBPort, c.DBSSLMode,
 	)
+}
+
+// EffectiveRunMode returns the platform run mode, deriving it from Env when
+// run_mode is not set explicitly. This is the single source of truth for the
+// simulated-backend policy (see pkg/runmode and pkg/capability).
+func (c *Config) EffectiveRunMode() runmode.RunMode {
+	if c.RunMode != "" {
+		return runmode.Parse(c.RunMode)
+	}
+	return runmode.FromEnvName(c.Env)
 }
 
 // Load reads configuration from file, environment variables, and CLI flags
@@ -403,6 +421,10 @@ func setDefaults(v *viper.Viper) {
 
 	// Feature Flags
 	v.SetDefault("feature_profile", "standard")
+
+	// Run mode: "" derives from env (production env => production);
+	// explicit values: simulation | degraded | production.
+	v.SetDefault("run_mode", "")
 
 	// Monitoring
 	v.SetDefault("prometheus_endpoint", "http://localhost:9090")

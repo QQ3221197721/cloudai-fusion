@@ -10,6 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
 
@@ -522,7 +523,10 @@ func (m *Manager) TriggerFailover(ctx context.Context, planID string, targetClus
 	// 4. Verify service health on new primary
 	// 5. Update plan primary to target
 
-	// Simulate successful failover
+	// No real cluster promotion / DNS / traffic-switch is performed here; record
+	// a simulated failover so run_mode=production refuses to fake DR (Enforce).
+	_ = capability.Report("multicluster.failover", "sim", capability.ModeSimulated,
+		"failover simulated; no real standby promotion, DNS update, or traffic switch")
 	completedAt := common.NowUTC()
 	event.CompletedAt = &completedAt
 	event.Duration = completedAt.Sub(event.StartedAt)

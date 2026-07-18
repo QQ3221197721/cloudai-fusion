@@ -2,6 +2,13 @@
 
 > **Audience**: Platform administrators, SRE teams, DevOps engineers
 
+> **Run mode (read first)**: Set `CLOUDAI_RUN_MODE=production` in production. The API
+> server **refuses to boot** if any subsystem (Redis, NATS/Kafka, Kubernetes Lease
+> election, etc.) can only offer a simulated in-memory backend. Provision real
+> dependencies, then confirm with `GET /api/v1/capabilities` (`all_real: true`) and a
+> passing `/readyz`. Verify released images with `make verify-signatures` /
+> `make verify-provenance`.
+
 ## Table of Contents
 
 - [1. Deployment Architecture](#1-deployment-architecture)
