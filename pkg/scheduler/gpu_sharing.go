@@ -39,36 +39,36 @@ const (
 	GPUShareExclusive GPUShareMode = "exclusive" // single workload per GPU
 	GPUShareMPS       GPUShareMode = "mps"       // CUDA Multi-Process Service
 	GPUShareMIG       GPUShareMode = "mig"       // Multi-Instance GPU
-	GPUShareTimeslice GPUShareMode = "timeslice"  // Kubernetes time-slicing
+	GPUShareTimeslice GPUShareMode = "timeslice" // Kubernetes time-slicing
 )
 
 // MIGProfile describes a MIG partition profile
 type MIGProfile struct {
-	Name       string `json:"name"`       // e.g., "1g.5gb", "2g.10gb", "3g.20gb", "4g.20gb", "7g.40gb"
-	GPUSlices  int    `json:"gpu_slices"` // number of compute slices
-	MemoryGB   int    `json:"memory_gb"`  // memory per instance
-	MaxInstances int  `json:"max_instances"` // max instances of this profile per GPU
+	Name         string `json:"name"`          // e.g., "1g.5gb", "2g.10gb", "3g.20gb", "4g.20gb", "7g.40gb"
+	GPUSlices    int    `json:"gpu_slices"`    // number of compute slices
+	MemoryGB     int    `json:"memory_gb"`     // memory per instance
+	MaxInstances int    `json:"max_instances"` // max instances of this profile per GPU
 }
 
 // MIGInstance represents an active MIG instance
 type MIGInstance struct {
-	ID         string `json:"id"`
-	GPUIndex   int    `json:"gpu_index"`
-	Profile    string `json:"profile"`
-	UUID       string `json:"uuid"`
-	MemoryMB   int    `json:"memory_mb"`
-	InUse      bool   `json:"in_use"`
+	ID       string `json:"id"`
+	GPUIndex int    `json:"gpu_index"`
+	Profile  string `json:"profile"`
+	UUID     string `json:"uuid"`
+	MemoryMB int    `json:"memory_mb"`
+	InUse    bool   `json:"in_use"`
 }
 
 // MPSStatus represents the current MPS daemon status
 type MPSStatus struct {
-	Active       bool   `json:"active"`
-	GPUIndex     int    `json:"gpu_index"`
-	PipeDir      string `json:"pipe_directory"`
-	LogDir       string `json:"log_directory"`
-	ActiveClients int   `json:"active_clients"`
-	MaxClients   int    `json:"max_clients"`    // GPU default limit
-	ThreadPct    int    `json:"thread_percent"` // active thread percentage (0-100)
+	Active        bool   `json:"active"`
+	GPUIndex      int    `json:"gpu_index"`
+	PipeDir       string `json:"pipe_directory"`
+	LogDir        string `json:"log_directory"`
+	ActiveClients int    `json:"active_clients"`
+	MaxClients    int    `json:"max_clients"`    // GPU default limit
+	ThreadPct     int    `json:"thread_percent"` // active thread percentage (0-100)
 }
 
 // GPUSharingState holds the current GPU sharing state for a node
@@ -87,8 +87,8 @@ type GPUSharingState struct {
 // GPUSharingManager manages GPU sharing via MPS and MIG
 type GPUSharingManager struct {
 	config       GPUSharingConfig
-	gpuStates    map[int]*GPUSharingState  // GPU index → sharing state
-	memoryStates map[int]*GPUMemoryState   // GPU index → memory state
+	gpuStates    map[int]*GPUSharingState // GPU index → sharing state
+	memoryStates map[int]*GPUMemoryState  // GPU index → memory state
 	logger       *logrus.Logger
 	mu           sync.RWMutex
 }
@@ -441,12 +441,12 @@ func (mgr *GPUSharingManager) GetGPUSharingStates() map[int]*GPUSharingState {
 
 // MemoryOversellPolicy defines the memory overselling configuration
 type MemoryOversellPolicy struct {
-	Enabled           bool    `json:"enabled"`
-	MaxOversellRatio  float64 `json:"max_oversell_ratio"`  // e.g., 1.5 = 150% of physical memory
-	SoftLimitRatio    float64 `json:"soft_limit_ratio"`    // OOM-kill threshold per workload
-	HardLimitRatio    float64 `json:"hard_limit_ratio"`    // absolute maximum
-	EvictionPriority  string  `json:"eviction_priority"`   // "lru", "priority", "memory-usage"
-	SwapEnabled       bool    `json:"swap_enabled"`        // unified memory (host↔device) swap
+	Enabled          bool    `json:"enabled"`
+	MaxOversellRatio float64 `json:"max_oversell_ratio"` // e.g., 1.5 = 150% of physical memory
+	SoftLimitRatio   float64 `json:"soft_limit_ratio"`   // OOM-kill threshold per workload
+	HardLimitRatio   float64 `json:"hard_limit_ratio"`   // absolute maximum
+	EvictionPriority string  `json:"eviction_priority"`  // "lru", "priority", "memory-usage"
+	SwapEnabled      bool    `json:"swap_enabled"`       // unified memory (host↔device) swap
 }
 
 // MemoryIsolationGroup represents an isolated memory region for a workload
@@ -464,13 +464,13 @@ type MemoryIsolationGroup struct {
 
 // GPUMemoryState tracks memory allocation state for a GPU
 type GPUMemoryState struct {
-	GPUIndex         int                      `json:"gpu_index"`
-	PhysicalTotalMiB int                      `json:"physical_total_mib"`
-	PhysicalUsedMiB  int                      `json:"physical_used_mib"`
-	VirtualTotalMiB  int                      `json:"virtual_total_mib"` // with overselling
-	VirtualUsedMiB   int                      `json:"virtual_used_mib"`
-	OversellRatio    float64                  `json:"oversell_ratio"`
-	IsolationGroups  []*MemoryIsolationGroup  `json:"isolation_groups"`
+	GPUIndex         int                     `json:"gpu_index"`
+	PhysicalTotalMiB int                     `json:"physical_total_mib"`
+	PhysicalUsedMiB  int                     `json:"physical_used_mib"`
+	VirtualTotalMiB  int                     `json:"virtual_total_mib"` // with overselling
+	VirtualUsedMiB   int                     `json:"virtual_used_mib"`
+	OversellRatio    float64                 `json:"oversell_ratio"`
+	IsolationGroups  []*MemoryIsolationGroup `json:"isolation_groups"`
 }
 
 // DefaultMemoryOversellPolicy returns a conservative overselling policy

@@ -174,7 +174,7 @@ func (f *fakeReconciler) Reconcile(ctx context.Context, req Request) (Result, er
 	return f.result, f.err
 }
 func (f *fakeReconciler) Name() string         { return f.name }
-func (f *fakeReconciler) ResourceKind() string  { return f.kind }
+func (f *fakeReconciler) ResourceKind() string { return f.kind }
 func (f *fakeReconciler) getCalls() []Request {
 	f.mu.Lock()
 	defer f.mu.Unlock()

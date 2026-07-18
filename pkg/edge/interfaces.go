@@ -31,7 +31,7 @@ type EdgeService interface {
 	StartSyncLoop(ctx context.Context)
 
 	// Enhanced edge-cloud collaboration methods
-	
+
 	// GetOfflineStatus returns offline operation queue status for a node.
 	GetOfflineStatus(ctx context.Context, nodeID string) (*SyncStatus, error)
 

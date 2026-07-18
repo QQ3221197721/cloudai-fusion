@@ -157,22 +157,22 @@ func (SecurityPolicyModel) TableName() string { return "security_policies" }
 
 // VulnerabilityScanModel persists vulnerability scan results in PG
 type VulnerabilityScanModel struct {
-	ID              string         `gorm:"type:uuid;primaryKey" json:"id"`
-	ClusterID       string         `gorm:"type:uuid;index" json:"cluster_id"`
-	ScanType        string         `gorm:"size:32;not null" json:"scan_type"`
-	Status          string         `gorm:"size:32;not null;default:pending" json:"status"`
-	Findings        string         `gorm:"type:jsonb;default:'[]'" json:"findings"`
-	Summary         string         `gorm:"type:jsonb;default:'{}'" json:"summary"`
-	TotalFindings   int            `gorm:"default:0" json:"total_findings"`
-	CriticalCount   int            `gorm:"default:0" json:"critical_count"`
-	HighCount       int            `gorm:"default:0" json:"high_count"`
-	MediumCount     int            `gorm:"default:0" json:"medium_count"`
-	LowCount        int            `gorm:"default:0" json:"low_count"`
-	StartedAt       time.Time      `json:"started_at"`
-	CompletedAt     *time.Time     `json:"completed_at,omitempty"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
-	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
+	ID            string         `gorm:"type:uuid;primaryKey" json:"id"`
+	ClusterID     string         `gorm:"type:uuid;index" json:"cluster_id"`
+	ScanType      string         `gorm:"size:32;not null" json:"scan_type"`
+	Status        string         `gorm:"size:32;not null;default:pending" json:"status"`
+	Findings      string         `gorm:"type:jsonb;default:'[]'" json:"findings"`
+	Summary       string         `gorm:"type:jsonb;default:'{}'" json:"summary"`
+	TotalFindings int            `gorm:"default:0" json:"total_findings"`
+	CriticalCount int            `gorm:"default:0" json:"critical_count"`
+	HighCount     int            `gorm:"default:0" json:"high_count"`
+	MediumCount   int            `gorm:"default:0" json:"medium_count"`
+	LowCount      int            `gorm:"default:0" json:"low_count"`
+	StartedAt     time.Time      `json:"started_at"`
+	CompletedAt   *time.Time     `json:"completed_at,omitempty"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 func (VulnerabilityScanModel) TableName() string { return "vulnerability_scans" }
@@ -332,7 +332,7 @@ func (AlertEventModel) TableName() string { return "alert_events" }
 // Only the latest snapshot is kept (upsert by key="scheduler").
 type SchedulerSnapshotModel struct {
 	Key       string    `gorm:"type:varchar(64);primaryKey" json:"key"` // always "scheduler"
-	Data      string    `gorm:"type:text;not null" json:"data"`        // JSON-encoded QueueSnapshot
+	Data      string    `gorm:"type:text;not null" json:"data"`         // JSON-encoded QueueSnapshot
 	Version   int64     `gorm:"not null;default:0" json:"version"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

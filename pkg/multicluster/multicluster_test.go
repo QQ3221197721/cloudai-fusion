@@ -141,6 +141,67 @@ func TestResolveEndpoint(t *testing.T) {
 	}
 }
 
+func TestResolveEndpointResourceBased(t *testing.T) {
+	mgr := NewManager(DefaultManagerConfig())
+	ctx := context.Background()
+
+	// Two member clusters with very different load.
+	busy, _ := mgr.JoinCluster(ctx, &MemberCluster{Name: "busy", Region: "us-east-1"})
+	idle, _ := mgr.JoinCluster(ctx, &MemberCluster{Name: "idle", Region: "us-west-2"})
+	_ = mgr.UpdateHeartbeat(ctx, busy.ID, ClusterCapacity{
+		CPUMillicores: 1000, UsedCPUMillicores: 900, GPUCount: 8, UsedGPUCount: 7,
+	})
+	_ = mgr.UpdateHeartbeat(ctx, idle.ID, ClusterCapacity{
+		CPUMillicores: 1000, UsedCPUMillicores: 100, GPUCount: 8, UsedGPUCount: 1,
+	})
+
+	svc, _ := mgr.CreateGlobalService(ctx, &GlobalService{
+		Name:   "resource-svc",
+		Policy: LBPolicyResourceBased,
+		Endpoints: []ServiceEndpoint{
+			{ClusterID: busy.ID, Address: "10.0.1.1", Port: 80, Weight: 1, Healthy: true},
+			{ClusterID: idle.ID, Address: "10.0.2.1", Port: 80, Weight: 1, Healthy: true},
+		},
+	})
+
+	ep, err := mgr.ResolveEndpoint(ctx, svc.ID)
+	if err != nil {
+		t.Fatalf("ResolveEndpoint failed: %v", err)
+	}
+	// Resource-based must route to the least-loaded cluster (idle), not just the first.
+	if ep.ClusterID != idle.ID {
+		t.Errorf("expected least-loaded cluster %s (idle), got %s", idle.ID, ep.ClusterID)
+	}
+}
+
+func TestResolveEndpointGeoBased(t *testing.T) {
+	mgr := NewManager(DefaultManagerConfig())
+	ctx := context.Background()
+
+	// The control-plane member defines the federation's home region.
+	cp, _ := mgr.JoinCluster(ctx, &MemberCluster{Name: "cp", Region: "eu-west-1", Role: RoleControlPlane})
+	remote, _ := mgr.JoinCluster(ctx, &MemberCluster{Name: "remote", Region: "ap-south-1", Role: RoleMember})
+
+	svc, _ := mgr.CreateGlobalService(ctx, &GlobalService{
+		Name:   "geo-svc",
+		Policy: LBPolicyGeoBased,
+		Endpoints: []ServiceEndpoint{
+			// Remote endpoint has LOWER latency, but geo must prefer the home region.
+			{ClusterID: remote.ID, Address: "10.1.0.1", Port: 80, Weight: 1, Healthy: true, LatencyMs: 5},
+			{ClusterID: cp.ID, Address: "10.2.0.1", Port: 80, Weight: 1, Healthy: true, LatencyMs: 20},
+		},
+	})
+
+	ep, err := mgr.ResolveEndpoint(ctx, svc.ID)
+	if err != nil {
+		t.Fatalf("ResolveEndpoint failed: %v", err)
+	}
+	// Home-region (eu-west-1) endpoint must win despite higher latency.
+	if ep.ClusterID != cp.ID {
+		t.Errorf("expected home-region endpoint %s, got %s", cp.ID, ep.ClusterID)
+	}
+}
+
 func TestResolveEndpointLatencyBased(t *testing.T) {
 	mgr := NewManager(DefaultManagerConfig())
 	ctx := context.Background()

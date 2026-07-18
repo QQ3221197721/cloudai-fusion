@@ -134,7 +134,7 @@ func (c *Client) DoRawRequest(ctx context.Context, method, path string) ([]byte,
 	if err != nil {
 		return nil, 0, fmt.Errorf("K8s API request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -159,7 +159,7 @@ func (c *Client) DoRawRequestWithBody(ctx context.Context, method, path string, 
 	if err != nil {
 		return nil, 0, fmt.Errorf("K8s API request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

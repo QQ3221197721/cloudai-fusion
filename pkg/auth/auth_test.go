@@ -243,3 +243,20 @@ func TestRolePermissionCounts(t *testing.T) {
 		}
 	}
 }
+
+// TestOAuth2Manager_CloseStopsGoroutine verifies the background session-cleanup
+// goroutine is stopped by Close (no leak, graceful shutdown).
+func TestOAuth2Manager_CloseStopsGoroutine(t *testing.T) {
+	mgr := NewOAuth2Manager(OAuth2Config{})
+
+	done := make(chan struct{})
+	go func() { mgr.Close(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Close() did not return: session-cleanup goroutine leaked")
+	}
+
+	// Close is idempotent.
+	mgr.Close()
+}

@@ -25,40 +25,40 @@ import (
 
 // PluginManifest describes a plugin for marketplace distribution.
 type PluginManifest struct {
-	APIVersion    string            `json:"api_version" yaml:"apiVersion"` // "v1"
-	Kind          string            `json:"kind" yaml:"kind"`             // "CloudAIPlugin"
-	Metadata      Metadata          `json:"metadata" yaml:"metadata"`
-	Spec          PluginSpec        `json:"spec" yaml:"spec"`
-	Distribution  DistributionInfo  `json:"distribution" yaml:"distribution"`
+	APIVersion   string           `json:"api_version" yaml:"apiVersion"` // "v1"
+	Kind         string           `json:"kind" yaml:"kind"`              // "CloudAIPlugin"
+	Metadata     Metadata         `json:"metadata" yaml:"metadata"`
+	Spec         PluginSpec       `json:"spec" yaml:"spec"`
+	Distribution DistributionInfo `json:"distribution" yaml:"distribution"`
 }
 
 // PluginSpec describes plugin capabilities and requirements.
 type PluginSpec struct {
-	MinPlatformVersion string            `json:"min_platform_version" yaml:"minPlatformVersion"`
-	MaxPlatformVersion string            `json:"max_platform_version,omitempty" yaml:"maxPlatformVersion,omitempty"`
-	GoModule           string            `json:"go_module" yaml:"goModule"`
-	EntryPoint         string            `json:"entry_point" yaml:"entryPoint"` // factory function name
+	MinPlatformVersion string                 `json:"min_platform_version" yaml:"minPlatformVersion"`
+	MaxPlatformVersion string                 `json:"max_platform_version,omitempty" yaml:"maxPlatformVersion,omitempty"`
+	GoModule           string                 `json:"go_module" yaml:"goModule"`
+	EntryPoint         string                 `json:"entry_point" yaml:"entryPoint"` // factory function name
 	ConfigSchema       map[string]interface{} `json:"config_schema,omitempty" yaml:"configSchema,omitempty"`
-	Permissions        []string          `json:"permissions,omitempty" yaml:"permissions,omitempty"`
-	Resources          ResourceRequirements `json:"resources,omitempty" yaml:"resources,omitempty"`
+	Permissions        []string               `json:"permissions,omitempty" yaml:"permissions,omitempty"`
+	Resources          ResourceRequirements   `json:"resources,omitempty" yaml:"resources,omitempty"`
 }
 
 // ResourceRequirements specifies plugin resource needs.
 type ResourceRequirements struct {
-	MinMemoryMB int `json:"min_memory_mb,omitempty"`
-	MinCPUMilli int `json:"min_cpu_milli,omitempty"`
+	MinMemoryMB int  `json:"min_memory_mb,omitempty"`
+	MinCPUMilli int  `json:"min_cpu_milli,omitempty"`
 	NeedsGPU    bool `json:"needs_gpu,omitempty"`
 }
 
 // DistributionInfo holds marketplace distribution data.
 type DistributionInfo struct {
-	Registry    string    `json:"registry" yaml:"registry"`       // e.g., "marketplace.cloudai-fusion.io"
-	Repository  string    `json:"repository" yaml:"repository"`   // e.g., "plugins/my-plugin"
-	Checksum    string    `json:"checksum" yaml:"checksum"`       // SHA256
+	Registry    string    `json:"registry" yaml:"registry"`     // e.g., "marketplace.cloudai-fusion.io"
+	Repository  string    `json:"repository" yaml:"repository"` // e.g., "plugins/my-plugin"
+	Checksum    string    `json:"checksum" yaml:"checksum"`     // SHA256
 	Signature   string    `json:"signature,omitempty" yaml:"signature,omitempty"`
 	PublishedAt time.Time `json:"published_at" yaml:"publishedAt"`
 	Downloads   int64     `json:"downloads" yaml:"downloads"`
-	Rating      float64   `json:"rating" yaml:"rating"`           // 0-5
+	Rating      float64   `json:"rating" yaml:"rating"` // 0-5
 	Verified    bool      `json:"verified" yaml:"verified"`
 }
 
@@ -120,17 +120,17 @@ func ValidateManifest(m *PluginManifest) *ValidationResult {
 
 // PluginPackage represents a built and packaged plugin ready for distribution.
 type PluginPackage struct {
-	Manifest    PluginManifest `json:"manifest"`
-	BinaryHash  string         `json:"binary_hash"`
-	SizeBytes   int64          `json:"size_bytes"`
-	BuildInfo   BuildInfo      `json:"build_info"`
-	BuiltAt     time.Time      `json:"built_at"`
+	Manifest   PluginManifest `json:"manifest"`
+	BinaryHash string         `json:"binary_hash"`
+	SizeBytes  int64          `json:"size_bytes"`
+	BuildInfo  BuildInfo      `json:"build_info"`
+	BuiltAt    time.Time      `json:"built_at"`
 }
 
 // BuildInfo contains plugin build metadata.
 type BuildInfo struct {
 	GoVersion    string `json:"go_version"`
-	Platform     string `json:"platform"`     // e.g., "linux/amd64"
+	Platform     string `json:"platform"` // e.g., "linux/amd64"
 	GitCommit    string `json:"git_commit"`
 	BuildTime    string `json:"build_time"`
 	Reproducible bool   `json:"reproducible"` // deterministic build
@@ -268,10 +268,10 @@ func compareSemver(a, b string) int {
 	for i := 0; i < 3; i++ {
 		var av, bv int
 		if i < len(aParts) {
-			fmt.Sscanf(aParts[i], "%d", &av)
+			_, _ = fmt.Sscanf(aParts[i], "%d", &av)
 		}
 		if i < len(bParts) {
-			fmt.Sscanf(bParts[i], "%d", &bv)
+			_, _ = fmt.Sscanf(bParts[i], "%d", &bv)
 		}
 		if av != bv {
 			return av - bv
@@ -296,11 +296,11 @@ type MarketplaceClient struct {
 
 // MarketplaceSearchResult holds search results.
 type MarketplaceSearchResult struct {
-	Plugins     []*PluginManifest `json:"plugins"`
-	TotalCount  int               `json:"total_count"`
-	Query       string            `json:"query"`
-	Page        int               `json:"page"`
-	PageSize    int               `json:"page_size"`
+	Plugins    []*PluginManifest `json:"plugins"`
+	TotalCount int               `json:"total_count"`
+	Query      string            `json:"query"`
+	Page       int               `json:"page"`
+	PageSize   int               `json:"page_size"`
 }
 
 // NewMarketplaceClient creates a new marketplace client.

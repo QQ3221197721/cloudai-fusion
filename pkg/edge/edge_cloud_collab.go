@@ -35,7 +35,7 @@ const (
 // EdgePlatformConfig holds configuration for edge platform integration
 type EdgePlatformConfig struct {
 	Platform          EdgePlatformType `json:"platform"`
-	APIEndpoint       string           `json:"api_endpoint"`       // e.g., https://kubeedge-cloudcore:10002
+	APIEndpoint       string           `json:"api_endpoint"` // e.g., https://kubeedge-cloudcore:10002
 	Token             string           `json:"token,omitempty"`
 	CertPath          string           `json:"cert_path,omitempty"`
 	NodePoolName      string           `json:"node_pool_name,omitempty"` // OpenYurt NodePool
@@ -59,10 +59,10 @@ type EdgePlatformStatus struct {
 
 // PlatformIntegration manages KubeEdge/OpenYurt connectivity
 type PlatformIntegration struct {
-	config   EdgePlatformConfig
-	status   EdgePlatformStatus
-	mu       sync.RWMutex
-	logger   *logrus.Logger
+	config EdgePlatformConfig
+	status EdgePlatformStatus
+	mu     sync.RWMutex
+	logger *logrus.Logger
 }
 
 // NewPlatformIntegration creates a new platform integration manager
@@ -169,17 +169,17 @@ func (p *PlatformIntegration) GetStatus() EdgePlatformStatus {
 type AutonomyState string
 
 const (
-	AutonomyInactive   AutonomyState = "inactive"    // cloud connected, normal mode
-	AutonomyActive     AutonomyState = "active"       // disconnected, autonomous mode
-	AutonomyRecovering AutonomyState = "recovering"   // reconnecting, draining queues
+	AutonomyInactive   AutonomyState = "inactive"   // cloud connected, normal mode
+	AutonomyActive     AutonomyState = "active"     // disconnected, autonomous mode
+	AutonomyRecovering AutonomyState = "recovering" // reconnecting, draining queues
 )
 
 // AutonomyConfig defines edge autonomy parameters
 type AutonomyConfig struct {
-	HeartbeatTimeoutSec  int `json:"heartbeat_timeout_sec"`   // switch to autonomy after N seconds
-	MaxOfflineDurationHr int `json:"max_offline_duration_hr"` // max offline hours before degraded
-	StoreCapacityMB      int `json:"store_capacity_mb"`       // WAL buffer size
-	EnableLocalDecision  bool `json:"enable_local_decision"`  // allow local scheduling decisions
+	HeartbeatTimeoutSec  int  `json:"heartbeat_timeout_sec"`   // switch to autonomy after N seconds
+	MaxOfflineDurationHr int  `json:"max_offline_duration_hr"` // max offline hours before degraded
+	StoreCapacityMB      int  `json:"store_capacity_mb"`       // WAL buffer size
+	EnableLocalDecision  bool `json:"enable_local_decision"`   // allow local scheduling decisions
 	AutoRecoveryEnabled  bool `json:"auto_recovery_enabled"`
 }
 
@@ -196,11 +196,11 @@ func DefaultAutonomyConfig() AutonomyConfig {
 
 // AutonomyManager manages edge node autonomous operation
 type AutonomyManager struct {
-	config      AutonomyConfig
-	nodeStates  map[string]*NodeAutonomyState // nodeID -> state
-	forwardBuf  map[string][]*ForwardMessage  // nodeID -> pending messages
-	mu          sync.RWMutex
-	logger      *logrus.Logger
+	config     AutonomyConfig
+	nodeStates map[string]*NodeAutonomyState // nodeID -> state
+	forwardBuf map[string][]*ForwardMessage  // nodeID -> pending messages
+	mu         sync.RWMutex
+	logger     *logrus.Logger
 }
 
 // NodeAutonomyState tracks per-node autonomy status
@@ -391,39 +391,39 @@ func (a *AutonomyManager) GetNodeAutonomyState(nodeID string) *NodeAutonomyState
 
 // DiffDeliveryConfig configures incremental model delivery
 type DiffDeliveryConfig struct {
-	ChunkSizeKB       int  `json:"chunk_size_kb"`        // chunk size for transfer
-	MaxConcurrentDL   int  `json:"max_concurrent_dl"`    // parallel download streams
-	VerifyChecksum    bool `json:"verify_checksum"`       // verify after patching
-	CompressDiffs     bool `json:"compress_diffs"`
-	ResumeEnabled     bool `json:"resume_enabled"`        // resume interrupted transfers
-	BandwidthLimitMbps int `json:"bandwidth_limit_mbps"` // 0 = unlimited
+	ChunkSizeKB        int  `json:"chunk_size_kb"`     // chunk size for transfer
+	MaxConcurrentDL    int  `json:"max_concurrent_dl"` // parallel download streams
+	VerifyChecksum     bool `json:"verify_checksum"`   // verify after patching
+	CompressDiffs      bool `json:"compress_diffs"`
+	ResumeEnabled      bool `json:"resume_enabled"`       // resume interrupted transfers
+	BandwidthLimitMbps int  `json:"bandwidth_limit_mbps"` // 0 = unlimited
 }
 
 // DefaultDiffDeliveryConfig returns production defaults
 func DefaultDiffDeliveryConfig() DiffDeliveryConfig {
 	return DiffDeliveryConfig{
-		ChunkSizeKB:       512,
-		MaxConcurrentDL:   4,
-		VerifyChecksum:    true,
-		CompressDiffs:     true,
-		ResumeEnabled:     true,
+		ChunkSizeKB:        512,
+		MaxConcurrentDL:    4,
+		VerifyChecksum:     true,
+		CompressDiffs:      true,
+		ResumeEnabled:      true,
 		BandwidthLimitMbps: 0,
 	}
 }
 
 // ModelDiff represents a binary diff between two model versions
 type ModelDiff struct {
-	ID                string    `json:"id"`
-	ModelID           string    `json:"model_id"`
-	FromVersion       string    `json:"from_version"`
-	ToVersion         string    `json:"to_version"`
-	DiffSizeBytes     int64     `json:"diff_size_bytes"`
-	FullSizeBytes     int64     `json:"full_size_bytes"`
-	SavingsPercent    float64   `json:"savings_percent"` // compression ratio
-	Algorithm         string    `json:"algorithm"`       // bsdiff, xdelta3, zstd-patch
-	Chunks            []DiffChunk `json:"chunks"`
-	ChecksumSHA256    string    `json:"checksum_sha256"`
-	CreatedAt         time.Time `json:"created_at"`
+	ID             string      `json:"id"`
+	ModelID        string      `json:"model_id"`
+	FromVersion    string      `json:"from_version"`
+	ToVersion      string      `json:"to_version"`
+	DiffSizeBytes  int64       `json:"diff_size_bytes"`
+	FullSizeBytes  int64       `json:"full_size_bytes"`
+	SavingsPercent float64     `json:"savings_percent"` // compression ratio
+	Algorithm      string      `json:"algorithm"`       // bsdiff, xdelta3, zstd-patch
+	Chunks         []DiffChunk `json:"chunks"`
+	ChecksumSHA256 string      `json:"checksum_sha256"`
+	CreatedAt      time.Time   `json:"created_at"`
 }
 
 // DiffChunk represents a chunk of a model diff
@@ -437,24 +437,24 @@ type DiffChunk struct {
 
 // DeliveryStatus tracks the progress of a model delivery to an edge node
 type DeliveryStatus struct {
-	NodeID            string    `json:"node_id"`
-	ModelID           string    `json:"model_id"`
-	DiffID            string    `json:"diff_id"`
-	State             string    `json:"state"` // pending, downloading, patching, verifying, complete, failed
-	Progress          float64   `json:"progress_percent"`
-	ChunksTotal       int       `json:"chunks_total"`
-	ChunksCompleted   int       `json:"chunks_completed"`
-	BytesTransferred  int64     `json:"bytes_transferred"`
-	BytesTotal        int64     `json:"bytes_total"`
-	StartedAt         time.Time `json:"started_at"`
-	EstimatedRemainSec int     `json:"estimated_remain_sec"`
-	Error             string    `json:"error,omitempty"`
+	NodeID             string    `json:"node_id"`
+	ModelID            string    `json:"model_id"`
+	DiffID             string    `json:"diff_id"`
+	State              string    `json:"state"` // pending, downloading, patching, verifying, complete, failed
+	Progress           float64   `json:"progress_percent"`
+	ChunksTotal        int       `json:"chunks_total"`
+	ChunksCompleted    int       `json:"chunks_completed"`
+	BytesTransferred   int64     `json:"bytes_transferred"`
+	BytesTotal         int64     `json:"bytes_total"`
+	StartedAt          time.Time `json:"started_at"`
+	EstimatedRemainSec int       `json:"estimated_remain_sec"`
+	Error              string    `json:"error,omitempty"`
 }
 
 // DiffDeliveryManager manages incremental model distribution to edge nodes
 type DiffDeliveryManager struct {
 	config     DiffDeliveryConfig
-	diffs      map[string]*ModelDiff     // diffID -> diff
+	diffs      map[string]*ModelDiff      // diffID -> diff
 	deliveries map[string]*DeliveryStatus // "nodeID:modelID" -> status
 	mu         sync.RWMutex
 	logger     *logrus.Logger
@@ -529,13 +529,13 @@ func (d *DiffDeliveryManager) CreateDiff(ctx context.Context, modelID, fromVersi
 	d.mu.Unlock()
 
 	d.logger.WithFields(logrus.Fields{
-		"model":    modelID,
-		"from":     fromVersion,
-		"to":       toVersion,
-		"diff_mb":  float64(diff.DiffSizeBytes) / 1024 / 1024,
-		"full_mb":  float64(diff.FullSizeBytes) / 1024 / 1024,
-		"savings":  fmt.Sprintf("%.1f%%", savings),
-		"chunks":   len(chunks),
+		"model":   modelID,
+		"from":    fromVersion,
+		"to":      toVersion,
+		"diff_mb": float64(diff.DiffSizeBytes) / 1024 / 1024,
+		"full_mb": float64(diff.FullSizeBytes) / 1024 / 1024,
+		"savings": fmt.Sprintf("%.1f%%", savings),
+		"chunks":  len(chunks),
 	}).Info("Model diff created for incremental delivery")
 
 	return diff, nil
@@ -689,27 +689,27 @@ func computeBinaryDiff(from, to []byte) []byte {
 type InferenceRuntime string
 
 const (
-	RuntimeTensorRT  InferenceRuntime = "tensorrt"
-	RuntimeOpenVINO  InferenceRuntime = "openvino"
-	RuntimeONNX      InferenceRuntime = "onnxruntime"
-	RuntimeTFLite    InferenceRuntime = "tflite"
-	RuntimeNCNN      InferenceRuntime = "ncnn"    // mobile/embedded
-	RuntimeMNN       InferenceRuntime = "mnn"     // Alibaba mobile
+	RuntimeTensorRT InferenceRuntime = "tensorrt"
+	RuntimeOpenVINO InferenceRuntime = "openvino"
+	RuntimeONNX     InferenceRuntime = "onnxruntime"
+	RuntimeTFLite   InferenceRuntime = "tflite"
+	RuntimeNCNN     InferenceRuntime = "ncnn" // mobile/embedded
+	RuntimeMNN      InferenceRuntime = "mnn"  // Alibaba mobile
 )
 
 // InferenceOptConfig configures edge inference optimization
 type InferenceOptConfig struct {
-	PreferredRuntime     InferenceRuntime `json:"preferred_runtime"`
-	EnableFP16           bool             `json:"enable_fp16"`
-	EnableINT8           bool             `json:"enable_int8"`
-	MaxBatchSize         int              `json:"max_batch_size"`
-	MaxWorkspaceGB       float64          `json:"max_workspace_gb"`       // TensorRT workspace
-	DynamicShape         bool             `json:"dynamic_shape"`          // enable dynamic shape
-	CalibrationDataPath  string           `json:"calibration_data_path"`  // INT8 calibration
-	LayerFusionEnabled   bool             `json:"layer_fusion_enabled"`
-	KernelAutoTuning     bool             `json:"kernel_auto_tuning"`
-	SparsityEnabled      bool             `json:"sparsity_enabled"`       // structured sparsity (Ampere+)
-	ProfilingEnabled     bool             `json:"profiling_enabled"`
+	PreferredRuntime    InferenceRuntime `json:"preferred_runtime"`
+	EnableFP16          bool             `json:"enable_fp16"`
+	EnableINT8          bool             `json:"enable_int8"`
+	MaxBatchSize        int              `json:"max_batch_size"`
+	MaxWorkspaceGB      float64          `json:"max_workspace_gb"`      // TensorRT workspace
+	DynamicShape        bool             `json:"dynamic_shape"`         // enable dynamic shape
+	CalibrationDataPath string           `json:"calibration_data_path"` // INT8 calibration
+	LayerFusionEnabled  bool             `json:"layer_fusion_enabled"`
+	KernelAutoTuning    bool             `json:"kernel_auto_tuning"`
+	SparsityEnabled     bool             `json:"sparsity_enabled"` // structured sparsity (Ampere+)
+	ProfilingEnabled    bool             `json:"profiling_enabled"`
 }
 
 // DefaultInferenceOptConfig returns production defaults
@@ -730,22 +730,22 @@ func DefaultInferenceOptConfig() InferenceOptConfig {
 
 // OptimizedModel represents a model optimized for edge inference
 type OptimizedModel struct {
-	OriginalModelID   string           `json:"original_model_id"`
-	OptimizedModelID  string           `json:"optimized_model_id"`
-	Runtime           InferenceRuntime `json:"runtime"`
-	Precision         string           `json:"precision"` // FP32, FP16, INT8, mixed
-	OriginalSizeBytes int64            `json:"original_size_bytes"`
-	OptimizedSizeBytes int64           `json:"optimized_size_bytes"`
-	SpeedupFactor     float64          `json:"speedup_factor"`     // e.g., 3.2x
-	LatencyMs         float64          `json:"latency_ms"`
-	ThroughputRPS     float64          `json:"throughput_rps"`     // requests per second
-	PowerEfficiency   float64          `json:"power_efficiency"`   // inferences per watt
-	HardwareTarget    string           `json:"hardware_target"`    // e.g., "nvidia-jetson-orin", "intel-nuc"
-	Layers            int              `json:"layers"`
-	FusedLayers       int              `json:"fused_layers"`
-	OptimizedAt       time.Time        `json:"optimized_at"`
-	BuildLog          string           `json:"build_log,omitempty"`
-	Status            string           `json:"status"` // building, ready, failed
+	OriginalModelID    string           `json:"original_model_id"`
+	OptimizedModelID   string           `json:"optimized_model_id"`
+	Runtime            InferenceRuntime `json:"runtime"`
+	Precision          string           `json:"precision"` // FP32, FP16, INT8, mixed
+	OriginalSizeBytes  int64            `json:"original_size_bytes"`
+	OptimizedSizeBytes int64            `json:"optimized_size_bytes"`
+	SpeedupFactor      float64          `json:"speedup_factor"` // e.g., 3.2x
+	LatencyMs          float64          `json:"latency_ms"`
+	ThroughputRPS      float64          `json:"throughput_rps"`   // requests per second
+	PowerEfficiency    float64          `json:"power_efficiency"` // inferences per watt
+	HardwareTarget     string           `json:"hardware_target"`  // e.g., "nvidia-jetson-orin", "intel-nuc"
+	Layers             int              `json:"layers"`
+	FusedLayers        int              `json:"fused_layers"`
+	OptimizedAt        time.Time        `json:"optimized_at"`
+	BuildLog           string           `json:"build_log,omitempty"`
+	Status             string           `json:"status"` // building, ready, failed
 }
 
 // InferenceOptimizer manages edge inference optimization
@@ -759,14 +759,14 @@ type InferenceOptimizer struct {
 
 // RuntimeProfile describes capabilities of an inference runtime
 type RuntimeProfile struct {
-	Runtime           InferenceRuntime `json:"runtime"`
-	SupportedHW       []string         `json:"supported_hw"`
-	SupportedFormats  []string         `json:"supported_formats"`
-	MaxPrecision      string           `json:"max_precision"`
-	SupportsQuantize  bool             `json:"supports_quantize"`
-	SupportsSparsity  bool             `json:"supports_sparsity"`
-	SupportsDynShape  bool             `json:"supports_dyn_shape"`
-	AvgSpeedup        float64          `json:"avg_speedup"` // vs baseline ONNX
+	Runtime          InferenceRuntime `json:"runtime"`
+	SupportedHW      []string         `json:"supported_hw"`
+	SupportedFormats []string         `json:"supported_formats"`
+	MaxPrecision     string           `json:"max_precision"`
+	SupportsQuantize bool             `json:"supports_quantize"`
+	SupportsSparsity bool             `json:"supports_sparsity"`
+	SupportsDynShape bool             `json:"supports_dyn_shape"`
+	AvgSpeedup       float64          `json:"avg_speedup"` // vs baseline ONNX
 }
 
 // NewInferenceOptimizer creates a new inference optimizer
@@ -971,19 +971,19 @@ func (o *InferenceOptimizer) GetRuntimeProfile(runtime InferenceRuntime) *Runtim
 
 // EdgeCollabHub aggregates all edge-cloud collaboration subsystems
 type EdgeCollabHub struct {
-	Platform      *PlatformIntegration
-	Autonomy      *AutonomyManager
-	DiffDelivery  *DiffDeliveryManager
-	InferenceOpt  *InferenceOptimizer
-	logger        *logrus.Logger
+	Platform     *PlatformIntegration
+	Autonomy     *AutonomyManager
+	DiffDelivery *DiffDeliveryManager
+	InferenceOpt *InferenceOptimizer
+	logger       *logrus.Logger
 }
 
 // EdgeCollabConfig holds all edge collaboration configuration
 type EdgeCollabConfig struct {
-	Platform     EdgePlatformConfig  `json:"platform"`
-	Autonomy     AutonomyConfig      `json:"autonomy"`
-	DiffDelivery DiffDeliveryConfig  `json:"diff_delivery"`
-	InferenceOpt InferenceOptConfig  `json:"inference_opt"`
+	Platform     EdgePlatformConfig `json:"platform"`
+	Autonomy     AutonomyConfig     `json:"autonomy"`
+	DiffDelivery DiffDeliveryConfig `json:"diff_delivery"`
+	InferenceOpt InferenceOptConfig `json:"inference_opt"`
 }
 
 // DefaultEdgeCollabConfig returns production-ready defaults
@@ -1018,10 +1018,10 @@ func NewEdgeCollabHub(cfg EdgeCollabConfig, logger *logrus.Logger) *EdgeCollabHu
 // GetStatus returns a unified status of all edge collaboration subsystems
 func (h *EdgeCollabHub) GetStatus() map[string]interface{} {
 	return map[string]interface{}{
-		"platform":       h.Platform.GetStatus(),
-		"autonomy":       "enabled",
-		"diff_delivery":  "ready",
-		"inference_opt":  string(h.InferenceOpt.config.PreferredRuntime),
+		"platform":         h.Platform.GetStatus(),
+		"autonomy":         "enabled",
+		"diff_delivery":    "ready",
+		"inference_opt":    string(h.InferenceOpt.config.PreferredRuntime),
 		"optimized_models": len(h.InferenceOpt.optimizedModels),
 	}
 }

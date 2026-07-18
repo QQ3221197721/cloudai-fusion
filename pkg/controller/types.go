@@ -28,11 +28,11 @@ import (
 // Reconciler defines the interface that all controllers must implement.
 // Reconcile is called when the observed state of the world changes for a
 // particular object (identified by Request). The implementation should:
-//   1. Read the desired state (spec)
-//   2. Read the actual state from the cluster / cloud
-//   3. Take actions to make actual match desired
-//   4. Update status conditions
-//   5. Return Result indicating if/when to requeue
+//  1. Read the desired state (spec)
+//  2. Read the actual state from the cluster / cloud
+//  3. Take actions to make actual match desired
+//  4. Update status conditions
+//  5. Return Result indicating if/when to requeue
 type Reconciler interface {
 	// Reconcile performs a single reconciliation pass for the given object.
 	// Returning a non-nil error triggers exponential backoff requeue.

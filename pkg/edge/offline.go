@@ -30,11 +30,11 @@ const (
 type ConflictResolutionStrategy string
 
 const (
-	ConflictLastWriteWins  ConflictResolutionStrategy = "last_write_wins"
-	ConflictCloudWins      ConflictResolutionStrategy = "cloud_wins"
-	ConflictEdgeWins       ConflictResolutionStrategy = "edge_wins"
-	ConflictMerge          ConflictResolutionStrategy = "merge"
-	ConflictManual         ConflictResolutionStrategy = "manual"
+	ConflictLastWriteWins ConflictResolutionStrategy = "last_write_wins"
+	ConflictCloudWins     ConflictResolutionStrategy = "cloud_wins"
+	ConflictEdgeWins      ConflictResolutionStrategy = "edge_wins"
+	ConflictMerge         ConflictResolutionStrategy = "merge"
+	ConflictManual        ConflictResolutionStrategy = "manual"
 )
 
 // SyncDirection defines the direction of data synchronization
@@ -48,59 +48,58 @@ const (
 
 // OfflineOperation represents a single operation to be executed when online
 type OfflineOperation struct {
-	ID            string                 `json:"id"`
-	NodeID        string                 `json:"node_id"`
-	Type          OfflineOperationType   `json:"type"`
-	Payload       map[string]interface{} `json:"payload"`
-	CreatedAt     time.Time              `json:"created_at"`
-	RetryCount    int                    `json:"retry_count"`
-	MaxRetries    int                    `json:"max_retries"`
-	NextRetryAt   *time.Time             `json:"next_retry_at,omitempty"`
-	LastError     string                 `json:"last_error,omitempty"`
-	Status        string                 `json:"status"` // pending, processing, completed, failed, dropped
-	Priority      int                    `json:"priority"`
-	ExpiryTime    *time.Time             `json:"expiry_time,omitempty"`
+	ID          string                 `json:"id"`
+	NodeID      string                 `json:"node_id"`
+	Type        OfflineOperationType   `json:"type"`
+	Payload     map[string]interface{} `json:"payload"`
+	CreatedAt   time.Time              `json:"created_at"`
+	RetryCount  int                    `json:"retry_count"`
+	MaxRetries  int                    `json:"max_retries"`
+	NextRetryAt *time.Time             `json:"next_retry_at,omitempty"`
+	LastError   string                 `json:"last_error,omitempty"`
+	Status      string                 `json:"status"` // pending, processing, completed, failed, dropped
+	Priority    int                    `json:"priority"`
+	ExpiryTime  *time.Time             `json:"expiry_time,omitempty"`
 }
 
 // SyncStatus tracks the current synchronization state
 type SyncStatus struct {
-	NodeID              string    `json:"node_id"`
-	LastSyncAt          time.Time `json:"last_sync_at"`
-	IsOnline            bool      `json:"is_online"`
-	PendingOperations   int       `json:"pending_operations"`
-	FailedOperations    int       `json:"failed_operations"`
-	TotalBufferedBytes  int64     `json:"total_buffered_bytes"`
-	BufferUtilization   float64   `json:"buffer_utilization_percent"`
-	CurrentBandwidthMbps float64  `json:"current_bandwidth_mbps"`
-	AvgLatencyMs        float64   `json:"avg_latency_ms"`
-	SyncDirection       SyncDirection `json:"sync_direction"`
-	CompressionEnabled  bool      `json:"compression_enabled"`
-	CompressionRatio    float64   `json:"compression_ratio"`
+	NodeID               string        `json:"node_id"`
+	LastSyncAt           time.Time     `json:"last_sync_at"`
+	IsOnline             bool          `json:"is_online"`
+	PendingOperations    int           `json:"pending_operations"`
+	FailedOperations     int           `json:"failed_operations"`
+	TotalBufferedBytes   int64         `json:"total_buffered_bytes"`
+	BufferUtilization    float64       `json:"buffer_utilization_percent"`
+	CurrentBandwidthMbps float64       `json:"current_bandwidth_mbps"`
+	AvgLatencyMs         float64       `json:"avg_latency_ms"`
+	SyncDirection        SyncDirection `json:"sync_direction"`
+	CompressionEnabled   bool          `json:"compression_enabled"`
+	CompressionRatio     float64       `json:"compression_ratio"`
 }
 
 // DeltaSyncResult contains information about incremental sync
 type DeltaSyncResult struct {
-	TotalItems      int      `json:"total_items"`
-	SyncedItems     int      `json:"synced_items"`
-	SkippedItems    int      `json:"skipped_items"`
-	FailedItems     int      `json:"failed_items"`
-	TransferredBytes int64   `json:"transferred_bytes"`
-	Duration        string   `json:"duration"`
-	ChecksumBefore  string   `json:"checksum_before"`
-	ChecksumAfter   string   `json:"checksum_after"`
+	TotalItems       int    `json:"total_items"`
+	SyncedItems      int    `json:"synced_items"`
+	SkippedItems     int    `json:"skipped_items"`
+	FailedItems      int    `json:"failed_items"`
+	TransferredBytes int64  `json:"transferred_bytes"`
+	Duration         string `json:"duration"`
+	ChecksumBefore   string `json:"checksum_before"`
+	ChecksumAfter    string `json:"checksum_after"`
 }
 
 // OfflineQueue manages buffered operations during disconnection
 type OfflineQueue struct {
-	nodeID           string
-	maxBufferSizeMB  int
-	operations       []*OfflineOperation
-	mu               sync.RWMutex
-	logger           *logrus.Logger
-	totalEnqueued    int64
-	totalDequeued    int64
-	totalDropped     int64
-	lastDrainAttempt time.Time
+	nodeID          string
+	maxBufferSizeMB int
+	operations      []*OfflineOperation
+	mu              sync.RWMutex
+	logger          *logrus.Logger
+	totalEnqueued   int64
+	totalDequeued   int64
+	totalDropped    int64
 }
 
 // NewOfflineQueue creates a new offline operation queue
@@ -131,7 +130,7 @@ func (q *OfflineQueue) Enqueue(ctx context.Context, op *OfflineOperation) error 
 	// Check buffer size limit
 	currentSize := q.calculateBufferSize()
 	opSize := q.estimateOpSize(op)
-	
+
 	if currentSize+opSize > int64(q.maxBufferSizeMB)*1024*1024 {
 		// Buffer full - apply drop policy (drop lowest priority)
 		if !q.dropLowestPriority(op) {
@@ -143,7 +142,7 @@ func (q *OfflineQueue) Enqueue(ctx context.Context, op *OfflineOperation) error 
 	op.CreatedAt = time.Now().UTC()
 	op.Status = "pending"
 	op.NextRetryAt = nil
-	
+
 	if op.MaxRetries == 0 {
 		op.MaxRetries = 3
 	}
@@ -222,11 +221,11 @@ func (q *OfflineQueue) MarkFailed(opID string, err error) {
 			op.RetryCount++
 			op.LastError = err.Error()
 			op.Status = "pending"
-			
+
 			if op.RetryCount >= op.MaxRetries {
 				op.Status = "failed"
 				q.logger.WithFields(logrus.Fields{
-					"op_id":  opID,
+					"op_id":   opID,
 					"retries": op.RetryCount,
 				}).Warn("Operation exceeded max retries")
 			} else {
@@ -432,11 +431,11 @@ func mergeMaps(base, override map[string]interface{}) map[string]interface{} {
 
 // BandwidthMonitor tracks network conditions for adaptive sync
 type BandwidthMonitor struct {
-	mu                sync.RWMutex
+	mu                   sync.RWMutex
 	currentBandwidthMbps float64
-	avgLatencyMs      float64
-	lastMeasurement   time.Time
-	history           []BandwidthSample
+	avgLatencyMs         float64
+	lastMeasurement      time.Time
+	history              []BandwidthSample
 }
 
 // BandwidthSample is a historical bandwidth measurement

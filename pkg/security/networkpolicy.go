@@ -23,19 +23,19 @@ import (
 
 // TrafficFlow represents an observed network communication.
 type TrafficFlow struct {
-	ID          string            `json:"id"`
-	SourcePod   string            `json:"source_pod"`
-	SourceNS    string            `json:"source_ns"`
+	ID           string            `json:"id"`
+	SourcePod    string            `json:"source_pod"`
+	SourceNS     string            `json:"source_ns"`
 	SourceLabels map[string]string `json:"source_labels,omitempty"`
-	DestPod     string            `json:"dest_pod"`
-	DestNS      string            `json:"dest_ns"`
-	DestLabels  map[string]string `json:"dest_labels,omitempty"`
-	Port        int               `json:"port"`
-	Protocol    string            `json:"protocol"` // TCP, UDP
-	BytesTotal  int64             `json:"bytes_total"`
-	RequestCount int64            `json:"request_count"`
-	LastSeen    time.Time         `json:"last_seen"`
-	Encrypted   bool              `json:"encrypted"`
+	DestPod      string            `json:"dest_pod"`
+	DestNS       string            `json:"dest_ns"`
+	DestLabels   map[string]string `json:"dest_labels,omitempty"`
+	Port         int               `json:"port"`
+	Protocol     string            `json:"protocol"` // TCP, UDP
+	BytesTotal   int64             `json:"bytes_total"`
+	RequestCount int64             `json:"request_count"`
+	LastSeen     time.Time         `json:"last_seen"`
+	Encrypted    bool              `json:"encrypted"`
 }
 
 // FlowKey returns a unique identifier for this flow direction.
@@ -50,17 +50,17 @@ func (f TrafficFlow) FlowKey() string {
 
 // NetworkPolicySpec represents a generated Kubernetes/Cilium NetworkPolicy.
 type NetworkPolicySpec struct {
-	ID          string             `json:"id"`
-	Name        string             `json:"name"`
-	Namespace   string             `json:"namespace"`
-	Type        string             `json:"type"` // kubernetes, cilium
-	Selector    map[string]string  `json:"selector"`
-	Ingress     []NetworkRule      `json:"ingress,omitempty"`
-	Egress      []NetworkRule      `json:"egress,omitempty"`
-	Status      string             `json:"status"` // draft, active, audit
-	GeneratedAt time.Time          `json:"generated_at"`
-	AppliedAt   *time.Time         `json:"applied_at,omitempty"`
-	Source      string             `json:"source"` // auto-generated, manual, webhook
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Namespace   string            `json:"namespace"`
+	Type        string            `json:"type"` // kubernetes, cilium
+	Selector    map[string]string `json:"selector"`
+	Ingress     []NetworkRule     `json:"ingress,omitempty"`
+	Egress      []NetworkRule     `json:"egress,omitempty"`
+	Status      string            `json:"status"` // draft, active, audit
+	GeneratedAt time.Time         `json:"generated_at"`
+	AppliedAt   *time.Time        `json:"applied_at,omitempty"`
+	Source      string            `json:"source"` // auto-generated, manual, webhook
 }
 
 // NetworkRule defines an allow rule.
@@ -84,14 +84,14 @@ type PolicyPort struct {
 
 // SegmentationZone defines a micro-segmentation boundary.
 type SegmentationZone struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description,omitempty"`
-	Namespaces  []string          `json:"namespaces"`
-	Labels      map[string]string `json:"labels"`
-	TrustLevel  string            `json:"trust_level"` // untrusted, low, medium, high, critical
-	AllowedZones []string         `json:"allowed_zones,omitempty"`
-	DenyByDefault bool            `json:"deny_by_default"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description,omitempty"`
+	Namespaces    []string          `json:"namespaces"`
+	Labels        map[string]string `json:"labels"`
+	TrustLevel    string            `json:"trust_level"` // untrusted, low, medium, high, critical
+	AllowedZones  []string          `json:"allowed_zones,omitempty"`
+	DenyByDefault bool              `json:"deny_by_default"`
 }
 
 // ============================================================================
@@ -231,7 +231,7 @@ func (e *NetworkPolicyEngine) generatePolicyForGroup(ns string, flows []*Traffic
 			rule := &NetworkRule{
 				Ports: []PolicyPort{{Port: f.Port, Protocol: f.Protocol}},
 			}
-			if f.SourceLabels != nil && len(f.SourceLabels) > 0 {
+			if len(f.SourceLabels) > 0 {
 				rule.FromLabels = f.SourceLabels
 			} else {
 				rule.FromLabels = map[string]string{"app": f.SourcePod}
@@ -352,17 +352,17 @@ func (e *NetworkPolicyEngine) ApprovePolicy(policyID string) error {
 
 // PolicyWebhook defines a webhook for network policy validation/mutation.
 type PolicyWebhook struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	Type     string `json:"type"` // validating, mutating
-	Enabled  bool   `json:"enabled"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	URL     string `json:"url"`
+	Type    string `json:"type"` // validating, mutating
+	Enabled bool   `json:"enabled"`
 }
 
 // WebhookResponse is the response from a policy webhook.
 type WebhookResponse struct {
-	Allowed  bool   `json:"allowed"`
-	Reason   string `json:"reason,omitempty"`
+	Allowed  bool               `json:"allowed"`
+	Reason   string             `json:"reason,omitempty"`
 	Mutation *NetworkPolicySpec `json:"mutation,omitempty"` // for mutating webhooks
 }
 
@@ -372,11 +372,11 @@ type WebhookResponse struct {
 
 // NetworkPolicyStatus reports the current state of network policy automation.
 type NetworkPolicyStatus struct {
-	TotalFlows      int `json:"total_flows"`
-	TotalPolicies   int `json:"total_policies"`
-	ActivePolicies  int `json:"active_policies"`
-	DraftPolicies   int `json:"draft_policies"`
-	Zones           int `json:"zones"`
+	TotalFlows     int `json:"total_flows"`
+	TotalPolicies  int `json:"total_policies"`
+	ActivePolicies int `json:"active_policies"`
+	DraftPolicies  int `json:"draft_policies"`
+	Zones          int `json:"zones"`
 }
 
 // Status returns the current network policy engine status.
@@ -412,39 +412,39 @@ func DefaultSegmentationZones() []*SegmentationZone {
 	return []*SegmentationZone{
 		{
 			ID: "zone-system", Name: "system",
-			Description: "Kubernetes system components",
-			Namespaces:  []string{"kube-system", "kube-public"},
-			Labels:      map[string]string{"zone": "system"},
-			TrustLevel:  "critical",
+			Description:   "Kubernetes system components",
+			Namespaces:    []string{"kube-system", "kube-public"},
+			Labels:        map[string]string{"zone": "system"},
+			TrustLevel:    "critical",
 			DenyByDefault: true,
-			AllowedZones: []string{"zone-platform"},
+			AllowedZones:  []string{"zone-platform"},
 		},
 		{
 			ID: "zone-platform", Name: "platform",
-			Description: "CloudAI Fusion platform services",
-			Namespaces:  []string{"cloudai-fusion", "monitoring"},
-			Labels:      map[string]string{"zone": "platform"},
-			TrustLevel:  "high",
+			Description:   "CloudAI Fusion platform services",
+			Namespaces:    []string{"cloudai-fusion", "monitoring"},
+			Labels:        map[string]string{"zone": "platform"},
+			TrustLevel:    "high",
 			DenyByDefault: true,
-			AllowedZones: []string{"zone-system", "zone-workload"},
+			AllowedZones:  []string{"zone-system", "zone-workload"},
 		},
 		{
 			ID: "zone-workload", Name: "workload",
-			Description: "User workloads and applications",
-			Namespaces:  []string{"default", "production", "staging"},
-			Labels:      map[string]string{"zone": "workload"},
-			TrustLevel:  "medium",
+			Description:   "User workloads and applications",
+			Namespaces:    []string{"default", "production", "staging"},
+			Labels:        map[string]string{"zone": "workload"},
+			TrustLevel:    "medium",
 			DenyByDefault: false,
-			AllowedZones: []string{"zone-platform"},
+			AllowedZones:  []string{"zone-platform"},
 		},
 		{
 			ID: "zone-external", Name: "external",
-			Description: "External-facing services",
-			Namespaces:  []string{"ingress", "gateway"},
-			Labels:      map[string]string{"zone": "external"},
-			TrustLevel:  "low",
+			Description:   "External-facing services",
+			Namespaces:    []string{"ingress", "gateway"},
+			Labels:        map[string]string{"zone": "external"},
+			TrustLevel:    "low",
 			DenyByDefault: true,
-			AllowedZones: []string{"zone-workload"},
+			AllowedZones:  []string{"zone-workload"},
 		},
 	}
 }

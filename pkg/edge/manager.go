@@ -34,10 +34,10 @@ const (
 type EdgeNodeStatus string
 
 const (
-	EdgeNodeOnline       EdgeNodeStatus = "online"
-	EdgeNodeOffline      EdgeNodeStatus = "offline"
-	EdgeNodeDegraded     EdgeNodeStatus = "degraded"
-	EdgeNodeMaintenance  EdgeNodeStatus = "maintenance"
+	EdgeNodeOnline      EdgeNodeStatus = "online"
+	EdgeNodeOffline     EdgeNodeStatus = "offline"
+	EdgeNodeDegraded    EdgeNodeStatus = "degraded"
+	EdgeNodeMaintenance EdgeNodeStatus = "maintenance"
 )
 
 // Config holds edge-cloud configuration
@@ -53,33 +53,33 @@ type Config struct {
 
 // EdgeNode represents an edge computing node
 type EdgeNode struct {
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	Region          string            `json:"region"`
-	Location        *GeoLocation      `json:"location,omitempty"`
-	Tier            NodeTier          `json:"tier"`
-	Status          EdgeNodeStatus    `json:"status"`
-	ClusterID       string            `json:"cluster_id,omitempty"`
+	ID        string         `json:"id"`
+	Name      string         `json:"name"`
+	Region    string         `json:"region"`
+	Location  *GeoLocation   `json:"location,omitempty"`
+	Tier      NodeTier       `json:"tier"`
+	Status    EdgeNodeStatus `json:"status"`
+	ClusterID string         `json:"cluster_id,omitempty"`
 	// Hardware
-	CPUCores        int               `json:"cpu_cores"`
-	MemoryGB        float64           `json:"memory_gb"`
-	GPUType         string            `json:"gpu_type,omitempty"`
-	GPUCount        int               `json:"gpu_count"`
-	GPUMemoryGB     float64           `json:"gpu_memory_gb"`
-	StorageGB       float64           `json:"storage_gb"`
-	PowerBudgetWatts int              `json:"power_budget_watts"`
-	CurrentPowerWatts float64         `json:"current_power_watts"`
+	CPUCores          int     `json:"cpu_cores"`
+	MemoryGB          float64 `json:"memory_gb"`
+	GPUType           string  `json:"gpu_type,omitempty"`
+	GPUCount          int     `json:"gpu_count"`
+	GPUMemoryGB       float64 `json:"gpu_memory_gb"`
+	StorageGB         float64 `json:"storage_gb"`
+	PowerBudgetWatts  int     `json:"power_budget_watts"`
+	CurrentPowerWatts float64 `json:"current_power_watts"`
 	// Connectivity
-	IPAddress            string      `json:"ip_address,omitempty"`
-	NetworkBandwidthMbps float64     `json:"network_bandwidth_mbps"`
-	LatencyToCloudMs     float64     `json:"latency_to_cloud_ms"`
-	IsOfflineCapable     bool        `json:"is_offline_capable"`
+	IPAddress            string  `json:"ip_address,omitempty"`
+	NetworkBandwidthMbps float64 `json:"network_bandwidth_mbps"`
+	LatencyToCloudMs     float64 `json:"latency_to_cloud_ms"`
+	IsOfflineCapable     bool    `json:"is_offline_capable"`
 	// Runtime
-	DeployedModels   []DeployedModel   `json:"deployed_models,omitempty"`
-	ResourceUsage    *EdgeResourceUsage `json:"resource_usage,omitempty"`
-	Labels           map[string]string  `json:"labels,omitempty"`
-	LastHeartbeatAt  time.Time          `json:"last_heartbeat_at"`
-	RegisteredAt     time.Time          `json:"registered_at"`
+	DeployedModels  []DeployedModel    `json:"deployed_models,omitempty"`
+	ResourceUsage   *EdgeResourceUsage `json:"resource_usage,omitempty"`
+	Labels          map[string]string  `json:"labels,omitempty"`
+	LastHeartbeatAt time.Time          `json:"last_heartbeat_at"`
+	RegisteredAt    time.Time          `json:"registered_at"`
 }
 
 // GeoLocation represents physical location
@@ -92,16 +92,16 @@ type GeoLocation struct {
 
 // DeployedModel represents a model running on edge node
 type DeployedModel struct {
-	ModelID        string  `json:"model_id"`
-	ModelName      string  `json:"model_name"`
-	ParameterCount string  `json:"parameter_count"` // e.g., "7B", "50B"
-	Framework      string  `json:"framework"`
-	QuantizationType string `json:"quantization_type,omitempty"` // INT4, INT8, FP16
+	ModelID            string  `json:"model_id"`
+	ModelName          string  `json:"model_name"`
+	ParameterCount     string  `json:"parameter_count"` // e.g., "7B", "50B"
+	Framework          string  `json:"framework"`
+	QuantizationType   string  `json:"quantization_type,omitempty"` // INT4, INT8, FP16
 	InferenceLatencyMs float64 `json:"inference_latency_ms"`
-	MemoryUsageGB  float64 `json:"memory_usage_gb"`
-	PowerUsageWatts float64 `json:"power_usage_watts"`
-	RequestsPerSec float64 `json:"requests_per_sec"`
-	Status         string  `json:"status"`
+	MemoryUsageGB      float64 `json:"memory_usage_gb"`
+	PowerUsageWatts    float64 `json:"power_usage_watts"`
+	RequestsPerSec     float64 `json:"requests_per_sec"`
+	Status             string  `json:"status"`
 }
 
 // EdgeResourceUsage tracks edge node resource consumption
@@ -127,14 +127,14 @@ type EdgeDeployRequest struct {
 
 // SyncPolicy defines cloud-edge data synchronization policy
 type SyncPolicy struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Direction      string `json:"direction"` // cloud-to-edge, edge-to-cloud, bidirectional
-	DataType       string `json:"data_type"` // model, config, metrics, logs
-	Interval       string `json:"interval"`
-	Priority       int    `json:"priority"`
-	OfflineBehavior string `json:"offline_behavior"` // buffer, drop, retry
-	CompressionEnabled bool `json:"compression_enabled"`
+	ID                 string `json:"id"`
+	Name               string `json:"name"`
+	Direction          string `json:"direction"` // cloud-to-edge, edge-to-cloud, bidirectional
+	DataType           string `json:"data_type"` // model, config, metrics, logs
+	Interval           string `json:"interval"`
+	Priority           int    `json:"priority"`
+	OfflineBehavior    string `json:"offline_behavior"` // buffer, drop, retry
+	CompressionEnabled bool   `json:"compression_enabled"`
 }
 
 // ============================================================================
@@ -143,23 +143,20 @@ type SyncPolicy struct {
 
 // Manager manages edge-cloud collaborative architecture
 type Manager struct {
-	config           Config
-	nodes            map[string]*EdgeNode   // in-memory cache (hot-path reads)
-	syncPolicies     []*SyncPolicy
-	store            *store.Store           // DB persistence (nil = in-memory only)
-	httpClient       *http.Client           // for edge node REST API calls
-	logger           *logrus.Logger
-	mu               sync.RWMutex
+	config       Config
+	nodes        map[string]*EdgeNode // in-memory cache (hot-path reads)
+	syncPolicies []*SyncPolicy
+	store        *store.Store // DB persistence (nil = in-memory only)
+	httpClient   *http.Client // for edge node REST API calls
+	logger       *logrus.Logger
+	mu           sync.RWMutex
 	// New fields for enhanced edge-cloud collaboration
-	offlineQueues    map[string]*OfflineQueue        // per-node offline buffers
-	optEngine        *OptimizationEngine             // model optimization
-	versionMgr       *VersionManager                 // model version tracking
-	bandwidthMonitor *BandwidthMonitor               // adaptive sync
-	conflictResolver *ConflictResolver               // conflict resolution
-	inferenceProxy   *InferenceProxy                 // cloud fallback
+	offlineQueues    map[string]*OfflineQueue // per-node offline buffers
+	optEngine        *OptimizationEngine      // model optimization
+	bandwidthMonitor *BandwidthMonitor        // adaptive sync
 	// Phase 2: Edge computing capabilities
-	edgeCollabHub    *EdgeCollabHub                  // KubeEdge/OpenYurt, autonomy, diff delivery, inference opt
-	offlineHub       *OfflineHub                     // cache, CRDT, mDNS, OTA
+	edgeCollabHub *EdgeCollabHub // KubeEdge/OpenYurt, autonomy, diff delivery, inference opt
+	offlineHub    *OfflineHub    // cache, CRDT, mDNS, OTA
 }
 
 // NewManager creates a new edge-cloud manager
@@ -352,7 +349,7 @@ func (m *Manager) deployModelToEdgeNode(ctx context.Context, node *EdgeNode, mod
 	if err != nil {
 		return fmt.Errorf("edge node communication failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 && resp.StatusCode != 201 && resp.StatusCode != 202 {
 		body, _ := io.ReadAll(resp.Body)
@@ -476,7 +473,7 @@ func (m *Manager) pullEdgeMetrics(ctx context.Context, node *EdgeNode) {
 	if err != nil {
 		return // Node unreachable, will be caught by heartbeat timeout
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == 200 {
 		var usage EdgeResourceUsage
@@ -532,13 +529,13 @@ func (m *Manager) GetTopologySummary(ctx context.Context) map[string]interface{}
 	}
 
 	return map[string]interface{}{
-		"cloud_nodes":    cloudCount,
-		"edge_nodes":     edgeCount,
-		"terminal_nodes": terminalCount,
-		"total_nodes":    len(m.nodes),
+		"cloud_nodes":     cloudCount,
+		"edge_nodes":      edgeCount,
+		"terminal_nodes":  terminalCount,
+		"total_nodes":     len(m.nodes),
 		"deployed_models": totalModels,
-		"sync_policies":  len(m.syncPolicies),
-		"architecture":   "three-tier: cloud → edge → terminal",
+		"sync_policies":   len(m.syncPolicies),
+		"architecture":    "three-tier: cloud → edge → terminal",
 	}
 }
 
@@ -557,26 +554,26 @@ func defaultSyncPolicies() []*SyncPolicy {
 
 func edgeNodeModelToNode(m *store.EdgeNodeModel) *EdgeNode {
 	node := &EdgeNode{
-		ID:                  m.ID,
-		Name:                m.Name,
-		Region:              m.Region,
-		Tier:                NodeTier(m.Tier),
-		Status:              EdgeNodeStatus(m.Status),
-		ClusterID:           m.ClusterID,
-		IPAddress:           m.IPAddress,
-		CPUCores:            m.CPUCores,
-		MemoryGB:            m.MemoryGB,
-		GPUType:             m.GPUType,
-		GPUCount:            m.GPUCount,
-		GPUMemoryGB:         m.GPUMemoryGB,
-		StorageGB:           m.StorageGB,
-		PowerBudgetWatts:    m.PowerBudgetWatts,
-		CurrentPowerWatts:   m.CurrentPowerWatts,
+		ID:                   m.ID,
+		Name:                 m.Name,
+		Region:               m.Region,
+		Tier:                 NodeTier(m.Tier),
+		Status:               EdgeNodeStatus(m.Status),
+		ClusterID:            m.ClusterID,
+		IPAddress:            m.IPAddress,
+		CPUCores:             m.CPUCores,
+		MemoryGB:             m.MemoryGB,
+		GPUType:              m.GPUType,
+		GPUCount:             m.GPUCount,
+		GPUMemoryGB:          m.GPUMemoryGB,
+		StorageGB:            m.StorageGB,
+		PowerBudgetWatts:     m.PowerBudgetWatts,
+		CurrentPowerWatts:    m.CurrentPowerWatts,
 		NetworkBandwidthMbps: m.NetworkBandwidth,
-		LatencyToCloudMs:    m.LatencyToCloudMs,
-		IsOfflineCapable:    m.IsOfflineCapable,
-		LastHeartbeatAt:     m.LastHeartbeatAt,
-		RegisteredAt:        m.RegisteredAt,
+		LatencyToCloudMs:     m.LatencyToCloudMs,
+		IsOfflineCapable:     m.IsOfflineCapable,
+		LastHeartbeatAt:      m.LastHeartbeatAt,
+		RegisteredAt:         m.RegisteredAt,
 	}
 	if m.Location != "" && m.Location != "{}" {
 		var loc GeoLocation

@@ -18,11 +18,11 @@ type ErrorCode string
 
 const (
 	// General (10xxx)
-	CodeInternal         ErrorCode = "INTERNAL_ERROR"
-	CodeUnknown          ErrorCode = "UNKNOWN_ERROR"
-	CodeValidation       ErrorCode = "VALIDATION_ERROR"
-	CodeBadRequest       ErrorCode = "BAD_REQUEST"
-	CodeNotImplemented   ErrorCode = "NOT_IMPLEMENTED"
+	CodeInternal       ErrorCode = "INTERNAL_ERROR"
+	CodeUnknown        ErrorCode = "UNKNOWN_ERROR"
+	CodeValidation     ErrorCode = "VALIDATION_ERROR"
+	CodeBadRequest     ErrorCode = "BAD_REQUEST"
+	CodeNotImplemented ErrorCode = "NOT_IMPLEMENTED"
 
 	// Auth (11xxx)
 	CodeUnauthorized     ErrorCode = "UNAUTHORIZED"
@@ -33,25 +33,25 @@ const (
 	CodeAccountDisabled  ErrorCode = "ACCOUNT_DISABLED"
 
 	// Resource (12xxx)
-	CodeNotFound         ErrorCode = "NOT_FOUND"
-	CodeAlreadyExists    ErrorCode = "ALREADY_EXISTS"
-	CodeConflict         ErrorCode = "CONFLICT"
-	CodeGone             ErrorCode = "GONE"
+	CodeNotFound      ErrorCode = "NOT_FOUND"
+	CodeAlreadyExists ErrorCode = "ALREADY_EXISTS"
+	CodeConflict      ErrorCode = "CONFLICT"
+	CodeGone          ErrorCode = "GONE"
 
 	// State (13xxx)
 	CodeInvalidState     ErrorCode = "INVALID_STATE_TRANSITION"
 	CodePreconditionFail ErrorCode = "PRECONDITION_FAILED"
 
 	// Rate/Quota (14xxx)
-	CodeRateLimited      ErrorCode = "RATE_LIMITED"
-	CodeQuotaExceeded    ErrorCode = "QUOTA_EXCEEDED"
+	CodeRateLimited   ErrorCode = "RATE_LIMITED"
+	CodeQuotaExceeded ErrorCode = "QUOTA_EXCEEDED"
 
 	// Infra (15xxx)
-	CodeServiceUnavail   ErrorCode = "SERVICE_UNAVAILABLE"
-	CodeTimeout          ErrorCode = "TIMEOUT"
-	CodeDatabaseError    ErrorCode = "DATABASE_ERROR"
-	CodeUpstreamError    ErrorCode = "UPSTREAM_ERROR"
-	CodeCircuitOpen      ErrorCode = "CIRCUIT_OPEN"
+	CodeServiceUnavail ErrorCode = "SERVICE_UNAVAILABLE"
+	CodeTimeout        ErrorCode = "TIMEOUT"
+	CodeDatabaseError  ErrorCode = "DATABASE_ERROR"
+	CodeUpstreamError  ErrorCode = "UPSTREAM_ERROR"
+	CodeCircuitOpen    ErrorCode = "CIRCUIT_OPEN"
 )
 
 // ============================================================================

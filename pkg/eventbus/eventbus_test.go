@@ -220,10 +220,57 @@ func TestMemoryBus_SubscribeGroup(t *testing.T) {
 	evt, _ := NewEvent("cluster.created", "Created", "test", nil)
 	bus.Publish(context.Background(), evt)
 
-	// Only one handler per group should receive
+	// Only one handler per group should receive a single event
 	total := countA.Load() + countB.Load()
 	if total != 1 {
 		t.Errorf("group total = %d, want 1", total)
+	}
+
+	// Many publishes must be load-balanced round-robin across the group's
+	// members (not all funneled to the first one), while still delivering
+	// exactly one copy per event.
+	for i := 0; i < 9; i++ {
+		bus.Publish(context.Background(), evt)
+	}
+	if total := countA.Load() + countB.Load(); total != 10 {
+		t.Fatalf("group total = %d, want 10 (exactly one per publish)", total)
+	}
+	if countA.Load() != 5 || countB.Load() != 5 {
+		t.Errorf("round-robin should split 10 events evenly, got A=%d B=%d", countA.Load(), countB.Load())
+	}
+}
+
+// TestMemoryBus_HandlerPanicIsolated verifies a panicking subscriber is
+// contained: Publish does not crash, the healthy sibling still receives the
+// event, and the panic is accounted as a delivery error.
+func TestMemoryBus_HandlerPanicIsolated(t *testing.T) {
+	lg := logrus.New()
+	lg.SetLevel(logrus.PanicLevel) // silence the expected delivery-failure warning
+	bus := NewMemoryBus(Config{MaxRetries: 1}, lg)
+	defer bus.Close()
+
+	var good atomic.Int32
+	if _, err := bus.Subscribe("cluster.created", func(_ context.Context, _ *Event) error {
+		panic("boom")
+	}); err != nil {
+		t.Fatalf("Subscribe: %v", err)
+	}
+	if _, err := bus.Subscribe("cluster.created", func(_ context.Context, _ *Event) error {
+		good.Add(1)
+		return nil
+	}); err != nil {
+		t.Fatalf("Subscribe: %v", err)
+	}
+
+	evt, _ := NewEvent("cluster.created", "Created", "test", nil)
+	if err := bus.Publish(context.Background(), evt); err != nil {
+		t.Fatalf("Publish returned error: %v", err)
+	}
+	if good.Load() != 1 {
+		t.Errorf("healthy handler should still receive event despite sibling panic, got %d", good.Load())
+	}
+	if bus.Stats().TotalErrors == 0 {
+		t.Error("panicking handler should be counted as a delivery error")
 	}
 }
 

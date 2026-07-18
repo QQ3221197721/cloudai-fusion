@@ -121,11 +121,11 @@ func TestDeployModel_PowerBudgetExceeded(t *testing.T) {
 	mgr.RegisterNode(context.Background(), node)
 
 	_, err := mgr.DeployModel(context.Background(), &EdgeDeployRequest{
-		ModelID:       "m-1",
-		ModelName:     "big-model",
+		ModelID:        "m-1",
+		ModelName:      "big-model",
 		ParameterCount: "50B",
-		EdgeNodeID:    node.ID,
-		MaxPowerWatts: 350,
+		EdgeNodeID:     node.ID,
+		MaxPowerWatts:  350,
 	})
 	if err == nil {
 		t.Fatal("expected power budget error")

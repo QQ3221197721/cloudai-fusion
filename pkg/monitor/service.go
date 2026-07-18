@@ -227,17 +227,17 @@ func init() {
 
 // AlertRule defines a monitoring alert rule
 type AlertRule struct {
-	ID           string            `json:"id"`
-	Name         string            `json:"name"`
-	Description  string            `json:"description,omitempty"`
-	ClusterID    string            `json:"cluster_id,omitempty"`
-	Severity     AlertSeverity     `json:"severity"`
-	Condition    string            `json:"condition"`
-	Threshold    float64           `json:"threshold"`
-	Duration     time.Duration     `json:"duration"`
-	Channels     []string          `json:"notification_channels"`
-	Status       string            `json:"status"`
-	Labels       map[string]string `json:"labels,omitempty"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	ClusterID   string            `json:"cluster_id,omitempty"`
+	Severity    AlertSeverity     `json:"severity"`
+	Condition   string            `json:"condition"`
+	Threshold   float64           `json:"threshold"`
+	Duration    time.Duration     `json:"duration"`
+	Channels    []string          `json:"notification_channels"`
+	Status      string            `json:"status"`
+	Labels      map[string]string `json:"labels,omitempty"`
 }
 
 // AlertSeverity defines alert severity levels
@@ -270,9 +270,9 @@ type AlertEvent struct {
 // Service provides monitoring and alerting capabilities
 type Service struct {
 	config     ServiceConfig
-	alertRules []*AlertRule          // in-memory cache
-	events     []*AlertEvent         // in-memory cache
-	store      *store.Store          // DB persistence (nil = in-memory only)
+	alertRules []*AlertRule  // in-memory cache
+	events     []*AlertEvent // in-memory cache
+	store      *store.Store  // DB persistence (nil = in-memory only)
 	logger     *logrus.Logger
 	mu         sync.RWMutex
 }
@@ -416,31 +416,31 @@ func defaultAlertRules() []*AlertRule {
 		{
 			ID: "gpu-high-util", Name: "GPU High Utilization",
 			Description: "GPU utilization above 95% for 5 minutes",
-			Severity: AlertSeverityWarning, Condition: "gpu_utilization > 95",
+			Severity:    AlertSeverityWarning, Condition: "gpu_utilization > 95",
 			Threshold: 95, Duration: 5 * time.Minute, Status: "active",
 		},
 		{
 			ID: "gpu-memory-exhaustion", Name: "GPU Memory Near Exhaustion",
 			Description: "GPU memory usage above 90%",
-			Severity: AlertSeverityCritical, Condition: "gpu_memory_usage > 90",
+			Severity:    AlertSeverityCritical, Condition: "gpu_memory_usage > 90",
 			Threshold: 90, Duration: 2 * time.Minute, Status: "active",
 		},
 		{
 			ID: "cluster-unreachable", Name: "Cluster Unreachable",
 			Description: "Cluster API server not responding",
-			Severity: AlertSeverityCritical, Condition: "cluster_health == 0",
+			Severity:    AlertSeverityCritical, Condition: "cluster_health == 0",
 			Threshold: 0, Duration: 1 * time.Minute, Status: "active",
 		},
 		{
 			ID: "scheduling-queue-buildup", Name: "Scheduling Queue Buildup",
 			Description: "More than 50 workloads pending in queue",
-			Severity: AlertSeverityWarning, Condition: "scheduler_queue_length > 50",
+			Severity:    AlertSeverityWarning, Condition: "scheduler_queue_length > 50",
 			Threshold: 50, Duration: 10 * time.Minute, Status: "active",
 		},
 		{
 			ID: "cost-spike", Name: "Cost Spike Detected",
 			Description: "Hourly cost increased by more than 50%",
-			Severity: AlertSeverityWarning, Condition: "cost_increase_pct > 50",
+			Severity:    AlertSeverityWarning, Condition: "cost_increase_pct > 50",
 			Threshold: 50, Duration: 30 * time.Minute, Status: "active",
 		},
 	}

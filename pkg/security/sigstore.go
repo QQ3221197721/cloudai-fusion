@@ -25,12 +25,12 @@ import (
 // ImageSignature represents a Cosign-compatible signature for a container image.
 type ImageSignature struct {
 	ID          string            `json:"id"`
-	ImageRef    string            `json:"image_ref"`    // registry/repo:tag
-	Digest      string            `json:"digest"`       // sha256:...
-	Signature   string            `json:"signature"`    // base64 encoded
-	PublicKey   string            `json:"public_key"`   // PEM encoded
-	SignedBy    string            `json:"signed_by"`    // identity (email or OIDC subject)
-	Issuer      string            `json:"issuer"`       // OIDC issuer URL
+	ImageRef    string            `json:"image_ref"`  // registry/repo:tag
+	Digest      string            `json:"digest"`     // sha256:...
+	Signature   string            `json:"signature"`  // base64 encoded
+	PublicKey   string            `json:"public_key"` // PEM encoded
+	SignedBy    string            `json:"signed_by"`  // identity (email or OIDC subject)
+	Issuer      string            `json:"issuer"`     // OIDC issuer URL
 	Verified    bool              `json:"verified"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 	SignedAt    time.Time         `json:"signed_at"`
@@ -39,17 +39,17 @@ type ImageSignature struct {
 
 // ImagePolicy defines trust policy for container images.
 type ImagePolicy struct {
-	ID              string   `json:"id"`
-	Name            string   `json:"name"`
-	Description     string   `json:"description,omitempty"`
+	ID                string   `json:"id"`
+	Name              string   `json:"name"`
+	Description       string   `json:"description,omitempty"`
 	TrustedRegistries []string `json:"trusted_registries"` // allowed registry prefixes
-	RequireSignature bool     `json:"require_signature"`
-	RequireSBOM      bool     `json:"require_sbom"`
-	TrustedSigners   []string `json:"trusted_signers"` // trusted signer identities
-	TrustedIssuers   []string `json:"trusted_issuers"` // trusted OIDC issuers
-	Namespaces       []string `json:"namespaces,omitempty"` // scope (empty = all)
-	Enforcement      string   `json:"enforcement"` // enforce, warn, audit
-	Enabled          bool     `json:"enabled"`
+	RequireSignature  bool     `json:"require_signature"`
+	RequireSBOM       bool     `json:"require_sbom"`
+	TrustedSigners    []string `json:"trusted_signers"`      // trusted signer identities
+	TrustedIssuers    []string `json:"trusted_issuers"`      // trusted OIDC issuers
+	Namespaces        []string `json:"namespaces,omitempty"` // scope (empty = all)
+	Enforcement       string   `json:"enforcement"`          // enforce, warn, audit
+	Enabled           bool     `json:"enabled"`
 }
 
 // ============================================================================
@@ -60,32 +60,32 @@ type ImagePolicy struct {
 type SBOMFormat string
 
 const (
-	SBOMFormatSPDX     SBOMFormat = "spdx"
+	SBOMFormatSPDX      SBOMFormat = "spdx"
 	SBOMFormatCycloneDX SBOMFormat = "cyclonedx"
 )
 
 // SBOM represents a Software Bill of Materials for a container image.
 type SBOM struct {
-	ID          string       `json:"id"`
-	ImageRef    string       `json:"image_ref"`
-	Digest      string       `json:"digest"`
-	Format      SBOMFormat   `json:"format"`
+	ID          string          `json:"id"`
+	ImageRef    string          `json:"image_ref"`
+	Digest      string          `json:"digest"`
+	Format      SBOMFormat      `json:"format"`
 	Components  []SBOMComponent `json:"components"`
-	TotalPkgs   int          `json:"total_packages"`
-	Licenses    []string     `json:"licenses"`
-	GeneratedAt time.Time    `json:"generated_at"`
-	GeneratedBy string       `json:"generated_by"` // tool name
+	TotalPkgs   int             `json:"total_packages"`
+	Licenses    []string        `json:"licenses"`
+	GeneratedAt time.Time       `json:"generated_at"`
+	GeneratedBy string          `json:"generated_by"` // tool name
 }
 
 // SBOMComponent represents a package or dependency in an SBOM.
 type SBOMComponent struct {
 	Name      string   `json:"name"`
 	Version   string   `json:"version"`
-	Type      string   `json:"type"` // library, framework, application, os
+	Type      string   `json:"type"`      // library, framework, application, os
 	Ecosystem string   `json:"ecosystem"` // go, npm, pip, rpm, deb
 	License   string   `json:"license,omitempty"`
 	Hashes    []string `json:"hashes,omitempty"` // sha256:...
-	PURL      string   `json:"purl,omitempty"` // package URL
+	PURL      string   `json:"purl,omitempty"`   // package URL
 }
 
 // ============================================================================
@@ -94,19 +94,19 @@ type SBOMComponent struct {
 
 // ProvenanceAttestation represents a SLSA provenance attestation.
 type ProvenanceAttestation struct {
-	ID             string            `json:"id"`
-	ImageRef       string            `json:"image_ref"`
-	Digest         string            `json:"digest"`
-	BuildType      string            `json:"build_type"`      // e.g., "https://github.com/slsa-framework/slsa/blob/main/docs/provenance/v0.2"
-	Builder        string            `json:"builder"`         // CI system
-	SourceRepo     string            `json:"source_repo"`
-	SourceCommit   string            `json:"source_commit"`
-	SourceBranch   string            `json:"source_branch"`
-	BuildInvocation string           `json:"build_invocation"` // build ID/URL
-	Materials      []BuildMaterial   `json:"materials"`
-	SLSALevel      int              `json:"slsa_level"` // 0-4
-	Verified       bool             `json:"verified"`
-	CreatedAt      time.Time        `json:"created_at"`
+	ID              string          `json:"id"`
+	ImageRef        string          `json:"image_ref"`
+	Digest          string          `json:"digest"`
+	BuildType       string          `json:"build_type"` // e.g., "https://github.com/slsa-framework/slsa/blob/main/docs/provenance/v0.2"
+	Builder         string          `json:"builder"`    // CI system
+	SourceRepo      string          `json:"source_repo"`
+	SourceCommit    string          `json:"source_commit"`
+	SourceBranch    string          `json:"source_branch"`
+	BuildInvocation string          `json:"build_invocation"` // build ID/URL
+	Materials       []BuildMaterial `json:"materials"`
+	SLSALevel       int             `json:"slsa_level"` // 0-4
+	Verified        bool            `json:"verified"`
+	CreatedAt       time.Time       `json:"created_at"`
 }
 
 // BuildMaterial represents a build input.
@@ -121,12 +121,12 @@ type BuildMaterial struct {
 
 // SupplyChainManager provides supply chain security features.
 type SupplyChainManager struct {
-	signatures  []*ImageSignature
-	policies    []*ImagePolicy
-	sboms       map[string]*SBOM   // digest → SBOM
+	signatures   []*ImageSignature
+	policies     []*ImagePolicy
+	sboms        map[string]*SBOM                  // digest → SBOM
 	attestations map[string]*ProvenanceAttestation // digest → attestation
-	logger      *logrus.Logger
-	mu          sync.RWMutex
+	logger       *logrus.Logger
+	mu           sync.RWMutex
 }
 
 // SupplyChainConfig configures the supply chain manager.
@@ -404,11 +404,11 @@ func (m *SupplyChainManager) ListPolicies() []*ImagePolicy {
 
 // SupplyChainStatus reports supply chain security status.
 type SupplyChainStatus struct {
-	TotalSignatures  int `json:"total_signatures"`
-	VerifiedImages   int `json:"verified_images"`
-	TotalSBOMs       int `json:"total_sboms"`
+	TotalSignatures   int `json:"total_signatures"`
+	VerifiedImages    int `json:"verified_images"`
+	TotalSBOMs        int `json:"total_sboms"`
 	TotalAttestations int `json:"total_attestations"`
-	ActivePolicies   int `json:"active_policies"`
+	ActivePolicies    int `json:"active_policies"`
 }
 
 // Status returns the current supply chain security status.
@@ -430,11 +430,11 @@ func (m *SupplyChainManager) Status() SupplyChainStatus {
 	}
 
 	return SupplyChainStatus{
-		TotalSignatures:  len(m.signatures),
-		VerifiedImages:   verified,
-		TotalSBOMs:       len(m.sboms),
+		TotalSignatures:   len(m.signatures),
+		VerifiedImages:    verified,
+		TotalSBOMs:        len(m.sboms),
 		TotalAttestations: len(m.attestations),
-		ActivePolicies:   active,
+		ActivePolicies:    active,
 	}
 }
 
@@ -467,11 +467,11 @@ func DefaultImagePolicies() []*ImagePolicy {
 		},
 		{
 			ID: "policy-default", Name: "Default Image Policy",
-			Description:       "Audit-only for all other namespaces",
-			RequireSignature:  false,
-			RequireSBOM:       false,
-			Enforcement:       "audit",
-			Enabled:           true,
+			Description:      "Audit-only for all other namespaces",
+			RequireSignature: false,
+			RequireSBOM:      false,
+			Enforcement:      "audit",
+			Enabled:          true,
 		},
 	}
 }

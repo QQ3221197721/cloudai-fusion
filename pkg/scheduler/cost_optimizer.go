@@ -24,21 +24,21 @@ import (
 type InstancePricingType string
 
 const (
-	PricingOnDemand  InstancePricingType = "on-demand"
-	PricingSpot      InstancePricingType = "spot"
-	PricingReserved  InstancePricingType = "reserved"
+	PricingOnDemand    InstancePricingType = "on-demand"
+	PricingSpot        InstancePricingType = "spot"
+	PricingReserved    InstancePricingType = "reserved"
 	PricingPreemptible InstancePricingType = "preemptible" // GCP terminology
 )
 
 // CostOptimizerConfig holds cost optimization configuration
 type CostOptimizerConfig struct {
-	SpotMaxPriceRatio       float64 `json:"spot_max_price_ratio"`       // max spot/on-demand ratio to bid
+	SpotMaxPriceRatio       float64 `json:"spot_max_price_ratio"`         // max spot/on-demand ratio to bid
 	SpotInterruptionBuffer  int     `json:"spot_interruption_buffer_sec"` // seconds to gracefully handle interruption
-	ReservedUtilThreshold   float64 `json:"reserved_util_threshold"`    // min utilization to justify reserved
-	ReservedBreakevenMonths int     `json:"reserved_breakeven_months"`  // months to break even on reserved
-	MaxSpotPercent          float64 `json:"max_spot_percent"`           // max % of fleet on spot
-	FallbackToOnDemand      bool    `json:"fallback_to_on_demand"`      // auto-fallback when spot unavailable
-	CostWeightInScoring     float64 `json:"cost_weight_in_scoring"`     // weight in scheduling score (0-1)
+	ReservedUtilThreshold   float64 `json:"reserved_util_threshold"`      // min utilization to justify reserved
+	ReservedBreakevenMonths int     `json:"reserved_breakeven_months"`    // months to break even on reserved
+	MaxSpotPercent          float64 `json:"max_spot_percent"`             // max % of fleet on spot
+	FallbackToOnDemand      bool    `json:"fallback_to_on_demand"`        // auto-fallback when spot unavailable
+	CostWeightInScoring     float64 `json:"cost_weight_in_scoring"`       // weight in scheduling score (0-1)
 	Enabled                 bool    `json:"enabled"`
 }
 
@@ -62,20 +62,20 @@ func DefaultCostOptimizerConfig() CostOptimizerConfig {
 
 // InstancePricing holds pricing information for an instance type
 type InstancePricing struct {
-	InstanceType    string              `json:"instance_type"`
-	Provider        string              `json:"provider"`
-	Region          string              `json:"region"`
-	Zone            string              `json:"zone"`
-	GPUType         string              `json:"gpu_type"`
-	GPUCount        int                 `json:"gpu_count"`
-	OnDemandPrice   float64             `json:"on_demand_price_per_hour"`
-	SpotPrice       float64             `json:"spot_price_per_hour"`
-	ReservedPrice   float64             `json:"reserved_price_per_hour"` // 1-year, no upfront
-	SpotDiscount    float64             `json:"spot_discount_percent"`
-	ReservedDiscount float64            `json:"reserved_discount_percent"`
-	SpotAvailable   bool                `json:"spot_available"`
-	SpotInterruptProb float64           `json:"spot_interrupt_probability"` // 0-1, higher = more likely to be interrupted
-	LastUpdated     time.Time           `json:"last_updated"`
+	InstanceType      string    `json:"instance_type"`
+	Provider          string    `json:"provider"`
+	Region            string    `json:"region"`
+	Zone              string    `json:"zone"`
+	GPUType           string    `json:"gpu_type"`
+	GPUCount          int       `json:"gpu_count"`
+	OnDemandPrice     float64   `json:"on_demand_price_per_hour"`
+	SpotPrice         float64   `json:"spot_price_per_hour"`
+	ReservedPrice     float64   `json:"reserved_price_per_hour"` // 1-year, no upfront
+	SpotDiscount      float64   `json:"spot_discount_percent"`
+	ReservedDiscount  float64   `json:"reserved_discount_percent"`
+	SpotAvailable     bool      `json:"spot_available"`
+	SpotInterruptProb float64   `json:"spot_interrupt_probability"` // 0-1, higher = more likely to be interrupted
+	LastUpdated       time.Time `json:"last_updated"`
 }
 
 // InstanceAllocation represents how an instance is allocated
@@ -90,31 +90,31 @@ type InstanceAllocation struct {
 	HourlyPrice     float64             `json:"hourly_price"`
 	AllocatedAt     time.Time           `json:"allocated_at"`
 	ExpectedRuntime time.Duration       `json:"expected_runtime"`
-	Preemptible     bool                `json:"preemptible"` // can be interrupted
+	Preemptible     bool                `json:"preemptible"`              // can be interrupted
 	CheckpointURL   string              `json:"checkpoint_url,omitempty"` // for spot resumption
 }
 
 // CostReport summarizes scheduling cost analysis
 type CostReport struct {
-	Period             string                    `json:"period"`
-	TotalCost          float64                   `json:"total_cost"`
-	OnDemandCost       float64                   `json:"on_demand_cost"`
-	SpotCost           float64                   `json:"spot_cost"`
-	ReservedCost       float64                   `json:"reserved_cost"`
-	SpotSavings        float64                   `json:"spot_savings"`
-	ReservedSavings    float64                   `json:"reserved_savings"`
-	TotalSavings       float64                   `json:"total_savings"`
-	SavingsPercent     float64                   `json:"savings_percent"`
-	SpotInterruptions  int                       `json:"spot_interruptions"`
-	InstanceBreakdown  map[string]int            `json:"instance_breakdown"`  // type → count
-	PricingBreakdown   map[string]float64        `json:"pricing_breakdown"`   // type → cost
-	Recommendations    []CostRecommendation      `json:"recommendations"`
+	Period            string               `json:"period"`
+	TotalCost         float64              `json:"total_cost"`
+	OnDemandCost      float64              `json:"on_demand_cost"`
+	SpotCost          float64              `json:"spot_cost"`
+	ReservedCost      float64              `json:"reserved_cost"`
+	SpotSavings       float64              `json:"spot_savings"`
+	ReservedSavings   float64              `json:"reserved_savings"`
+	TotalSavings      float64              `json:"total_savings"`
+	SavingsPercent    float64              `json:"savings_percent"`
+	SpotInterruptions int                  `json:"spot_interruptions"`
+	InstanceBreakdown map[string]int       `json:"instance_breakdown"` // type → count
+	PricingBreakdown  map[string]float64   `json:"pricing_breakdown"`  // type → cost
+	Recommendations   []CostRecommendation `json:"recommendations"`
 }
 
 // CostRecommendation is a specific cost optimization suggestion
 type CostRecommendation struct {
-	Type             string  `json:"type"`              // "switch-to-spot", "reserve", "right-size"
-	Priority         string  `json:"priority"`          // "high", "medium", "low"
+	Type             string  `json:"type"`     // "switch-to-spot", "reserve", "right-size"
+	Priority         string  `json:"priority"` // "high", "medium", "low"
 	Description      string  `json:"description"`
 	EstimatedSavings float64 `json:"estimated_savings_per_month"`
 	Confidence       float64 `json:"confidence"`
@@ -126,21 +126,21 @@ type CostRecommendation struct {
 
 // CostOptimizer manages cost-aware scheduling decisions
 type CostOptimizer struct {
-	config       CostOptimizerConfig
-	pricingDB    map[string]*InstancePricing   // instance_type → pricing
-	allocations  map[string]*InstanceAllocation // allocation_id → allocation
-	costHistory  []DailyCostEntry
-	logger       *logrus.Logger
-	mu           sync.RWMutex
+	config      CostOptimizerConfig
+	pricingDB   map[string]*InstancePricing    // instance_type → pricing
+	allocations map[string]*InstanceAllocation // allocation_id → allocation
+	costHistory []DailyCostEntry
+	logger      *logrus.Logger
+	mu          sync.RWMutex
 }
 
 // DailyCostEntry tracks daily cost
 type DailyCostEntry struct {
-	Date         time.Time `json:"date"`
-	OnDemandCost float64   `json:"on_demand_cost"`
-	SpotCost     float64   `json:"spot_cost"`
-	ReservedCost float64   `json:"reserved_cost"`
-	Interruptions int      `json:"interruptions"`
+	Date          time.Time `json:"date"`
+	OnDemandCost  float64   `json:"on_demand_cost"`
+	SpotCost      float64   `json:"spot_cost"`
+	ReservedCost  float64   `json:"reserved_cost"`
+	Interruptions int       `json:"interruptions"`
 }
 
 // NewCostOptimizer creates a new cost optimizer

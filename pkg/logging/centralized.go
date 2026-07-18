@@ -40,11 +40,11 @@ const (
 type ArchivalTier string
 
 const (
-	TierHot      ArchivalTier = "hot"    // Recent, fast access (SSD)
-	TierWarm     ArchivalTier = "warm"   // Moderate, standard storage
-	TierCold     ArchivalTier = "cold"   // Old, cheap storage (S3/OSS)
-	TierFrozen   ArchivalTier = "frozen" // Long-term archive, glacier
-	TierDeleted  ArchivalTier = "deleted"
+	TierHot     ArchivalTier = "hot"    // Recent, fast access (SSD)
+	TierWarm    ArchivalTier = "warm"   // Moderate, standard storage
+	TierCold    ArchivalTier = "cold"   // Old, cheap storage (S3/OSS)
+	TierFrozen  ArchivalTier = "frozen" // Long-term archive, glacier
+	TierDeleted ArchivalTier = "deleted"
 )
 
 // ============================================================================
@@ -53,35 +53,35 @@ const (
 
 // ElasticsearchConfig configures Elasticsearch/OpenSearch connection.
 type ElasticsearchConfig struct {
-	Endpoints    []string `json:"endpoints"`     // e.g. ["https://es-01:9200"]
-	IndexPrefix  string   `json:"index_prefix"`  // e.g. "cloudai-fusion"
-	Username     string   `json:"username,omitempty"`
-	Password     string   `json:"password,omitempty"`
-	TLSEnabled   bool     `json:"tls_enabled"`
-	Shards       int      `json:"shards"`
-	Replicas     int      `json:"replicas"`
-	RefreshSecs  int      `json:"refresh_seconds"`
+	Endpoints   []string `json:"endpoints"`    // e.g. ["https://es-01:9200"]
+	IndexPrefix string   `json:"index_prefix"` // e.g. "cloudai-fusion"
+	Username    string   `json:"username,omitempty"`
+	Password    string   `json:"password,omitempty"`
+	TLSEnabled  bool     `json:"tls_enabled"`
+	Shards      int      `json:"shards"`
+	Replicas    int      `json:"replicas"`
+	RefreshSecs int      `json:"refresh_seconds"`
 }
 
 // ElasticsearchIndex represents an index lifecycle configuration.
 type ElasticsearchIndex struct {
-	Name         string       `json:"name"`
-	Pattern      string       `json:"pattern"` // e.g. "cloudai-fusion-2026.03.*"
-	Tier         ArchivalTier `json:"tier"`
-	SizeBytes    int64        `json:"size_bytes"`
-	DocCount     int64        `json:"doc_count"`
-	CreatedAt    time.Time    `json:"created_at"`
-	LastWriteAt  *time.Time   `json:"last_write_at,omitempty"`
+	Name        string       `json:"name"`
+	Pattern     string       `json:"pattern"` // e.g. "cloudai-fusion-2026.03.*"
+	Tier        ArchivalTier `json:"tier"`
+	SizeBytes   int64        `json:"size_bytes"`
+	DocCount    int64        `json:"doc_count"`
+	CreatedAt   time.Time    `json:"created_at"`
+	LastWriteAt *time.Time   `json:"last_write_at,omitempty"`
 }
 
 // IndexLifecyclePolicy defines when indices transition between tiers.
 type IndexLifecyclePolicy struct {
-	Name           string `json:"name"`
-	HotMaxAgeDays  int    `json:"hot_max_age_days"`   // Move to warm after N days
-	WarmMaxAgeDays int    `json:"warm_max_age_days"`  // Move to cold after N days
-	ColdMaxAgeDays int    `json:"cold_max_age_days"`  // Move to frozen after N days
-	DeleteAfterDays int   `json:"delete_after_days"`  // Delete after N days
-	HotMaxSizeGB    int   `json:"hot_max_size_gb"`    // Rollover hot at size
+	Name            string `json:"name"`
+	HotMaxAgeDays   int    `json:"hot_max_age_days"`  // Move to warm after N days
+	WarmMaxAgeDays  int    `json:"warm_max_age_days"` // Move to cold after N days
+	ColdMaxAgeDays  int    `json:"cold_max_age_days"` // Move to frozen after N days
+	DeleteAfterDays int    `json:"delete_after_days"` // Delete after N days
+	HotMaxSizeGB    int    `json:"hot_max_size_gb"`   // Rollover hot at size
 }
 
 // ============================================================================
@@ -96,7 +96,7 @@ type ArchivalPolicy struct {
 	Enabled       bool         `json:"enabled"`
 	SourceBackend LogBackend   `json:"source_backend"`
 	MinLevel      LogLevel     `json:"min_level"`      // Only archive logs >= this level
-	RetentionDays int          `json:"retention_days"`  // Total retention before deletion
+	RetentionDays int          `json:"retention_days"` // Total retention before deletion
 	Tiers         []TierConfig `json:"tiers"`
 	CreatedAt     time.Time    `json:"created_at"`
 	LastRunAt     *time.Time   `json:"last_run_at,omitempty"`
@@ -105,8 +105,8 @@ type ArchivalPolicy struct {
 // TierConfig defines a specific archival tier's settings.
 type TierConfig struct {
 	Tier          ArchivalTier `json:"tier"`
-	AfterDays     int          `json:"after_days"`     // Transition after N days from creation
-	StorageClass  string       `json:"storage_class"`  // e.g. "STANDARD_IA", "GLACIER"
+	AfterDays     int          `json:"after_days"`    // Transition after N days from creation
+	StorageClass  string       `json:"storage_class"` // e.g. "STANDARD_IA", "GLACIER"
 	CompressionOn bool         `json:"compression"`
 }
 
@@ -118,10 +118,10 @@ type TierConfig struct {
 type LogSource struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name"`
-	Type        string            `json:"type"`    // container, file, syslog, journal
+	Type        string            `json:"type"` // container, file, syslog, journal
 	Namespace   string            `json:"namespace,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
-	Path        string            `json:"path,omitempty"`  // For file sources
+	Path        string            `json:"path,omitempty"` // For file sources
 	Backend     LogBackend        `json:"backend"`
 	Enabled     bool              `json:"enabled"`
 	ParseFormat string            `json:"parse_format,omitempty"` // json, logfmt, regex
@@ -129,13 +129,13 @@ type LogSource struct {
 
 // LogCollectionStats tracks log ingestion statistics.
 type LogCollectionStats struct {
-	SourceID       string    `json:"source_id"`
-	SourceName     string    `json:"source_name"`
-	BytesIngested  int64     `json:"bytes_ingested"`
-	LinesIngested  int64     `json:"lines_ingested"`
-	ErrorCount     int64     `json:"error_count"`
-	DroppedCount   int64     `json:"dropped_count"`
-	LastIngestAt   time.Time `json:"last_ingest_at"`
+	SourceID      string    `json:"source_id"`
+	SourceName    string    `json:"source_name"`
+	BytesIngested int64     `json:"bytes_ingested"`
+	LinesIngested int64     `json:"lines_ingested"`
+	ErrorCount    int64     `json:"error_count"`
+	DroppedCount  int64     `json:"dropped_count"`
+	LastIngestAt  time.Time `json:"last_ingest_at"`
 }
 
 // ============================================================================
@@ -144,12 +144,12 @@ type LogCollectionStats struct {
 
 // CentralizedConfig configures the centralized logging manager.
 type CentralizedConfig struct {
-	DefaultBackend    LogBackend          `json:"default_backend"`
-	Elasticsearch     *ElasticsearchConfig `json:"elasticsearch,omitempty"`
-	LokiEndpoint      string              `json:"loki_endpoint,omitempty"`
-	DefaultRetention  int                 `json:"default_retention_days"` // days
-	ArchivalEnabled   bool                `json:"archival_enabled"`
-	Logger            *logrus.Logger
+	DefaultBackend   LogBackend           `json:"default_backend"`
+	Elasticsearch    *ElasticsearchConfig `json:"elasticsearch,omitempty"`
+	LokiEndpoint     string               `json:"loki_endpoint,omitempty"`
+	DefaultRetention int                  `json:"default_retention_days"` // days
+	ArchivalEnabled  bool                 `json:"archival_enabled"`
+	Logger           *logrus.Logger
 }
 
 // CentralizedManager manages centralized log collection, routing, and archival.
@@ -422,7 +422,7 @@ func (m *CentralizedManager) EvaluateILM() []map[string]interface{} {
 
 		if targetTier != idx.Tier {
 			actions = append(actions, map[string]interface{}{
-				"index":       idx.Name,
+				"index":        idx.Name,
 				"current_tier": idx.Tier,
 				"target_tier":  targetTier,
 				"age_days":     ageDays,
@@ -587,7 +587,7 @@ func (m *CentralizedManager) GenerateDefaultPolicies() []*ArchivalPolicy {
 	}
 
 	for _, p := range policies {
-		m.CreateArchivalPolicy(p)
+		_ = m.CreateArchivalPolicy(p)
 	}
 	return policies
 }

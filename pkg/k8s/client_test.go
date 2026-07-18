@@ -56,8 +56,8 @@ func makeNode(name string, gpus int, ready bool) *corev1.Node {
 			ProviderID: "aws:///us-east-1a/i-abc123",
 		},
 		Status: corev1.NodeStatus{
-			Conditions: conditions,
-			Capacity:   cap,
+			Conditions:  conditions,
+			Capacity:    cap,
 			Allocatable: alloc,
 			Addresses: []corev1.NodeAddress{
 				{Type: corev1.NodeInternalIP, Address: "10.0.0.1"},
@@ -471,7 +471,7 @@ func TestResourceListToStringMap(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := resourceListToStringMap(tc.rl)
 			if tc.want == 0 {
-				if m != nil && len(m) > 0 {
+				if len(m) > 0 {
 					t.Errorf("expected nil/empty map, got %v", m)
 				}
 			} else if len(m) != tc.want {
@@ -497,7 +497,7 @@ func TestParseResourceList(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rl := parseResourceList(tc.input)
 			if tc.want == 0 {
-				if rl != nil && len(rl) > 0 {
+				if len(rl) > 0 {
 					t.Errorf("expected nil/empty, got %v", rl)
 				}
 			} else if len(rl) != tc.want {

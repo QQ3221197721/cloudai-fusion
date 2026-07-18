@@ -115,7 +115,7 @@ func TestCreate_NoStore(t *testing.T) {
 
 func TestGet_NoStore(t *testing.T) {
 	mgr, _ := NewManager(ManagerConfig{})
-	_, err := mgr.Get(nil, "some-id")
+	_, err := mgr.Get(context.TODO(), "some-id")
 	if err == nil {
 		t.Error("Get without store should return error")
 	}
@@ -123,7 +123,7 @@ func TestGet_NoStore(t *testing.T) {
 
 func TestList_NoStore(t *testing.T) {
 	mgr, _ := NewManager(ManagerConfig{})
-	items, total, err := mgr.List(nil, "", "", 1, 20)
+	items, total, err := mgr.List(context.TODO(), "", "", 1, 20)
 	if err != nil {
 		t.Errorf("List without store should not error, got: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestList_NoStore(t *testing.T) {
 
 func TestDelete_NoStore(t *testing.T) {
 	mgr, _ := NewManager(ManagerConfig{})
-	err := mgr.Delete(nil, "some-id")
+	err := mgr.Delete(context.TODO(), "some-id")
 	if err == nil {
 		t.Error("Delete without store should return error")
 	}
@@ -145,7 +145,7 @@ func TestDelete_NoStore(t *testing.T) {
 
 func TestUpdateStatus_NoStore(t *testing.T) {
 	mgr, _ := NewManager(ManagerConfig{})
-	_, err := mgr.UpdateStatus(nil, "some-id", &WorkloadStatusUpdate{
+	_, err := mgr.UpdateStatus(context.TODO(), "some-id", &WorkloadStatusUpdate{
 		Status: "queued",
 	})
 	if err == nil {
@@ -155,7 +155,7 @@ func TestUpdateStatus_NoStore(t *testing.T) {
 
 func TestGetEvents_NoStore(t *testing.T) {
 	mgr, _ := NewManager(ManagerConfig{})
-	events, err := mgr.GetEvents(nil, "wl-1", 0)
+	events, err := mgr.GetEvents(context.TODO(), "wl-1", 0)
 	if err != nil {
 		t.Errorf("GetEvents without store should not error, got: %v", err)
 	}
@@ -188,7 +188,7 @@ func TestList_PaginationDefaults(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// No store = returns empty but exercises pagination logic
-			items, _, _ := mgr.List(nil, "", "", tc.page, tc.pageSize)
+			items, _, _ := mgr.List(context.TODO(), "", "", tc.page, tc.pageSize)
 			if len(items) != 0 {
 				t.Errorf("expected empty items from no-store manager")
 			}

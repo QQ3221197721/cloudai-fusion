@@ -204,9 +204,9 @@ func BenchmarkFederationSelectCluster(b *testing.B) {
 		})
 	}
 	wl := &Workload{
-		ID:   "bench-wl",
-		Name: "bench-workload",
-		Type: common.WorkloadTypeTraining,
+		ID:              "bench-wl",
+		Name:            "bench-workload",
+		Type:            common.WorkloadTypeTraining,
 		ResourceRequest: common.ResourceRequest{GPUCount: 4},
 	}
 
@@ -228,10 +228,10 @@ func BenchmarkQueueManagerEnqueue(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		wl := &Workload{
-			ID:       fmt.Sprintf("wl-%d", i),
-			Name:     fmt.Sprintf("bench-wl-%d", i),
-			Type:     common.WorkloadTypeInference,
-			Priority: i % 10,
+			ID:              fmt.Sprintf("wl-%d", i),
+			Name:            fmt.Sprintf("bench-wl-%d", i),
+			Type:            common.WorkloadTypeInference,
+			Priority:        i % 10,
 			ResourceRequest: common.ResourceRequest{GPUCount: 1},
 		}
 		qm.Enqueue(wl, "default", PriorityLevel(i%10)*100)
@@ -242,10 +242,10 @@ func BenchmarkQueueManagerDequeue(b *testing.B) {
 	qm := NewQueueManager(DefaultQueueManagerConfig(), 64, 384000, 3*1024*1024*1024*1024)
 	for i := 0; i < 1000; i++ {
 		wl := &Workload{
-			ID:       fmt.Sprintf("wl-%d", i),
-			Name:     fmt.Sprintf("bench-wl-%d", i),
-			Type:     common.WorkloadTypeInference,
-			Priority: i % 10,
+			ID:              fmt.Sprintf("wl-%d", i),
+			Name:            fmt.Sprintf("bench-wl-%d", i),
+			Type:            common.WorkloadTypeInference,
+			Priority:        i % 10,
 			ResourceRequest: common.ResourceRequest{GPUCount: 1},
 		}
 		qm.Enqueue(wl, "default", PriorityLevel(i%10)*100)
@@ -296,13 +296,13 @@ func BenchmarkSchedulingCycleSingle(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		wl := &Workload{
-			ID:       fmt.Sprintf("wl-%d", i),
-			Name:     "cycle-bench",
-			Type:     common.WorkloadTypeTraining,
-			Status:   common.WorkloadStatusQueued,
-			Priority: 5,
+			ID:              fmt.Sprintf("wl-%d", i),
+			Name:            "cycle-bench",
+			Type:            common.WorkloadTypeTraining,
+			Status:          common.WorkloadStatusQueued,
+			Priority:        5,
 			ResourceRequest: common.ResourceRequest{GPUCount: 2},
-			QueuedAt: common.NowUTC(),
+			QueuedAt:        common.NowUTC(),
 		}
 		engine.SubmitWorkload(wl)
 		engine.schedulingCycle(context.Background())

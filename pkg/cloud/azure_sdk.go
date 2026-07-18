@@ -50,9 +50,9 @@ type AKSCluster struct {
 	Location   string            `json:"location"`
 	Tags       map[string]string `json:"tags,omitempty"`
 	Properties struct {
-		ProvisioningState string        `json:"provisioningState"`
-		KubernetesVersion string        `json:"kubernetesVersion"`
-		Fqdn              string        `json:"fqdn"`
+		ProvisioningState string `json:"provisioningState"`
+		KubernetesVersion string `json:"kubernetesVersion"`
+		Fqdn              string `json:"fqdn"`
 		PowerState        struct {
 			Code string `json:"code"`
 		} `json:"powerState"`

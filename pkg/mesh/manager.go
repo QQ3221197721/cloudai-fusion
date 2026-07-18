@@ -27,8 +27,8 @@ import (
 type MeshMode string
 
 const (
-	MeshModeAmbient  MeshMode = "ambient"  // Istio Ambient (ztunnel + waypoint)
-	MeshModeCilium   MeshMode = "cilium"   // Cilium eBPF-native mesh
+	MeshModeAmbient  MeshMode = "ambient" // Istio Ambient (ztunnel + waypoint)
+	MeshModeCilium   MeshMode = "cilium"  // Cilium eBPF-native mesh
 	MeshModeDisabled MeshMode = "disabled"
 )
 
@@ -40,7 +40,7 @@ type Config struct {
 	EnableL7Policy   bool     `json:"enable_l7_policy"`
 	EnableTracing    bool     `json:"enable_tracing"`
 	TraceSampleRate  float64  `json:"trace_sample_rate"`
-	HubbleEnabled    bool     `json:"hubble_enabled"`   // Cilium observability
+	HubbleEnabled    bool     `json:"hubble_enabled"`    // Cilium observability
 	WaypointReplicas int      `json:"waypoint_replicas"` // Istio Ambient waypoint
 }
 
@@ -50,44 +50,44 @@ type Config struct {
 
 // MeshStatus represents the service mesh health and configuration
 type MeshStatus struct {
-	Mode             MeshMode         `json:"mode"`
-	Version          string           `json:"version"`
-	Healthy          bool             `json:"healthy"`
-	MTLSEnabled      bool             `json:"mtls_enabled"`
-	ProxylessCount   int              `json:"proxyless_count"`  // pods without sidecar
-	ZTunnelStatus    string           `json:"ztunnel_status,omitempty"`
-	WaypointStatus   string           `json:"waypoint_status,omitempty"`
-	CiliumAgentCount int              `json:"cilium_agent_count,omitempty"`
-	EBPFProgramCount int              `json:"ebpf_program_count,omitempty"`
-	NetworkPolicies  int              `json:"network_policies"`
+	Mode             MeshMode          `json:"mode"`
+	Version          string            `json:"version"`
+	Healthy          bool              `json:"healthy"`
+	MTLSEnabled      bool              `json:"mtls_enabled"`
+	ProxylessCount   int               `json:"proxyless_count"` // pods without sidecar
+	ZTunnelStatus    string            `json:"ztunnel_status,omitempty"`
+	WaypointStatus   string            `json:"waypoint_status,omitempty"`
+	CiliumAgentCount int               `json:"cilium_agent_count,omitempty"`
+	EBPFProgramCount int               `json:"ebpf_program_count,omitempty"`
+	NetworkPolicies  int               `json:"network_policies"`
 	Components       []ComponentStatus `json:"components,omitempty"`
-	LastSyncAt       time.Time        `json:"last_sync_at"`
+	LastSyncAt       time.Time         `json:"last_sync_at"`
 }
 
 // NetworkPolicy defines an eBPF-enforced network policy
 type NetworkPolicy struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Namespace   string            `json:"namespace"`
-	ClusterID   string            `json:"cluster_id"`
-	Type        string            `json:"type"` // ingress, egress, both
-	Selector    map[string]string `json:"selector"`
-	IngressRules []PolicyRule     `json:"ingress_rules,omitempty"`
-	EgressRules  []PolicyRule     `json:"egress_rules,omitempty"`
-	L7Rules      []L7Rule         `json:"l7_rules,omitempty"`
-	Enforcement  string           `json:"enforcement"` // enforce, audit
-	Status       string           `json:"status"`
-	CreatedAt    time.Time        `json:"created_at"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Namespace    string            `json:"namespace"`
+	ClusterID    string            `json:"cluster_id"`
+	Type         string            `json:"type"` // ingress, egress, both
+	Selector     map[string]string `json:"selector"`
+	IngressRules []PolicyRule      `json:"ingress_rules,omitempty"`
+	EgressRules  []PolicyRule      `json:"egress_rules,omitempty"`
+	L7Rules      []L7Rule          `json:"l7_rules,omitempty"`
+	Enforcement  string            `json:"enforcement"` // enforce, audit
+	Status       string            `json:"status"`
+	CreatedAt    time.Time         `json:"created_at"`
 }
 
 // PolicyRule defines L3/L4 network policy rule
 type PolicyRule struct {
-	FromCIDR     []string          `json:"from_cidr,omitempty"`
-	ToCIDR       []string          `json:"to_cidr,omitempty"`
-	FromLabels   map[string]string `json:"from_labels,omitempty"`
-	ToLabels     map[string]string `json:"to_labels,omitempty"`
-	Ports        []PortRule        `json:"ports,omitempty"`
-	Action       string            `json:"action"` // allow, deny
+	FromCIDR   []string          `json:"from_cidr,omitempty"`
+	ToCIDR     []string          `json:"to_cidr,omitempty"`
+	FromLabels map[string]string `json:"from_labels,omitempty"`
+	ToLabels   map[string]string `json:"to_labels,omitempty"`
+	Ports      []PortRule        `json:"ports,omitempty"`
+	Action     string            `json:"action"` // allow, deny
 }
 
 // PortRule defines port-level policy
@@ -107,19 +107,19 @@ type L7Rule struct {
 
 // TrafficMetrics holds eBPF-collected traffic telemetry
 type TrafficMetrics struct {
-	SourcePod      string  `json:"source_pod"`
-	SourceNS       string  `json:"source_namespace"`
-	DestPod        string  `json:"dest_pod"`
-	DestNS         string  `json:"dest_namespace"`
-	Protocol       string  `json:"protocol"`
-	Port           int     `json:"port"`
-	BytesSent      int64   `json:"bytes_sent"`
-	BytesReceived  int64   `json:"bytes_received"`
-	RequestCount   int64   `json:"request_count"`
-	ErrorCount     int64   `json:"error_count"`
-	LatencyP50MS   float64 `json:"latency_p50_ms"`
-	LatencyP99MS   float64 `json:"latency_p99_ms"`
-	Encrypted      bool    `json:"encrypted"` // mTLS active
+	SourcePod     string  `json:"source_pod"`
+	SourceNS      string  `json:"source_namespace"`
+	DestPod       string  `json:"dest_pod"`
+	DestNS        string  `json:"dest_namespace"`
+	Protocol      string  `json:"protocol"`
+	Port          int     `json:"port"`
+	BytesSent     int64   `json:"bytes_sent"`
+	BytesReceived int64   `json:"bytes_received"`
+	RequestCount  int64   `json:"request_count"`
+	ErrorCount    int64   `json:"error_count"`
+	LatencyP50MS  float64 `json:"latency_p50_ms"`
+	LatencyP99MS  float64 `json:"latency_p99_ms"`
+	Encrypted     bool    `json:"encrypted"` // mTLS active
 }
 
 // ============================================================================
@@ -129,9 +129,9 @@ type TrafficMetrics struct {
 // Manager manages eBPF-based service mesh across clusters
 type Manager struct {
 	config    Config
-	policies  []*NetworkPolicy        // in-memory cache (hot-path reads)
-	store     *store.Store            // DB persistence (nil = in-memory only)
-	k8sClient *k8s.Client             // optional: real K8s API client for CRD queries
+	policies  []*NetworkPolicy // in-memory cache (hot-path reads)
+	store     *store.Store     // DB persistence (nil = in-memory only)
+	k8sClient *k8s.Client      // optional: real K8s API client for CRD queries
 	logger    *logrus.Logger
 	mu        sync.RWMutex
 }
@@ -333,15 +333,6 @@ func hasLabelPrefix(labels map[string]string, key, prefix string) bool {
 		return true
 	}
 	return len(v) >= len(prefix) && v[:len(prefix)] == prefix
-}
-
-func getCiliumVersion(pods []k8s.Pod) string {
-	for _, p := range pods {
-		if v, ok := p.Metadata.Labels["app.kubernetes.io/version"]; ok {
-			return "cilium-" + v
-		}
-	}
-	return "cilium-1.16.0"
 }
 
 // ListPolicies returns all network policies (DB-first with cache fallback)
@@ -638,7 +629,7 @@ func defaultMeshPolicies() []*NetworkPolicy {
 			Enforcement: "audit", Status: "active",
 			IngressRules: []PolicyRule{{Action: "deny"}},
 			EgressRules:  []PolicyRule{{Action: "deny"}},
-			CreatedAt: now,
+			CreatedAt:    now,
 		},
 		{
 			ID: "mesh-allow-dns", Name: "allow-dns-egress",

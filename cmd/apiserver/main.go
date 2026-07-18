@@ -116,16 +116,16 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// Initialize OpenTelemetry tracing (enhanced: adaptive sampling + profiling)
 	tracingProvider, err := tracing.Init(ctx, tracing.Config{
-		ServiceName:      "cloudai-apiserver",
-		ServiceVersion:   Version,
-		Endpoint:         cfg.JaegerEndpoint,
-		SampleRate:       0.1,
-		Enabled:          cfg.JaegerEndpoint != "",
-		AdaptiveSampling: true,
-		MinSampleRate:    0.01,
-		MaxSampleRate:    1.0,
+		ServiceName:       "cloudai-apiserver",
+		ServiceVersion:    Version,
+		Endpoint:          cfg.JaegerEndpoint,
+		SampleRate:        0.1,
+		Enabled:           cfg.JaegerEndpoint != "",
+		AdaptiveSampling:  true,
+		MinSampleRate:     0.01,
+		MaxSampleRate:     1.0,
 		TargetSpansPerSec: 200,
-		Environment:      cfg.Env,
+		Environment:       cfg.Env,
 	})
 	if err != nil {
 		logger.WithError(err).Warn("Failed to init tracing, continuing without")
@@ -162,7 +162,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		logger.WithError(err).Warn("Database unavailable - running without persistence (login/register disabled)")
 	} else {
 		authService.SetStore(dbStore)
-		defer dbStore.Close()
+		defer func() { _ = dbStore.Close() }()
 		logger.Info("Database store initialized")
 
 		// Run database migrations (Problem #8.1)
@@ -244,9 +244,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// Initialize service mesh manager (eBPF/Cilium/Istio Ambient)
 	meshManager, err := mesh.NewManager(mesh.Config{
-		Mode:        mesh.MeshModeAmbient,
-		EnableMTLS:  true,
-		EnableTracing: true,
+		Mode:            mesh.MeshModeAmbient,
+		EnableMTLS:      true,
+		EnableTracing:   true,
 		TraceSampleRate: 0.1,
 	})
 	if err != nil {
@@ -273,8 +273,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// Initialize edge-cloud manager
 	edgeManager, err := edge.NewManager(edge.Config{
-		CloudEndpoint:     fmt.Sprintf("http://%s:%d", cfg.Host, cfg.Port),
-		MaxEdgePowerWatts: 200,
+		CloudEndpoint:      fmt.Sprintf("http://%s:%d", cfg.Host, cfg.Port),
+		MaxEdgePowerWatts:  200,
 		EnableAutoFailover: true,
 	})
 	if err != nil {
@@ -303,7 +303,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		RetryDelay: 1 * time.Second,
 	}
 	bus := eventbus.New(eventBusCfg, logger)
-	defer bus.Close()
+	defer func() { _ = bus.Close() }()
 	logger.Info("Event bus initialized")
 
 	// Initialize async messaging queue (NATS/Kafka)
@@ -316,7 +316,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		RetryDelay:   5 * time.Second,
 	}
 	msgProducer := messaging.NewProducer(msgCfg, logger)
-	defer msgProducer.Close()
+	defer func() { _ = msgProducer.Close() }()
 	_ = msgProducer // Will be used by API handlers for async command dispatch
 	logger.Info("Message producer initialized")
 
@@ -589,9 +589,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// Apply audit logging middleware
 	router.Use(auth.AuditMiddleware(auth.AuditConfig{
-		Level:  auth.AuditLevelRequest,
-		Sinks:  []auth.AuditSink{auditStore, auditSink, auth.NewLoggerAuditSink(logger)},
-		Logger: logger,
+		Level:     auth.AuditLevelRequest,
+		Sinks:     []auth.AuditSink{auditStore, auditSink, auth.NewLoggerAuditSink(logger)},
+		Logger:    logger,
 		SkipPaths: []string{"/healthz", "/readyz", "/metrics"},
 	}))
 
@@ -620,11 +620,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 	// Security status endpoint
 	router.GET("/admin/security/status", func(c *gin.Context) {
 		status := map[string]interface{}{
-			"gateway":       apiGateway.Status(),
-			"vault":         vaultClient.Status(),
-			"supply_chain":  supplyChain.Status(),
-			"net_policy":    netPolicyEngine.Status(),
-			"frameworks":    security.SupportedFrameworks(),
+			"gateway":      apiGateway.Status(),
+			"vault":        vaultClient.Status(),
+			"supply_chain": supplyChain.Status(),
+			"net_policy":   netPolicyEngine.Status(),
+			"frameworks":   security.SupportedFrameworks(),
 		}
 		if mtlsMgr != nil {
 			status["mtls"] = mtlsMgr.Status()

@@ -30,11 +30,11 @@ import (
 // but false negatives are not. Used to avoid unnecessary DB lookups for
 // keys that have never been cached.
 type BloomFilter struct {
-	bits    []uint64
-	size    uint64
-	hashes  int
-	mu      sync.RWMutex
-	added   int64
+	bits   []uint64
+	size   uint64
+	hashes int
+	mu     sync.RWMutex
+	added  int64
 }
 
 // NewBloomFilter creates a bloom filter optimized for n expected elements
@@ -133,12 +133,12 @@ func (bf *BloomFilter) hash(key string) (uint64, uint64) {
 
 // AdaptiveTTLConfig configures adaptive TTL behavior.
 type AdaptiveTTLConfig struct {
-	BaseTTL          time.Duration // base TTL for new keys
-	MinTTL           time.Duration // minimum TTL
-	MaxTTL           time.Duration // maximum TTL
-	HotThreshold     int           // access count to be considered "hot"
-	TTLMultiplier    float64       // multiply TTL by this per hot threshold
-	DecayInterval    time.Duration // how often to decay access counters
+	BaseTTL       time.Duration // base TTL for new keys
+	MinTTL        time.Duration // minimum TTL
+	MaxTTL        time.Duration // maximum TTL
+	HotThreshold  int           // access count to be considered "hot"
+	TTLMultiplier float64       // multiply TTL by this per hot threshold
+	DecayInterval time.Duration // how often to decay access counters
 }
 
 // DefaultAdaptiveTTLConfig returns sensible defaults.
@@ -158,6 +158,9 @@ type AdaptiveTTLManager struct {
 	config      AdaptiveTTLConfig
 	accessCount map[string]*int64 // key → access count
 	mu          sync.RWMutex
+	stopCh      chan struct{}
+	stopOnce    sync.Once
+	doneCh      chan struct{} // closed when decayLoop exits
 }
 
 // NewAdaptiveTTLManager creates a new adaptive TTL manager.
@@ -165,6 +168,8 @@ func NewAdaptiveTTLManager(cfg AdaptiveTTLConfig) *AdaptiveTTLManager {
 	m := &AdaptiveTTLManager{
 		config:      cfg,
 		accessCount: make(map[string]*int64),
+		stopCh:      make(chan struct{}),
+		doneCh:      make(chan struct{}),
 	}
 	go m.decayLoop()
 	return m
@@ -227,21 +232,36 @@ func (m *AdaptiveTTLManager) ComputeTTL(key string) time.Duration {
 
 // decayLoop periodically decays access counters to adapt to changing patterns.
 func (m *AdaptiveTTLManager) decayLoop() {
+	defer close(m.doneCh)
 	ticker := time.NewTicker(m.config.DecayInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		m.mu.Lock()
-		for key, counter := range m.accessCount {
-			newVal := atomic.LoadInt64(counter) / 2
-			if newVal <= 0 {
-				delete(m.accessCount, key)
-			} else {
-				atomic.StoreInt64(counter, newVal)
+	for {
+		select {
+		case <-m.stopCh:
+			return
+		case <-ticker.C:
+			m.mu.Lock()
+			for key, counter := range m.accessCount {
+				newVal := atomic.LoadInt64(counter) / 2
+				if newVal <= 0 {
+					delete(m.accessCount, key)
+				} else {
+					atomic.StoreInt64(counter, newVal)
+				}
 			}
+			m.mu.Unlock()
 		}
-		m.mu.Unlock()
 	}
+}
+
+// Close stops the background decay goroutine and waits for it to exit.
+// It is safe to call multiple times.
+func (m *AdaptiveTTLManager) Close() {
+	m.stopOnce.Do(func() {
+		close(m.stopCh)
+		<-m.doneCh
+	})
 }
 
 // Stats returns access tracking statistics.
@@ -289,15 +309,15 @@ type ShardedCache struct {
 
 // ShardedCacheConfig configures the sharded cache.
 type ShardedCacheConfig struct {
-	ShardCount       int
-	MaxSizePerShard  int
-	DefaultTTL       time.Duration
-	KeyPrefix        string
-	EnableBloom      bool
-	BloomExpectedN   int
-	BloomFPRate      float64
+	ShardCount        int
+	MaxSizePerShard   int
+	DefaultTTL        time.Duration
+	KeyPrefix         string
+	EnableBloom       bool
+	BloomExpectedN    int
+	BloomFPRate       float64
 	EnableAdaptiveTTL bool
-	AdaptiveTTL      AdaptiveTTLConfig
+	AdaptiveTTL       AdaptiveTTLConfig
 }
 
 // DefaultShardedCacheConfig returns sensible defaults.
@@ -417,7 +437,7 @@ func (sc *ShardedCache) Exists(ctx context.Context, key string) (bool, error) {
 // Close releases all shard resources.
 func (sc *ShardedCache) Close() error {
 	for _, shard := range sc.shards {
-		shard.Close()
+		_ = shard.Close()
 	}
 	return nil
 }
@@ -457,9 +477,9 @@ func (sc *ShardedCache) BloomStats() map[string]interface{} {
 		return nil
 	}
 	return map[string]interface{}{
-		"elements":  sc.bloom.Count(),
-		"fp_rate":   sc.bloom.EstimatedFPRate(),
-		"skips":     atomic.LoadInt64(&sc.bloomSkips),
+		"elements": sc.bloom.Count(),
+		"fp_rate":  sc.bloom.EstimatedFPRate(),
+		"skips":    atomic.LoadInt64(&sc.bloomSkips),
 	}
 }
 
@@ -493,11 +513,11 @@ func DefaultWarmupConfig() WarmupConfig {
 
 // WarmupResult holds the result of a cache warmup operation.
 type WarmupResult struct {
-	TotalKeys    int           `json:"total_keys"`
-	LoadedKeys   int64         `json:"loaded_keys"`
-	FailedKeys   int64         `json:"failed_keys"`
-	Duration     time.Duration `json:"duration"`
-	KeysPerSec   float64       `json:"keys_per_sec"`
+	TotalKeys  int           `json:"total_keys"`
+	LoadedKeys int64         `json:"loaded_keys"`
+	FailedKeys int64         `json:"failed_keys"`
+	Duration   time.Duration `json:"duration"`
+	KeysPerSec float64       `json:"keys_per_sec"`
 }
 
 // WarmupSource provides keys and values for cache warming.
@@ -560,10 +580,10 @@ func Warmup(ctx context.Context, cache Cache, source WarmupSource, cfg WarmupCon
 	}
 
 	logger.WithFields(logrus.Fields{
-		"total":       total,
-		"loaded":      result.LoadedKeys,
-		"failed":      result.FailedKeys,
-		"duration":    result.Duration,
+		"total":        total,
+		"loaded":       result.LoadedKeys,
+		"failed":       result.FailedKeys,
+		"duration":     result.Duration,
 		"keys_per_sec": result.KeysPerSec,
 	}).Info("Cache warmup completed")
 

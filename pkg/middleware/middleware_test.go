@@ -80,4 +80,22 @@ func TestNewRateLimiter(t *testing.T) {
 	if rl.clients == nil {
 		t.Error("clients map should be initialized")
 	}
+	rl.Close()
+}
+
+// TestRateLimiter_CloseStopsGoroutine verifies the background cleanup goroutine
+// is stopped by Close (no leak, graceful shutdown).
+func TestRateLimiter_CloseStopsGoroutine(t *testing.T) {
+	rl := NewRateLimiter(DefaultRateLimitConfig())
+
+	done := make(chan struct{})
+	go func() { rl.Close(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Close() did not return: cleanup goroutine leaked")
+	}
+
+	// Close is idempotent.
+	rl.Close()
 }

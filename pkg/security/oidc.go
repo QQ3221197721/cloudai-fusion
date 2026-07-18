@@ -28,12 +28,12 @@ import (
 type OIDCProviderType string
 
 const (
-	OIDCProviderAzureAD    OIDCProviderType = "azure-ad"
-	OIDCProviderGoogle     OIDCProviderType = "google"
-	OIDCProviderOkta       OIDCProviderType = "okta"
-	OIDCProviderAWSSSO     OIDCProviderType = "aws-sso"
-	OIDCProviderKeycloak   OIDCProviderType = "keycloak"
-	OIDCProviderGeneric    OIDCProviderType = "generic"
+	OIDCProviderAzureAD  OIDCProviderType = "azure-ad"
+	OIDCProviderGoogle   OIDCProviderType = "google"
+	OIDCProviderOkta     OIDCProviderType = "okta"
+	OIDCProviderAWSSSO   OIDCProviderType = "aws-sso"
+	OIDCProviderKeycloak OIDCProviderType = "keycloak"
+	OIDCProviderGeneric  OIDCProviderType = "generic"
 )
 
 // OIDCProviderConfig holds configuration for an OIDC identity provider
@@ -41,26 +41,26 @@ type OIDCProviderConfig struct {
 	ID           string           `json:"id"`
 	Name         string           `json:"name"`
 	Type         OIDCProviderType `json:"type"`
-	IssuerURL    string           `json:"issuer_url"`    // e.g., https://login.microsoftonline.com/{tenant}/v2.0
+	IssuerURL    string           `json:"issuer_url"` // e.g., https://login.microsoftonline.com/{tenant}/v2.0
 	ClientID     string           `json:"client_id"`
 	ClientSecret string           `json:"client_secret"` //nolint:gosec // G101: config field, not a hardcoded credential
 	RedirectURI  string           `json:"redirect_uri"`
 	Scopes       []string         `json:"scopes"`
 	// Role mapping: external claim → CloudAI role
-	RoleMapping  map[string]string `json:"role_mapping"` // e.g., {"admin": "admin", "reader": "viewer"}
-	RoleClaim    string            `json:"role_claim"`   // JWT claim containing the role (default: "roles")
-	Enabled      bool              `json:"enabled"`
+	RoleMapping map[string]string `json:"role_mapping"` // e.g., {"admin": "admin", "reader": "viewer"}
+	RoleClaim   string            `json:"role_claim"`   // JWT claim containing the role (default: "roles")
+	Enabled     bool              `json:"enabled"`
 }
 
 // OIDCDiscovery holds the discovered OIDC endpoints
 type OIDCDiscovery struct {
-	Issuer                string   `json:"issuer"`
-	AuthorizationEndpoint string   `json:"authorization_endpoint"`
-	TokenEndpoint         string   `json:"token_endpoint"`
-	UserinfoEndpoint      string   `json:"userinfo_endpoint"`
-	JwksURI               string   `json:"jwks_uri"`
-	ScopesSupported       []string `json:"scopes_supported"`
-	ResponseTypesSupported []string `json:"response_types_supported"`
+	Issuer                  string   `json:"issuer"`
+	AuthorizationEndpoint   string   `json:"authorization_endpoint"`
+	TokenEndpoint           string   `json:"token_endpoint"`
+	UserinfoEndpoint        string   `json:"userinfo_endpoint"`
+	JwksURI                 string   `json:"jwks_uri"`
+	ScopesSupported         []string `json:"scopes_supported"`
+	ResponseTypesSupported  []string `json:"response_types_supported"`
 	IDTokenSigningAlgValues []string `json:"id_token_signing_alg_values_supported"`
 }
 
@@ -76,12 +76,12 @@ type OIDCTokenResponse struct {
 
 // OIDCUserInfo represents user information from the IdP
 type OIDCUserInfo struct {
-	Sub           string `json:"sub"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	Name          string `json:"name"`
-	PreferredName string `json:"preferred_username"`
-	Picture       string `json:"picture,omitempty"`
+	Sub           string   `json:"sub"`
+	Email         string   `json:"email"`
+	EmailVerified bool     `json:"email_verified"`
+	Name          string   `json:"name"`
+	PreferredName string   `json:"preferred_username"`
+	Picture       string   `json:"picture,omitempty"`
 	Roles         []string `json:"roles,omitempty"`
 }
 
@@ -96,9 +96,9 @@ type FederatedIdentity struct {
 	ExternalToken string           `json:"-"` //nolint:gosec // G101: runtime token holder, not a hardcoded credential
 	FederatedAt   time.Time        `json:"federated_at"`
 	// JIT provisioning fields
-	ProvisionedAt time.Time        `json:"provisioned_at,omitempty"`
-	LastLoginAt   time.Time        `json:"last_login_at,omitempty"`
-	Active        bool             `json:"active,omitempty"`
+	ProvisionedAt time.Time `json:"provisioned_at,omitempty"`
+	LastLoginAt   time.Time `json:"last_login_at,omitempty"`
+	Active        bool      `json:"active,omitempty"`
 }
 
 // JWKS represents a JSON Web Key Set
@@ -122,14 +122,14 @@ type JWK struct {
 
 // FederationManager manages cross-cloud OIDC/SAML identity federation
 type FederationManager struct {
-	providers       map[string]*OIDCProviderConfig
-	discoveries     map[string]*OIDCDiscovery // cached discovery docs
-	jwksCache       map[string]*jwksCacheEntry // cached JWKS per issuer with TTL
-	revokedTokens   map[string]time.Time       // revoked token JTI → expiry (cleanup on check)
+	providers        map[string]*OIDCProviderConfig
+	discoveries      map[string]*OIDCDiscovery     // cached discovery docs
+	jwksCache        map[string]*jwksCacheEntry    // cached JWKS per issuer with TTL
+	revokedTokens    map[string]time.Time          // revoked token JTI → expiry (cleanup on check)
 	provisionedUsers map[string]*FederatedIdentity // external sub → provisioned identity
-	httpClient      *http.Client
-	logger          *logrus.Logger
-	mu              sync.RWMutex
+	httpClient       *http.Client
+	logger           *logrus.Logger
+	mu               sync.RWMutex
 }
 
 // jwksCacheEntry holds a JWKS response with a TTL for automatic refresh.
@@ -222,7 +222,7 @@ func (fm *FederationManager) Discover(ctx context.Context, providerID string) (*
 	if err != nil {
 		return nil, fmt.Errorf("OIDC discovery failed for %s: %w", provider.Name, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -300,7 +300,7 @@ func (fm *FederationManager) ExchangeCode(ctx context.Context, providerID, code 
 	if err != nil {
 		return nil, fmt.Errorf("token exchange failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -510,7 +510,7 @@ func (fm *FederationManager) getJWKS(ctx context.Context, providerID string, for
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var fetchedJWKS JWKS
 	if err := json.NewDecoder(resp.Body).Decode(&fetchedJWKS); err != nil {
@@ -570,7 +570,7 @@ func (fm *FederationManager) RefreshToken(ctx context.Context, providerID, refre
 	if err != nil {
 		return nil, fmt.Errorf("token refresh failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -613,10 +613,10 @@ func jwkToRSAPublicKey(jwk JWK) (*rsa.PublicKey, error) {
 // JITProvisionConfig controls how federated users are automatically provisioned.
 type JITProvisionConfig struct {
 	Enabled        bool              `json:"enabled"`
-	DefaultRole    string            `json:"default_role"`     // role if no mapping matches
-	AutoActivate   bool              `json:"auto_activate"`    // activate account immediately
-	AllowedDomains []string          `json:"allowed_domains"`  // restrict by email domain
-	GroupMapping   map[string]string `json:"group_mapping"`    // IdP group → CloudAI role
+	DefaultRole    string            `json:"default_role"`    // role if no mapping matches
+	AutoActivate   bool              `json:"auto_activate"`   // activate account immediately
+	AllowedDomains []string          `json:"allowed_domains"` // restrict by email domain
+	GroupMapping   map[string]string `json:"group_mapping"`   // IdP group → CloudAI role
 }
 
 // ProvisionedUser represents a JIT-provisioned local user account.

@@ -23,48 +23,48 @@ type PermissionScope string
 const (
 	ScopeGlobal    PermissionScope = "global"    // all resources
 	ScopeCluster   PermissionScope = "cluster"   // within a cluster
-	ScopeNamespace PermissionScope = "namespace"  // within a namespace
-	ScopeTenant    PermissionScope = "tenant"     // within a tenant
-	ScopeOwner     PermissionScope = "owner"      // only own resources
+	ScopeNamespace PermissionScope = "namespace" // within a namespace
+	ScopeTenant    PermissionScope = "tenant"    // within a tenant
+	ScopeOwner     PermissionScope = "owner"     // only own resources
 )
 
 // DataAccessLevel defines the data-level access restriction.
 type DataAccessLevel string
 
 const (
-	DataAccessFull      DataAccessLevel = "full"       // all fields
-	DataAccessStandard  DataAccessLevel = "standard"   // non-sensitive fields
+	DataAccessFull       DataAccessLevel = "full"       // all fields
+	DataAccessStandard   DataAccessLevel = "standard"   // non-sensitive fields
 	DataAccessRestricted DataAccessLevel = "restricted" // minimal fields only
-	DataAccessNone      DataAccessLevel = "none"        // no data access
+	DataAccessNone       DataAccessLevel = "none"       // no data access
 )
 
 // PermissionGrant represents a fine-grained permission assigned to a principal.
 type PermissionGrant struct {
-	ID             string          `json:"id"`
-	PrincipalID    string          `json:"principal_id"`   // user ID or group ID
-	PrincipalType  string          `json:"principal_type"` // user, group, service-account
-	Permission     Permission      `json:"permission"`     // base permission (e.g., cluster:read)
-	Scope          PermissionScope `json:"scope"`
-	ScopeRef       string          `json:"scope_ref,omitempty"` // cluster ID, namespace, tenant ID
-	DataAccess     DataAccessLevel `json:"data_access"`
-	FieldFilter    *FieldFilter    `json:"field_filter,omitempty"`
-	Conditions     []PermCondition `json:"conditions,omitempty"`
-	Enabled        bool            `json:"enabled"`
+	ID            string          `json:"id"`
+	PrincipalID   string          `json:"principal_id"`   // user ID or group ID
+	PrincipalType string          `json:"principal_type"` // user, group, service-account
+	Permission    Permission      `json:"permission"`     // base permission (e.g., cluster:read)
+	Scope         PermissionScope `json:"scope"`
+	ScopeRef      string          `json:"scope_ref,omitempty"` // cluster ID, namespace, tenant ID
+	DataAccess    DataAccessLevel `json:"data_access"`
+	FieldFilter   *FieldFilter    `json:"field_filter,omitempty"`
+	Conditions    []PermCondition `json:"conditions,omitempty"`
+	Enabled       bool            `json:"enabled"`
 }
 
 // FieldFilter defines which fields of a resource are visible/editable.
 type FieldFilter struct {
-	AllowedFields  []string `json:"allowed_fields,omitempty"`  // whitelist (empty = all)
-	DeniedFields   []string `json:"denied_fields,omitempty"`   // blacklist
-	MaskedFields   []string `json:"masked_fields,omitempty"`   // shown as "***"
+	AllowedFields  []string `json:"allowed_fields,omitempty"` // whitelist (empty = all)
+	DeniedFields   []string `json:"denied_fields,omitempty"`  // blacklist
+	MaskedFields   []string `json:"masked_fields,omitempty"`  // shown as "***"
 	ReadOnlyFields []string `json:"read_only_fields,omitempty"`
 }
 
 // PermCondition defines a runtime condition for a permission.
 type PermCondition struct {
-	Type  string `json:"type"`  // ip_range, time_window, mfa, resource_tag
+	Type  string `json:"type"` // ip_range, time_window, mfa, resource_tag
 	Key   string `json:"key"`
-	Op    string `json:"op"`    // eq, neq, in, not_in, contains, cidr
+	Op    string `json:"op"` // eq, neq, in, not_in, contains, cidr
 	Value string `json:"value"`
 }
 
@@ -74,9 +74,9 @@ type PermCondition struct {
 
 // PermissionManager manages fine-grained permission grants and evaluation.
 type PermissionManager struct {
-	grants  []*PermissionGrant
-	logger  *logrus.Logger
-	mu      sync.RWMutex
+	grants []*PermissionGrant
+	logger *logrus.Logger
+	mu     sync.RWMutex
 }
 
 // PermissionManagerConfig configures the permission manager.

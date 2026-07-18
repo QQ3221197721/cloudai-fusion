@@ -84,8 +84,8 @@ func TestAgentTypeConstants(t *testing.T) {
 
 func newTestOrchestrator() *AgentOrchestrator {
 	return &AgentOrchestrator{
-		agents: make(map[AgentType]*Agent),
-		logger: logrus.New(),
+		agents:  make(map[AgentType]*Agent),
+		logger:  logrus.New(),
 		apiAddr: "localhost:8080",
 		aiAddr:  "localhost:8090",
 	}

@@ -52,9 +52,9 @@ type Migrator struct {
 
 // Config holds migrator configuration.
 type Config struct {
-	DB         *sql.DB
-	TableName  string // defaults to "schema_migrations"
-	Logger     *logrus.Logger
+	DB        *sql.DB
+	TableName string // defaults to "schema_migrations"
+	Logger    *logrus.Logger
 }
 
 // New creates a new Migrator with the given config and migrations.
@@ -237,7 +237,7 @@ func (m *Migrator) getApplied(ctx context.Context) ([]AppliedMigration, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var result []AppliedMigration
 	for rows.Next() {

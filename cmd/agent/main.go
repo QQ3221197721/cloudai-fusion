@@ -108,8 +108,8 @@ func runAgent(cmd *cobra.Command, args []string) error {
 
 	// Initialize agent orchestrator
 	orchestrator := &AgentOrchestrator{
-		agents: make(map[AgentType]*Agent),
-		logger: logger,
+		agents:  make(map[AgentType]*Agent),
+		logger:  logger,
 		apiAddr: cfg.APIServerAddr,
 		aiAddr:  cfg.AIEngineAddr,
 	}
@@ -210,7 +210,9 @@ func runAgent(cmd *cobra.Command, args []string) error {
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer shutdownCancel()
-	server.Shutdown(shutdownCtx)
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Info("Agent HTTP server shutdown error: " + err.Error())
+	}
 
 	cancel()
 	logger.Info("Agent service stopped")
@@ -414,7 +416,10 @@ func (o *AgentOrchestrator) HandleRealtimeMetrics(c *gin.Context) {
 	// Convert to JSON for clean output
 	data, _ := json.Marshal(latest)
 	var result map[string]interface{}
-	json.Unmarshal(data, &result)
+	if err := json.Unmarshal(data, &result); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to serialize metrics"})
+		return
+	}
 	c.JSON(http.StatusOK, result)
 }
 

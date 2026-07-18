@@ -22,17 +22,17 @@ import (
 
 // ABACPolicy defines an attribute-based access control policy.
 type ABACPolicy struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description,omitempty"`
-	Priority    int             `json:"priority"` // higher = evaluated first
-	Effect      PolicyEffect    `json:"effect"`   // allow or deny
-	Subject     SubjectMatch    `json:"subject"`
-	Resource    ResourceMatch   `json:"resource"`
-	Action      ActionMatch     `json:"action"`
+	ID          string           `json:"id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description,omitempty"`
+	Priority    int              `json:"priority"` // higher = evaluated first
+	Effect      PolicyEffect     `json:"effect"`   // allow or deny
+	Subject     SubjectMatch     `json:"subject"`
+	Resource    ResourceMatch    `json:"resource"`
+	Action      ActionMatch      `json:"action"`
 	Environment EnvironmentMatch `json:"environment,omitempty"`
-	Enabled     bool            `json:"enabled"`
-	CreatedAt   time.Time       `json:"created_at"`
+	Enabled     bool             `json:"enabled"`
+	CreatedAt   time.Time        `json:"created_at"`
 }
 
 // PolicyEffect is the outcome of a matched policy.
@@ -76,9 +76,9 @@ type EnvironmentMatch struct {
 
 // TimeWindow represents an allowed time range.
 type TimeWindow struct {
-	Weekdays []time.Weekday `json:"weekdays,omitempty"` // empty = all days
-	StartHour int           `json:"start_hour"`         // 0-23 UTC
-	EndHour   int           `json:"end_hour"`           // 0-23 UTC
+	Weekdays  []time.Weekday `json:"weekdays,omitempty"` // empty = all days
+	StartHour int            `json:"start_hour"`         // 0-23 UTC
+	EndHour   int            `json:"end_hour"`           // 0-23 UTC
 }
 
 // ============================================================================
@@ -107,17 +107,17 @@ type ABACRequest struct {
 	Operation string // create, read, update, delete, list, exec
 
 	// Environment
-	ClientIP   string
-	SourceType string // api, console, ci-cd
+	ClientIP    string
+	SourceType  string // api, console, ci-cd
 	RequestTime time.Time
 }
 
 // ABACDecision is the result of policy evaluation.
 type ABACDecision struct {
-	Allowed   bool         `json:"allowed"`
-	Effect    PolicyEffect `json:"effect"`
-	PolicyID  string       `json:"policy_id,omitempty"`
-	Reason    string       `json:"reason"`
+	Allowed  bool         `json:"allowed"`
+	Effect   PolicyEffect `json:"effect"`
+	PolicyID string       `json:"policy_id,omitempty"`
+	Reason   string       `json:"reason"`
 }
 
 // ============================================================================
@@ -447,52 +447,52 @@ func DefaultABACPolicies() []*ABACPolicy {
 		{
 			ID: "abac-admin-full", Name: "Admin Full Access",
 			Description: "Admins have unrestricted access to all resources",
-			Priority: 1000, Effect: EffectAllow, Enabled: true,
-			Subject: SubjectMatch{Roles: []string{"admin"}},
-			Resource: ResourceMatch{},
-			Action:   ActionMatch{},
+			Priority:    1000, Effect: EffectAllow, Enabled: true,
+			Subject:   SubjectMatch{Roles: []string{"admin"}},
+			Resource:  ResourceMatch{},
+			Action:    ActionMatch{},
 			CreatedAt: now,
 		},
 		{
 			ID: "abac-deny-restricted-no-mfa", Name: "Deny Restricted Without MFA",
 			Description: "Restricted resources require multi-factor authentication",
-			Priority: 900, Effect: EffectDeny, Enabled: true,
-			Subject:  SubjectMatch{MFARequired: true},
-			Resource: ResourceMatch{Sensitivity: []string{"restricted"}},
-			Action:   ActionMatch{},
+			Priority:    900, Effect: EffectDeny, Enabled: true,
+			Subject:   SubjectMatch{MFARequired: true},
+			Resource:  ResourceMatch{Sensitivity: []string{"restricted"}},
+			Action:    ActionMatch{},
 			CreatedAt: now,
 		},
 		{
 			ID: "abac-operator-crud", Name: "Operator CRUD on Clusters/Workloads",
 			Description: "Operators can manage clusters and workloads",
-			Priority: 500, Effect: EffectAllow, Enabled: true,
-			Subject:  SubjectMatch{Roles: []string{"operator"}},
-			Resource: ResourceMatch{Types: []string{"cluster", "workload"}},
-			Action:   ActionMatch{Operations: []string{"create", "read", "update", "delete", "list"}},
+			Priority:    500, Effect: EffectAllow, Enabled: true,
+			Subject:   SubjectMatch{Roles: []string{"operator"}},
+			Resource:  ResourceMatch{Types: []string{"cluster", "workload"}},
+			Action:    ActionMatch{Operations: []string{"create", "read", "update", "delete", "list"}},
 			CreatedAt: now,
 		},
 		{
 			ID: "abac-developer-read-write", Name: "Developer Read/Write Workloads",
 			Description: "Developers can create and read workloads",
-			Priority: 400, Effect: EffectAllow, Enabled: true,
-			Subject:  SubjectMatch{Roles: []string{"developer"}},
-			Resource: ResourceMatch{Types: []string{"workload"}},
-			Action:   ActionMatch{Operations: []string{"create", "read", "update", "list"}},
+			Priority:    400, Effect: EffectAllow, Enabled: true,
+			Subject:   SubjectMatch{Roles: []string{"developer"}},
+			Resource:  ResourceMatch{Types: []string{"workload"}},
+			Action:    ActionMatch{Operations: []string{"create", "read", "update", "list"}},
 			CreatedAt: now,
 		},
 		{
 			ID: "abac-viewer-readonly", Name: "Viewer Read-Only",
 			Description: "Viewers have read-only access to non-restricted resources",
-			Priority: 300, Effect: EffectAllow, Enabled: true,
-			Subject:  SubjectMatch{Roles: []string{"viewer"}},
-			Resource: ResourceMatch{Sensitivity: []string{"public", "internal"}},
-			Action:   ActionMatch{Operations: []string{"read", "list"}},
+			Priority:    300, Effect: EffectAllow, Enabled: true,
+			Subject:   SubjectMatch{Roles: []string{"viewer"}},
+			Resource:  ResourceMatch{Sensitivity: []string{"public", "internal"}},
+			Action:    ActionMatch{Operations: []string{"read", "list"}},
 			CreatedAt: now,
 		},
 		{
 			ID: "abac-deny-outside-hours", Name: "Deny Writes Outside Business Hours",
 			Description: "Non-admin write operations restricted to business hours (UTC)",
-			Priority: 800, Effect: EffectDeny, Enabled: false, // disabled by default
+			Priority:    800, Effect: EffectDeny, Enabled: false, // disabled by default
 			Subject:  SubjectMatch{Roles: []string{"operator", "developer"}},
 			Resource: ResourceMatch{},
 			Action:   ActionMatch{Operations: []string{"create", "update", "delete"}},

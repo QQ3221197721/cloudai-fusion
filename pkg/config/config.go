@@ -42,7 +42,7 @@ type Config struct {
 	DBPort         int    `mapstructure:"db_port"`
 	DBName         string `mapstructure:"db_name"`
 	DBUser         string `mapstructure:"db_user"`
-	DBPassword     string `mapstructure:"db_password"`     //nolint:gosec // G101: config field, not a hardcoded credential
+	DBPassword     string `mapstructure:"db_password"` //nolint:gosec // G101: config field, not a hardcoded credential
 	DBSSLMode      string `mapstructure:"db_sslmode"`
 	DBMaxOpenConns int    `mapstructure:"db_max_open_conns"`
 	DBMaxIdleConns int    `mapstructure:"db_max_idle_conns"`
@@ -145,7 +145,9 @@ func Load(cmd *cobra.Command) (*Config, error) {
 
 	// Bind CLI flags
 	if cmd != nil {
-		v.BindPFlags(cmd.Flags())
+		if err := v.BindPFlags(cmd.Flags()); err != nil {
+			return nil, fmt.Errorf("failed to bind CLI flags: %w", err)
+		}
 	}
 
 	// Unmarshal config

@@ -41,14 +41,14 @@ type Event struct {
 
 // Client represents a connected WebSocket client.
 type Client struct {
-	id       string
-	conn     net.Conn
-	writer   *bufio.Writer
-	hub      *Hub
-	send     chan []byte
-	topics   map[EventType]bool
-	mu       sync.Mutex
-	closed   bool
+	id     string
+	conn   net.Conn
+	writer *bufio.Writer
+	hub    *Hub
+	send   chan []byte
+	topics map[EventType]bool
+	mu     sync.Mutex
+	closed bool
 }
 
 // Hub manages WebSocket clients and broadcasts events.
@@ -202,7 +202,7 @@ func (h *Hub) HandleWebSocket() gin.HandlerFunc {
 		// Perform WebSocket handshake
 		if err := performHandshake(c.Request, bufrw.Writer); err != nil {
 			h.logger.WithError(err).Error("WebSocket handshake failed")
-			conn.Close()
+			_ = conn.Close()
 			return
 		}
 
@@ -281,7 +281,7 @@ func (c *Client) readPump() {
 	}()
 	buf := make([]byte, 512)
 	for {
-		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		_, err := c.conn.Read(buf)
 		if err != nil {
 			return
@@ -299,7 +299,7 @@ func (c *Client) close() {
 	}
 	c.closed = true
 	close(c.send)
-	c.conn.Close()
+	_ = c.conn.Close()
 }
 
 // ============================================================================
@@ -314,11 +314,11 @@ func performHandshake(r *http.Request, w *bufio.Writer) error {
 
 	accept := computeAcceptKey(key)
 
-	w.WriteString("HTTP/1.1 101 Switching Protocols\r\n")
-	w.WriteString("Upgrade: websocket\r\n")
-	w.WriteString("Connection: Upgrade\r\n")
-	w.WriteString("Sec-WebSocket-Accept: " + accept + "\r\n")
-	w.WriteString("\r\n")
+	_, _ = w.WriteString("HTTP/1.1 101 Switching Protocols\r\n")
+	_, _ = w.WriteString("Upgrade: websocket\r\n")
+	_, _ = w.WriteString("Connection: Upgrade\r\n")
+	_, _ = w.WriteString("Sec-WebSocket-Accept: " + accept + "\r\n")
+	_, _ = w.WriteString("\r\n")
 	return w.Flush()
 }
 

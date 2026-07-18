@@ -47,15 +47,15 @@ func NewAWSAPIClient(accessKeyID, secretAccessKey, region string) *AWSAPIClient 
 
 // EKSCluster represents an EKS cluster from the AWS API
 type EKSCluster struct {
-	Name               string            `json:"name"`
-	Arn                string            `json:"arn"`
-	Version            string            `json:"version"`
-	Status             string            `json:"status"`
-	Endpoint           string            `json:"endpoint"`
-	RoleArn            string            `json:"roleArn"`
-	PlatformVersion    string            `json:"platformVersion"`
-	Tags               map[string]string `json:"tags,omitempty"`
-	CreatedAt          float64           `json:"createdAt"`
+	Name                    string            `json:"name"`
+	Arn                     string            `json:"arn"`
+	Version                 string            `json:"version"`
+	Status                  string            `json:"status"`
+	Endpoint                string            `json:"endpoint"`
+	RoleArn                 string            `json:"roleArn"`
+	PlatformVersion         string            `json:"platformVersion"`
+	Tags                    map[string]string `json:"tags,omitempty"`
+	CreatedAt               float64           `json:"createdAt"`
 	KubernetesNetworkConfig struct {
 		ServiceIpv4Cidr string `json:"serviceIpv4Cidr"`
 	} `json:"kubernetesNetworkConfig"`

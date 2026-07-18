@@ -149,13 +149,13 @@ func TestReportViolation(t *testing.T) {
 	hm.ApplyPSSToNamespace(ctx, "test-ns")
 
 	hm.ReportViolation(PSSViolation{
-		Namespace: "test-ns",
-		PodName:   "bad-pod",
-		Container: "main",
-		Profile:   PSSRestricted,
-		Rule:      "Privileged",
+		Namespace:   "test-ns",
+		PodName:     "bad-pod",
+		Container:   "main",
+		Profile:     PSSRestricted,
+		Rule:        "Privileged",
 		Description: "Container runs as privileged",
-		Severity:  "critical",
+		Severity:    "critical",
 	})
 
 	violations := hm.GetViolations("test-ns")
@@ -276,7 +276,7 @@ func TestVerifyImageUnauthorizedRegistry(t *testing.T) {
 
 func TestVerifyImageDisabled(t *testing.T) {
 	hm := NewHardeningManager(HardeningConfig{
-		PSS: DefaultPSSConfig(),
+		PSS:    DefaultPSSConfig(),
 		Cosign: CosignConfig{Enabled: false},
 	})
 	ctx := context.Background()

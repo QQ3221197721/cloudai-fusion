@@ -112,10 +112,10 @@ func (m *Manager) CreateTenant(ctx context.Context, name, displayName, ownerID, 
 			KeyVersion:  1,
 		},
 		Billing: BillingConfig{
-			PlanID:             string(tier),
-			BillingCycle:       "monthly",
-			Currency:           "USD",
-			AlertThresholds:    []float64{0.5, 0.8, 0.95},
+			PlanID:          string(tier),
+			BillingCycle:    "monthly",
+			Currency:        "USD",
+			AlertThresholds: []float64{0.5, 0.8, 0.95},
 		},
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -398,8 +398,8 @@ func (m *Manager) checkViolations(tenantID string) {
 			v := &QuotaViolation{
 				ID: common.NewUUID(), TenantID: tenantID,
 				ResourceType: resType, Current: current, Limit: limit,
-				Severity: "critical",
-				Message:  fmt.Sprintf("%s usage at %.1f%% of quota", resType, ratio*100),
+				Severity:   "critical",
+				Message:    fmt.Sprintf("%s usage at %.1f%% of quota", resType, ratio*100),
 				DetectedAt: now,
 			}
 			if ratio >= 1.0 {
@@ -410,8 +410,8 @@ func (m *Manager) checkViolations(tenantID string) {
 			v := &QuotaViolation{
 				ID: common.NewUUID(), TenantID: tenantID,
 				ResourceType: resType, Current: current, Limit: limit,
-				Severity: "warning",
-				Message:  fmt.Sprintf("%s usage at %.1f%% of quota", resType, ratio*100),
+				Severity:   "warning",
+				Message:    fmt.Sprintf("%s usage at %.1f%% of quota", resType, ratio*100),
 				DetectedAt: now,
 			}
 			m.violations[tenantID] = append(m.violations[tenantID], v)

@@ -23,22 +23,22 @@ import (
 
 // Config configures the gRPC server.
 type Config struct {
-	Port                int
-	MaxRecvMsgSize      int           // bytes, default 16MB
-	MaxSendMsgSize      int           // bytes, default 16MB
-	KeepaliveInterval   time.Duration // default 30s
-	KeepaliveTimeout    time.Duration // default 10s
+	Port                 int
+	MaxRecvMsgSize       int           // bytes, default 16MB
+	MaxSendMsgSize       int           // bytes, default 16MB
+	KeepaliveInterval    time.Duration // default 30s
+	KeepaliveTimeout     time.Duration // default 10s
 	MaxConcurrentStreams uint32        // default 1000
 }
 
 // DefaultConfig returns sensible defaults for the gRPC server.
 func DefaultConfig() Config {
 	return Config{
-		Port:                9090,
-		MaxRecvMsgSize:      16 * 1024 * 1024,
-		MaxSendMsgSize:      16 * 1024 * 1024,
-		KeepaliveInterval:   30 * time.Second,
-		KeepaliveTimeout:    10 * time.Second,
+		Port:                 9090,
+		MaxRecvMsgSize:       16 * 1024 * 1024,
+		MaxSendMsgSize:       16 * 1024 * 1024,
+		KeepaliveInterval:    30 * time.Second,
+		KeepaliveTimeout:     10 * time.Second,
 		MaxConcurrentStreams: 1000,
 	}
 }

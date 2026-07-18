@@ -480,7 +480,7 @@ func TestFederationManager_Logout(t *testing.T) {
 	}
 
 	// Logout with JTI should revoke token
-	_, err = fm.Logout(context.Background(), "test-idp", "jti-logout-1", "")
+	_, _ = fm.Logout(context.Background(), "test-idp", "jti-logout-1", "")
 	// Will fail on Discover (no real HTTP server), but should still revoke token
 	if fm.IsTokenRevoked("jti-logout-1") != true {
 		t.Error("expected token to be revoked after logout")

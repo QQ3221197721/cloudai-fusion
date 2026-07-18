@@ -110,10 +110,10 @@ func TestCompressionPipeline_NewMethods(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := CompressionPipelineConfig{
-				Stages:            tt.stages,
+				Stages:             tt.stages,
 				AccuracyLossBudget: 10.0, // generous for testing
-				TargetSizeRatio:   0.5,
-				TargetSpeedupMin:  1.5,
+				TargetSizeRatio:    0.5,
+				TargetSpeedupMin:   1.5,
 			}
 			pipeline := NewCompressionPipeline(cfg, nil)
 			modelSize := int64(100 * 1024 * 1024 * 1024)
@@ -463,6 +463,23 @@ func TestMixedPrecision(t *testing.T) {
 	}
 	if result.SizeOverhead < 0 {
 		t.Errorf("mixed precision should have positive size overhead, got %.2f%%", result.SizeOverhead)
+	}
+	// The regex sensitive-layer patterns must actually take effect at sub-layer
+	// granularity (they were previously silently ignored via exact-string match).
+	if b := result.LayerConfigs["layers.5.self_attn.q_proj"]; b != 8 {
+		t.Errorf("q_proj should be protected at 8-bit by the sensitive pattern, got %d", b)
+	}
+	if b := result.LayerConfigs["layers.5.self_attn.k_proj"]; b != 8 {
+		t.Errorf("k_proj should be protected at 8-bit, got %d", b)
+	}
+	if b := result.LayerConfigs["layers.5.self_attn.v_proj"]; b != cfg.DefaultBits {
+		t.Errorf("v_proj is not sensitive, should stay at default %d, got %d", cfg.DefaultBits, b)
+	}
+	if b := result.LayerConfigs["layers.5.mlp.down_proj"]; b != cfg.DefaultBits {
+		t.Errorf("mlp.down_proj should stay at default %d, got %d", cfg.DefaultBits, b)
+	}
+	if result.SensitivePercent <= 0 {
+		t.Error("expected some transformer blocks flagged sensitive")
 	}
 	t.Logf("Mixed precision: BPW=%.2f, sensitive=%.1f%%, quality_gain=%.3f, overhead=%.1f%%",
 		result.EffectiveBPW, result.SensitivePercent, result.QualityGain, result.SizeOverhead)

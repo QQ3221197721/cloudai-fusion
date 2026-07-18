@@ -46,7 +46,7 @@ func run(args []string) int {
 		fmt.Fprintf(os.Stderr, "healthcheck failed: %v\n", err)
 		return 1
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		fmt.Fprintf(os.Stderr, "healthcheck failed: HTTP %d\n", resp.StatusCode)

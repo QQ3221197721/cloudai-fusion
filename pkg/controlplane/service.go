@@ -286,7 +286,7 @@ func (s *Service) Status() ServiceStatus {
 
 // ServiceStatus describes the overall status of the control plane.
 type ServiceStatus struct {
-	Started           bool                    `json:"started"`
+	Started           bool                     `json:"started"`
 	ControllerStatus  controller.ManagerStatus `json:"controller_manager"`
 	EventBusStats     *eventbus.BusStats       `json:"event_bus,omitempty"`
 	EventTriggerCount int                      `json:"event_trigger_count"`

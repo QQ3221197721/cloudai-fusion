@@ -79,9 +79,9 @@ var (
 type BudgetPolicyLevel int
 
 const (
-	BudgetPolicyNormal   BudgetPolicyLevel = 0 // < 50% consumed
-	BudgetPolicyWarning  BudgetPolicyLevel = 1 // 50-80% consumed
-	BudgetPolicyCritical BudgetPolicyLevel = 2 // 80-100% consumed
+	BudgetPolicyNormal    BudgetPolicyLevel = 0 // < 50% consumed
+	BudgetPolicyWarning   BudgetPolicyLevel = 1 // 50-80% consumed
+	BudgetPolicyCritical  BudgetPolicyLevel = 2 // 80-100% consumed
 	BudgetPolicyExhausted BudgetPolicyLevel = 3 // 100% consumed
 )
 
@@ -103,13 +103,13 @@ func (l BudgetPolicyLevel) String() string {
 
 // BudgetPolicy defines actions at each consumption threshold.
 type BudgetPolicy struct {
-	Level              BudgetPolicyLevel `json:"level"`
-	ThresholdConsumed  float64           `json:"threshold_consumed"` // 0.0-1.0
-	FreezeDeployments  bool              `json:"freeze_deployments"`
-	RequireApproval    bool              `json:"require_approval"`
-	AlertSeverity      string            `json:"alert_severity"` // info, warning, critical, page
-	NotifyChannels     []string          `json:"notify_channels"`
-	Description        string            `json:"description"`
+	Level             BudgetPolicyLevel `json:"level"`
+	ThresholdConsumed float64           `json:"threshold_consumed"` // 0.0-1.0
+	FreezeDeployments bool              `json:"freeze_deployments"`
+	RequireApproval   bool              `json:"require_approval"`
+	AlertSeverity     string            `json:"alert_severity"` // info, warning, critical, page
+	NotifyChannels    []string          `json:"notify_channels"`
+	Description       string            `json:"description"`
 }
 
 // DefaultBudgetPolicies returns the standard graduated error budget policies.
@@ -156,28 +156,28 @@ type ErrorBudgetConfig struct {
 
 // ErrorBudgetManager tracks error budget consumption and enforces policies.
 type ErrorBudgetManager struct {
-	config    ErrorBudgetConfig
-	budgets   map[string]*ServiceBudget // service -> budget state
-	policies  []BudgetPolicy
-	logger    *logrus.Logger
-	mu        sync.RWMutex
-	cancel    context.CancelFunc
+	config   ErrorBudgetConfig
+	budgets  map[string]*ServiceBudget // service -> budget state
+	policies []BudgetPolicy
+	logger   *logrus.Logger
+	mu       sync.RWMutex
+	cancel   context.CancelFunc
 }
 
 // ServiceBudget tracks budget state for a single service.
 type ServiceBudget struct {
-	Service            string            `json:"service"`
-	Target             float64           `json:"target"`              // availability target
-	Window             time.Duration     `json:"window"`              // budget window (e.g. 30d)
-	TotalRequests      int64             `json:"total_requests"`
-	ErrorRequests      int64             `json:"error_requests"`
-	ConsumedRatio      float64           `json:"consumed_ratio"`      // 0.0-1.0
-	RemainingRatio     float64           `json:"remaining_ratio"`     // 0.0-1.0
-	ActivePolicy       BudgetPolicyLevel `json:"active_policy"`
-	BurnRates          map[string]float64 `json:"burn_rates"`         // window -> rate
-	DeploymentsFrozen  bool              `json:"deployments_frozen"`
-	LastEvaluatedAt    time.Time         `json:"last_evaluated_at"`
-	PolicyTransitions  []PolicyTransition `json:"policy_transitions,omitempty"`
+	Service           string             `json:"service"`
+	Target            float64            `json:"target"` // availability target
+	Window            time.Duration      `json:"window"` // budget window (e.g. 30d)
+	TotalRequests     int64              `json:"total_requests"`
+	ErrorRequests     int64              `json:"error_requests"`
+	ConsumedRatio     float64            `json:"consumed_ratio"`  // 0.0-1.0
+	RemainingRatio    float64            `json:"remaining_ratio"` // 0.0-1.0
+	ActivePolicy      BudgetPolicyLevel  `json:"active_policy"`
+	BurnRates         map[string]float64 `json:"burn_rates"` // window -> rate
+	DeploymentsFrozen bool               `json:"deployments_frozen"`
+	LastEvaluatedAt   time.Time          `json:"last_evaluated_at"`
+	PolicyTransitions []PolicyTransition `json:"policy_transitions,omitempty"`
 }
 
 // PolicyTransition records a policy level change.
@@ -266,7 +266,7 @@ func (m *ErrorBudgetManager) Evaluate() {
 		b.LastEvaluatedAt = now
 
 		// Calculate burn rates
-		b.BurnRates["1h"] = consumed  // simplified: use overall rate
+		b.BurnRates["1h"] = consumed // simplified: use overall rate
 		b.BurnRates["6h"] = consumed
 		b.BurnRates["24h"] = consumed
 
@@ -399,24 +399,24 @@ const (
 
 // Alert represents an incoming alert.
 type Alert struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Severity    AlertSeverity     `json:"severity"`
-	Service     string            `json:"service"`
-	Source      string            `json:"source"`
-	Message     string            `json:"message"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	FiredAt     time.Time         `json:"fired_at"`
-	ResolvedAt  *time.Time        `json:"resolved_at,omitempty"`
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	Severity   AlertSeverity     `json:"severity"`
+	Service    string            `json:"service"`
+	Source     string            `json:"source"`
+	Message    string            `json:"message"`
+	Labels     map[string]string `json:"labels,omitempty"`
+	FiredAt    time.Time         `json:"fired_at"`
+	ResolvedAt *time.Time        `json:"resolved_at,omitempty"`
 }
 
 // AlertGroup represents a group of related alerts.
 type AlertGroup struct {
-	Key       string    `json:"key"`       // grouping key (e.g. "service:apiserver")
-	Alerts    []*Alert  `json:"alerts"`
-	Count     int       `json:"count"`
-	FirstSeen time.Time `json:"first_seen"`
-	LastSeen  time.Time `json:"last_seen"`
+	Key       string        `json:"key"` // grouping key (e.g. "service:apiserver")
+	Alerts    []*Alert      `json:"alerts"`
+	Count     int           `json:"count"`
+	FirstSeen time.Time     `json:"first_seen"`
+	LastSeen  time.Time     `json:"last_seen"`
 	Severity  AlertSeverity `json:"severity"` // highest severity in group
 }
 
@@ -432,12 +432,12 @@ type SilenceRule struct {
 
 // AlertConvergenceConfig configures the alert convergence engine.
 type AlertConvergenceConfig struct {
-	GroupByLabels     []string      `json:"group_by_labels"`     // Labels to group alerts by
-	GroupWait         time.Duration `json:"group_wait"`          // Wait before sending first group notification
-	GroupInterval     time.Duration `json:"group_interval"`      // Interval between group notifications
-	RepeatInterval    time.Duration `json:"repeat_interval"`     // Don't re-alert within this interval
-	DeduplicationTTL  time.Duration `json:"deduplication_ttl"`   // How long to deduplicate same alerts
-	Logger            *logrus.Logger
+	GroupByLabels    []string      `json:"group_by_labels"`   // Labels to group alerts by
+	GroupWait        time.Duration `json:"group_wait"`        // Wait before sending first group notification
+	GroupInterval    time.Duration `json:"group_interval"`    // Interval between group notifications
+	RepeatInterval   time.Duration `json:"repeat_interval"`   // Don't re-alert within this interval
+	DeduplicationTTL time.Duration `json:"deduplication_ttl"` // How long to deduplicate same alerts
+	Logger           *logrus.Logger
 }
 
 // DefaultAlertConvergenceConfig returns production convergence settings.
@@ -453,12 +453,12 @@ func DefaultAlertConvergenceConfig() AlertConvergenceConfig {
 
 // AlertConvergenceEngine implements smart alert convergence.
 type AlertConvergenceEngine struct {
-	config     AlertConvergenceConfig
-	groups     map[string]*AlertGroup    // groupKey -> group
-	silences   []*SilenceRule
-	dedup      map[string]time.Time      // alertFingerprint -> lastSeen
-	logger     *logrus.Logger
-	mu         sync.RWMutex
+	config   AlertConvergenceConfig
+	groups   map[string]*AlertGroup // groupKey -> group
+	silences []*SilenceRule
+	dedup    map[string]time.Time // alertFingerprint -> lastSeen
+	logger   *logrus.Logger
+	mu       sync.RWMutex
 }
 
 // NewAlertConvergenceEngine creates a new convergence engine.

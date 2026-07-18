@@ -34,10 +34,10 @@ type Config struct {
 	Enabled        bool    // master toggle
 
 	// Adaptive sampling: dynamically adjust sample rate based on load
-	AdaptiveSampling bool    // Enable adaptive sampling
-	MinSampleRate    float64 // Minimum sample rate under high load (default: 0.01)
-	MaxSampleRate    float64 // Maximum sample rate under low load (default: 1.0)
-	TargetSpansPerSec int    // Target spans/sec throughput (default: 100)
+	AdaptiveSampling  bool    // Enable adaptive sampling
+	MinSampleRate     float64 // Minimum sample rate under high load (default: 0.01)
+	MaxSampleRate     float64 // Maximum sample rate under low load (default: 1.0)
+	TargetSpansPerSec int     // Target spans/sec throughput (default: 100)
 
 	// Continuous Profiling integration
 	ProfilingEnabled  bool   // Enable profiling hook
@@ -108,10 +108,10 @@ func Init(ctx context.Context, cfg Config) (*Provider, error) {
 	var sampler sdktrace.Sampler
 	if cfg.AdaptiveSampling {
 		sampler = newAdaptiveSampler(adaptiveSamplerConfig{
-			MinRate:         cfg.MinSampleRate,
-			MaxRate:         cfg.MaxSampleRate,
+			MinRate:           cfg.MinSampleRate,
+			MaxRate:           cfg.MaxSampleRate,
 			TargetSpansPerSec: cfg.TargetSpansPerSec,
-			InitialRate:     sampleRate,
+			InitialRate:       sampleRate,
 		})
 	} else {
 		sampler = sdktrace.TraceIDRatioBased(sampleRate)
@@ -145,11 +145,11 @@ func Init(ctx context.Context, cfg Config) (*Provider, error) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"endpoint":         cfg.Endpoint,
-		"sample_rate":      sampleRate,
-		"adaptive":         cfg.AdaptiveSampling,
-		"profiling":        cfg.ProfilingEnabled,
-		"environment":      env,
+		"endpoint":    cfg.Endpoint,
+		"sample_rate": sampleRate,
+		"adaptive":    cfg.AdaptiveSampling,
+		"profiling":   cfg.ProfilingEnabled,
+		"environment": env,
 	}).Info("OpenTelemetry tracing initialized (enhanced)")
 
 	return provider, nil
@@ -236,10 +236,10 @@ func StartSpan(ctx context.Context, name string, opts ...trace.SpanStartOption) 
 // ============================================================================
 
 type adaptiveSamplerConfig struct {
-	MinRate         float64
-	MaxRate         float64
+	MinRate           float64
+	MaxRate           float64
 	TargetSpansPerSec int
-	InitialRate     float64
+	InitialRate       float64
 }
 
 type adaptiveSampler struct {

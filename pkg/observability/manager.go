@@ -2,6 +2,7 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -21,6 +22,13 @@ type ManagerConfig struct {
 	DefaultGroupWait      time.Duration
 	DefaultGroupInterval  time.Duration
 	DefaultRepeatInterval time.Duration
+	// AllowCommandExecution enables real host execution of command/script/kubectl
+	// runbook steps. Disabled by default; such steps are otherwise reported as
+	// skipped rather than faked as successful.
+	AllowCommandExecution bool
+	// StepExecutor overrides the runbook step executor (primarily for testing).
+	// When nil, a default executor is created from AllowCommandExecution.
+	StepExecutor StepExecutor
 }
 
 // DefaultManagerConfig returns sensible defaults.
@@ -39,7 +47,7 @@ func DefaultManagerConfig() ManagerConfig {
 // Manager provides observability operations including alert routing,
 // on-call management, runbook automation, and incident retrospectives.
 type Manager struct {
-	config      ManagerConfig
+	config       ManagerConfig
 	routingRules map[string]*RoutingRule
 	escalations  map[string]*EscalationPolicy
 	alerts       map[string]*ClassifiedAlert
@@ -47,12 +55,17 @@ type Manager struct {
 	runbooks     map[string]*Runbook
 	executions   map[string]*RunbookExecution
 	incidents    map[string]*Incident
+	stepExecutor StepExecutor
 	logger       *logrus.Logger
 	mu           sync.RWMutex
 }
 
 // NewManager creates a new observability manager.
 func NewManager(cfg ManagerConfig) *Manager {
+	executor := cfg.StepExecutor
+	if executor == nil {
+		executor = newDefaultStepExecutor(cfg.AllowCommandExecution)
+	}
 	return &Manager{
 		config:       cfg,
 		routingRules: make(map[string]*RoutingRule),
@@ -62,6 +75,7 @@ func NewManager(cfg ManagerConfig) *Manager {
 		runbooks:     make(map[string]*Runbook),
 		executions:   make(map[string]*RunbookExecution),
 		incidents:    make(map[string]*Incident),
+		stepExecutor: executor,
 		logger:       logrus.StandardLogger(),
 	}
 }
@@ -479,13 +493,11 @@ func (m *Manager) ExecuteRunbook(ctx context.Context, runbookID, executedBy stri
 		return nil, ctx.Err()
 	}
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	rb, ok := m.runbooks[runbookID]
 	if !ok {
+		m.mu.Unlock()
 		return nil, fmt.Errorf("runbook '%s' not found", runbookID)
 	}
-
 	if rb.RequiresApproval {
 		exec := &RunbookExecution{
 			ID:          common.NewUUID(),
@@ -497,46 +509,69 @@ func (m *Manager) ExecuteRunbook(ctx context.Context, runbookID, executedBy stri
 			Steps:       make([]StepResult, 0),
 		}
 		m.executions[exec.ID] = exec
+		m.mu.Unlock()
 		return exec, nil
 	}
+	m.mu.Unlock()
 
+	// Execute steps without holding the manager lock (steps perform real I/O).
 	return m.doExecuteRunbook(rb, "", executedBy)
 }
 
 func (m *Manager) doExecuteRunbook(rb *Runbook, alertID, executedBy string) (*RunbookExecution, error) {
-	now := common.NowUTC()
 	exec := &RunbookExecution{
 		ID:          common.NewUUID(),
 		RunbookID:   rb.ID,
 		RunbookName: rb.Name,
 		AlertID:     alertID,
 		Status:      ExecutionRunning,
-		StartedAt:   now,
+		StartedAt:   common.NowUTC(),
 		ExecutedBy:  executedBy,
 		Steps:       make([]StepResult, 0, len(rb.Steps)),
 	}
 
-	// Execute each step
+	timeout := rb.Timeout
+	if timeout <= 0 {
+		timeout = 30 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// Execute each step against its real endpoint/host. Duration, output and
+	// status all reflect the actual outcome; failures propagate to the run.
 	allSuccess := true
 	for _, step := range rb.Steps {
-		stepResult := StepResult{
+		start := common.NowUTC()
+		output, err := m.stepExecutor.Execute(ctx, step)
+		result := StepResult{
 			StepOrder: step.Order,
 			StepName:  step.Name,
-			Status:    "success",
-			StartedAt: common.NowUTC(),
-			Duration:  time.Millisecond * 100, // simulated
+			StartedAt: start,
+			Duration:  time.Since(start),
+			Output:    output,
 		}
+		switch {
+		case errors.Is(err, ErrStepSkipped):
+			result.Status = "skipped"
+			result.Output = fmt.Sprintf("step '%s' skipped (%s execution disabled)", step.Name, step.Type)
+		case errors.Is(err, ErrStepManual):
+			result.Status = "manual"
+			result.Output = fmt.Sprintf("step '%s' requires manual action", step.Name)
+		case err != nil:
+			result.Status = "failed"
+			result.Error = err.Error()
+			allSuccess = false
+		default:
+			result.Status = "success"
+			if result.Output == "" {
+				result.Output = fmt.Sprintf("step '%s' completed (%s)", step.Name, step.Type)
+			}
+		}
+		exec.Steps = append(exec.Steps, result)
 
-		// In production, this would:
-		// - StepTypeCommand: execute shell command
-		// - StepTypeKubectl: run kubectl commands
-		// - StepTypeWebhook: call external webhook
-		// - StepTypeHTTP: make HTTP request
-		// - StepTypeScript: execute script
-		// - StepTypeManual: wait for manual confirmation
-
-		stepResult.Output = fmt.Sprintf("Step '%s' completed successfully (type: %s)", step.Name, step.Type)
-		exec.Steps = append(exec.Steps, stepResult)
+		if result.Status == "failed" && step.OnFailure == "abort" {
+			break
+		}
 	}
 
 	completedAt := common.NowUTC()
@@ -547,10 +582,11 @@ func (m *Manager) doExecuteRunbook(rb *Runbook, alertID, executedBy string) (*Ru
 		exec.Status = ExecutionFailed
 	}
 
+	m.mu.Lock()
 	rb.ExecutionCount++
 	rb.LastExecutedAt = &completedAt
-
 	m.executions[exec.ID] = exec
+	m.mu.Unlock()
 
 	m.logger.WithFields(logrus.Fields{
 		"execution_id": exec.ID,
@@ -563,9 +599,11 @@ func (m *Manager) doExecuteRunbook(rb *Runbook, alertID, executedBy string) (*Ru
 }
 
 func (m *Manager) executeRunbookAsync(alertID string, rb *Runbook) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.doExecuteRunbook(rb, alertID, "auto")
+	// doExecuteRunbook manages its own locking; holding the lock here would
+	// both block the manager during step I/O and deadlock on the final store.
+	if _, err := m.doExecuteRunbook(rb, alertID, "auto"); err != nil {
+		m.logger.WithError(err).Error("async runbook execution failed")
+	}
 }
 
 // GetRunbook retrieves a runbook by ID.

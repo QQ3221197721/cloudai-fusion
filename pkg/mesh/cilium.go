@@ -337,8 +337,8 @@ type HubbleFlow struct {
 		Namespace string            `json:"namespace"`
 		Labels    map[string]string `json:"labels"`
 	} `json:"destination"`
-	Type          string `json:"Type"` // L3_L4, L7
-	IsEncrypted   bool   `json:"is_encrypted"`
+	Type             string `json:"Type"` // L3_L4, L7
+	IsEncrypted      bool   `json:"is_encrypted"`
 	TrafficDirection string `json:"traffic_direction"` // INGRESS, EGRESS
 }
 
@@ -349,7 +349,9 @@ type HubbleGetFlowsResponse struct {
 
 // queryHubbleFlows queries Hubble Relay for recent flows in a namespace.
 // Hubble Relay exposes a gRPC API; we access it via K8s service proxy:
-//   GET /api/v1/namespaces/kube-system/services/hubble-relay:80/proxy/v1/flows?namespace={ns}
+//
+//	GET /api/v1/namespaces/kube-system/services/hubble-relay:80/proxy/v1/flows?namespace={ns}
+//
 // Falls back to Hubble UI HTTP endpoint if available.
 func (m *Manager) queryHubbleFlows(ctx context.Context, client *k8s.Client, namespace string) ([]HubbleFlow, error) {
 	// Path via K8s API server proxy to Hubble Relay service
@@ -463,11 +465,6 @@ type eBPFProgram struct {
 	MapCount  int    `json:"map_count"`
 }
 
-// eBPFProgramList is returned by Cilium agent debug API
-type eBPFProgramList struct {
-	Programs []eBPFProgram `json:"programs"`
-}
-
 // discovereBPFPrograms queries Cilium agent debug API for loaded eBPF programs.
 // Cilium agent debug API: GET /v1/debuginfo on the agent pod (port 9879).
 // We access it via K8s pod exec or service proxy.
@@ -497,7 +494,7 @@ func (m *Manager) discovereBPFPrograms(ctx context.Context, client *k8s.Client) 
 	if err != nil || statusCode != 200 {
 		// Fallback: try the Cilium health endpoint for basic eBPF info
 		healthPath := fmt.Sprintf("/api/v1/namespaces/kube-system/pods/%s:9879/proxy/v1/healthz", ciliumPodName)
-		body, statusCode, err = client.DoRawRequest(ctx, "GET", healthPath)
+		body, _, err = client.DoRawRequest(ctx, "GET", healthPath)
 		if err != nil {
 			return nil, fmt.Errorf("cilium debug API not reachable: %w", err)
 		}
@@ -707,5 +704,3 @@ func detectMeshComponents(ctx context.Context, client *k8s.Client, mode MeshMode
 
 	return components
 }
-
-

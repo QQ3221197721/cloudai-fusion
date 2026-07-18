@@ -213,6 +213,16 @@ func TestRollbackPromotion(t *testing.T) {
 	}
 }
 
+// fakeDriftScanner is a test DriftScanner returning canned drifts.
+type fakeDriftScanner struct {
+	drifts []DriftDetail
+	err    error
+}
+
+func (f *fakeDriftScanner) Scan(_ context.Context, _ *Application) ([]DriftDetail, error) {
+	return f.drifts, f.err
+}
+
 func TestDriftDetection(t *testing.T) {
 	mgr := NewManager(DefaultManagerConfig())
 	ctx := context.Background()
@@ -222,6 +232,16 @@ func TestDriftDetection(t *testing.T) {
 		RepoURL: "https://example.com/repo", TargetRevision: "main",
 	})
 
+	// Without a scanner, DetectDrift must NOT fabricate "synced" — it errors.
+	if _, err := mgr.DetectDrift(ctx, app.ID); err == nil {
+		t.Fatal("expected an error when no drift scanner is configured")
+	}
+
+	// Inject a scanner reporting a real drift (replicas 3 -> 1).
+	mgr.SetDriftScanner(&fakeDriftScanner{drifts: []DriftDetail{
+		{ResourceKind: "Deployment", ResourceName: "api", Namespace: "dev", Field: "spec.replicas", Expected: "3", Actual: "1", Severity: "high"},
+	}})
+
 	report, err := mgr.DetectDrift(ctx, app.ID)
 	if err != nil {
 		t.Fatalf("DetectDrift failed: %v", err)
@@ -229,10 +249,36 @@ func TestDriftDetection(t *testing.T) {
 	if report.ID == "" {
 		t.Fatal("expected non-empty report ID")
 	}
+	if len(report.Drifts) != 1 || report.Status != DriftDetected {
+		t.Errorf("expected 1 drift with status detected, got %d drifts status=%s", len(report.Drifts), report.Status)
+	}
+	if app.SyncStatus != SyncStatusOutOfSync {
+		t.Errorf("expected app out-of-sync, got %s", app.SyncStatus)
+	}
 
 	reports, _ := mgr.GetDriftReports(ctx, app.ID)
 	if len(reports) != 1 {
 		t.Errorf("expected 1 drift report, got %d", len(reports))
+	}
+}
+
+// TestDriftDetectionInSync verifies that when the scanner finds no drift the
+// report is marked in-sync (not the previous contradictory 'detected').
+func TestDriftDetectionInSync(t *testing.T) {
+	mgr := NewManager(DefaultManagerConfig())
+	ctx := context.Background()
+	app, _ := mgr.CreateApplication(ctx, &Application{Name: "sync-test", Environment: "dev"})
+	mgr.SetDriftScanner(&fakeDriftScanner{drifts: nil})
+
+	report, err := mgr.DetectDrift(ctx, app.ID)
+	if err != nil {
+		t.Fatalf("DetectDrift failed: %v", err)
+	}
+	if report.Status != DriftNone || len(report.Drifts) != 0 {
+		t.Errorf("expected in-sync report with 0 drifts, got status=%s drifts=%d", report.Status, len(report.Drifts))
+	}
+	if app.SyncStatus != SyncStatusSynced {
+		t.Errorf("expected app synced, got %s", app.SyncStatus)
 	}
 }
 

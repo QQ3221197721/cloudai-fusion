@@ -354,17 +354,17 @@ func TestCostEngine_GenerateReport(t *testing.T) {
 	var records []CostRecord
 	for i := 0; i < 60; i++ {
 		records = append(records, CostRecord{
-			Date:      now.AddDate(0, 0, -i),
-			TotalCost: 100 + float64(i%10),
-			Currency:  "USD",
-			ByService: map[string]float64{"compute": 60, "storage": 40},
-			ByTeam:    map[string]float64{"ai-team": 80, "platform": 20},
-			ByProject: map[string]float64{"proj-a": 100},
-			ByRegion:  map[string]float64{"us-east-1": 100},
+			Date:          now.AddDate(0, 0, -i),
+			TotalCost:     100 + float64(i%10),
+			Currency:      "USD",
+			ByService:     map[string]float64{"compute": 60, "storage": 40},
+			ByTeam:        map[string]float64{"ai-team": 80, "platform": 20},
+			ByProject:     map[string]float64{"proj-a": 100},
+			ByRegion:      map[string]float64{"us-east-1": 100},
 			ByResource:    map[string]float64{"compute": 60, "storage": 30, "network": 10},
 			ByEnvironment: map[string]float64{"prod": 70, "dev": 30},
-			GPUCost:    20,
-			ComputeCost: 60,
+			GPUCost:       20,
+			ComputeCost:   60,
 		})
 	}
 	engine.IngestCostData(records)

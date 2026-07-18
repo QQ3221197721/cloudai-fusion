@@ -46,11 +46,11 @@ type RouterConfig struct {
 	Logger          *logrus.Logger
 
 	// Infrastructure components (Problem #8)
-	Store          *store.Store      // DB for readyz health check
-	FeatureFlags   *feature.Manager  // Runtime feature toggles
-	Tracer         trace.Tracer      // OpenTelemetry tracer
-	WebSocketHub   *websocket.Hub    // Real-time event push
-	ControllerMgr  *controller.Manager // Controller manager for reconciliation loops
+	Store         *store.Store        // DB for readyz health check
+	FeatureFlags  *feature.Manager    // Runtime feature toggles
+	Tracer        trace.Tracer        // OpenTelemetry tracer
+	WebSocketHub  *websocket.Hub      // Real-time event push
+	ControllerMgr *controller.Manager // Controller manager for reconciliation loops
 }
 
 // NewRouter creates the main API router with all routes configured
@@ -681,10 +681,10 @@ func handleListWorkloads(mgr workload.WorkloadService) gin.HandlerFunc {
 		page := 1
 		pageSize := 20
 		if v := c.Query("page"); v != "" {
-			fmt.Sscanf(v, "%d", &page)
+			_, _ = fmt.Sscanf(v, "%d", &page)
 		}
 		if v := c.Query("page_size"); v != "" {
-			fmt.Sscanf(v, "%d", &pageSize)
+			_, _ = fmt.Sscanf(v, "%d", &pageSize)
 		}
 		items, total, err := mgr.List(c.Request.Context(), clusterID, status, page, pageSize)
 		if err != nil {
@@ -899,55 +899,55 @@ func handleCostOptimization(mgr cloud.CloudService) gin.HandlerFunc {
 
 		recommendations := []gin.H{
 			{
-				"type":             "spot-instance",
-				"priority":         "high",
-				"description":      fmt.Sprintf("Switch inference workloads to spot instances across %d providers", numProviders),
+				"type":              "spot-instance",
+				"priority":          "high",
+				"description":       fmt.Sprintf("Switch inference workloads to spot instances across %d providers", numProviders),
 				"estimated_savings": fmt.Sprintf("$%d/month", spotSavings),
-				"risk_level":       "medium",
-				"implementation":   "Use preemptible/spot VMs for fault-tolerant inference workloads",
+				"risk_level":        "medium",
+				"implementation":    "Use preemptible/spot VMs for fault-tolerant inference workloads",
 			},
 			{
-				"type":             "gpu-sharing",
-				"priority":         "high",
-				"description":      "Enable MPS/MIG GPU sharing for small model inference tasks",
+				"type":              "gpu-sharing",
+				"priority":          "high",
+				"description":       "Enable MPS/MIG GPU sharing for small model inference tasks",
 				"estimated_savings": fmt.Sprintf("$%d/month", gpuShareSavings),
-				"risk_level":       "low",
-				"implementation":   "Configure NVIDIA MPS for models using <30% GPU, MIG for A100/H100",
+				"risk_level":        "low",
+				"implementation":    "Configure NVIDIA MPS for models using <30% GPU, MIG for A100/H100",
 			},
 			{
-				"type":             "right-sizing",
-				"priority":         "medium",
-				"description":      "Downsize underutilized GPU nodes based on real utilization data",
+				"type":              "right-sizing",
+				"priority":          "medium",
+				"description":       "Downsize underutilized GPU nodes based on real utilization data",
 				"estimated_savings": fmt.Sprintf("$%d/month", rightSizeSavings),
-				"risk_level":       "low",
-				"implementation":   "Replace A100-80GB with A100-40GB where VRAM usage <35GB",
+				"risk_level":        "low",
+				"implementation":    "Replace A100-80GB with A100-40GB where VRAM usage <35GB",
 			},
 			{
-				"type":             "reserved-instances",
-				"priority":         "medium",
-				"description":      "Purchase reserved instances for stable training workloads",
+				"type":              "reserved-instances",
+				"priority":          "medium",
+				"description":       "Purchase reserved instances for stable training workloads",
 				"estimated_savings": fmt.Sprintf("$%d/month", reservedSavings),
-				"risk_level":       "low",
-				"implementation":   "1-year reserved pricing for long-running training clusters",
+				"risk_level":        "low",
+				"implementation":    "1-year reserved pricing for long-running training clusters",
 			},
 			{
-				"type":             "auto-scaling",
-				"priority":         "high",
-				"description":      "Enable ML-based predictive auto-scaling to avoid over-provisioning",
+				"type":              "auto-scaling",
+				"priority":          "high",
+				"description":       "Enable ML-based predictive auto-scaling to avoid over-provisioning",
 				"estimated_savings": fmt.Sprintf("$%d/month", 1800*numProviders),
-				"risk_level":       "medium",
-				"implementation":   "Use AI Engine predictive scaling API for demand forecasting",
+				"risk_level":        "medium",
+				"implementation":    "Use AI Engine predictive scaling API for demand forecasting",
 			},
 		}
 
 		totalSavings += 1800 * numProviders
 
 		c.JSON(http.StatusOK, gin.H{
-			"recommendations":        recommendations,
+			"recommendations":         recommendations,
 			"total_potential_savings": fmt.Sprintf("$%d/month", totalSavings),
 			"providers_analyzed":      numProviders,
 			"analysis_timestamp":      common.NowUTC(),
-			"methodology":            "Based on real provider pricing APIs, utilization metrics, and workload patterns",
+			"methodology":             "Based on real provider pricing APIs, utilization metrics, and workload patterns",
 		})
 	}
 }

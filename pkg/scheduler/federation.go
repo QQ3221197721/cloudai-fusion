@@ -26,12 +26,12 @@ type FederationConfig struct {
 	Enabled                bool    `json:"enabled"`
 	HeartbeatIntervalSec   int     `json:"heartbeat_interval_sec"`
 	ClusterTimeoutSec      int     `json:"cluster_timeout_sec"`
-	DataGravityWeight      float64 `json:"data_gravity_weight"`      // prefer cluster with data
-	NetworkLocalityWeight  float64 `json:"network_locality_weight"`  // prefer low-latency cluster
-	CostWeight             float64 `json:"cost_weight"`              // prefer cheaper cluster
-	ResourceFitWeight      float64 `json:"resource_fit_weight"`      // prefer cluster with best GPU fit
-	ComplianceStrict       bool    `json:"compliance_strict"`        // enforce data residency
-	CrossClusterMigration  bool    `json:"cross_cluster_migration"`  // allow live migration
+	DataGravityWeight      float64 `json:"data_gravity_weight"`       // prefer cluster with data
+	NetworkLocalityWeight  float64 `json:"network_locality_weight"`   // prefer low-latency cluster
+	CostWeight             float64 `json:"cost_weight"`               // prefer cheaper cluster
+	ResourceFitWeight      float64 `json:"resource_fit_weight"`       // prefer cluster with best GPU fit
+	ComplianceStrict       bool    `json:"compliance_strict"`         // enforce data residency
+	CrossClusterMigration  bool    `json:"cross_cluster_migration"`   // allow live migration
 	MaxClustersPerWorkload int     `json:"max_clusters_per_workload"` // for distributed training
 }
 
@@ -57,32 +57,32 @@ func DefaultFederationConfig() FederationConfig {
 
 // FederatedCluster represents a cluster in the federation
 type FederatedCluster struct {
-	ID               string               `json:"id"`
-	Name             string               `json:"name"`
-	Provider         string               `json:"provider"`      // aws, gcp, azure, aliyun, huawei
-	Region           string               `json:"region"`
-	Zone             string               `json:"zone"`
-	Status           string               `json:"status"`        // "active", "degraded", "offline"
-	Capacity         FederatedCapacity     `json:"capacity"`
-	NetworkLatencyMs map[string]float64    `json:"network_latency_ms"` // cluster_id → latency
-	CostMultiplier   float64              `json:"cost_multiplier"`    // relative cost factor
-	Compliance       []string             `json:"compliance"`         // e.g., "gdpr", "hipaa", "china-data-residency"
-	DataLocations    []string             `json:"data_locations"`     // datasets available locally
-	LastHeartbeat    time.Time            `json:"last_heartbeat"`
+	ID               string                 `json:"id"`
+	Name             string                 `json:"name"`
+	Provider         string                 `json:"provider"` // aws, gcp, azure, aliyun, huawei
+	Region           string                 `json:"region"`
+	Zone             string                 `json:"zone"`
+	Status           string                 `json:"status"` // "active", "degraded", "offline"
+	Capacity         FederatedCapacity      `json:"capacity"`
+	NetworkLatencyMs map[string]float64     `json:"network_latency_ms"` // cluster_id → latency
+	CostMultiplier   float64                `json:"cost_multiplier"`    // relative cost factor
+	Compliance       []string               `json:"compliance"`         // e.g., "gdpr", "hipaa", "china-data-residency"
+	DataLocations    []string               `json:"data_locations"`     // datasets available locally
+	LastHeartbeat    time.Time              `json:"last_heartbeat"`
 	Weights          *ClusterWeightOverride `json:"weights,omitempty"` // per-cluster scoring overrides
 }
 
 // FederatedCapacity describes GPU/resource capacity of a federated cluster
 type FederatedCapacity struct {
-	TotalGPUs        int                `json:"total_gpus"`
-	AvailableGPUs    int                `json:"available_gpus"`
-	GPUTypes         map[string]int     `json:"gpu_types"`           // type → count available
-	TotalCPUCores    int                `json:"total_cpu_cores"`
-	AvailableCPU     int                `json:"available_cpu_cores"`
-	TotalMemoryGiB   int                `json:"total_memory_gib"`
-	AvailableMemGiB  int                `json:"available_memory_gib"`
-	GPUUtilization   float64            `json:"gpu_utilization_percent"`
-	QueuedWorkloads  int                `json:"queued_workloads"`
+	TotalGPUs       int            `json:"total_gpus"`
+	AvailableGPUs   int            `json:"available_gpus"`
+	GPUTypes        map[string]int `json:"gpu_types"` // type → count available
+	TotalCPUCores   int            `json:"total_cpu_cores"`
+	AvailableCPU    int            `json:"available_cpu_cores"`
+	TotalMemoryGiB  int            `json:"total_memory_gib"`
+	AvailableMemGiB int            `json:"available_memory_gib"`
+	GPUUtilization  float64        `json:"gpu_utilization_percent"`
+	QueuedWorkloads int            `json:"queued_workloads"`
 }
 
 // ClusterWeightOverride allows per-cluster scoring weight adjustments
@@ -94,27 +94,27 @@ type ClusterWeightOverride struct {
 
 // FederationPlacement represents a cross-cluster scheduling decision
 type FederationPlacement struct {
-	WorkloadID      string              `json:"workload_id"`
-	WorkloadName    string              `json:"workload_name"`
-	PrimaryCluster  string              `json:"primary_cluster"`
-	AssistClusters  []string            `json:"assist_clusters,omitempty"` // for distributed training
-	ClusterScores   []ClusterScore      `json:"cluster_scores"`
-	Reason          string              `json:"reason"`
-	DecidedAt       time.Time           `json:"decided_at"`
-	Constraints     *PlacementConstraint `json:"constraints,omitempty"`
+	WorkloadID     string               `json:"workload_id"`
+	WorkloadName   string               `json:"workload_name"`
+	PrimaryCluster string               `json:"primary_cluster"`
+	AssistClusters []string             `json:"assist_clusters,omitempty"` // for distributed training
+	ClusterScores  []ClusterScore       `json:"cluster_scores"`
+	Reason         string               `json:"reason"`
+	DecidedAt      time.Time            `json:"decided_at"`
+	Constraints    *PlacementConstraint `json:"constraints,omitempty"`
 }
 
 // ClusterScore holds scoring details for a candidate cluster
 type ClusterScore struct {
-	ClusterID       string  `json:"cluster_id"`
-	ClusterName     string  `json:"cluster_name"`
-	TotalScore      float64 `json:"total_score"`
-	ResourceScore   float64 `json:"resource_score"`
-	CostScore       float64 `json:"cost_score"`
-	LocalityScore   float64 `json:"locality_score"`
+	ClusterID        string  `json:"cluster_id"`
+	ClusterName      string  `json:"cluster_name"`
+	TotalScore       float64 `json:"total_score"`
+	ResourceScore    float64 `json:"resource_score"`
+	CostScore        float64 `json:"cost_score"`
+	LocalityScore    float64 `json:"locality_score"`
 	DataGravityScore float64 `json:"data_gravity_score"`
-	CompliancePass  bool    `json:"compliance_pass"`
-	Reason          string  `json:"reason"`
+	CompliancePass   bool    `json:"compliance_pass"`
+	Reason           string  `json:"reason"`
 }
 
 // PlacementConstraint specifies where a workload can be placed
@@ -124,7 +124,7 @@ type PlacementConstraint struct {
 	RequiredProviders  []string `json:"required_providers,omitempty"`  // must use these providers
 	RequiredCompliance []string `json:"required_compliance,omitempty"` // must have these certifications
 	DataLocality       string   `json:"data_locality,omitempty"`       // dataset must be local
-	MaxNetworkLatency  float64  `json:"max_network_latency_ms"`       // max acceptable latency
+	MaxNetworkLatency  float64  `json:"max_network_latency_ms"`        // max acceptable latency
 }
 
 // ============================================================================
@@ -133,11 +133,11 @@ type PlacementConstraint struct {
 
 // FederationScheduler manages multi-cluster federated scheduling
 type FederationScheduler struct {
-	config    FederationConfig
-	clusters  map[string]*FederatedCluster
+	config     FederationConfig
+	clusters   map[string]*FederatedCluster
 	placements []FederationPlacement
-	logger    *logrus.Logger
-	mu        sync.RWMutex
+	logger     *logrus.Logger
+	mu         sync.RWMutex
 }
 
 // NewFederationScheduler creates a new federation scheduler

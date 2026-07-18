@@ -236,11 +236,11 @@ func TopologyAwareScoreFactory() (plugin.Plugin, error) {
 // RegisterDefaults registers all built-in plugins into the given registry.
 func RegisterDefaults(reg *plugin.Registry) error {
 	defaults := map[string]plugin.Factory{
-		"gpu-resource-filter":    GPUResourceFilterFactory,
+		"gpu-resource-filter":     GPUResourceFilterFactory,
 		"taint-toleration-filter": TaintTolerationFilterFactory,
-		"default-score":          DefaultScoreFactory,
-		"cost-aware-score":       CostAwareScoreFactory,
-		"topology-aware-score":   TopologyAwareScoreFactory,
+		"default-score":           DefaultScoreFactory,
+		"cost-aware-score":        CostAwareScoreFactory,
+		"topology-aware-score":    TopologyAwareScoreFactory,
 	}
 
 	for name, factory := range defaults {

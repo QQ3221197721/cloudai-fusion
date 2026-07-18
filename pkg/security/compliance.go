@@ -136,13 +136,13 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 		checks = append(checks, ComplianceCheck{
 			ID: "CIS-1.1.1", Category: "API Server",
 			Description: "Ensure API server is healthy and responsive",
-			Status: "pass", Severity: "critical",
+			Status:      "pass", Severity: "critical",
 		})
 	} else {
 		checks = append(checks, ComplianceCheck{
 			ID: "CIS-1.1.1", Category: "API Server",
 			Description: "Ensure API server is healthy and responsive",
-			Status: "fail", Severity: "critical",
+			Status:      "fail", Severity: "critical",
 			Remediation: "Check API server logs and configuration",
 		})
 	}
@@ -154,13 +154,13 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 		checks = append(checks, ComplianceCheck{
 			ID: "CIS-1.2.1", Category: "RBAC",
 			Description: "Ensure RBAC is enabled",
-			Status: "pass", Severity: "critical",
+			Status:      "pass", Severity: "critical",
 		})
 	} else {
 		checks = append(checks, ComplianceCheck{
 			ID: "CIS-1.2.1", Category: "RBAC",
 			Description: "Ensure RBAC is enabled",
-			Status: "fail", Severity: "critical",
+			Status:      "fail", Severity: "critical",
 			Remediation: "Enable RBAC via --authorization-mode=RBAC on API server",
 		})
 	}
@@ -169,7 +169,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 	checks = append(checks, ComplianceCheck{
 		ID: "CIS-1.2.6", Category: "API Server",
 		Description: "Ensure audit logging is enabled",
-		Status: "pass", Severity: "high",
+		Status:      "pass", Severity: "high",
 	})
 
 	// === Section 3: Control Plane Configuration ===
@@ -178,7 +178,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 	checks = append(checks, ComplianceCheck{
 		ID: "CIS-3.1.1", Category: "Authentication",
 		Description: "Client certificate authentication should not be used for users",
-		Status: "pass", Severity: "medium",
+		Status:      "pass", Severity: "medium",
 	})
 
 	// === Section 4: Worker Nodes ===
@@ -189,7 +189,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 		checks = append(checks, ComplianceCheck{
 			ID: "CIS-4.1.1", Category: "Worker Nodes",
 			Description: fmt.Sprintf("Kubelet authentication is configured (%d nodes verified)", len(nodes)),
-			Status: "pass", Severity: "high",
+			Status:      "pass", Severity: "high",
 		})
 
 		// CIS 4.1.5 - Node labels for scheduling
@@ -205,7 +205,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 				checks = append(checks, ComplianceCheck{
 					ID: "CIS-4.1.5", Category: "Worker Nodes",
 					Description: fmt.Sprintf("Node '%s' missing role label", node.Metadata.Name),
-					Status: "warn", Severity: "low",
+					Status:      "warn", Severity: "low",
 					Remediation: "Add node-role.kubernetes.io/ label for proper scheduling",
 				})
 			}
@@ -214,7 +214,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 		checks = append(checks, ComplianceCheck{
 			ID: "CIS-4.1.1", Category: "Worker Nodes",
 			Description: "Unable to verify kubelet authentication - node listing failed",
-			Status: "warn", Severity: "high",
+			Status:      "warn", Severity: "high",
 		})
 	}
 
@@ -227,13 +227,13 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 			checks = append(checks, ComplianceCheck{
 				ID: "CIS-5.1.1", Category: "Policies",
 				Description: "No workloads deployed in default namespace",
-				Status: "pass", Severity: "medium",
+				Status:      "pass", Severity: "medium",
 			})
 		} else {
 			checks = append(checks, ComplianceCheck{
 				ID: "CIS-5.1.1", Category: "Policies",
 				Description: fmt.Sprintf("%d pods found in default namespace", len(pods)),
-				Status: "fail", Severity: "medium",
+				Status:      "fail", Severity: "medium",
 				Remediation: "Deploy workloads to dedicated namespaces",
 			})
 		}
@@ -244,7 +244,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 	checks = append(checks, ComplianceCheck{
 		ID: "CIS-5.2.1", Category: "Pod Security",
 		Description: "Pod Security Admission should be configured",
-		Status: "warn", Severity: "high",
+		Status:      "warn", Severity: "high",
 		Remediation: "Apply pod-security.kubernetes.io/enforce labels to namespaces",
 	})
 
@@ -265,13 +265,13 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 			checks = append(checks, ComplianceCheck{
 				ID: "CIS-5.2.2", Category: "Pod Security",
 				Description: fmt.Sprintf("No obviously privileged containers found (%d pods scanned)", len(allPods)),
-				Status: "pass", Severity: "critical",
+				Status:      "pass", Severity: "critical",
 			})
 		} else {
 			checks = append(checks, ComplianceCheck{
 				ID: "CIS-5.2.2", Category: "Pod Security",
 				Description: fmt.Sprintf("%d potentially privileged containers found", riskyCount),
-				Status: "fail", Severity: "critical",
+				Status:      "fail", Severity: "critical",
 				Remediation: "Remove privileged flag from container security contexts",
 			})
 		}
@@ -281,7 +281,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 	checks = append(checks, ComplianceCheck{
 		ID: "CIS-5.3.1", Category: "Network Policies",
 		Description: "Ensure NetworkPolicy is configured for critical namespaces",
-		Status: "warn", Severity: "medium",
+		Status:      "warn", Severity: "medium",
 		Remediation: "Create NetworkPolicy resources for all namespaces",
 	})
 
@@ -289,7 +289,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 	checks = append(checks, ComplianceCheck{
 		ID: "CIS-5.4.1", Category: "Secrets",
 		Description: "Prefer using secrets as files over env vars",
-		Status: "warn", Severity: "medium",
+		Status:      "warn", Severity: "medium",
 		Remediation: "Mount secrets as volumes instead of environment variables",
 	})
 
@@ -297,7 +297,7 @@ func (e *ComplianceEngine) runRealCISChecks(ctx context.Context) []ComplianceChe
 	checks = append(checks, ComplianceCheck{
 		ID: "CIS-5.7.1", Category: "General Policies",
 		Description: "Create administrative boundaries between resources using namespaces",
-		Status: "pass", Severity: "medium",
+		Status:      "pass", Severity: "medium",
 	})
 
 	return checks

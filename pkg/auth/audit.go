@@ -24,39 +24,39 @@ import (
 
 // AuditEvent represents a structured audit log entry.
 type AuditEvent struct {
-	ID            string                 `json:"id"`
-	Timestamp     time.Time              `json:"timestamp"`
-	TraceID       string                 `json:"trace_id,omitempty"`
-	UserID        string                 `json:"user_id"`
-	Username      string                 `json:"username"`
-	Role          string                 `json:"role"`
-	ClientIP      string                 `json:"client_ip"`
-	UserAgent     string                 `json:"user_agent"`
-	Method        string                 `json:"method"`
-	Path          string                 `json:"path"`
-	Query         string                 `json:"query,omitempty"`
-	StatusCode    int                    `json:"status_code"`
-	Latency       time.Duration          `json:"latency"`
-	RequestSize   int                    `json:"request_size"`
-	ResponseSize  int                    `json:"response_size"`
-	Action        string                 `json:"action"`       // derived: create, read, update, delete
-	ResourceType  string                 `json:"resource_type"` // derived from path
-	ResourceID    string                 `json:"resource_id,omitempty"`
-	Outcome       string                 `json:"outcome"` // success, failure, error
-	ErrorMessage  string                 `json:"error_message,omitempty"`
-	RequestBody   string                 `json:"request_body,omitempty"` // sanitised
-	Tags          map[string]string      `json:"tags,omitempty"`
-	Extra         map[string]interface{} `json:"extra,omitempty"`
+	ID           string                 `json:"id"`
+	Timestamp    time.Time              `json:"timestamp"`
+	TraceID      string                 `json:"trace_id,omitempty"`
+	UserID       string                 `json:"user_id"`
+	Username     string                 `json:"username"`
+	Role         string                 `json:"role"`
+	ClientIP     string                 `json:"client_ip"`
+	UserAgent    string                 `json:"user_agent"`
+	Method       string                 `json:"method"`
+	Path         string                 `json:"path"`
+	Query        string                 `json:"query,omitempty"`
+	StatusCode   int                    `json:"status_code"`
+	Latency      time.Duration          `json:"latency"`
+	RequestSize  int                    `json:"request_size"`
+	ResponseSize int                    `json:"response_size"`
+	Action       string                 `json:"action"`        // derived: create, read, update, delete
+	ResourceType string                 `json:"resource_type"` // derived from path
+	ResourceID   string                 `json:"resource_id,omitempty"`
+	Outcome      string                 `json:"outcome"` // success, failure, error
+	ErrorMessage string                 `json:"error_message,omitempty"`
+	RequestBody  string                 `json:"request_body,omitempty"` // sanitised
+	Tags         map[string]string      `json:"tags,omitempty"`
+	Extra        map[string]interface{} `json:"extra,omitempty"`
 }
 
 // AuditLevel controls which events are recorded.
 type AuditLevel string
 
 const (
-	AuditLevelNone     AuditLevel = "none"      // no auditing
-	AuditLevelMetadata AuditLevel = "metadata"   // method, path, user, status
-	AuditLevelRequest  AuditLevel = "request"    // + request body
-	AuditLevelFull     AuditLevel = "full"        // + response body (expensive)
+	AuditLevelNone     AuditLevel = "none"     // no auditing
+	AuditLevelMetadata AuditLevel = "metadata" // method, path, user, status
+	AuditLevelRequest  AuditLevel = "request"  // + request body
+	AuditLevelFull     AuditLevel = "full"     // + response body (expensive)
 )
 
 // ============================================================================
@@ -143,10 +143,10 @@ type AuditConfig struct {
 	Level            AuditLevel
 	Sinks            []AuditSink
 	Logger           *logrus.Logger
-	SkipPaths        []string          // paths to skip (e.g., /healthz)
-	SanitizeFields   []string          // fields to redact from request body
-	MaxBodyCapture   int               // max bytes of request body to capture
-	EnableRequestLog bool              // log request body at Request level
+	SkipPaths        []string // paths to skip (e.g., /healthz)
+	SanitizeFields   []string // fields to redact from request body
+	MaxBodyCapture   int      // max bytes of request body to capture
+	EnableRequestLog bool     // log request body at Request level
 }
 
 // bodyWriter wraps gin.ResponseWriter to capture response size.
@@ -268,9 +268,9 @@ func AuditMiddleware(cfg AuditConfig) gin.HandlerFunc {
 
 // AuditStore provides queryable in-memory storage for recent audit events.
 type AuditStore struct {
-	events   []*AuditEvent
-	maxSize  int
-	mu       sync.RWMutex
+	events  []*AuditEvent
+	maxSize int
+	mu      sync.RWMutex
 }
 
 // NewAuditStore creates a new audit store with a fixed capacity.

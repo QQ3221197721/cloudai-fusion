@@ -23,11 +23,11 @@ const (
 type SyncStatus string
 
 const (
-	SyncStatusSynced     SyncStatus = "synced"
-	SyncStatusOutOfSync  SyncStatus = "out-of-sync"
-	SyncStatusUnknown    SyncStatus = "unknown"
+	SyncStatusSynced      SyncStatus = "synced"
+	SyncStatusOutOfSync   SyncStatus = "out-of-sync"
+	SyncStatusUnknown     SyncStatus = "unknown"
 	SyncStatusProgressing SyncStatus = "progressing"
-	SyncStatusDegraded   SyncStatus = "degraded"
+	SyncStatusDegraded    SyncStatus = "degraded"
 )
 
 // HealthStatus represents the health status of a GitOps application.
@@ -101,11 +101,11 @@ type PromotionStage struct {
 
 // PromotionGate defines a gate that must pass before promotion proceeds.
 type PromotionGate struct {
-	Type      GateType `json:"type"`
-	Name      string   `json:"name"`
-	Required  bool     `json:"required"`
-	Timeout   string   `json:"timeout,omitempty"`
-	Config    map[string]string `json:"config,omitempty"`
+	Type     GateType          `json:"type"`
+	Name     string            `json:"name"`
+	Required bool              `json:"required"`
+	Timeout  string            `json:"timeout,omitempty"`
+	Config   map[string]string `json:"config,omitempty"`
 }
 
 // GateType defines the type of promotion gate.
@@ -121,15 +121,15 @@ const (
 
 // PromotionPipeline defines a multi-stage promotion workflow.
 type PromotionPipeline struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"name"`
-	AppID       string           `json:"app_id"`
-	Stages      []PromotionStage `json:"stages"`
-	Status      PromotionStatus  `json:"status"`
-	CurrentStage int             `json:"current_stage"`
-	Revision    string           `json:"revision"`
-	StartedAt   time.Time        `json:"started_at"`
-	CompletedAt *time.Time       `json:"completed_at,omitempty"`
+	ID           string           `json:"id"`
+	Name         string           `json:"name"`
+	AppID        string           `json:"app_id"`
+	Stages       []PromotionStage `json:"stages"`
+	Status       PromotionStatus  `json:"status"`
+	CurrentStage int              `json:"current_stage"`
+	Revision     string           `json:"revision"`
+	StartedAt    time.Time        `json:"started_at"`
+	CompletedAt  *time.Time       `json:"completed_at,omitempty"`
 }
 
 // PromotionStatus represents the status of a promotion pipeline.
@@ -174,6 +174,7 @@ type DriftDetail struct {
 type DriftStatus string
 
 const (
+	DriftNone       DriftStatus = "in-sync"
 	DriftDetected   DriftStatus = "detected"
 	DriftRemediated DriftStatus = "remediated"
 	DriftAccepted   DriftStatus = "accepted"

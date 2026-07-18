@@ -313,9 +313,24 @@ func (m *Manager) selectByLatency(endpoints []ServiceEndpoint) *ServiceEndpoint 
 }
 
 func (m *Manager) selectByGeo(endpoints []ServiceEndpoint) *ServiceEndpoint {
-	// In production, this would consider the client's geographic location
-	// and select the closest endpoint. For now, prefer first healthy.
-	return &endpoints[0]
+	// Region-aware routing: prefer endpoints co-located in the federation's home
+	// region (that of the control-plane member) to minimise cross-region traffic,
+	// breaking ties by lowest latency; falls back to lowest latency when no
+	// home-region endpoint exists. Caller holds m.mu (read).
+	homeRegion := m.homeRegion()
+
+	best := &endpoints[0]
+	bestHome := m.inRegion(endpoints[0].ClusterID, homeRegion)
+	for i := 1; i < len(endpoints); i++ {
+		home := m.inRegion(endpoints[i].ClusterID, homeRegion)
+		switch {
+		case home && !bestHome:
+			best, bestHome = &endpoints[i], true
+		case home == bestHome && endpoints[i].LatencyMs < best.LatencyMs:
+			best = &endpoints[i]
+		}
+	}
+	return best
 }
 
 func (m *Manager) selectByCost(endpoints []ServiceEndpoint) *ServiceEndpoint {
@@ -328,8 +343,65 @@ func (m *Manager) selectByCost(endpoints []ServiceEndpoint) *ServiceEndpoint {
 }
 
 func (m *Manager) selectByResource(endpoints []ServiceEndpoint) *ServiceEndpoint {
-	// In production, check cluster capacity and select least loaded.
-	return &endpoints[0]
+	// Route to the endpoint whose member cluster is least loaded, using real
+	// per-cluster resource utilisation. Caller holds m.mu (read).
+	best := &endpoints[0]
+	bestLoad := m.clusterLoad(endpoints[0].ClusterID)
+	for i := 1; i < len(endpoints); i++ {
+		if load := m.clusterLoad(endpoints[i].ClusterID); load < bestLoad {
+			bestLoad, best = load, &endpoints[i]
+		}
+	}
+	return best
+}
+
+// homeRegion returns the region of the control-plane member, or "" if none.
+// Caller must hold m.mu.
+func (m *Manager) homeRegion() string {
+	for _, member := range m.members {
+		if member.Role == RoleControlPlane {
+			return member.Region
+		}
+	}
+	return ""
+}
+
+// inRegion reports whether the endpoint's member cluster is in the given region.
+// A blank region never matches. Caller must hold m.mu.
+func (m *Manager) inRegion(clusterID, region string) bool {
+	if region == "" {
+		return false
+	}
+	member, ok := m.members[clusterID]
+	return ok && member.Region == region
+}
+
+// clusterLoad returns the member cluster's utilisation in [0,1] (max of CPU,
+// memory and GPU used ratios), or 1.0 when the cluster/capacity is unknown so
+// that unrecognised endpoints are deprioritised. Caller must hold m.mu.
+func (m *Manager) clusterLoad(clusterID string) float64 {
+	member, ok := m.members[clusterID]
+	if !ok {
+		return 1.0
+	}
+	c := member.Capacity
+	load := 0.0
+	if c.CPUMillicores > 0 {
+		if r := float64(c.UsedCPUMillicores) / float64(c.CPUMillicores); r > load {
+			load = r
+		}
+	}
+	if c.MemoryBytes > 0 {
+		if r := float64(c.UsedMemoryBytes) / float64(c.MemoryBytes); r > load {
+			load = r
+		}
+	}
+	if c.GPUCount > 0 {
+		if r := float64(c.UsedGPUCount) / float64(c.GPUCount); r > load {
+			load = r
+		}
+	}
+	return load
 }
 
 // ListGlobalServices returns all global services.
@@ -437,10 +509,10 @@ func (m *Manager) TriggerFailover(ctx context.Context, planID string, targetClus
 	plan.Status = DRStatusFailover
 
 	m.logger.WithFields(logrus.Fields{
-		"plan_id":    planID,
-		"from":       plan.PrimaryClusterID,
-		"to":         targetClusterID,
-		"strategy":   plan.Strategy,
+		"plan_id":  planID,
+		"from":     plan.PrimaryClusterID,
+		"to":       targetClusterID,
+		"strategy": plan.Strategy,
 	}).Warn("Failover triggered")
 
 	// In production, this would:

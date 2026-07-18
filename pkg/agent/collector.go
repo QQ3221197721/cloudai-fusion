@@ -74,10 +74,10 @@ type NodeMetrics struct {
 
 // CollectedMetrics holds all metrics from a single collection cycle
 type CollectedMetrics struct {
-	Timestamp  time.Time    `json:"timestamp"`
-	GPUs       []GPUMetrics `json:"gpus"`
-	Node       *NodeMetrics `json:"node,omitempty"`
-	Errors     []string     `json:"errors,omitempty"`
+	Timestamp time.Time    `json:"timestamp"`
+	GPUs      []GPUMetrics `json:"gpus"`
+	Node      *NodeMetrics `json:"node,omitempty"`
+	Errors    []string     `json:"errors,omitempty"`
 }
 
 // ============================================================================
@@ -121,9 +121,9 @@ func NewCollector(cfg CollectorConfig) *Collector {
 // Start begins the periodic metrics collection loop
 func (c *Collector) Start(ctx context.Context) {
 	c.logger.WithFields(logrus.Fields{
-		"dcgm_url":         c.dcgmURL,
+		"dcgm_url":          c.dcgmURL,
 		"node_exporter_url": c.nodeExporterURL,
-		"interval":         c.interval.String(),
+		"interval":          c.interval.String(),
 	}).Info("Metrics collector started")
 
 	// Collect immediately
@@ -369,7 +369,7 @@ func (c *Collector) scrapePrometheus(url string) ([]prometheusMetric, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)

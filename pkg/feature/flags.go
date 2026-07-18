@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"math/rand"
 	"os"
 	"sort"
@@ -36,12 +37,12 @@ type Category string
 
 const (
 	CategoryCompute     Category = "compute"       // GPU sharing, WASM, edge
-	CategoryAI          Category = "ai"             // RL scheduler, LLM ops, AIOps
-	CategoryNetworking  Category = "networking"     // Service mesh, gRPC, WebSocket
-	CategoryObservation Category = "observability"  // Tracing, monitoring, audit
-	CategorySecurity    Category = "security"       // Threat detection, compliance
-	CategoryFinOps      Category = "finops"         // Cost optimisation, spot
-	CategoryPlatform    Category = "platform"       // Multi-cluster, GitOps, plugins
+	CategoryAI          Category = "ai"            // RL scheduler, LLM ops, AIOps
+	CategoryNetworking  Category = "networking"    // Service mesh, gRPC, WebSocket
+	CategoryObservation Category = "observability" // Tracing, monitoring, audit
+	CategorySecurity    Category = "security"      // Threat detection, compliance
+	CategoryFinOps      Category = "finops"        // Cost optimisation, spot
+	CategoryPlatform    Category = "platform"      // Multi-cluster, GitOps, plugins
 )
 
 // Profile is a predefined combination of feature flags.
@@ -59,7 +60,7 @@ type Flag struct {
 	Enabled     bool              `json:"enabled"`
 	Description string            `json:"description,omitempty"`
 	Category    Category          `json:"category"`
-	Percentage  int               `json:"percentage"`           // 0-100 for gradual rollout
+	Percentage  int               `json:"percentage"`            // 0-100 for gradual rollout
 	MinProfile  Profile           `json:"min_profile,omitempty"` // Minimum profile that enables this flag
 	Metadata    map[string]string `json:"metadata,omitempty"`
 	UpdatedBy   string            `json:"updated_by,omitempty"`
@@ -241,11 +242,46 @@ func (m *Manager) IsEnabled(key string) bool {
 	if !flag.Enabled {
 		return false
 	}
-	// Percentage-based rollout
+	// Percentage-based rollout without a stickiness key: sample statistically
+	// per call. For consistent per-entity rollout use IsEnabledFor.
 	if flag.Percentage < 100 {
 		return rand.Intn(100) < flag.Percentage
 	}
 	return true
+}
+
+// IsEnabledFor reports whether a flag is enabled for a specific entity
+// (user, tenant, request, ...). Percentage rollout uses a stable hash of the
+// flag key and entity, so the same entity always lands in the same bucket: the
+// decision is consistent across calls, and rollout is monotonic — raising the
+// percentage only ever enables additional entities, never flips existing ones
+// back off.
+func (m *Manager) IsEnabledFor(key, entity string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	flag, ok := m.flags[key]
+	if !ok || !flag.Enabled {
+		return false
+	}
+	if flag.Percentage >= 100 {
+		return true
+	}
+	if flag.Percentage <= 0 {
+		return false
+	}
+	return rolloutBucket(key, entity) < flag.Percentage
+}
+
+// rolloutBucket maps (key, entity) to a stable bucket in [0,100) using FNV-1a.
+// Mixing the flag key in means the same entity is bucketed independently per
+// flag (an entity in the first 10% of flag A is uncorrelated with flag B).
+func rolloutBucket(key, entity string) int {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(key))
+	_, _ = h.Write([]byte{0})
+	_, _ = h.Write([]byte(entity))
+	return int(h.Sum32() % 100)
 }
 
 // SetFlag updates or creates a feature flag.
@@ -274,7 +310,7 @@ func (m *Manager) SetFlag(key string, enabled bool, updatedBy string) error {
 	m.logger.WithFields(logrus.Fields{
 		"flag":    key,
 		"enabled": enabled,
-		"by":     updatedBy,
+		"by":      updatedBy,
 	}).Info("Feature flag updated")
 	return nil
 }

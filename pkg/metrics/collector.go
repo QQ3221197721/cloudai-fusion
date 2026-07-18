@@ -37,13 +37,13 @@ type ResourceCollectorConfig struct {
 
 // GPUMetrics represents GPU device metrics returned by the collector function.
 type GPUMetrics struct {
-	Index         string
-	Model         string
-	Utilization   float64 // 0-100
-	MemoryUsed    float64 // bytes
-	MemoryTotal   float64 // bytes
-	Temperature   float64 // celsius
-	PowerUsage    float64 // watts
+	Index       string
+	Model       string
+	Utilization float64 // 0-100
+	MemoryUsed  float64 // bytes
+	MemoryTotal float64 // bytes
+	Temperature float64 // celsius
+	PowerUsage  float64 // watts
 }
 
 // ResourceCollector periodically collects resource utilization metrics
@@ -164,12 +164,12 @@ func (c *ResourceCollector) collectGPU() {
 
 // DBPoolStats represents database connection pool statistics.
 type DBPoolStats struct {
-	MaxOpen     int
-	Open        int
-	InUse       int
-	Idle        int
-	WaitCount   int64
-	WaitTime    time.Duration
+	MaxOpen   int
+	Open      int
+	InUse     int
+	Idle      int
+	WaitCount int64
+	WaitTime  time.Duration
 }
 
 // CollectDBPoolStats updates connection pool utilization metrics.

@@ -120,15 +120,15 @@ func TestSchedulingPriority(t *testing.T) {
 	// Add two workloads with different priorities
 	lowPriority := &Workload{
 		ID: "low", Name: "low-priority-job", Priority: 1,
-		Status: common.WorkloadStatusQueued,
+		Status:          common.WorkloadStatusQueued,
 		ResourceRequest: common.ResourceRequest{GPUCount: 1},
-		QueuedAt: common.NowUTC(),
+		QueuedAt:        common.NowUTC(),
 	}
 	highPriority := &Workload{
 		ID: "high", Name: "high-priority-job", Priority: 10,
-		Status: common.WorkloadStatusQueued,
+		Status:          common.WorkloadStatusQueued,
 		ResourceRequest: common.ResourceRequest{GPUCount: 1},
-		QueuedAt: common.NowUTC(),
+		QueuedAt:        common.NowUTC(),
 	}
 	engine.queue = append(engine.queue, lowPriority, highPriority)
 	engine.mu.Unlock()
@@ -177,11 +177,11 @@ func TestScoreNode(t *testing.T) {
 	}
 
 	node := NodeScore{
-		NodeName:     "test-node",
-		GPUFreeCount: 4,
-		GPUType:      "nvidia-a100",
+		NodeName:       "test-node",
+		GPUFreeCount:   4,
+		GPUType:        "nvidia-a100",
 		GPUUtilization: 50.0,
-		CostPerHour:  15.0,
+		CostPerHour:    15.0,
 	}
 
 	engine.scoreNode(&node, workload)
@@ -391,7 +391,7 @@ func TestEstimateNVLinkBandwidth(t *testing.T) {
 // ============================================================================
 
 func TestRLOptimizer_Creation(t *testing.T) {
-	rl := NewRLOptimizer(RLOptimizerConfig{})
+	rl := NewRLOptimizer(DefaultRLOptimizerConfig())
 	if rl == nil {
 		t.Fatal("RLOptimizer should not be nil")
 	}
@@ -403,6 +403,17 @@ func TestRLOptimizer_Creation(t *testing.T) {
 	}
 	if rl.config.ExplorationRate != 0.2 {
 		t.Errorf("default exploration rate should be 0.2, got %f", rl.config.ExplorationRate)
+	}
+
+	// An explicit ExplorationRate of 0 must be respected (pure exploitation),
+	// not silently overridden by the default.
+	pure := NewRLOptimizer(RLOptimizerConfig{ExplorationRate: 0.0})
+	if pure.config.ExplorationRate != 0.0 {
+		t.Errorf("explicit ExplorationRate 0.0 must be respected, got %f", pure.config.ExplorationRate)
+	}
+	// LearningRate/DiscountFactor of 0 remain non-functional and fall back.
+	if pure.config.LearningRate != 0.1 || pure.config.DiscountFactor != 0.95 {
+		t.Errorf("LR/DF should fall back to defaults, got %f/%f", pure.config.LearningRate, pure.config.DiscountFactor)
 	}
 }
 
@@ -544,18 +555,18 @@ func TestCalculateReward(t *testing.T) {
 	// Good outcome: high utilization, fast completion, good cost efficiency
 	goodReward := CalculateReward(SchedulingReward{
 		GPUUtilization:    80.0,
-		JobCompletionTime: 600,  // 10 minutes
+		JobCompletionTime: 600, // 10 minutes
 		CostEfficiency:    0.9,
-		QueueWaitTime:     30,   // 30 seconds
+		QueueWaitTime:     30, // 30 seconds
 		Preemptions:       0,
 	})
 
 	// Bad outcome: low utilization, slow, expensive, many preemptions
 	badReward := CalculateReward(SchedulingReward{
 		GPUUtilization:    20.0,
-		JobCompletionTime: 7200,  // 2 hours
+		JobCompletionTime: 7200, // 2 hours
 		CostEfficiency:    0.1,
-		QueueWaitTime:     600,   // 10 minutes
+		QueueWaitTime:     600, // 10 minutes
 		Preemptions:       3,
 	})
 
@@ -728,9 +739,9 @@ func TestScoreNode_WithRLIntegration(t *testing.T) {
 	engine, _ := NewEngine(EngineConfig{})
 
 	workload := &Workload{
-		Type: common.WorkloadTypeTraining,
+		Type:            common.WorkloadTypeTraining,
 		ResourceRequest: common.ResourceRequest{GPUCount: 2},
-		Priority: 5,
+		Priority:        5,
 		GPUTopologyReq: &GPUTopologyRequirement{
 			RequireNVLink:  true,
 			PreferSameNode: true,

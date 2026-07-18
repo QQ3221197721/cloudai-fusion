@@ -66,12 +66,12 @@ type CircuitBreaker struct {
 	mu     sync.Mutex
 	config CircuitBreakerConfig
 
-	state              CircuitState
-	failureCount       int
-	successCount       int
-	halfOpenRequests   int
-	lastFailureTime    time.Time
-	lastStateChangeAt  time.Time
+	state             CircuitState
+	failureCount      int
+	successCount      int
+	halfOpenRequests  int
+	lastFailureTime   time.Time
+	lastStateChangeAt time.Time
 }
 
 // NewCircuitBreaker creates a new circuit breaker with the given config.

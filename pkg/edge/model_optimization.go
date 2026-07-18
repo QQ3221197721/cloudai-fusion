@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,39 +25,39 @@ import (
 type QuantizationType string
 
 const (
-	QuantFP32   QuantizationType = "FP32"
-	QuantFP16   QuantizationType = "FP16"
-	QuantINT8   QuantizationType = "INT8"
-	QuantINT4   QuantizationType = "INT4"
-	QuantNF4    QuantizationType = "NF4"
-	QuantGPTQ4  QuantizationType = "GPTQ4"  // GPTQ 4-bit
-	QuantAWQ4   QuantizationType = "AWQ4"   // AWQ 4-bit
-	QuantGGUF4  QuantizationType = "GGUF_Q4_K_M" // GGUF Q4_K_M
+	QuantFP32  QuantizationType = "FP32"
+	QuantFP16  QuantizationType = "FP16"
+	QuantINT8  QuantizationType = "INT8"
+	QuantINT4  QuantizationType = "INT4"
+	QuantNF4   QuantizationType = "NF4"
+	QuantGPTQ4 QuantizationType = "GPTQ4"       // GPTQ 4-bit
+	QuantAWQ4  QuantizationType = "AWQ4"        // AWQ 4-bit
+	QuantGGUF4 QuantizationType = "GGUF_Q4_K_M" // GGUF Q4_K_M
 )
 
 // ModelVersion tracks deployed model versions
 type ModelVersion struct {
-	VersionID      string            `json:"version_id"`
-	ModelID        string            `json:"model_id"`
-	ModelName      string            `json:"model_name"`
-	SemanticVersion string           `json:"semantic_version"` // e.g., "1.2.3"
-	ParameterCount string            `json:"parameter_count"`
-	Quantization   QuantizationType  `json:"quantization"`
-	ChecksumSHA256 string            `json:"checksum_sha256"`
-	SizeBytes      int64             `json:"size_bytes"`
-	CreatedAt      time.Time         `json:"created_at"`
-	Metadata       map[string]string `json:"metadata,omitempty"`
+	VersionID       string            `json:"version_id"`
+	ModelID         string            `json:"model_id"`
+	ModelName       string            `json:"model_name"`
+	SemanticVersion string            `json:"semantic_version"` // e.g., "1.2.3"
+	ParameterCount  string            `json:"parameter_count"`
+	Quantization    QuantizationType  `json:"quantization"`
+	ChecksumSHA256  string            `json:"checksum_sha256"`
+	SizeBytes       int64             `json:"size_bytes"`
+	CreatedAt       time.Time         `json:"created_at"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
 }
 
 // PowerBudgetResult contains power consumption analysis
 type PowerBudgetResult struct {
-	ModelID              string  `json:"model_id"`
-	EstimatedPowerWatts  float64 `json:"estimated_power_watts"`
-	PeakPowerWatts       float64 `json:"peak_power_watts"`
-	AvgPowerWatts        float64 `json:"avg_power_watts"`
-	PowerPerInferenceW   float64 `json:"power_per_inference_watts"`
-	WithinBudget         bool    `json:"within_budget"`
-	BudgetWatts          int     `json:"budget_watts"`
+	ModelID                 string   `json:"model_id"`
+	EstimatedPowerWatts     float64  `json:"estimated_power_watts"`
+	PeakPowerWatts          float64  `json:"peak_power_watts"`
+	AvgPowerWatts           float64  `json:"avg_power_watts"`
+	PowerPerInferenceW      float64  `json:"power_per_inference_watts"`
+	WithinBudget            bool     `json:"within_budget"`
+	BudgetWatts             int      `json:"budget_watts"`
 	OptimizationSuggestions []string `json:"optimization_suggestions,omitempty"`
 }
 
@@ -121,7 +123,7 @@ func (p *InferenceProxy) ProxyInference(ctx context.Context, modelID string, inp
 		p.mu.Unlock()
 		return nil, fmt.Errorf("cloud fallback failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("cloud returned HTTP %d", resp.StatusCode)
@@ -141,11 +143,11 @@ func (p *InferenceProxy) GetStats() map[string]interface{} {
 	defer p.mu.RUnlock()
 
 	return map[string]interface{}{
-		"total_requests":  p.requestCount,
-		"fallback_count":  p.fallbackCount,
-		"fallback_rate":   float64(p.fallbackCount) / float64(p.requestCount) * 100,
-		"last_fallback":   p.lastFallback,
-		"cloud_endpoint":  p.cloudEndpoint,
+		"total_requests": p.requestCount,
+		"fallback_count": p.fallbackCount,
+		"fallback_rate":  float64(p.fallbackCount) / float64(p.requestCount) * 100,
+		"last_fallback":  p.lastFallback,
+		"cloud_endpoint": p.cloudEndpoint,
 	}
 }
 
@@ -156,7 +158,6 @@ func (p *InferenceProxy) GetStats() map[string]interface{} {
 // OptimizationEngine assesses and optimizes models for edge deployment
 type OptimizationEngine struct {
 	logger *logrus.Logger
-	mu     sync.RWMutex
 }
 
 // NewOptimizationEngine creates a new optimization engine
@@ -199,13 +200,13 @@ func (e *OptimizationEngine) AssessQuantization(modelName, paramCount string, po
 	}
 
 	result := &PowerBudgetResult{
-		ModelID:              modelName,
-		EstimatedPowerWatts:  estimates[0].EstimatedPowerWatts,
-		PeakPowerWatts:       estimates[0].PeakPowerWatts,
-		AvgPowerWatts:        estimates[0].AvgPowerWatts,
-		PowerPerInferenceW:   estimates[0].PowerPerInferenceW,
-		WithinBudget:         withinBudget,
-		BudgetWatts:          powerBudgetWatts,
+		ModelID:             modelName,
+		EstimatedPowerWatts: estimates[0].EstimatedPowerWatts,
+		PeakPowerWatts:      estimates[0].PeakPowerWatts,
+		AvgPowerWatts:       estimates[0].AvgPowerWatts,
+		PowerPerInferenceW:  estimates[0].PowerPerInferenceW,
+		WithinBudget:        withinBudget,
+		BudgetWatts:         powerBudgetWatts,
 	}
 
 	if !withinBudget {
@@ -220,11 +221,11 @@ func (e *OptimizationEngine) AssessQuantization(modelName, paramCount string, po
 }
 
 type powerEstimate struct {
-	Quantization      QuantizationType
+	Quantization        QuantizationType
 	EstimatedPowerWatts float64
-	PeakPowerWatts    float64
-	AvgPowerWatts     float64
-	PowerPerInferenceW float64
+	PeakPowerWatts      float64
+	AvgPowerWatts       float64
+	PowerPerInferenceW  float64
 }
 
 func (e *OptimizationEngine) estimatePowerConsumption(paramsBillion float64, modelName string) []powerEstimate {
@@ -233,32 +234,32 @@ func (e *OptimizationEngine) estimatePowerConsumption(paramsBillion float64, mod
 
 	estimates := []powerEstimate{
 		{
-			Quantization:      QuantFP32,
+			Quantization:        QuantFP32,
 			EstimatedPowerWatts: paramsBillion * baseMultiplier * 1.0,
-			PeakPowerWatts:    paramsBillion * baseMultiplier * 1.5,
-			AvgPowerWatts:     paramsBillion * baseMultiplier * 0.8,
-			PowerPerInferenceW: paramsBillion * baseMultiplier * 0.01,
+			PeakPowerWatts:      paramsBillion * baseMultiplier * 1.5,
+			AvgPowerWatts:       paramsBillion * baseMultiplier * 0.8,
+			PowerPerInferenceW:  paramsBillion * baseMultiplier * 0.01,
 		},
 		{
-			Quantization:      QuantFP16,
+			Quantization:        QuantFP16,
 			EstimatedPowerWatts: paramsBillion * baseMultiplier * 0.6,
-			PeakPowerWatts:    paramsBillion * baseMultiplier * 0.9,
-			AvgPowerWatts:     paramsBillion * baseMultiplier * 0.5,
-			PowerPerInferenceW: paramsBillion * baseMultiplier * 0.006,
+			PeakPowerWatts:      paramsBillion * baseMultiplier * 0.9,
+			AvgPowerWatts:       paramsBillion * baseMultiplier * 0.5,
+			PowerPerInferenceW:  paramsBillion * baseMultiplier * 0.006,
 		},
 		{
-			Quantization:      QuantINT8,
+			Quantization:        QuantINT8,
 			EstimatedPowerWatts: paramsBillion * baseMultiplier * 0.35,
-			PeakPowerWatts:    paramsBillion * baseMultiplier * 0.5,
-			AvgPowerWatts:     paramsBillion * baseMultiplier * 0.3,
-			PowerPerInferenceW: paramsBillion * baseMultiplier * 0.003,
+			PeakPowerWatts:      paramsBillion * baseMultiplier * 0.5,
+			AvgPowerWatts:       paramsBillion * baseMultiplier * 0.3,
+			PowerPerInferenceW:  paramsBillion * baseMultiplier * 0.003,
 		},
 		{
-			Quantization:      QuantINT4,
+			Quantization:        QuantINT4,
 			EstimatedPowerWatts: paramsBillion * baseMultiplier * 0.2,
-			PeakPowerWatts:    paramsBillion * baseMultiplier * 0.3,
-			AvgPowerWatts:     paramsBillion * baseMultiplier * 0.15,
-			PowerPerInferenceW: paramsBillion * baseMultiplier * 0.0015,
+			PeakPowerWatts:      paramsBillion * baseMultiplier * 0.3,
+			AvgPowerWatts:       paramsBillion * baseMultiplier * 0.15,
+			PowerPerInferenceW:  paramsBillion * baseMultiplier * 0.0015,
 		},
 	}
 
@@ -281,8 +282,8 @@ func getArchMultiplier(modelName string) float64 {
 
 func parseParamCount(paramCount string) (float64, error) {
 	paramCount = strings.ToLower(strings.TrimSpace(paramCount))
-	
-	var multiplier float64 = 1.0
+
+	var multiplier = 1.0
 	if strings.HasSuffix(paramCount, "b") {
 		multiplier = 1e9
 		paramCount = strings.TrimSuffix(paramCount, "b")
@@ -443,21 +444,21 @@ func (m *VersionManager) Rollback(modelID, targetVersionID string) error {
 
 // EdgeHardwareProfile describes an edge hardware platform's capabilities.
 type EdgeHardwareProfile struct {
-	Name              string  `json:"name"`
-	GPUType           string  `json:"gpu_type"`
-	GPUMemoryGB       float64 `json:"gpu_memory_gb"`
-	CPUArch           string  `json:"cpu_arch"`
-	SystemMemoryGB    float64 `json:"system_memory_gb"`
-	TDPWatts          int     `json:"tdp_watts"`
-	MaxModelParams    string  `json:"max_model_params"`       // at INT4, e.g., "70B"
+	Name              string   `json:"name"`
+	GPUType           string   `json:"gpu_type"`
+	GPUMemoryGB       float64  `json:"gpu_memory_gb"`
+	CPUArch           string   `json:"cpu_arch"`
+	SystemMemoryGB    float64  `json:"system_memory_gb"`
+	TDPWatts          int      `json:"tdp_watts"`
+	MaxModelParams    string   `json:"max_model_params"` // at INT4, e.g., "70B"
 	SupportedRuntimes []string `json:"supported_runtimes"`
-	ComputeCapability string  `json:"compute_capability"`     // CUDA CC for NVIDIA
-	INT4TOPS          float64 `json:"int4_tops"`              // INT4 compute throughput
-	INT8TOPS          float64 `json:"int8_tops"`
-	FP16TFLOPS        float64 `json:"fp16_tflops"`
-	MemoryBandwidthGB float64 `json:"memory_bandwidth_gbps"` // GB/s
-	PCIeGen           int     `json:"pcie_gen"`
-	Notes             string  `json:"notes"`
+	ComputeCapability string   `json:"compute_capability"` // CUDA CC for NVIDIA
+	INT4TOPS          float64  `json:"int4_tops"`          // INT4 compute throughput
+	INT8TOPS          float64  `json:"int8_tops"`
+	FP16TFLOPS        float64  `json:"fp16_tflops"`
+	MemoryBandwidthGB float64  `json:"memory_bandwidth_gbps"` // GB/s
+	PCIeGen           int      `json:"pcie_gen"`
+	Notes             string   `json:"notes"`
 }
 
 // StandardEdgeProfiles returns hardware profiles for common edge platforms.
@@ -466,7 +467,7 @@ func StandardEdgeProfiles() map[string]*EdgeHardwareProfile {
 		"nvidia-jetson-orin-64": {
 			Name: "NVIDIA Jetson AGX Orin 64GB", GPUType: "nvidia-jetson-orin",
 			GPUMemoryGB: 64, CPUArch: "arm64", SystemMemoryGB: 64, TDPWatts: 60,
-			MaxModelParams: "50B",
+			MaxModelParams:    "50B",
 			SupportedRuntimes: []string{"tensorrt", "onnxruntime", "tflite"},
 			ComputeCapability: "8.7", INT4TOPS: 275, INT8TOPS: 138, FP16TFLOPS: 69,
 			MemoryBandwidthGB: 204.8, PCIeGen: 0, // integrated
@@ -475,7 +476,7 @@ func StandardEdgeProfiles() map[string]*EdgeHardwareProfile {
 		"nvidia-jetson-orin-32": {
 			Name: "NVIDIA Jetson AGX Orin 32GB", GPUType: "nvidia-jetson-orin",
 			GPUMemoryGB: 32, CPUArch: "arm64", SystemMemoryGB: 32, TDPWatts: 40,
-			MaxModelParams: "20B",
+			MaxModelParams:    "20B",
 			SupportedRuntimes: []string{"tensorrt", "onnxruntime"},
 			ComputeCapability: "8.7", INT4TOPS: 200, INT8TOPS: 100, FP16TFLOPS: 50,
 			MemoryBandwidthGB: 204.8, PCIeGen: 0,
@@ -484,7 +485,7 @@ func StandardEdgeProfiles() map[string]*EdgeHardwareProfile {
 		"nvidia-jetson-orin-nano": {
 			Name: "NVIDIA Jetson Orin Nano 8GB", GPUType: "nvidia-jetson-orin-nano",
 			GPUMemoryGB: 8, CPUArch: "arm64", SystemMemoryGB: 8, TDPWatts: 15,
-			MaxModelParams: "7B",
+			MaxModelParams:    "7B",
 			SupportedRuntimes: []string{"tensorrt", "onnxruntime", "ncnn"},
 			ComputeCapability: "8.7", INT4TOPS: 67, INT8TOPS: 34, FP16TFLOPS: 17,
 			MemoryBandwidthGB: 68, PCIeGen: 0,
@@ -493,27 +494,27 @@ func StandardEdgeProfiles() map[string]*EdgeHardwareProfile {
 		"intel-nuc-ultra7": {
 			Name: "Intel NUC Ultra 7 165H", GPUType: "intel-arc",
 			GPUMemoryGB: 32, CPUArch: "x86_64", SystemMemoryGB: 32, TDPWatts: 65,
-			MaxModelParams: "13B",
+			MaxModelParams:    "13B",
 			SupportedRuntimes: []string{"openvino", "onnxruntime"},
-			INT4TOPS: 0, INT8TOPS: 33, FP16TFLOPS: 16,
+			INT4TOPS:          0, INT8TOPS: 33, FP16TFLOPS: 16,
 			MemoryBandwidthGB: 89.6, PCIeGen: 5,
 			Notes: "OpenVINO optimized, good for 7B-13B with GGUF",
 		},
 		"rockchip-rk3588": {
 			Name: "Rockchip RK3588 (Mali G610)", GPUType: "mali-g610",
 			GPUMemoryGB: 0, CPUArch: "arm64", SystemMemoryGB: 16, TDPWatts: 10,
-			MaxModelParams: "3B",
+			MaxModelParams:    "3B",
 			SupportedRuntimes: []string{"ncnn", "mnn", "tflite"},
-			INT4TOPS: 6, INT8TOPS: 3, FP16TFLOPS: 1.5,
+			INT4TOPS:          6, INT8TOPS: 3, FP16TFLOPS: 1.5,
 			MemoryBandwidthGB: 25.6, PCIeGen: 0,
 			Notes: "Low-power IoT edge, up to 3B with GGUF Q4",
 		},
 		"hailo-8l": {
 			Name: "Hailo-8L AI Accelerator", GPUType: "hailo-8l",
 			GPUMemoryGB: 0, CPUArch: "arm64", SystemMemoryGB: 8, TDPWatts: 5,
-			MaxModelParams: "1B",
+			MaxModelParams:    "1B",
 			SupportedRuntimes: []string{"hailo-rt"},
-			INT4TOPS: 13, INT8TOPS: 13, FP16TFLOPS: 0,
+			INT4TOPS:          13, INT8TOPS: 13, FP16TFLOPS: 0,
 			MemoryBandwidthGB: 12.8, PCIeGen: 3,
 			Notes: "Dedicated NPU for vision/NLP edge inference <5W",
 		},
@@ -565,18 +566,18 @@ func FindBestProfile(paramCount string, powerBudgetW int) (*EdgeHardwareProfile,
 
 // LayerQuantConfig configures per-layer quantization for sensitive layers.
 type LayerQuantConfig struct {
-	LayerPattern   string           `json:"layer_pattern"`   // regex for layer name
-	Quantization   QuantizationType `json:"quantization"`
-	Reason         string           `json:"reason"`
+	LayerPattern string           `json:"layer_pattern"` // regex for layer name
+	Quantization QuantizationType `json:"quantization"`
+	Reason       string           `json:"reason"`
 }
 
 // MixedPrecisionConfig configures layer-wise mixed precision quantization.
 type MixedPrecisionConfig struct {
-	DefaultBits    int                `json:"default_bits"`      // e.g., 4
-	SensitiveLayers []LayerQuantConfig `json:"sensitive_layers"` // layers needing higher precision
-	EmbeddingBits  int                `json:"embedding_bits"`    // typically 8 for embeddings
-	LMHeadBits     int                `json:"lm_head_bits"`      // typically 8 for output head
-	AttentionQKBits int               `json:"attention_qk_bits"` // Q/K projections
+	DefaultBits     int                `json:"default_bits"`      // e.g., 4
+	SensitiveLayers []LayerQuantConfig `json:"sensitive_layers"`  // layers needing higher precision
+	EmbeddingBits   int                `json:"embedding_bits"`    // typically 8 for embeddings
+	LMHeadBits      int                `json:"lm_head_bits"`      // typically 8 for output head
+	AttentionQKBits int                `json:"attention_qk_bits"` // Q/K projections
 }
 
 // DefaultMixedPrecisionConfig returns optimized mixed-precision for 50B LLMs.
@@ -584,9 +585,9 @@ type MixedPrecisionConfig struct {
 // sensitive to quantization and benefit from higher precision.
 func DefaultMixedPrecisionConfig() MixedPrecisionConfig {
 	return MixedPrecisionConfig{
-		DefaultBits:    4,
-		EmbeddingBits:  8,
-		LMHeadBits:     8,
+		DefaultBits:     4,
+		EmbeddingBits:   8,
+		LMHeadBits:      8,
 		AttentionQKBits: 8,
 		SensitiveLayers: []LayerQuantConfig{
 			{LayerPattern: "embed_tokens", Quantization: QuantINT8, Reason: "embeddings are quantization-sensitive"},
@@ -600,8 +601,8 @@ func DefaultMixedPrecisionConfig() MixedPrecisionConfig {
 
 // MixedPrecisionResult contains the analysis of mixed-precision quantization.
 type MixedPrecisionResult struct {
-	LayerConfigs     map[string]int `json:"layer_configs"`       // layer_name -> bits
-	EffectiveBPW     float64        `json:"effective_bpw"`       // effective bits per weight
+	LayerConfigs     map[string]int `json:"layer_configs"` // layer_name -> bits
+	EffectiveBPW     float64        `json:"effective_bpw"` // effective bits per weight
 	TotalSizeBytes   int64          `json:"total_size_bytes"`
 	SensitivePercent float64        `json:"sensitive_layer_percent"` // % layers at higher precision
 	QualityGain      float64        `json:"quality_gain_vs_uniform"` // PPL improvement vs uniform quant
@@ -609,62 +610,138 @@ type MixedPrecisionResult struct {
 }
 
 // AnalyzeMixedPrecision plans per-layer quantization for optimal quality/size tradeoff.
+// Sensitive-layer patterns are treated as globs ('*' wildcard) matched against
+// fully-qualified weight-tensor names (e.g. "layers.5.self_attn.q_proj"), so a
+// pattern like "layers.*.self_attn.q_proj" precisely targets attention projections.
 func (e *OptimizationEngine) AnalyzeMixedPrecision(cfg MixedPrecisionConfig, totalLayers int, modelSizeBytes int64) *MixedPrecisionResult {
-	layerConfigs := make(map[string]int)
-	sensitiveCount := 0
-
-	// Assign bits to each layer
-	for i := 0; i < totalLayers; i++ {
-		layerName := fmt.Sprintf("layers.%d", i)
-		bits := cfg.DefaultBits
-
-		// Check if this is a sensitive layer
-		for _, sl := range cfg.SensitiveLayers {
-			matched := false
-			if sl.LayerPattern == fmt.Sprintf("layers.%d.*", i) {
-				matched = true
-			}
-			if matched {
-				switch sl.Quantization {
-				case QuantINT8:
-					bits = 8
-				case QuantFP16:
-					bits = 16
-				default:
-					bits = 8
-				}
-				sensitiveCount++
-			}
+	// Compile sensitive-layer patterns once.
+	type compiledRule struct {
+		re   *regexp.Regexp
+		bits int
+	}
+	rules := make([]compiledRule, 0, len(cfg.SensitiveLayers))
+	for _, sl := range cfg.SensitiveLayers {
+		re, err := regexp.Compile(globToRegex(sl.LayerPattern))
+		if err != nil {
+			continue // skip invalid pattern rather than silently mis-scoring
 		}
-		layerConfigs[layerName] = bits
+		bits := 8
+		if sl.Quantization == QuantFP16 {
+			bits = 16
+		}
+		rules = append(rules, compiledRule{re: re, bits: bits})
 	}
 
-	// Special layers
-	layerConfigs["embed_tokens"] = cfg.EmbeddingBits
-	layerConfigs["lm_head"] = cfg.LMHeadBits
+	// Enumerate quantizable weight tensors at sub-layer granularity so patterns
+	// can target individual projections rather than whole transformer blocks.
+	subLayers := []string{
+		"self_attn.q_proj", "self_attn.k_proj", "self_attn.v_proj", "self_attn.o_proj",
+		"mlp.gate_proj", "mlp.up_proj", "mlp.down_proj",
+	}
+	names := make([]string, 0, totalLayers*len(subLayers)+2)
+	for i := 0; i < totalLayers; i++ {
+		for _, sub := range subLayers {
+			names = append(names, fmt.Sprintf("layers.%d.%s", i, sub))
+		}
+	}
+	names = append(names, "embed_tokens", "lm_head")
 
-	// Calculate effective BPW
+	layerConfigs := make(map[string]int, len(names))
+	sensitiveBlocks := make(map[int]bool)
+	for _, name := range names {
+		bits := cfg.DefaultBits
+		switch name {
+		case "embed_tokens":
+			bits = cfg.EmbeddingBits
+		case "lm_head":
+			bits = cfg.LMHeadBits
+		}
+		// Apply the highest-precision matching sensitive-layer rule.
+		for _, r := range rules {
+			if r.re.MatchString(name) && r.bits > bits {
+				bits = r.bits
+			}
+		}
+		if bits > cfg.DefaultBits {
+			if idx, ok := layerBlockIndex(name); ok {
+				sensitiveBlocks[idx] = true
+			}
+		}
+		layerConfigs[name] = bits
+	}
+
+	// Effective bits-per-weight (equal-weight approximation across tensors).
 	totalBits := 0
 	for _, bits := range layerConfigs {
 		totalBits += bits
 	}
 	effBPW := float64(totalBits) / float64(len(layerConfigs))
 
-	// Size calculation
+	// Sizes assume modelSizeBytes is the FP32 (32-bit) footprint.
 	uniformSize := int64(float64(modelSizeBytes) * float64(cfg.DefaultBits) / 32.0)
 	mixedSize := int64(float64(modelSizeBytes) * effBPW / 32.0)
 
-	// Quality gain: ~0.2 PPL improvement for mixed vs uniform 4-bit
+	// Quality gain heuristic: extra average precision over the uniform baseline
+	// yields a perplexity improvement (~0.15 ppl per extra average bit).
 	qualityGain := (effBPW - float64(cfg.DefaultBits)) * 0.15
+
+	sizeOverhead := 0.0
+	if uniformSize > 0 {
+		sizeOverhead = float64(mixedSize-uniformSize) / float64(uniformSize) * 100
+	}
+
+	sensitivePercent := 0.0
+	if totalLayers > 0 {
+		sensitivePercent = float64(len(sensitiveBlocks)) / float64(totalLayers) * 100
+	}
 
 	return &MixedPrecisionResult{
 		LayerConfigs:     layerConfigs,
 		EffectiveBPW:     effBPW,
 		TotalSizeBytes:   mixedSize,
-		SensitivePercent: float64(sensitiveCount) / float64(totalLayers) * 100,
+		SensitivePercent: sensitivePercent,
 		QualityGain:      qualityGain,
-		SizeOverhead:     float64(mixedSize-uniformSize) / float64(uniformSize) * 100,
+		SizeOverhead:     sizeOverhead,
 	}
+}
+
+// globToRegex converts a '*'-wildcard glob into an anchored regular expression,
+// escaping all other regex metacharacters so '.' is matched literally.
+func globToRegex(glob string) string {
+	var b strings.Builder
+	b.WriteByte('^')
+	for _, r := range glob {
+		switch r {
+		case '*':
+			b.WriteString(".*")
+		case '.', '+', '(', ')', '[', ']', '{', '}', '^', '$', '\\', '|', '?':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('$')
+	return b.String()
+}
+
+// layerBlockIndex extracts the transformer block index from a tensor name like
+// "layers.5.self_attn.q_proj". Returns false for non-block tensors.
+func layerBlockIndex(name string) (int, bool) {
+	const prefix = "layers."
+	if !strings.HasPrefix(name, prefix) {
+		return 0, false
+	}
+	rest := name[len(prefix):]
+	dot := strings.IndexByte(rest, '.')
+	if dot < 0 {
+		return 0, false
+	}
+	idx, err := strconv.Atoi(rest[:dot])
+	if err != nil {
+		return 0, false
+	}
+	return idx, true
 }
 
 // ============================================================================
@@ -673,7 +750,7 @@ func (e *OptimizationEngine) AnalyzeMixedPrecision(cfg MixedPrecisionConfig, tot
 
 // KVCacheConfig configures KV-cache optimization for memory-constrained edge devices.
 type KVCacheConfig struct {
-	MaxSeqLen           int     `json:"max_seq_len"`           // context length
+	MaxSeqLen           int     `json:"max_seq_len"` // context length
 	NumLayers           int     `json:"num_layers"`
 	NumHeads            int     `json:"num_heads"`
 	HeadDim             int     `json:"head_dim"`
@@ -693,10 +770,10 @@ type KVCacheConfig struct {
 func DefaultKVCacheConfig() KVCacheConfig {
 	return KVCacheConfig{
 		MaxSeqLen:           2048,
-		NumLayers:           64,   // 50B model typical
+		NumLayers:           64, // 50B model typical
 		NumHeads:            64,
 		HeadDim:             128,
-		NumKVHeads:          8,    // GQA 8:1 ratio
+		NumKVHeads:          8, // GQA 8:1 ratio
 		CachePrecision:      "INT8",
 		PagedAttention:      true,
 		PageSize:            16,
@@ -711,19 +788,19 @@ func DefaultKVCacheConfig() KVCacheConfig {
 
 // KVCacheAnalysis contains the analysis of KV-cache memory requirements.
 type KVCacheAnalysis struct {
-	BaseKVCacheSizeMB    float64 `json:"base_kv_cache_size_mb"`    // FP16 full KV-cache
-	OptimizedCacheSizeMB float64 `json:"optimized_cache_size_mb"` // after optimizations
-	MemorySavingsPercent float64 `json:"memory_savings_percent"`
-	MaxBatchSize         int     `json:"max_batch_size"`           // given memory budget
-	MaxSeqLen            int     `json:"max_seq_len"`              // achievable context length
-	GQAReduction         float64 `json:"gqa_reduction_factor"`     // reduction from GQA
-	QuantReduction       float64 `json:"quant_reduction_factor"`   // reduction from cache quantization
-	SlidingWindowActive  bool    `json:"sliding_window_active"`
-	PagedActive          bool    `json:"paged_attention_active"`
-	StreamingActive      bool    `json:"streaming_llm_active"`
+	BaseKVCacheSizeMB    float64  `json:"base_kv_cache_size_mb"`   // FP16 full KV-cache
+	OptimizedCacheSizeMB float64  `json:"optimized_cache_size_mb"` // after optimizations
+	MemorySavingsPercent float64  `json:"memory_savings_percent"`
+	MaxBatchSize         int      `json:"max_batch_size"`         // given memory budget
+	MaxSeqLen            int      `json:"max_seq_len"`            // achievable context length
+	GQAReduction         float64  `json:"gqa_reduction_factor"`   // reduction from GQA
+	QuantReduction       float64  `json:"quant_reduction_factor"` // reduction from cache quantization
+	SlidingWindowActive  bool     `json:"sliding_window_active"`
+	PagedActive          bool     `json:"paged_attention_active"`
+	StreamingActive      bool     `json:"streaming_llm_active"`
 	Optimizations        []string `json:"optimizations_applied"`
-	FitInMemory          bool    `json:"fits_in_memory"`
-	Notes                string  `json:"notes"`
+	FitInMemory          bool     `json:"fits_in_memory"`
+	Notes                string   `json:"notes"`
 }
 
 // AnalyzeKVCache computes KV-cache memory requirements and recommends optimizations.
@@ -841,18 +918,18 @@ func (e *OptimizationEngine) AnalyzeKVCache(cfg KVCacheConfig, modelMemoryGB flo
 
 // EdgeDeploymentPlan is a comprehensive plan for deploying a 50B model to edge.
 type EdgeDeploymentPlan struct {
-	ModelParams         string              `json:"model_params"`
-	TargetHardware      *EdgeHardwareProfile `json:"target_hardware"`
-	Quantization        QuantizationType    `json:"quantization"`
-	MixedPrecision      *MixedPrecisionResult `json:"mixed_precision,omitempty"`
-	KVCacheAnalysis     *KVCacheAnalysis    `json:"kv_cache_analysis"`
-	EstModelSizeGB      float64             `json:"est_model_size_gb"`
-	EstTotalMemoryGB    float64             `json:"est_total_memory_gb"`
-	EstPowerWatts       float64             `json:"est_power_watts"`
-	EstTokensPerSec     float64             `json:"est_tokens_per_sec"`
-	Feasible            bool                `json:"feasible"`
-	Bottleneck          string              `json:"bottleneck"`
-	Recommendations     []string            `json:"recommendations"`
+	ModelParams      string                `json:"model_params"`
+	TargetHardware   *EdgeHardwareProfile  `json:"target_hardware"`
+	Quantization     QuantizationType      `json:"quantization"`
+	MixedPrecision   *MixedPrecisionResult `json:"mixed_precision,omitempty"`
+	KVCacheAnalysis  *KVCacheAnalysis      `json:"kv_cache_analysis"`
+	EstModelSizeGB   float64               `json:"est_model_size_gb"`
+	EstTotalMemoryGB float64               `json:"est_total_memory_gb"`
+	EstPowerWatts    float64               `json:"est_power_watts"`
+	EstTokensPerSec  float64               `json:"est_tokens_per_sec"`
+	Feasible         bool                  `json:"feasible"`
+	Bottleneck       string                `json:"bottleneck"`
+	Recommendations  []string              `json:"recommendations"`
 }
 
 // Plan50BDeployment creates a comprehensive deployment plan for a 50B model.

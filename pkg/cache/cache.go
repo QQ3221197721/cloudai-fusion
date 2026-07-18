@@ -3,7 +3,8 @@
 // as L1 (local process cache) and Redis as L2 (distributed shared cache).
 //
 // Architecture:
-//   L1 (in-memory) → L2 (Redis Cluster) → PostgreSQL (source of truth)
+//
+//	L1 (in-memory) → L2 (Redis Cluster) → PostgreSQL (source of truth)
 //
 // Cache invalidation follows a write-through pattern:
 //   - On write: invalidate L1 & L2, write to DB
@@ -14,24 +15,27 @@
 // ============================================================================
 //
 // Redis:
-//   ✓ L2 distributed cache (GET/SET with TTL)
-//   ✓ Distributed locking (SET NX EX — scheduler leader election, queue CAS)
-//   ✓ Lightweight pub/sub (cross-instance cache invalidation, node cache refresh)
-//   ✗ NOT for durable event streams (use Kafka)
-//   ✗ NOT for complex routing/fan-out (use NATS)
+//
+//	✓ L2 distributed cache (GET/SET with TTL)
+//	✓ Distributed locking (SET NX EX — scheduler leader election, queue CAS)
+//	✓ Lightweight pub/sub (cross-instance cache invalidation, node cache refresh)
+//	✗ NOT for durable event streams (use Kafka)
+//	✗ NOT for complex routing/fan-out (use NATS)
 //
 // Kafka:
-//   ✓ Durable event sourcing (audit logs, workload lifecycle events)
-//   ✓ High-throughput ordered streams (metrics ingestion)
-//   ✓ Consumer group processing (multi-consumer workload dispatch)
-//   ✗ NOT for low-latency pub/sub (use Redis or NATS)
+//
+//	✓ Durable event sourcing (audit logs, workload lifecycle events)
+//	✓ High-throughput ordered streams (metrics ingestion)
+//	✓ Consumer group processing (multi-consumer workload dispatch)
+//	✗ NOT for low-latency pub/sub (use Redis or NATS)
 //
 // NATS:
-//   ✓ Real-time lightweight pub/sub (event bus, controller triggers)
-//   ✓ Request-reply RPC (agent ↔ control-plane)
-//   ✓ Queue groups (work distribution to agents)
-//   ✗ NOT for durable storage (use Kafka)
-//   ✗ NOT for distributed locking (use Redis)
+//
+//	✓ Real-time lightweight pub/sub (event bus, controller triggers)
+//	✓ Request-reply RPC (agent ↔ control-plane)
+//	✓ Queue groups (work distribution to agents)
+//	✗ NOT for durable storage (use Kafka)
+//	✗ NOT for distributed locking (use Redis)
 package cache
 
 import (
@@ -75,14 +79,14 @@ type Cache interface {
 
 // CacheStats holds cache performance metrics.
 type CacheStats struct {
-	Backend    string `json:"backend"`
-	Hits       int64  `json:"hits"`
-	Misses     int64  `json:"misses"`
-	Sets       int64  `json:"sets"`
-	Deletes    int64  `json:"deletes"`
-	Errors     int64  `json:"errors"`
-	KeyCount   int64  `json:"key_count"`
-	MemoryUsed int64  `json:"memory_used_bytes,omitempty"`
+	Backend    string  `json:"backend"`
+	Hits       int64   `json:"hits"`
+	Misses     int64   `json:"misses"`
+	Sets       int64   `json:"sets"`
+	Deletes    int64   `json:"deletes"`
+	Errors     int64   `json:"errors"`
+	KeyCount   int64   `json:"key_count"`
+	MemoryUsed int64   `json:"memory_used_bytes,omitempty"`
 	HitRate    float64 `json:"hit_rate"`
 }
 
@@ -136,13 +140,16 @@ type cacheEntry struct {
 }
 
 type memoryCache struct {
-	entries map[string]*cacheEntry
-	mu      sync.RWMutex
-	maxSize int
-	stats   CacheStats
-	statsMu sync.Mutex
-	prefix  string
-	logger  *logrus.Logger
+	entries  map[string]*cacheEntry
+	mu       sync.RWMutex
+	maxSize  int
+	stats    CacheStats
+	statsMu  sync.Mutex
+	prefix   string
+	logger   *logrus.Logger
+	stopCh   chan struct{}
+	stopOnce sync.Once
+	doneCh   chan struct{} // closed when evictionLoop exits
 }
 
 // NewMemoryCache creates an in-memory LRU cache.
@@ -160,6 +167,8 @@ func NewMemoryCache(cfg Config, logger *logrus.Logger) Cache {
 		prefix:  cfg.KeyPrefix,
 		logger:  logger,
 		stats:   CacheStats{Backend: "memory"},
+		stopCh:  make(chan struct{}),
+		doneCh:  make(chan struct{}),
 	}
 
 	// Start eviction goroutine
@@ -264,6 +273,10 @@ func (c *memoryCache) Exists(ctx context.Context, key string) (bool, error) {
 }
 
 func (c *memoryCache) Close() error {
+	c.stopOnce.Do(func() {
+		close(c.stopCh)
+		<-c.doneCh
+	})
 	c.mu.Lock()
 	c.entries = make(map[string]*cacheEntry)
 	c.mu.Unlock()
@@ -301,18 +314,24 @@ func (c *memoryCache) evictOldest() {
 }
 
 func (c *memoryCache) evictionLoop() {
+	defer close(c.doneCh)
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		now := time.Now()
-		c.mu.Lock()
-		for key, entry := range c.entries {
-			if now.After(entry.expiresAt) {
-				delete(c.entries, key)
+	for {
+		select {
+		case <-c.stopCh:
+			return
+		case <-ticker.C:
+			now := time.Now()
+			c.mu.Lock()
+			for key, entry := range c.entries {
+				if now.After(entry.expiresAt) {
+					delete(c.entries, key)
+				}
 			}
+			c.mu.Unlock()
 		}
-		c.mu.Unlock()
 	}
 }
 
@@ -321,11 +340,10 @@ func (c *memoryCache) evictionLoop() {
 // ============================================================================
 
 type redisCache struct {
-	addr    string
-	prefix  string
-	logger  *logrus.Logger
-	stats   CacheStats
-	statsMu sync.Mutex
+	addr   string
+	prefix string
+	logger *logrus.Logger
+	stats  CacheStats
 
 	// In-memory fallback for when Redis is unavailable
 	fallback *memoryCache
@@ -339,10 +357,10 @@ func NewRedisCache(cfg Config, logger *logrus.Logger) Cache {
 	}
 
 	rc := &redisCache{
-		addr:   cfg.RedisAddr,
-		prefix: cfg.KeyPrefix,
-		logger: logger,
-		stats:  CacheStats{Backend: "redis"},
+		addr:     cfg.RedisAddr,
+		prefix:   cfg.KeyPrefix,
+		logger:   logger,
+		stats:    CacheStats{Backend: "redis"},
 		fallback: NewMemoryCache(cfg, logger).(*memoryCache),
 	}
 

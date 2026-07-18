@@ -60,7 +60,7 @@ type RotationPolicy struct {
 	Interval    time.Duration `json:"interval"`
 	MaxVersions int           `json:"max_versions"`
 	Generator   string        `json:"generator"` // random, uuid, timestamp
-	Length      int           `json:"length"`     // for random generator
+	Length      int           `json:"length"`    // for random generator
 }
 
 // ============================================================================
@@ -69,21 +69,21 @@ type RotationPolicy struct {
 
 // VaultClient provides HashiCorp Vault integration.
 type VaultClient struct {
-	address    string
-	token      string
-	secrets    map[string]*ManagedSecret // path/key → secret
-	policies   []*RotationPolicy
-	leases     map[string]*LeaseInfo
-	connected  bool
-	logger     *logrus.Logger
-	mu         sync.RWMutex
+	address   string
+	token     string
+	secrets   map[string]*ManagedSecret // path/key → secret
+	policies  []*RotationPolicy
+	leases    map[string]*LeaseInfo
+	connected bool
+	logger    *logrus.Logger
+	mu        sync.RWMutex
 }
 
 // VaultConfig configures the Vault client.
 type VaultConfig struct {
-	Address  string
-	Token    string
-	Logger   *logrus.Logger
+	Address string
+	Token   string
+	Logger  *logrus.Logger
 }
 
 // LeaseInfo tracks a Vault lease.
@@ -410,12 +410,12 @@ func (vc *VaultClient) TransitDecrypt(keyName, ciphertext string) (string, error
 
 // VaultStatus reports the Vault client status.
 type VaultStatus struct {
-	Connected      bool   `json:"connected"`
-	Address        string `json:"address"`
-	SecretsManaged int    `json:"secrets_managed"`
-	ActiveLeases   int    `json:"active_leases"`
-	RotationPolicies int  `json:"rotation_policies"`
-	SecretsNeedingRotation int `json:"secrets_needing_rotation"`
+	Connected              bool   `json:"connected"`
+	Address                string `json:"address"`
+	SecretsManaged         int    `json:"secrets_managed"`
+	ActiveLeases           int    `json:"active_leases"`
+	RotationPolicies       int    `json:"rotation_policies"`
+	SecretsNeedingRotation int    `json:"secrets_needing_rotation"`
 }
 
 // Status returns the current Vault client status.

@@ -41,12 +41,12 @@ type EventBus interface {
 
 // BusStats holds runtime statistics for the event bus.
 type BusStats struct {
-	Backend         string `json:"backend"`
-	TotalPublished  int64  `json:"total_published"`
-	TotalDelivered  int64  `json:"total_delivered"`
-	TotalErrors     int64  `json:"total_errors"`
-	ActiveTopics    int    `json:"active_topics"`
-	ActiveSubscriptions int `json:"active_subscriptions"`
+	Backend             string `json:"backend"`
+	TotalPublished      int64  `json:"total_published"`
+	TotalDelivered      int64  `json:"total_delivered"`
+	TotalErrors         int64  `json:"total_errors"`
+	ActiveTopics        int    `json:"active_topics"`
+	ActiveSubscriptions int    `json:"active_subscriptions"`
 }
 
 // ============================================================================
@@ -56,13 +56,15 @@ type BusStats struct {
 // memoryBus is an in-memory event bus implementation using Go channels.
 // Suitable for single-process deployments, development, and testing.
 type memoryBus struct {
-	subscriptions map[string][]*Subscription // topic -> subscriptions
+	subscriptions map[string][]*Subscription            // topic -> subscriptions
 	groups        map[string]map[string][]*Subscription // topic -> group -> subscriptions
 	mu            sync.RWMutex
 	config        Config
 	logger        *logrus.Logger
 	stats         BusStats
 	statsMu       sync.Mutex
+	groupRR       map[string]uint64 // "topic\x00group" -> round-robin cursor
+	groupRRMu     sync.Mutex
 	closed        bool
 }
 
@@ -77,6 +79,7 @@ func NewMemoryBus(cfg Config, logger *logrus.Logger) EventBus {
 	return &memoryBus{
 		subscriptions: make(map[string][]*Subscription),
 		groups:        make(map[string]map[string][]*Subscription),
+		groupRR:       make(map[string]uint64),
 		config:        cfg,
 		logger:        logger,
 		stats:         BusStats{Backend: "memory"},
@@ -122,25 +125,29 @@ func (b *memoryBus) Publish(ctx context.Context, event *Event) error {
 		}
 	}
 
-	// Deliver to consumer groups (one handler per group)
+	// Deliver to consumer groups: exactly one member per group handles each
+	// event, load-balanced round-robin across the group's active members.
 	for topic, groups := range b.groups {
 		if !topicMatches(topic, event.Topic) {
 			continue
 		}
-		for _, groupSubs := range groups {
-			// Round-robin within group: pick first active handler
+		for groupName, groupSubs := range groups {
+			active := make([]*Subscription, 0, len(groupSubs))
 			for _, sub := range groupSubs {
-				if !sub.IsActive() {
-					continue
+				if sub.IsActive() {
+					active = append(active, sub)
 				}
-				if err := b.deliverWithRetry(ctx, sub, event); err != nil {
-					b.statsMu.Lock()
-					b.stats.TotalErrors++
-					b.statsMu.Unlock()
-				} else {
-					delivered++
-				}
-				break // only one handler per group
+			}
+			if len(active) == 0 {
+				continue
+			}
+			sub := active[b.nextGroupIndex(topic, groupName, len(active))]
+			if err := b.deliverWithRetry(ctx, sub, event); err != nil {
+				b.statsMu.Lock()
+				b.stats.TotalErrors++
+				b.statsMu.Unlock()
+			} else {
+				delivered++
 			}
 		}
 	}
@@ -270,6 +277,18 @@ func (b *memoryBus) Stats() BusStats {
 	return stats
 }
 
+// safeInvoke runs a subscriber handler, converting any panic into an error so a
+// misbehaving handler cannot crash the process or block delivery to the bus's
+// other subscribers.
+func safeInvoke(ctx context.Context, handler Handler, event *Event) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("event handler panicked: %v", r)
+		}
+	}()
+	return handler(ctx, event)
+}
+
 // deliverWithRetry delivers an event to a handler with retry support.
 func (b *memoryBus) deliverWithRetry(ctx context.Context, sub *Subscription, event *Event) error {
 	maxRetries := b.config.MaxRetries
@@ -279,7 +298,7 @@ func (b *memoryBus) deliverWithRetry(ctx context.Context, sub *Subscription, eve
 
 	var lastErr error
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		if err := sub.Handler(ctx, event); err != nil {
+		if err := safeInvoke(ctx, sub.Handler, event); err != nil {
 			lastErr = err
 			if attempt < maxRetries-1 {
 				delay := b.config.RetryDelay * time.Duration(1<<uint(attempt))
@@ -294,6 +313,18 @@ func (b *memoryBus) deliverWithRetry(ctx context.Context, sub *Subscription, eve
 		return nil
 	}
 	return lastErr
+}
+
+// nextGroupIndex returns the next round-robin index for a consumer group,
+// distributing events evenly across the group's active members. Uses its own
+// lock so it is safe under the caller's read lock on b.mu.
+func (b *memoryBus) nextGroupIndex(topic, group string, n int) int {
+	key := topic + "\x00" + group
+	b.groupRRMu.Lock()
+	idx := b.groupRR[key] % uint64(n)
+	b.groupRR[key]++
+	b.groupRRMu.Unlock()
+	return int(idx)
 }
 
 func (b *memoryBus) updateTopicCount() {

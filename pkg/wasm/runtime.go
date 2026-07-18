@@ -30,13 +30,13 @@ var WasmVersion1 = []byte{0x01, 0x00, 0x00, 0x00}
 
 // ModuleValidationResult contains the result of validating a Wasm binary
 type ModuleValidationResult struct {
-	Valid       bool     `json:"valid"`
-	Version     int      `json:"version"`
-	Size        int64    `json:"size_bytes"`
-	HasWASI     bool     `json:"has_wasi"`
-	Imports     []string `json:"imports,omitempty"`
-	Exports     []string `json:"exports,omitempty"`
-	ErrorMsg    string   `json:"error,omitempty"`
+	Valid    bool     `json:"valid"`
+	Version  int      `json:"version"`
+	Size     int64    `json:"size_bytes"`
+	HasWASI  bool     `json:"has_wasi"`
+	Imports  []string `json:"imports,omitempty"`
+	Exports  []string `json:"exports,omitempty"`
+	ErrorMsg string   `json:"error,omitempty"`
 }
 
 // ValidateWasmBinary validates a raw Wasm binary by checking the magic number,
@@ -213,9 +213,9 @@ func parseExportSection(data []byte) []string {
 
 // OCIManifest represents a minimal OCI image manifest for Wasm modules
 type OCIManifest struct {
-	SchemaVersion int          `json:"schemaVersion"`
-	MediaType     string       `json:"mediaType"`
-	Config        OCIDescriptor `json:"config"`
+	SchemaVersion int             `json:"schemaVersion"`
+	MediaType     string          `json:"mediaType"`
+	Config        OCIDescriptor   `json:"config"`
 	Layers        []OCIDescriptor `json:"layers"`
 }
 
@@ -250,7 +250,7 @@ func (m *Manager) PullWasmModule(ctx context.Context, registryURL, reference str
 	if err != nil {
 		return nil, fmt.Errorf("OCI registry not reachable: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
@@ -286,7 +286,7 @@ func (m *Manager) PullWasmModule(ctx context.Context, registryURL, reference str
 	if err != nil {
 		return nil, fmt.Errorf("failed to pull Wasm blob: %w", err)
 	}
-	defer blobResp.Body.Close()
+	defer func() { _ = blobResp.Body.Close() }()
 
 	if blobResp.StatusCode != 200 {
 		return nil, fmt.Errorf("OCI blob pull failed (status=%d)", blobResp.StatusCode)
@@ -336,7 +336,7 @@ func (m *Manager) StopInstance(ctx context.Context, instanceID string) error {
 			if err != nil {
 				m.logger.WithError(err).Debug("Spin stop API call failed")
 			} else {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 			}
 		}
 	}
@@ -374,7 +374,7 @@ func (m *Manager) DeleteInstance(ctx context.Context, instanceID string) error {
 						if err != nil {
 							m.logger.WithError(err).Debug("Spin delete API call failed")
 						} else {
-							resp.Body.Close()
+							_ = resp.Body.Close()
 						}
 					}
 				}
@@ -435,7 +435,7 @@ func (m *Manager) InstanceHealthCheck(ctx context.Context, instanceID string) (*
 				health.Healthy = false
 				health.Message = "Spin health check failed: " + err.Error()
 			} else {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				health.Healthy = resp.StatusCode == 200
 				if !health.Healthy {
 					health.Message = fmt.Sprintf("Spin health check returned status %d", resp.StatusCode)
@@ -459,14 +459,14 @@ func (m *Manager) InstanceHealthCheck(ctx context.Context, instanceID string) (*
 
 // InstanceHealth represents the health status of a Wasm instance
 type InstanceHealth struct {
-	InstanceID    string `json:"instance_id"`
-	Status        string `json:"status"`
-	Runtime       string `json:"runtime"`
-	Healthy       bool   `json:"healthy"`
-	Message       string `json:"message,omitempty"`
-	UptimeSeconds int64  `json:"uptime_seconds"`
-	MemoryUsedKB  int64  `json:"memory_used_kb"`
-	RequestCount  int64  `json:"request_count"`
+	InstanceID    string    `json:"instance_id"`
+	Status        string    `json:"status"`
+	Runtime       string    `json:"runtime"`
+	Healthy       bool      `json:"healthy"`
+	Message       string    `json:"message,omitempty"`
+	UptimeSeconds int64     `json:"uptime_seconds"`
+	MemoryUsedKB  int64     `json:"memory_used_kb"`
+	RequestCount  int64     `json:"request_count"`
 	CheckedAt     time.Time `json:"checked_at"`
 }
 
@@ -476,10 +476,10 @@ type InstanceHealth struct {
 
 // RuntimeClassSpec represents a K8s RuntimeClass for Wasm runtimes
 type RuntimeClassSpec struct {
-	APIVersion string            `json:"apiVersion"`
-	Kind       string            `json:"kind"`
+	APIVersion string                 `json:"apiVersion"`
+	Kind       string                 `json:"kind"`
 	Metadata   map[string]interface{} `json:"metadata"`
-	Handler    string            `json:"handler"`
+	Handler    string                 `json:"handler"`
 	Overhead   map[string]interface{} `json:"overhead,omitempty"`
 	Scheduling map[string]interface{} `json:"scheduling,omitempty"`
 }
@@ -504,7 +504,7 @@ func runtimeClassCRD(runtime RuntimeType) *RuntimeClassSpec {
 		Handler: handler,
 		Overhead: map[string]interface{}{
 			"podFixed": map[string]string{
-				"memory": "8Mi",  // Wasm overhead is minimal vs Docker's ~50MB
+				"memory": "8Mi", // Wasm overhead is minimal vs Docker's ~50MB
 				"cpu":    "10m",
 			},
 		},
@@ -620,7 +620,7 @@ func (m *Manager) GetSpinAppStatus(ctx context.Context, appName string) (*SpinAp
 	if err != nil {
 		return nil, fmt.Errorf("Spin API not reachable: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == 404 {
 		return nil, fmt.Errorf("Spin app %q not found", appName)
@@ -655,7 +655,7 @@ func (m *Manager) GetSpinAppLogs(ctx context.Context, appName string, lines int)
 	if err != nil {
 		return nil, fmt.Errorf("Spin logs API not reachable: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("Spin logs API returned %d", resp.StatusCode)
@@ -715,7 +715,7 @@ func (m *Manager) CheckRuntimeHealth(ctx context.Context) (*RuntimeHealth, error
 			health.Message = "Runtime not reachable: " + err.Error()
 			return health, nil
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		health.Healthy = resp.StatusCode == 200
 		if !health.Healthy {
@@ -728,8 +728,10 @@ func (m *Manager) CheckRuntimeHealth(ctx context.Context) (*RuntimeHealth, error
 		if vReq != nil {
 			vResp, err := m.httpClient.Do(vReq)
 			if err == nil {
-				defer vResp.Body.Close()
-				var vInfo struct{ Version string `json:"version"` }
+				defer func() { _ = vResp.Body.Close() }()
+				var vInfo struct {
+					Version string `json:"version"`
+				}
 				if json.NewDecoder(vResp.Body).Decode(&vInfo) == nil {
 					health.Version = vInfo.Version
 				}
@@ -756,10 +758,12 @@ func (m *Manager) CheckRuntimeHealth(ctx context.Context) (*RuntimeHealth, error
 			health.Message = "containerd not reachable: " + err.Error()
 			return health, nil
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		health.Healthy = resp.StatusCode == 200
-		var vInfo struct{ Version string `json:"version"` }
+		var vInfo struct {
+			Version string `json:"version"`
+		}
 		if json.NewDecoder(resp.Body).Decode(&vInfo) == nil {
 			health.Version = vInfo.Version
 		}

@@ -416,7 +416,7 @@ type GCPProvider struct {
 	name      string
 	region    string
 	projectID string
-	credJSON  string // Service account JSON key
+	credJSON  string        // Service account JSON key
 	client    *GCPAPIClient // real API client
 }
 
@@ -599,13 +599,13 @@ func (p *GCPProvider) ListGPUInstances(ctx context.Context) ([]*GPUInstanceInfo,
 			Availability: "limited",
 		},
 		{
-			InstanceType: "a2-ultragpu-4g",
-			GPUType:      "nvidia-a100",
-			GPUCount:     4,
-			GPUMemoryGB:  320,
-			CPUCores:     48,
-			MemoryGB:     680,
-			PricePerHour: 29.39,
+			InstanceType:  "a2-ultragpu-4g",
+			GPUType:       "nvidia-a100",
+			GPUCount:      4,
+			GPUMemoryGB:   320,
+			CPUCores:      48,
+			MemoryGB:      680,
+			PricePerHour:  29.39,
 			SpotAvailable: true,
 			SpotPrice:     8.82,
 			Availability:  "available",

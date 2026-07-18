@@ -23,16 +23,16 @@ import (
 // ============================================================================
 
 type testEnv struct {
-	mux           http.Handler
-	authMock      *testutil.MockAuthService
-	clusterMock   *testutil.MockClusterService
-	cloudMock     *testutil.MockCloudService
-	securityMock  *testutil.MockSecurityService
-	monitorMock   *testutil.MockMonitoringService
-	workloadMock  *testutil.MockWorkloadService
-	meshMock      *testutil.MockMeshService
-	wasmMock      *testutil.MockWasmService
-	edgeMock      *testutil.MockEdgeService
+	mux          http.Handler
+	authMock     *testutil.MockAuthService
+	clusterMock  *testutil.MockClusterService
+	cloudMock    *testutil.MockCloudService
+	securityMock *testutil.MockSecurityService
+	monitorMock  *testutil.MockMonitoringService
+	workloadMock *testutil.MockWorkloadService
+	meshMock     *testutil.MockMeshService
+	wasmMock     *testutil.MockWasmService
+	edgeMock     *testutil.MockEdgeService
 }
 
 func newTestEnv() *testEnv {
@@ -40,16 +40,16 @@ func newTestEnv() *testEnv {
 		testutil.NewTestRouterConfig()
 
 	router := api.NewRouter(api.RouterConfig{
-		AuthService:       auth,
-		CloudManager:      cloud,
-		ClusterManager:    cluster,
-		SecurityManager:   security,
-		MonitorService:    monitor,
-		WorkloadManager:   workload,
-		MeshManager:       mesh,
-		WasmManager:       wasm,
-		EdgeManager:       edge,
-		Logger:            logrus.New(),
+		AuthService:     auth,
+		CloudManager:    cloud,
+		ClusterManager:  cluster,
+		SecurityManager: security,
+		MonitorService:  monitor,
+		WorkloadManager: workload,
+		MeshManager:     mesh,
+		WasmManager:     wasm,
+		EdgeManager:     edge,
+		Logger:          logrus.New(),
 	})
 
 	return &testEnv{

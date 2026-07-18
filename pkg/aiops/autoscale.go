@@ -33,16 +33,16 @@ type PredictiveAutoscaler struct {
 
 // AutoscaleConfig configures the auto-scaler.
 type AutoscaleConfig struct {
-	EvaluationInterval   time.Duration `json:"evaluation_interval" yaml:"evaluationInterval"`       // e.g., 30s
-	PredictionWindow     time.Duration `json:"prediction_window" yaml:"predictionWindow"`           // e.g., 5min ahead
-	MetricHistoryWindow  time.Duration `json:"metric_history_window" yaml:"metricHistoryWindow"`    // e.g., 1h
-	ScaleUpCooldown      time.Duration `json:"scale_up_cooldown" yaml:"scaleUpCooldown"`            // e.g., 3min
-	ScaleDownCooldown    time.Duration `json:"scale_down_cooldown" yaml:"scaleDownCooldown"`        // e.g., 5min
-	ScaleUpMaxStep       int           `json:"scale_up_max_step" yaml:"scaleUpMaxStep"`             // max replicas to add
-	ScaleDownMaxStep     int           `json:"scale_down_max_step" yaml:"scaleDownMaxStep"`         // max replicas to remove
-	StabilizationWindow  time.Duration `json:"stabilization_window" yaml:"stabilizationWindow"`     // e.g., 2min
-	Tolerance            float64       `json:"tolerance" yaml:"tolerance"`                          // e.g., 0.1 = 10%
-	EnablePredictive     bool          `json:"enable_predictive" yaml:"enablePredictive"`
+	EvaluationInterval  time.Duration `json:"evaluation_interval" yaml:"evaluationInterval"`    // e.g., 30s
+	PredictionWindow    time.Duration `json:"prediction_window" yaml:"predictionWindow"`        // e.g., 5min ahead
+	MetricHistoryWindow time.Duration `json:"metric_history_window" yaml:"metricHistoryWindow"` // e.g., 1h
+	ScaleUpCooldown     time.Duration `json:"scale_up_cooldown" yaml:"scaleUpCooldown"`         // e.g., 3min
+	ScaleDownCooldown   time.Duration `json:"scale_down_cooldown" yaml:"scaleDownCooldown"`     // e.g., 5min
+	ScaleUpMaxStep      int           `json:"scale_up_max_step" yaml:"scaleUpMaxStep"`          // max replicas to add
+	ScaleDownMaxStep    int           `json:"scale_down_max_step" yaml:"scaleDownMaxStep"`      // max replicas to remove
+	StabilizationWindow time.Duration `json:"stabilization_window" yaml:"stabilizationWindow"`  // e.g., 2min
+	Tolerance           float64       `json:"tolerance" yaml:"tolerance"`                       // e.g., 0.1 = 10%
+	EnablePredictive    bool          `json:"enable_predictive" yaml:"enablePredictive"`
 }
 
 // DefaultAutoscaleConfig returns sensible defaults.
@@ -63,42 +63,42 @@ func DefaultAutoscaleConfig() AutoscaleConfig {
 
 // ScalableWorkload represents a workload that can be auto-scaled.
 type ScalableWorkload struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	Namespace       string    `json:"namespace"`
-	Kind            string    `json:"kind"` // Deployment, StatefulSet
-	CurrentReplicas int       `json:"current_replicas"`
-	MinReplicas     int       `json:"min_replicas"`
-	MaxReplicas     int       `json:"max_replicas"`
+	ID              string         `json:"id"`
+	Name            string         `json:"name"`
+	Namespace       string         `json:"namespace"`
+	Kind            string         `json:"kind"` // Deployment, StatefulSet
+	CurrentReplicas int            `json:"current_replicas"`
+	MinReplicas     int            `json:"min_replicas"`
+	MaxReplicas     int            `json:"max_replicas"`
 	TargetMetrics   []TargetMetric `json:"target_metrics"`
-	LastScaleTime   time.Time `json:"last_scale_time"`
-	LastScaleDir    string    `json:"last_scale_direction"` // up, down
+	LastScaleTime   time.Time      `json:"last_scale_time"`
+	LastScaleDir    string         `json:"last_scale_direction"` // up, down
 }
 
 // TargetMetric defines a scaling metric target.
 type TargetMetric struct {
-	Name          string  `json:"name"`           // cpu, memory, gpu, rps, latency_p99
-	Type          string  `json:"type"`           // utilization, average, value
-	TargetValue   float64 `json:"target_value"`
-	Weight        float64 `json:"weight"`         // 0-1, for multi-metric decisions
-	ScaleUpAt     float64 `json:"scale_up_at"`    // threshold to trigger scale up
-	ScaleDownAt   float64 `json:"scale_down_at"`  // threshold to trigger scale down
+	Name        string  `json:"name"` // cpu, memory, gpu, rps, latency_p99
+	Type        string  `json:"type"` // utilization, average, value
+	TargetValue float64 `json:"target_value"`
+	Weight      float64 `json:"weight"`        // 0-1, for multi-metric decisions
+	ScaleUpAt   float64 `json:"scale_up_at"`   // threshold to trigger scale up
+	ScaleDownAt float64 `json:"scale_down_at"` // threshold to trigger scale down
 }
 
 // MetricSample is a single metric observation.
 type MetricSample struct {
-	Timestamp   time.Time `json:"timestamp"`
-	WorkloadID  string    `json:"workload_id"`
-	MetricName  string    `json:"metric_name"`
-	Value       float64   `json:"value"`
-	Replicas    int       `json:"replicas"`
+	Timestamp  time.Time `json:"timestamp"`
+	WorkloadID string    `json:"workload_id"`
+	MetricName string    `json:"metric_name"`
+	Value      float64   `json:"value"`
+	Replicas   int       `json:"replicas"`
 }
 
 // ScalingRule defines custom scaling behavior.
 type ScalingRule struct {
-	WorkloadID     string        `json:"workload_id"`
-	Schedule       []ScheduledScale `json:"schedule,omitempty"`
-	Behavior       ScalingBehavior  `json:"behavior"`
+	WorkloadID string           `json:"workload_id"`
+	Schedule   []ScheduledScale `json:"schedule,omitempty"`
+	Behavior   ScalingBehavior  `json:"behavior"`
 }
 
 // ScheduledScale defines scheduled scaling (e.g., scale up before known peaks).
@@ -124,23 +124,23 @@ type ScalePolicy struct {
 
 // PolicyRule defines a single scaling policy rule.
 type PolicyRule struct {
-	Type          string        `json:"type"`  // pods, percent
+	Type          string        `json:"type"` // pods, percent
 	Value         int           `json:"value"`
 	PeriodSeconds time.Duration `json:"period"`
 }
 
 // ScalingEvent records a scaling action.
 type ScalingEvent struct {
-	Timestamp     time.Time `json:"timestamp"`
-	WorkloadID    string    `json:"workload_id"`
-	WorkloadName  string    `json:"workload_name"`
-	Direction     string    `json:"direction"` // up, down
-	FromReplicas  int       `json:"from_replicas"`
-	ToReplicas    int       `json:"to_replicas"`
-	Reason        string    `json:"reason"`
-	Metrics       map[string]float64 `json:"metrics"`
-	Predicted     bool      `json:"predicted"` // was this a predictive scale?
-	Duration      time.Duration `json:"decision_duration"`
+	Timestamp    time.Time          `json:"timestamp"`
+	WorkloadID   string             `json:"workload_id"`
+	WorkloadName string             `json:"workload_name"`
+	Direction    string             `json:"direction"` // up, down
+	FromReplicas int                `json:"from_replicas"`
+	ToReplicas   int                `json:"to_replicas"`
+	Reason       string             `json:"reason"`
+	Metrics      map[string]float64 `json:"metrics"`
+	Predicted    bool               `json:"predicted"` // was this a predictive scale?
+	Duration     time.Duration      `json:"decision_duration"`
 }
 
 // ScalingDecision is the output of an evaluation cycle.

@@ -158,23 +158,23 @@ type Config struct {
 	KafkaGroupID string `mapstructure:"kafka_group_id"`
 
 	// Common settings
-	BufferSize    int           `mapstructure:"buffer_size"`
-	MaxRetries    int           `mapstructure:"max_retries"`
-	RetryDelay    time.Duration `mapstructure:"retry_delay"`
-	AckTimeout    time.Duration `mapstructure:"ack_timeout"`
+	BufferSize int           `mapstructure:"buffer_size"`
+	MaxRetries int           `mapstructure:"max_retries"`
+	RetryDelay time.Duration `mapstructure:"retry_delay"`
+	AckTimeout time.Duration `mapstructure:"ack_timeout"`
 }
 
 // DefaultConfig returns default messaging configuration.
 func DefaultConfig() Config {
 	return Config{
-		Backend:    "memory",
-		NATSURL:    "nats://localhost:4222",
+		Backend:      "memory",
+		NATSURL:      "nats://localhost:4222",
 		KafkaBrokers: "localhost:9092",
 		KafkaGroupID: "cloudai-fusion",
-		BufferSize: 10000,
-		MaxRetries: 3,
-		RetryDelay: 5 * time.Second,
-		AckTimeout: 30 * time.Second,
+		BufferSize:   10000,
+		MaxRetries:   3,
+		RetryDelay:   5 * time.Second,
+		AckTimeout:   30 * time.Second,
 	}
 }
 

@@ -661,7 +661,7 @@ func TestE2E_AdmissionHubIntegration(t *testing.T) {
 	}
 
 	// Policy stats
-	result, err = hub.HandleAdmissionExtension(ctx, "policy_stats", nil)
+	_, err = hub.HandleAdmissionExtension(ctx, "policy_stats", nil)
 	if err != nil {
 		t.Fatalf("policy_stats failed: %v", err)
 	}
@@ -695,9 +695,9 @@ func TestE2E_LatencyBudget(t *testing.T) {
 	env := newE2EEnv()
 
 	endpoints := []struct {
-		method   string
-		path     string
-		maxMs    int64 // maximum acceptable latency in ms
+		method string
+		path   string
+		maxMs  int64 // maximum acceptable latency in ms
 	}{
 		{"GET", "/healthz", 50},
 		{"GET", "/readyz", 50},

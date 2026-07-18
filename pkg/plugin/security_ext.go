@@ -11,34 +11,34 @@ import (
 
 // ScanTarget describes what to scan.
 type ScanTarget struct {
-	Type        string            `json:"type"`        // "image", "cluster", "config", "code"
-	Identifier  string            `json:"identifier"`  // e.g., image ref, cluster ID
-	Namespace   string            `json:"namespace,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Options     map[string]string `json:"options,omitempty"`
+	Type       string            `json:"type"`       // "image", "cluster", "config", "code"
+	Identifier string            `json:"identifier"` // e.g., image ref, cluster ID
+	Namespace  string            `json:"namespace,omitempty"`
+	Labels     map[string]string `json:"labels,omitempty"`
+	Options    map[string]string `json:"options,omitempty"`
 }
 
 // ScanFinding is an individual vulnerability or misconfiguration.
 type ScanFinding struct {
-	ID          string `json:"id"`
-	Severity    string `json:"severity"` // CRITICAL, HIGH, MEDIUM, LOW, INFO
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Package     string `json:"package,omitempty"`
-	Version     string `json:"version,omitempty"`
-	FixVersion  string `json:"fixVersion,omitempty"`
+	ID          string  `json:"id"`
+	Severity    string  `json:"severity"` // CRITICAL, HIGH, MEDIUM, LOW, INFO
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	Package     string  `json:"package,omitempty"`
+	Version     string  `json:"version,omitempty"`
+	FixVersion  string  `json:"fixVersion,omitempty"`
 	CVSS        float64 `json:"cvss,omitempty"`
-	Reference   string `json:"reference,omitempty"`
+	Reference   string  `json:"reference,omitempty"`
 }
 
 // ScanReport is the result of a security scan.
 type ScanReport struct {
-	PluginName  string        `json:"pluginName"`
-	Target      ScanTarget    `json:"target"`
-	Findings    []ScanFinding `json:"findings"`
+	PluginName  string         `json:"pluginName"`
+	Target      ScanTarget     `json:"target"`
+	Findings    []ScanFinding  `json:"findings"`
 	Summary     map[string]int `json:"summary"` // severity → count
-	StartedAt   time.Time     `json:"startedAt"`
-	CompletedAt time.Time     `json:"completedAt"`
+	StartedAt   time.Time      `json:"startedAt"`
+	CompletedAt time.Time      `json:"completedAt"`
 }
 
 // ScannerPlugin extends the security scanning pipeline.
@@ -56,8 +56,8 @@ type ScannerPlugin interface {
 
 // PolicyContext carries the data to be evaluated against security policies.
 type PolicyContext struct {
-	Action    string            `json:"action"`    // "deploy", "scale", "update", "delete"
-	Resource  string            `json:"resource"`  // "workload", "cluster", "pod"
+	Action    string            `json:"action"`   // "deploy", "scale", "update", "delete"
+	Resource  string            `json:"resource"` // "workload", "cluster", "pod"
 	Namespace string            `json:"namespace,omitempty"`
 	UserID    string            `json:"userId,omitempty"`
 	Roles     []string          `json:"roles,omitempty"`
@@ -112,8 +112,8 @@ type AuditorPlugin interface {
 type ThreatSignal struct {
 	ID          string            `json:"id"`
 	Timestamp   time.Time         `json:"timestamp"`
-	Type        string            `json:"type"`        // "brute_force", "privilege_escalation", "anomalous_access"
-	Severity    string            `json:"severity"`    // CRITICAL, HIGH, MEDIUM, LOW
+	Type        string            `json:"type"`     // "brute_force", "privilege_escalation", "anomalous_access"
+	Severity    string            `json:"severity"` // CRITICAL, HIGH, MEDIUM, LOW
 	Source      string            `json:"source"`
 	Description string            `json:"description"`
 	Evidence    map[string]string `json:"evidence,omitempty"`

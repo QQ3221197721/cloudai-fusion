@@ -37,7 +37,7 @@ type ScaffoldConfig struct {
 
 // ScaffoldOutput holds generated scaffold files.
 type ScaffoldOutput struct {
-	Files     map[string]string `json:"files"`     // filename → content
+	Files     map[string]string `json:"files"` // filename → content
 	Manifest  *PluginManifest   `json:"manifest"`
 	CreatedAt time.Time         `json:"created_at"`
 }
@@ -187,35 +187,35 @@ func (g *ScaffoldGenerator) registerBuiltinTemplates() {
 
 // PluginTestHarness provides a testing framework for plugin development.
 type PluginTestHarness struct {
-	registry  *Registry
-	plugins   map[string]Plugin
-	configs   map[string]map[string]interface{}
-	events    []TestEvent
-	mu        sync.Mutex
-	logger    *logrus.Logger
+	registry *Registry
+	plugins  map[string]Plugin
+	configs  map[string]map[string]interface{}
+	events   []TestEvent
+	mu       sync.Mutex
+	logger   *logrus.Logger
 }
 
 // TestEvent records lifecycle events during testing.
 type TestEvent struct {
-	Time      time.Time `json:"time"`
-	Plugin    string    `json:"plugin"`
-	EventType string    `json:"event_type"` // init, start, stop, health, error
-	Message   string    `json:"message,omitempty"`
+	Time      time.Time     `json:"time"`
+	Plugin    string        `json:"plugin"`
+	EventType string        `json:"event_type"` // init, start, stop, health, error
+	Message   string        `json:"message,omitempty"`
 	Duration  time.Duration `json:"duration"`
-	Error     error     `json:"-"`
+	Error     error         `json:"-"`
 }
 
 // TestResult holds the results of a plugin test run.
 type TestResult struct {
-	PluginName  string        `json:"plugin_name"`
-	Passed      bool          `json:"passed"`
-	Events      []TestEvent   `json:"events"`
-	InitTime    time.Duration `json:"init_time"`
-	StartTime   time.Duration `json:"start_time"`
-	StopTime    time.Duration `json:"stop_time"`
-	HealthOK    bool          `json:"health_ok"`
-	Errors      []string      `json:"errors,omitempty"`
-	Warnings    []string      `json:"warnings,omitempty"`
+	PluginName string        `json:"plugin_name"`
+	Passed     bool          `json:"passed"`
+	Events     []TestEvent   `json:"events"`
+	InitTime   time.Duration `json:"init_time"`
+	StartTime  time.Duration `json:"start_time"`
+	StopTime   time.Duration `json:"stop_time"`
+	HealthOK   bool          `json:"health_ok"`
+	Errors     []string      `json:"errors,omitempty"`
+	Warnings   []string      `json:"warnings,omitempty"`
 }
 
 // NewPluginTestHarness creates a new test harness.
@@ -336,18 +336,18 @@ func (h *PluginTestHarness) recordEvent(plugin, eventType string, err error) {
 
 // LintRule defines a single linting rule for plugins.
 type LintRule struct {
-	ID          string `json:"id"`
-	Severity    string `json:"severity"` // error, warning, info
-	Description string `json:"description"`
+	ID          string                   `json:"id"`
+	Severity    string                   `json:"severity"` // error, warning, info
+	Description string                   `json:"description"`
 	Check       func(Plugin) []LintIssue `json:"-"`
 }
 
 // LintIssue represents a single issue found by the linter.
 type LintIssue struct {
-	RuleID      string `json:"rule_id"`
-	Severity    string `json:"severity"`
-	Message     string `json:"message"`
-	Suggestion  string `json:"suggestion,omitempty"`
+	RuleID     string `json:"rule_id"`
+	Severity   string `json:"severity"`
+	Message    string `json:"message"`
+	Suggestion string `json:"suggestion,omitempty"`
 }
 
 // LintReport holds the complete linting results.

@@ -83,23 +83,23 @@ type OIDCEndpoints struct {
 
 // OAuth2Session tracks an in-flight or completed OAuth2 flow.
 type OAuth2Session struct {
-	ID            string       `json:"id"`
-	ProviderID    string       `json:"provider_id"`
-	State         string       `json:"state"`
-	Nonce         string       `json:"nonce"`
-	CodeVerifier  string       `json:"-"` // PKCE, never serialised
-	RedirectURI   string       `json:"redirect_uri"`
-	UserID        string       `json:"user_id,omitempty"`
-	ExternalSub   string       `json:"external_sub,omitempty"`
-	Email         string       `json:"email,omitempty"`
-	DisplayName   string       `json:"display_name,omitempty"`
-	MappedRole    Role         `json:"mapped_role,omitempty"`
-	AccessToken   string       `json:"-"`
-	RefreshToken  string       `json:"-"`
-	IDTokenRaw    string       `json:"-"`
-	ExpiresAt     time.Time    `json:"expires_at"`
-	CreatedAt     time.Time    `json:"created_at"`
-	Authenticated bool         `json:"authenticated"`
+	ID            string    `json:"id"`
+	ProviderID    string    `json:"provider_id"`
+	State         string    `json:"state"`
+	Nonce         string    `json:"nonce"`
+	CodeVerifier  string    `json:"-"` // PKCE, never serialised
+	RedirectURI   string    `json:"redirect_uri"`
+	UserID        string    `json:"user_id,omitempty"`
+	ExternalSub   string    `json:"external_sub,omitempty"`
+	Email         string    `json:"email,omitempty"`
+	DisplayName   string    `json:"display_name,omitempty"`
+	MappedRole    Role      `json:"mapped_role,omitempty"`
+	AccessToken   string    `json:"-"`
+	RefreshToken  string    `json:"-"`
+	IDTokenRaw    string    `json:"-"`
+	ExpiresAt     time.Time `json:"expires_at"`
+	CreatedAt     time.Time `json:"created_at"`
+	Authenticated bool      `json:"authenticated"`
 }
 
 // ============================================================================
@@ -108,14 +108,17 @@ type OAuth2Session struct {
 
 // OAuth2Manager orchestrates multi-provider OAuth2/OIDC flows.
 type OAuth2Manager struct {
-	providers    map[string]*ProviderConfig
-	endpoints    map[string]*OIDCEndpoints
-	sessions     map[string]*OAuth2Session // state → session
-	authService  *Service                  // for issuing local JWT tokens
-	httpClient   *http.Client
-	logger       *logrus.Logger
-	mu           sync.RWMutex
-	sessionTTL   time.Duration
+	providers   map[string]*ProviderConfig
+	endpoints   map[string]*OIDCEndpoints
+	sessions    map[string]*OAuth2Session // state → session
+	authService *Service                  // for issuing local JWT tokens
+	httpClient  *http.Client
+	logger      *logrus.Logger
+	mu          sync.RWMutex
+	sessionTTL  time.Duration
+	stopCh      chan struct{}
+	stopOnce    sync.Once
+	doneCh      chan struct{} // closed when cleanupLoop exits
 }
 
 // OAuth2Config configures the OAuth2 manager.
@@ -143,6 +146,8 @@ func NewOAuth2Manager(cfg OAuth2Config) *OAuth2Manager {
 		httpClient:  &http.Client{Timeout: 15 * time.Second},
 		logger:      cfg.Logger,
 		sessionTTL:  cfg.SessionTTL,
+		stopCh:      make(chan struct{}),
+		doneCh:      make(chan struct{}),
 	}
 
 	for i := range cfg.Providers {
@@ -227,7 +232,7 @@ func (m *OAuth2Manager) Discover(ctx context.Context, providerID string) (*OIDCE
 	if err != nil {
 		return nil, fmt.Errorf("OIDC discovery for %s: %w", provider.Name, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -402,7 +407,7 @@ func (m *OAuth2Manager) exchangeCode(ctx context.Context, provider *ProviderConf
 	if err != nil {
 		return nil, fmt.Errorf("token exchange: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -473,7 +478,7 @@ func (m *OAuth2Manager) fetchUserInfo(ctx context.Context, ep *OIDCEndpoints, ac
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var info map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
@@ -600,18 +605,33 @@ func (m *OAuth2Manager) ProvidersHandler() gin.HandlerFunc {
 // ============================================================================
 
 func (m *OAuth2Manager) cleanupLoop() {
+	defer close(m.doneCh)
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
-	for range ticker.C {
-		m.mu.Lock()
-		now := time.Now()
-		for state, sess := range m.sessions {
-			if now.After(sess.ExpiresAt) {
-				delete(m.sessions, state)
+	for {
+		select {
+		case <-m.stopCh:
+			return
+		case <-ticker.C:
+			m.mu.Lock()
+			now := time.Now()
+			for state, sess := range m.sessions {
+				if now.After(sess.ExpiresAt) {
+					delete(m.sessions, state)
+				}
 			}
+			m.mu.Unlock()
 		}
-		m.mu.Unlock()
 	}
+}
+
+// Close stops the background session-cleanup goroutine and waits for it to
+// exit. It is safe to call multiple times.
+func (m *OAuth2Manager) Close() {
+	m.stopOnce.Do(func() {
+		close(m.stopCh)
+		<-m.doneCh
+	})
 }
 
 // ============================================================================

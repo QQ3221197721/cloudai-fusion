@@ -14,10 +14,10 @@ import (
 // keyed by extension point for fast lookup.
 type Registry struct {
 	mu        sync.RWMutex
-	factories map[string]Factory                     // name → factory
-	plugins   map[string]Plugin                      // name → instantiated plugin
-	byExt     map[ExtensionPoint][]string            // extension → ordered plugin names
-	disabled  map[string]bool                        // name → disabled
+	factories map[string]Factory          // name → factory
+	plugins   map[string]Plugin           // name → instantiated plugin
+	byExt     map[ExtensionPoint][]string // extension → ordered plugin names
+	disabled  map[string]bool             // name → disabled
 }
 
 // NewRegistry creates an empty Registry.
