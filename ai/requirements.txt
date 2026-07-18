@@ -61,7 +61,7 @@ opentelemetry-semantic-conventions==0.44b0
 
 # --- Utilities ---
 pyyaml==6.0.1
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 structlog==24.1.0
 tenacity==8.2.3
 

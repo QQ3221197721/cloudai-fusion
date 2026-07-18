@@ -39,7 +39,7 @@ opentelemetry-api==1.23.0
 opentelemetry-sdk==1.23.0
 opentelemetry-exporter-otlp==1.23.0
 pyyaml==6.0.1
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 structlog==24.1.0
 tenacity==8.2.3
 
