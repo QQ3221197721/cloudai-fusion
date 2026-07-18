@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Verifiable Control Plane & AI Red Team
+- `pkg/evidence`: Ed25519-signed, hash-chained receipts forming an RFC 6962 Merkle transparency log (signed checkpoints/STH, inclusion + consistency proofs, optional Rekor anchoring); canonical JSON for byte-exact cross-language hashes; `cmd/cafctl verify` offline verifier; concurrency / tamper-injection / key-rotation tests
+- `GET /api/v1/evidence/*`: summary, records, inclusion proof, verify, export, checkpoint, consistency, rotate-key
+- Verifiable scheduling decisions, provable FinOps reclamation, and per-action control-plane receipts recorded into the evidence ledger
+- Real Flux GitOps client (dynamic-client reconcile-status reads), cross-cluster failover (client-go health probes + promotion), and hashicorp/raft consensus — integration-tested against `kind`
+- `pkg/redteam`: Verifiable AI Red Team — signed-scope authorization gate (target/technique/time-window/risk-tier/rate-limit, deny-by-default), engagement state machine + kill-switch, LLM ReAct planner over real tools, web exploit-chaining (reproducible via request/response hashes), BloodHound-style AD pathing with per-hop approval, CVE-Bench harness, multi-tenant isolation, per-engagement FinOps cost receipts, ATT&CK Navigator export, DPO trace export
+- `GET|POST /api/v1/redteam/engagements*`: engagement lifecycle, human-in-the-loop approval, verifiable report (embeds a signed STH), and per-engagement evidence
+
 ### Added — Run-Mode Honesty Framework & Real Backends
 - `pkg/runmode` + `pkg/capability`: process-wide run mode (simulation/degraded/production) and a capability registry; production **refuses to boot** if any subsystem is simulated (`capability.Enforce()`)
 - `GET /api/v1/capabilities` endpoint and `/readyz` gating reporting real-vs-simulated backends

@@ -18,6 +18,7 @@ import (
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/k8s"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/plugin"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/builtin"
@@ -88,9 +89,12 @@ type Engine struct {
 	// Adaptive scheduling
 	currentInterval time.Duration
 	logger          *logrus.Logger
-	mu              sync.RWMutex
-	ready           bool
-	stopCh          chan struct{}
+	// evidenceRec emits signed, verifiable receipts for scheduling decisions.
+	// Defaults to a no-op so scheduling works when evidence is disabled.
+	evidenceRec evidence.Recorder
+	mu          sync.RWMutex
+	ready       bool
+	stopCh      chan struct{}
 }
 
 // NewEngine creates a new scheduling engine.
@@ -136,6 +140,7 @@ func NewEngine(cfg EngineConfig) (*Engine, error) {
 		nodeCache:        NewNodeWatchCache(nodeCacheSyncInterval, logger),
 		currentInterval:  initialInterval,
 		logger:           logger,
+		evidenceRec:      evidence.NopRecorder{},
 		stopCh:           make(chan struct{}),
 	}
 
@@ -172,6 +177,19 @@ func (e *Engine) SetStore(s *store.Store) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.store = s
+}
+
+// SetEvidenceRecorder injects the Verifiable Control Plane recorder. When set,
+// every scheduling decision emits a signed, hash-chained receipt (chosen node,
+// full candidate scoreboard, preempted victims). A nil recorder is ignored so
+// callers can pass evidence.NopRecorder or nothing to disable emission.
+func (e *Engine) SetEvidenceRecorder(r evidence.Recorder) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if r == nil {
+		r = evidence.NopRecorder{}
+	}
+	e.evidenceRec = r
 }
 
 // IsReady returns whether the engine is ready to accept requests.
@@ -298,8 +316,11 @@ func (e *Engine) tryScheduleAll(ctx context.Context) []int {
 
 // scheduleWorkload finds the best assignment and marks the workload as scheduled.
 func (e *Engine) scheduleWorkload(ctx context.Context, workload *Workload) error {
-	assignment, err := e.findBestAssignment(ctx, workload)
+	assignment, candidates, err := e.findBestAssignment(ctx, workload)
 	if err != nil {
+		// Emit a signed receipt of WHY placement failed, so "why didn't my task
+		// schedule?" is provable rather than a silent debug log.
+		e.emitScheduleReject(ctx, workload, err)
 		return err
 	}
 
@@ -310,6 +331,11 @@ func (e *Engine) scheduleWorkload(ctx context.Context, workload *Workload) error
 	e.running[workload.ID] = workload
 
 	e.persistSchedulingDecision(workload)
+
+	// Emit a signed, verifiable receipt of WHY this node was chosen (chosen node
+	// plus the full candidate scoreboard). This is what lets a tenant later prove
+	// "my task landed here for these reasons" instead of being told to trust us.
+	e.emitSchedulingEvidence(ctx, workload, candidates, nil)
 
 	e.logger.WithFields(logrus.Fields{
 		"workload": workload.Name,
@@ -344,20 +370,22 @@ func (e *Engine) removeScheduled(indices []int) {
 
 // findBestAssignment runs the multi-factor scoring algorithm with plugin chain integration.
 // Pipeline: getCandidates → Plugin Filter → Engine Score → Plugin Score → Blend → Select Best
-func (e *Engine) findBestAssignment(ctx context.Context, workload *Workload) (*Assignment, error) {
+// It returns the winning assignment AND the full scored candidate list, so the
+// caller can emit a verifiable decision record (the scoreboard is the evidence).
+func (e *Engine) findBestAssignment(ctx context.Context, workload *Workload) (*Assignment, []NodeScore, error) {
 	if ctx.Err() != nil {
-		return nil, fmt.Errorf("context cancelled: %w", ctx.Err())
+		return nil, nil, fmt.Errorf("context cancelled: %w", ctx.Err())
 	}
 
 	candidates := e.getCandidateNodes(ctx, workload)
 	if len(candidates) == 0 {
-		return nil, fmt.Errorf("no eligible nodes found")
+		return nil, nil, fmt.Errorf("no eligible nodes found")
 	}
 
 	// Plugin Filter Phase
 	candidates, err := e.runPluginFilters(ctx, workload, candidates)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Engine Scoring Phase
@@ -372,7 +400,7 @@ func (e *Engine) findBestAssignment(ctx context.Context, workload *Workload) (*A
 		Score:      bestNode.Score,
 		Reason:     fmt.Sprintf("Best score %.2f (topology=%.2f, cost=$%.2f/h)", bestNode.Score, bestNode.TopologyScore, bestNode.CostPerHour),
 		AssignedAt: common.NowUTC(),
-	}, nil
+	}, candidates, nil
 }
 
 // runPluginFilters applies registered FilterPlugins to prune ineligible candidates.

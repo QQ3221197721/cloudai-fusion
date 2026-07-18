@@ -89,6 +89,22 @@ simulation is acceptable.
 - **Honesty**: `GET /api/v1/models/status` reports exactly which models/LLMs are active
   versus rule-based.
 
+### Verifiable Control Plane (`pkg/evidence`)
+- Every consequential action records an Ed25519-signed, hash-chained receipt; receipts
+  form an RFC 6962 Merkle transparency log with signed checkpoints (STH), inclusion and
+  consistency proofs, and optional Rekor anchoring. Canonical JSON makes hashes
+  byte-exact and cross-language reproducible.
+- `cmd/cafctl verify` verifies an exported chain + checkpoint OFFLINE against the pinned
+  public key. Concurrent writers, tamper injection, and key rotation are test-covered.
+
+### Verifiable AI Red Team (`pkg/redteam`)
+- Authorized, evidence-grade security validation. A signed **scope** gates every action
+  (target / technique / time-window / risk-tier / rate-limit); out-of-scope is refused and
+  recorded. Exploitation and lateral tiers require human approval; a kill-switch halts.
+- LLM planner (ReAct) orchestrating real tools; web exploit-chaining and BloodHound-style
+  AD pathing; CVE-Bench harness; multi-tenant isolation; per-engagement FinOps receipts.
+  Reachable at `/api/v1/redteam`. Full design: `docs/redteam-subsystem-spec.md`.
+
 ## Real-vs-Simulated Matrix
 
 | Subsystem | Real driver | Simulated fallback | Prod behavior |
@@ -99,11 +115,17 @@ simulation is acceptable.
 | Leader election | K8s `Lease` (`client-go`) | in-memory single-node | must be real |
 | Kubernetes nodes | `client-go` | labeled sim nodes | **no fake nodes**; returns none |
 | Cloud | 6 official SDKs | stub mode (no creds) | needs creds |
-| GitOps | ArgoCD REST | simulated (Flux TBD) | must be real |
+| GitOps | ArgoCD REST + Flux (dynamic client) | simulated when neither reachable | must be real |
+| Consensus | hashicorp/raft | in-memory Raft (labeled) | must be real |
+| Cross-cluster failover | client-go health probes | simulated w/o DR cluster | must be real |
+| Verifiable Control Plane | Ed25519 + Merkle log + offline verifier | (always real) | always real |
+| Red team | scope gate + evidence + LLM/tools | tools/LLM real-when-configured | authorized-only |
 | AI/LLM | OpenAI/DashScope/Ollama/vLLM + torch | heuristics | honest via `/models/status` |
 
-Anything that can only be simulated (etcd election, Flux, cross-cluster failover,
-in-memory Raft) is **blocked by `capability.Enforce()` in production**.
+Flux reconcile-status reads, cross-cluster failover, and hashicorp/raft are now real
+(integration-tested against `kind`). What can still only be simulated until configured
+(etcd election, real multi-cloud credentials, red-team tools/LLM endpoint) is **blocked
+by `capability.Enforce()` in production**.
 
 ## Data Flow
 

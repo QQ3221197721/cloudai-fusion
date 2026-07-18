@@ -59,6 +59,10 @@ tags:
     description: Enterprise features (SSO, SLA, audit)
   - name: tickets
     description: Support ticket management
+  - name: evidence
+    description: Verifiable Control Plane (signed, hash-chained receipts + Merkle log)
+  - name: redteam
+    description: Verifiable AI Red Team (authorized, evidence-grade security validation)
 
 paths:
   /healthz:
@@ -1393,12 +1397,201 @@ paths:
         "200":
           description: List of recent incident analyses
 
+  /api/v1/evidence/pubkey:
+    get:
+      summary: Evidence signing public key (no auth; pin to verify offline)
+      tags: [evidence]
+      security: []
+      responses:
+        "200":
+          description: PEM-encoded Ed25519 public key + key id
+
+  /api/v1/evidence:
+    get:
+      summary: Evidence ledger summary (size, key id, anchor backend)
+      tags: [evidence]
+      responses:
+        "200":
+          description: Ledger status
+
+  /api/v1/evidence/records:
+    get:
+      summary: List signed receipts (newest first)
+      tags: [evidence]
+      parameters:
+        - {name: action, in: query, schema: {type: string}}
+        - {name: subject, in: query, schema: {type: string}}
+        - {name: actor, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer}}
+      responses:
+        "200":
+          description: Receipts
+
+  /api/v1/evidence/records/{id}:
+    get:
+      summary: Get a single receipt
+      tags: [evidence]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Receipt}
+        "404": {description: Not found}
+
+  /api/v1/evidence/records/{id}/proof:
+    get:
+      summary: Merkle inclusion proof for a receipt
+      tags: [evidence]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Inclusion proof}
+
+  /api/v1/evidence/verify:
+    get:
+      summary: Server-side chain verification
+      tags: [evidence]
+      responses:
+        "200": {description: Verification report}
+
+  /api/v1/evidence/export:
+    get:
+      summary: Export chain + public key for offline verification (cafctl)
+      tags: [evidence]
+      responses:
+        "200": {description: Exportable bundle}
+
+  /api/v1/evidence/checkpoint:
+    get:
+      summary: Signed tree head (STH)
+      tags: [evidence]
+      responses:
+        "200": {description: Signed checkpoint}
+
+  /api/v1/evidence/consistency:
+    get:
+      summary: Consistency proof between two tree sizes
+      tags: [evidence]
+      parameters:
+        - {name: from, in: query, schema: {type: integer}}
+        - {name: to, in: query, schema: {type: integer}}
+      responses:
+        "200": {description: Consistency proof}
+
+  /api/v1/evidence/rotate-key:
+    post:
+      summary: Rotate the evidence signing key (security:manage)
+      tags: [evidence]
+      responses:
+        "200": {description: Rotated}
+
+  /api/v1/redteam/engagements:
+    get:
+      summary: List red-team engagements
+      tags: [redteam]
+      parameters:
+        - {name: tenant_id, in: query, schema: {type: string}}
+      responses:
+        "200": {description: Engagements}
+    post:
+      summary: Create a red-team engagement (signed scope; security:manage)
+      tags: [redteam]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scope]
+              properties:
+                tenant_id: {type: string}
+                scope:
+                  type: object
+                  properties:
+                    targets:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          kind: {type: string, enum: [cidr, host, url, cluster]}
+                          value: {type: string}
+                    allow_techniques: {type: array, items: {type: string}}
+                    max_risk_tier: {type: integer, description: "0 read-only, 1 exploit, 2 lateral"}
+                    approval_required_at: {type: integer}
+      responses:
+        "201": {description: Engagement created}
+        "400": {description: Invalid or empty scope}
+
+  /api/v1/redteam/engagements/{id}:
+    get:
+      summary: Get engagement status + findings
+      tags: [redteam]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Engagement}
+        "404": {description: Not found}
+
+  /api/v1/redteam/engagements/{id}/abort:
+    post:
+      summary: Kill-switch - abort an engagement (security:manage)
+      tags: [redteam]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Aborted}
+
+  /api/v1/redteam/engagements/{id}/approve:
+    post:
+      summary: Approve a pending high-risk action (security:manage)
+      tags: [redteam]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action_id]
+              properties:
+                action_id: {type: string}
+                risk_tier: {type: integer}
+      responses:
+        "200": {description: Approved}
+
+  /api/v1/redteam/engagements/{id}/report:
+    get:
+      summary: Verifiable engagement report (embeds a signed STH)
+      tags: [redteam]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Report}
+
+  /api/v1/redteam/engagements/{id}/evidence:
+    get:
+      summary: Signed receipts for an engagement
+      tags: [redteam]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Receipts}
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+  parameters:
+    TenantId:
+      name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique tenant identifier
 
   schemas:
     TokenResponse:
@@ -1639,16 +1832,6 @@ components:
           type: string
           nullable: true
 
-  parameters:
-    TenantId:
-      name: tenantId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Unique tenant identifier
-
-  schemas:
     # =========================================================================
     # Multi-Tenant Schemas
     # =========================================================================

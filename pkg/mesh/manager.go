@@ -14,7 +14,9 @@ import (
 
 	apperrors "github.com/cloudai-fusion/cloudai-fusion/pkg/errors"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/k8s"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 )
@@ -132,6 +134,7 @@ type Manager struct {
 	policies  []*NetworkPolicy // in-memory cache (hot-path reads)
 	store     *store.Store     // DB persistence (nil = in-memory only)
 	k8sClient *k8s.Client      // optional: real K8s API client for CRD queries
+	recorder  evidence.Recorder
 	logger    *logrus.Logger
 	mu        sync.RWMutex
 }
@@ -151,6 +154,26 @@ func NewManager(cfg Config) (*Manager, error) {
 		logger:   logrus.StandardLogger(),
 	}
 	return mgr, nil
+}
+
+// SetEvidenceRecorder attaches the Verifiable Control Plane recorder so policy
+// applies emit a signed receipt honestly tagged with the dataplane mode.
+func (m *Manager) SetEvidenceRecorder(r evidence.Recorder) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.recorder = r
+}
+
+// dataplaneMode reports whether a real dataplane (Cilium/K8s CRDs via client) is
+// wired, or the manager runs in-memory only. Honest input to capability/evidence.
+func (m *Manager) dataplaneMode() (mode, driver string) {
+	if m.k8sClient != nil {
+		if m.config.Mode == MeshModeCilium {
+			return "real", "cilium-ebpf"
+		}
+		return "real", "k8s-netpol"
+	}
+	return "simulated", "in-memory"
 }
 
 // SetStore injects a database store for persistent policy management
@@ -399,7 +422,31 @@ func (m *Manager) CreatePolicy(ctx context.Context, policy *NetworkPolicy) error
 	// Update cache
 	m.policies = append(m.policies, policy)
 	m.logger.WithField("policy", policy.Name).Info("eBPF network policy created")
+	m.emitPolicyEvidence(ctx, policy)
 	return nil
+}
+
+// emitPolicyEvidence records a signed receipt for a policy apply, honestly tagged
+// real (CRDs applied to a cluster) or simulated (in-memory only).
+func (m *Manager) emitPolicyEvidence(ctx context.Context, policy *NetworkPolicy) {
+	if m.recorder == nil {
+		return
+	}
+	mode, driver := m.dataplaneMode()
+	capMode := capability.ModeSimulated
+	if mode == "real" {
+		capMode = capability.ModeReal
+	}
+	_ = capability.Report("mesh.dataplane", driver, capMode, "eBPF/service-mesh dataplane")
+	_, _ = m.recorder.Record(ctx, evidence.RecordInput{
+		Actor:   "mesh",
+		Action:  "mesh.policy.apply",
+		Subject: policy.Name,
+		Input:   map[string]any{"policy": policy.Name, "mode": m.config.Mode},
+		Output:  map[string]any{"status": policy.Status},
+		Payload: map[string]any{"policy": policy, "dataplane": driver},
+		Backends: []evidence.BackendFact{{Component: "mesh.dataplane", Mode: mode, Driver: driver}},
+	})
 }
 
 // DeletePolicy removes a network policy from the cluster CRD and DB

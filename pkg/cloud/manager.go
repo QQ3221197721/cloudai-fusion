@@ -13,6 +13,7 @@ import (
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/config"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 )
 
 // ============================================================================
@@ -177,7 +178,16 @@ type ManagerConfig struct {
 // Manager manages multiple cloud providers
 type Manager struct {
 	providers map[string]Provider
+	recorder  evidence.Recorder
 	mu        sync.RWMutex
+}
+
+// SetEvidenceRecorder attaches the Verifiable Control Plane recorder so price
+// lookups emit signed provenance receipts. A nil recorder disables emission.
+func (m *Manager) SetEvidenceRecorder(r evidence.Recorder) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.recorder = r
 }
 
 // NewManager creates a new cloud provider manager
@@ -192,6 +202,7 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 			return nil, fmt.Errorf("failed to create provider %s: %w", providerCfg.Name, err)
 		}
 		m.providers[providerCfg.Name] = provider
+		reportProviderCapability(provider) // honest: real SDK vs stub mode
 	}
 
 	return m, nil
@@ -202,6 +213,7 @@ func (m *Manager) RegisterProvider(name string, provider Provider) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.providers[name] = provider
+	reportProviderCapability(provider) // honest: real SDK vs stub mode
 }
 
 // GetProvider returns a specific provider by name

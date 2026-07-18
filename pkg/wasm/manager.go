@@ -16,7 +16,9 @@ import (
 
 	apperrors "github.com/cloudai-fusion/cloudai-fusion/pkg/errors"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 )
 
@@ -125,6 +127,7 @@ type Manager struct {
 	store              *store.Store        // DB persistence (nil = in-memory only)
 	httpClient         *http.Client        // for Spin/containerd HTTP API calls
 	pluginEcosystemHub *PluginEcosystemHub // WASM plugin ecosystem
+	recorder           evidence.Recorder
 	logger             *logrus.Logger
 	mu                 sync.RWMutex
 }
@@ -150,6 +153,14 @@ func NewManager(cfg Config) (*Manager, error) {
 		logger:             logrus.StandardLogger(),
 	}
 	return mgr, nil
+}
+
+// SetEvidenceRecorder attaches the Verifiable Control Plane recorder so Wasm
+// deployments emit a signed receipt honestly tagged with the runtime mode.
+func (m *Manager) SetEvidenceRecorder(r evidence.Recorder) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.recorder = r
 }
 
 // SetStore injects a database store for persistent module/instance management
@@ -267,6 +278,23 @@ func (m *Manager) Deploy(ctx context.Context, req *WasmDeployRequest) ([]*WasmIn
 		"replicas": req.Replicas,
 		"runtime":  runtime,
 	}).Info("Wasm deployment created")
+
+	// Honest: this fallback tracks instances in-memory (no real Wasm runtime
+	// endpoint configured), so the receipt is tagged simulated.
+	if m.recorder != nil {
+		driver := string(runtime) + "-inmem"
+		_ = capability.Report("wasm.runtime", driver, capability.ModeSimulated,
+			"in-memory Wasm instance tracking (no Spin/containerd endpoint configured)")
+		_, _ = m.recorder.Record(ctx, evidence.RecordInput{
+			Actor:   "wasm",
+			Action:  "wasm.deploy",
+			Subject: req.ModuleID,
+			Input:   map[string]any{"module": req.ModuleID, "replicas": req.Replicas, "runtime": runtime},
+			Output:  map[string]any{"instances": len(instances)},
+			Payload: map[string]any{"module_id": req.ModuleID, "cluster_id": req.ClusterID, "runtime": runtime, "replicas": req.Replicas},
+			Backends: []evidence.BackendFact{{Component: "wasm.runtime", Mode: "simulated", Driver: driver}},
+		})
+	}
 
 	return instances, nil
 }

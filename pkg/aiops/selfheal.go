@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 )
 
 // ============================================================================
@@ -28,6 +31,7 @@ type SelfHealingEngine struct {
 	rootCauseDB  map[string]*RootCausePattern
 	healthProbes map[string]*HealthProbe
 	config       SelfHealConfig
+	evidenceRec  evidence.Recorder
 	mu           sync.RWMutex
 	logger       *logrus.Logger
 }
@@ -242,6 +246,7 @@ func NewSelfHealingEngine(cfg SelfHealConfig, logger *logrus.Logger) *SelfHealin
 		rootCauseDB:  make(map[string]*RootCausePattern),
 		healthProbes: make(map[string]*HealthProbe),
 		config:       cfg,
+		evidenceRec:  evidence.NopRecorder{},
 		logger:       logger,
 	}
 	engine.registerDefaultDetectors()
@@ -575,7 +580,47 @@ func (e *SelfHealingEngine) AnalyzeRootCause(incident *Incident) *RootCauseAnaly
 		Message:   fmt.Sprintf("Root cause: %s (confidence: %.0f%%)", analysis.ProbableCause, analysis.Confidence*100),
 	})
 
+	e.emitRCAEvidence(incident.ID, analysis)
 	return analysis
+}
+
+// SetEvidenceRecorder attaches the Verifiable Control Plane recorder so each
+// root-cause analysis emits a signed receipt, honestly labeled as rule/pattern
+// based (advisory; not a trained model). A nil recorder disables emission.
+func (e *SelfHealingEngine) SetEvidenceRecorder(r evidence.Recorder) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if r == nil {
+		r = evidence.NopRecorder{}
+	}
+	e.evidenceRec = r
+}
+
+// emitRCAEvidence records a signed receipt for a root-cause analysis. Called with
+// e.mu held; reads e.evidenceRec directly and records out-of-band.
+func (e *SelfHealingEngine) emitRCAEvidence(incidentID string, a *RootCauseAnalysis) {
+	rec := e.evidenceRec
+	if rec == nil {
+		return
+	}
+	_ = capability.Report("aiops.selfheal", "heuristic-rules", capability.ModeReal,
+		"rule/pattern-based root-cause analysis (advisory; not a trained model)")
+	_, err := rec.Record(context.Background(), evidence.RecordInput{
+		Actor:   "aiops",
+		Action:  "aiops.selfheal",
+		Subject: incidentID,
+		Input:   map[string]any{"incident_id": incidentID},
+		Output:  map[string]any{"probable_cause": a.ProbableCause, "confidence": a.Confidence, "recommended_fix": a.RecommendedFix},
+		Payload: map[string]any{
+			"analysis": a,
+			"method":   "heuristic-rules", // pattern matching, not ML/RL
+			"applied":  false,             // advisory analysis
+		},
+		Backends: []evidence.BackendFact{{Component: "aiops.selfheal", Mode: "real", Driver: "heuristic-rules"}},
+	})
+	if err != nil {
+		e.logger.WithError(err).Warn("aiops: failed to emit self-heal evidence")
+	}
 }
 
 // metricMatchesSymptom reports whether any observed metric name corresponds to
