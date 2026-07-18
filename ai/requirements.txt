@@ -73,4 +73,4 @@ torch==2.2.2
 # --- Development dependencies ---
 pytest==8.1.1
 pytest-asyncio==0.23.6
-pytest-cov==5.0.0
+pytest-cov==7.1.0
