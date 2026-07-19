@@ -236,7 +236,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      CLUSTER_ID: "cloudai-fusion-local-dev"
+      CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
     volumes:
       - kafka-data:/var/lib/kafka/data
     healthcheck:
