@@ -241,6 +241,8 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 				ev.GET("/export", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceExport(cfg.EvidenceLedger))
 				ev.GET("/checkpoint", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceCheckpoint(cfg.EvidenceLedger))
 				ev.GET("/consistency", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceConsistency(cfg.EvidenceLedger))
+				ev.GET("/completeness", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceCompleteness(cfg.EvidenceLedger))
+				ev.GET("/lineage", auth.RequirePermission(auth.PermSecurityRead), handleEvidenceLineage(cfg.EvidenceLedger))
 				ev.POST("/rotate-key", auth.RequirePermission(auth.PermSecurityManage), handleEvidenceRotateKey(cfg.EvidenceLedger))
 			}
 

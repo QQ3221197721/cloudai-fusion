@@ -46,6 +46,21 @@ func ExportDPOTraces(all []*evidence.Evidence) []DPOPair {
 	return pairs
 }
 
+// MineDPORecords returns the ledger records that back the DPO corpus - the
+// authorized ("chosen") and denied ("rejected") actions. Pair it with
+// provenance.BuildDatasetManifest to produce a signed, verifiable training corpus
+// (the flywheel rail): you can then prove which signed, in-scope engagement records
+// the planner was fine-tuned on. Records keep ledger (ascending-Seq) order.
+func MineDPORecords(all []*evidence.Evidence) []*evidence.Evidence {
+	out := make([]*evidence.Evidence, 0)
+	for _, ev := range all {
+		if ev.Action == ActionActionAuthorized || ev.Action == ActionScopeDeny {
+			out = append(out, ev)
+		}
+	}
+	return out
+}
+
 // ExportDPOJSONL renders the preference pairs as JSONL (one JSON object per line),
 // the format DPO trainers expect.
 func ExportDPOJSONL(pairs []DPOPair) ([]byte, error) {

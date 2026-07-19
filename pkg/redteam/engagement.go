@@ -152,35 +152,41 @@ func (m *Manager) Start(id string) error {
 	return nil
 }
 
-// Complete transitions running -> completed.
+// Complete transitions running -> completed and seals the engagement so its
+// completeness is provable (Moat A / M0).
 func (m *Manager) Complete(id string) error {
 	e, err := m.Get(id)
 	if err != nil {
 		return err
 	}
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	if e.Status != StatusRunning {
+		e.mu.Unlock()
 		return fmt.Errorf("redteam: cannot complete engagement in state %q", e.Status)
 	}
 	e.Status = StatusCompleted
+	e.mu.Unlock()
+	m.sealEngagement(context.Background(), id)
 	return nil
 }
 
 // Abort trips the kill-switch and transitions the engagement to aborted. It is
-// idempotent and records a redteam.engagement.abort receipt.
+// idempotent, records a redteam.engagement.abort receipt, and seals the
+// engagement so an aborted run is still completeness-provable (Moat A / M0).
 func (m *Manager) Abort(ctx context.Context, id, reason string) error {
 	e, err := m.Get(id)
 	if err != nil {
 		return err
 	}
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	if e.Status.terminal() {
+		e.mu.Unlock()
 		return nil
 	}
 	e.gate.Abort(ctx, reason)
 	e.Status = StatusAborted
+	e.mu.Unlock()
+	m.sealEngagement(ctx, id)
 	return nil
 }
 
@@ -202,4 +208,39 @@ func (m *Manager) AddFinding(ctx context.Context, id string, f *Finding) error {
 
 	recordFinding(ctx, m.recorder, m.logger, id, f)
 	return nil
+}
+
+// sealer is satisfied by *evidence.Ledger. When the recorder is a full ledger,
+// terminal transitions seal the engagement's namespace so its completeness is
+// provable (Moat A / M0, docs/verifiable-moat-spec.md). A plain Recorder (e.g.
+// NopRecorder) simply skips sealing.
+type sealer interface {
+	SealNamespace(ctx context.Context, namespace, actor string, members []*evidence.Evidence) (*evidence.Evidence, error)
+	Store() evidence.Store
+}
+
+// NamespaceFor returns the evidence namespace under which an engagement's
+// receipts are sealed and completeness-proven.
+func NamespaceFor(engagementID string) string {
+	return "redteam/engagement/" + engagementID
+}
+
+// sealEngagement gathers the engagement's receipts and records a terminal seal so
+// a CompletenessProof can later show a report is EXACTLY those receipts - no more,
+// no less. It is best-effort and logged on error, like the other evidence
+// emitters, so a ledger hiccup never blocks a lifecycle transition.
+func (m *Manager) sealEngagement(ctx context.Context, engagementID string) {
+	s, ok := m.recorder.(sealer)
+	if !ok {
+		return
+	}
+	all, err := s.Store().All(ctx)
+	if err != nil {
+		m.logger.WithError(err).Warn("redteam: seal: read ledger failed")
+		return
+	}
+	members := EngagementReceipts(all, engagementID)
+	if _, err := s.SealNamespace(ctx, NamespaceFor(engagementID), "redteam", members); err != nil {
+		m.logger.WithError(err).Warn("redteam: seal engagement failed")
+	}
 }

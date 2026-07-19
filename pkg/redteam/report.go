@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"sort"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -138,6 +139,17 @@ func receiptEngagementID(ev *evidence.Evidence) string {
 		}
 	}
 	return ""
+}
+
+// EngagementKeyOf is the fabric KeyFunc for the red-team well: it returns the
+// engagement ID a redteam.* receipt belongs to, or "" for non-redteam receipts
+// (including seals). It reuses receiptEngagementID so classification stays DRY,
+// and is what pkg/fabric registers to seal/prove an engagement's completeness.
+func EngagementKeyOf(ev *evidence.Evidence) string {
+	if ev == nil || !strings.HasPrefix(ev.Action, "redteam.") {
+		return ""
+	}
+	return receiptEngagementID(ev)
 }
 
 func receiptTechnique(ev *evidence.Evidence) string {

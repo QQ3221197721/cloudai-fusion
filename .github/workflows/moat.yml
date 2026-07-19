@@ -1,0 +1,72 @@
+name: Verifiable Moat
+
+# The regression gate for the Verifiable Moat (docs/verifiable-moat-spec.md). The
+# moat's guarantees are expressed AS TESTS, so running them is the gate: a
+# regression in completeness ("no more, no less" + tamper detection), provenance
+# binding, the bench PassesGate (0 scope violations, 100% receipts verified,
+# solve-rate floor), any of the nine wells, or the Fabric (PCA / VKG / saga) fails
+# the build. The offline verifiers (cafctl) are covered by ./cmd/cafctl.
+
+on:
+  push:
+    branches: [main, develop, 'release/*']
+    paths:
+      - 'pkg/evidence/**'
+      - 'pkg/redteam/**'
+      - 'pkg/scheduler/**'
+      - 'pkg/finops/**'
+      - 'pkg/fabric/**'
+      - 'pkg/provenance/**'
+      - 'pkg/delivery/**'
+      - 'pkg/api/**'
+      - 'cmd/cafctl/**'
+      - 'ai/scheduler/provenance.py'
+      - 'ai/tests/test_provenance.py'
+      - '.github/workflows/moat.yml'
+  pull_request:
+    branches: [main, develop]
+
+env:
+  GO_VERSION: '1.25'
+  PYTHON_VERSION: '3.11'
+
+permissions:
+  contents: read
+
+jobs:
+  moat-gate:
+    name: Verifiable Moat Gate (Go)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Build
+        run: go build ./...
+      - name: Moat regression gate (the tests ARE the gate)
+        run: |
+          go test -race -count=1 \
+            ./pkg/evidence/... \
+            ./pkg/redteam/... \
+            ./pkg/scheduler/... \
+            ./pkg/finops/... \
+            ./pkg/fabric/... \
+            ./pkg/provenance/... \
+            ./pkg/delivery/... \
+            ./pkg/api/... \
+            ./cmd/cafctl/...
+
+  moat-provenance-py:
+    name: Model Provenance Producer (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Test the ModelProvenance producer (M-B / M1 Python side)
+        run: |
+          pip install pytest
+          cd ai
+          python -m pytest tests/test_provenance.py -v --override-ini='addopts='
