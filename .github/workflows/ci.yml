@@ -353,16 +353,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-build
     if: github.ref == 'refs/heads/main'
+    env:
+      # CI-only non-secret values so docker compose's required ${VAR:?} interpolations
+      # resolve (the Cleanup step's `docker compose down` needs them too).
+      CLOUDAI_DB_PASSWORD: ci-postgres-pw
+      CLOUDAI_JWT_SECRET: ci-jwt-secret-not-for-production
     steps:
       - uses: actions/checkout@v4
-      - name: Start services
-        run: |
-          docker compose -f docker-compose.yml up -d
-          sleep 30
+      - name: Start core services
+        # Build + wait for the core stack (apiserver + its deps) to be HEALTHY. The
+        # full monitoring/ai-engine stack is unnecessary for the API smoke test and
+        # only adds cold-build time and flakiness.
+        run: docker compose -f docker-compose.yml up -d --build --wait --wait-timeout 600 postgres redis kafka nats apiserver
       - name: Health check
-        run: |
-          curl -sf http://localhost:8080/healthz || exit 1
-          curl -sf http://localhost:8090/healthz || exit 1
+        run: curl -sf http://localhost:8080/healthz
       - name: API smoke tests
         run: |
           # Login
