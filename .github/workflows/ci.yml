@@ -220,11 +220,20 @@ jobs:
           sbom: true
 
       # ---- Supply chain: keyless cosign signature (Sigstore -> Fulcio -> Rekor) ----
+      # GHCR/OCI repository names MUST be lowercase; github.repository can contain
+      # uppercase (the owner login), which docker/metadata-action lowercases for the
+      # push but the raw ${IMAGE_PREFIX} does not - so normalize once and reuse it for
+      # every cosign/inspect reference below.
+      - name: Normalize image name (GHCR requires lowercase)
+        id: img
+        run: echo "image=${IMAGE_RAW,,}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE_RAW: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
       - name: Sign image by digest (keyless)
         env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          IMAGE: ${{ steps.img.outputs.image }}
           DIGEST: ${{ steps.build.outputs.digest }}
           COSIGN_YES: "true"
         run: |
@@ -232,7 +241,7 @@ jobs:
           echo "::notice::Signed ${IMAGE}@${DIGEST} (keyless; recorded in the Rekor transparency log)"
       - name: Verify signature (self-check)
         env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          IMAGE: ${{ steps.img.outputs.image }}
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           cosign verify \
@@ -241,7 +250,7 @@ jobs:
             "${IMAGE}@${DIGEST}"
       - name: Inspect SLSA provenance attestation (self-check)
         env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.component }}
+          IMAGE: ${{ steps.img.outputs.image }}
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           docker buildx imagetools inspect "${IMAGE}@${DIGEST}" \
@@ -285,7 +294,8 @@ jobs:
             comp="$(basename "$f" .txt)"
             dig="$(tr -d '[:space:]' < "$f")"
             [ -z "$dig" ] && continue
-            item="{\"component\":\"$comp\",\"digest\":\"$dig\"}"
+            img="ghcr.io/${GITHUB_REPOSITORY,,}/$comp"
+            item="{\"component\":\"$comp\",\"digest\":\"$dig\",\"image\":\"$img\"}"
             if [ -z "$items" ]; then items="$item"; else items="$items,$item"; fi
           done
           echo "images=[$items]" >> "$GITHUB_OUTPUT"
@@ -306,7 +316,7 @@ jobs:
         image: ${{ fromJSON(needs.slsa-matrix.outputs.images) }}
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
     with:
-      image: ghcr.io/${{ github.repository }}/${{ matrix.image.component }}
+      image: ${{ matrix.image.image }}
       digest: ${{ matrix.image.digest }}
       registry-username: ${{ github.actor }}
     secrets:
@@ -333,7 +343,7 @@ jobs:
       - uses: azure/setup-helm@v4
       - run: |
           helm package deploy/helm/cloudai-fusion --version ${{ github.ref_name }}
-          helm push cloudai-fusion-${{ github.ref_name }}.tgz oci://${{ env.REGISTRY }}/${{ github.repository }}/charts
+          helm push "cloudai-fusion-${{ github.ref_name }}.tgz" "oci://${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/charts"
 
   # ============================================================================
   # Integration Tests (on main only)
