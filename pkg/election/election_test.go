@@ -2,12 +2,25 @@ package election
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
+
+// TestMain keeps election unit tests hermetic: it points KUBECONFIG at a path that
+// does not exist so kubernetes-backed electors deterministically fall back to
+// in-memory election (exactly as on CI, where no cluster is configured) instead of
+// picking up a developer's ambient ~/.kube/config and attempting to reach a
+// possibly-dead cluster. Real client-go leader election is exercised against a live
+// cluster, not in these unit tests.
+func TestMain(m *testing.M) {
+	_ = os.Setenv("KUBECONFIG", filepath.Join(os.TempDir(), "cloudai-fusion-election-absent-kubeconfig"))
+	os.Exit(m.Run())
+}
 
 // ============================================================================
 // DefaultConfig
