@@ -67,7 +67,7 @@ services:
       - cloudai-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8080/healthz"]
+      test: ["CMD", "/usr/local/bin/healthcheck", "http://localhost:8080/healthz"]
       interval: 10s
       timeout: 5s
       start_period: 20s
@@ -109,7 +109,7 @@ services:
       - cloudai-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8081/healthz"]
+      test: ["CMD", "/usr/local/bin/healthcheck", "http://localhost:8081/healthz"]
       interval: 10s
       timeout: 5s
       start_period: 20s
@@ -140,7 +140,7 @@ services:
       - cloudai-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8082/healthz"]
+      test: ["CMD", "/usr/local/bin/healthcheck", "http://localhost:8082/healthz"]
       interval: 10s
       timeout: 5s
       start_period: 15s
