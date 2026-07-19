@@ -37,7 +37,7 @@ type ToolOutput struct {
 // static mode to the capability registry at registration time.
 type Tool interface {
 	Name() string
-	Techniques() []string // MITRE ATT&CK IDs this tool exercises
+	Techniques() []string  // MITRE ATT&CK IDs this tool exercises
 	Mode() capability.Mode // real when the binary/endpoint is reachable
 	Invoke(ctx context.Context, in ToolInput) (ToolOutput, error)
 }

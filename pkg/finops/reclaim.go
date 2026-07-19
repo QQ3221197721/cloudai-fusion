@@ -72,11 +72,11 @@ type SavingsReceipt struct {
 	AvgUtilization     float64             `json:"avg_utilization_percent"`
 	ObservedFrom       time.Time           `json:"observed_from"`
 	ObservedTo         time.Time           `json:"observed_to"`
-	ReclaimedGPUHours  float64             `json:"reclaimed_gpu_hours"`   // measured: idle window x GPU count
-	RealizedSavingsUSD float64             `json:"realized_savings_usd"`  // reclaimed GPU-hours x rate
-	UtilizationReal    bool                `json:"utilization_real"`      // all samples from a real source?
-	PriceReal          bool                `json:"price_real"`            // rate from live billing vs static table?
-	Measured           bool                `json:"measured"`              // true only when backend+utilization are real
+	ReclaimedGPUHours  float64             `json:"reclaimed_gpu_hours"`  // measured: idle window x GPU count
+	RealizedSavingsUSD float64             `json:"realized_savings_usd"` // reclaimed GPU-hours x rate
+	UtilizationReal    bool                `json:"utilization_real"`     // all samples from a real source?
+	PriceReal          bool                `json:"price_real"`           // rate from live billing vs static table?
+	Measured           bool                `json:"measured"`             // true only when backend+utilization are real
 	ReclaimedAt        time.Time           `json:"reclaimed_at"`
 }
 

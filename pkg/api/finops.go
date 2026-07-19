@@ -86,13 +86,13 @@ func handleFinOpsSavings(l *evidence.Ledger) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			// measured_* counts ONLY receipts whose reclaim + utilization were real.
-			"measured_savings_usd":     measuredUSD,
-			"measured_gpu_hours":       measuredHours,
-			"measured_receipts":        measuredCount,
-			"reported_savings_usd":     reportedUSD, // includes simulated reclaims (not proven)
-			"total_receipts":           len(receipts),
-			"receipts":                 receipts,
-			"note":                     "measured_* figures are backed by signed receipts with real reclaim+utilization backends; verify at GET /api/v1/evidence/export",
+			"measured_savings_usd": measuredUSD,
+			"measured_gpu_hours":   measuredHours,
+			"measured_receipts":    measuredCount,
+			"reported_savings_usd": reportedUSD, // includes simulated reclaims (not proven)
+			"total_receipts":       len(receipts),
+			"receipts":             receipts,
+			"note":                 "measured_* figures are backed by signed receipts with real reclaim+utilization backends; verify at GET /api/v1/evidence/export",
 		})
 	}
 }

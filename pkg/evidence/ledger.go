@@ -23,12 +23,12 @@ type Recorder interface {
 // (never stored verbatim, so secrets stay out of the ledger); Payload is the
 // domain-specific, verifiable record (e.g. a SchedulingDecision) stored as-is.
 type RecordInput struct {
-	Actor      string   // identity that caused the action
-	Action     string   // e.g. "schedule.bind", "finops.reclaim"
-	Subject    string   // resource id acted upon
-	Input      any      // hashed into InputHash
-	Output     any      // hashed into OutputHash
-	Payload    any      // domain payload, JSON-encoded into Payload
+	Actor      string        // identity that caused the action
+	Action     string        // e.g. "schedule.bind", "finops.reclaim"
+	Subject    string        // resource id acted upon
+	Input      any           // hashed into InputHash
+	Output     any           // hashed into OutputHash
+	Payload    any           // domain payload, JSON-encoded into Payload
 	Backends   []BackendFact // explicit per-action backends (takes precedence)
 	Components []string      // if Backends is nil, snapshot only these components
 }

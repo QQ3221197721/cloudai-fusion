@@ -48,12 +48,12 @@ func authBypassChain(baseURL string) WebChain {
 		BaseURL:   baseURL,
 		Steps: []WebStep{
 			{
-				Name:    "login",
-				Method:  "POST",
-				Path:    "/login",
-				Headers: map[string]string{"Content-Type": "application/json"},
-				Body:    `{"user":"x","pass":"y"}`,
-				Extract: []Extractor{{Var: "token", Source: "body-regex", Regex: `"token":"([^"]+)"`}},
+				Name:          "login",
+				Method:        "POST",
+				Path:          "/login",
+				Headers:       map[string]string{"Content-Type": "application/json"},
+				Body:          `{"user":"x","pass":"y"}`,
+				Extract:       []Extractor{{Var: "token", Source: "body-regex", Regex: `"token":"([^"]+)"`}},
 				SuccessStatus: 200,
 			},
 			{

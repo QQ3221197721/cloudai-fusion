@@ -39,12 +39,12 @@ func (DryRunExecutor) Execute(context.Context, Action) (*Finding, error) { retur
 
 // RunResult summarizes one engagement run.
 type RunResult struct {
-	Planned    int `json:"planned"`
-	Authorized int `json:"authorized"`
-	Denied     int `json:"denied"`
-	Skipped    int `json:"skipped"` // authorized but awaiting approval
-	Executed   int `json:"executed"`
-	Findings   int `json:"findings"`
+	Planned    int  `json:"planned"`
+	Authorized int  `json:"authorized"`
+	Denied     int  `json:"denied"`
+	Skipped    int  `json:"skipped"` // authorized but awaiting approval
+	Executed   int  `json:"executed"`
+	Findings   int  `json:"findings"`
 	Aborted    bool `json:"aborted"`
 }
 
