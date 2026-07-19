@@ -153,9 +153,15 @@ func TestComputeHashDeterministic(t *testing.T) {
 }
 
 func TestGORMStoreRoundTripAndVerify(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
+	// Private in-memory DB (no cache=shared) with a single connection: fully isolated
+	// per test, so rows never leak across other tests or -count reruns.
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)})
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
+	}
+	if sqlDB, e := db.DB(); e == nil {
+		sqlDB.SetMaxOpenConns(1)
+		defer sqlDB.Close()
 	}
 	store, err := NewGORMStore(db)
 	if err != nil {
