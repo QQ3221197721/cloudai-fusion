@@ -260,12 +260,12 @@ func (m *Manager) emitNodeEvidence(ctx context.Context, node *EdgeNode) {
 	_ = capability.Report("edge.runtime", "rest-stub", capability.ModeSimulated,
 		"edge node registry (no live edge-device runtime link verified)")
 	_, _ = m.recorder.Record(ctx, evidence.RecordInput{
-		Actor:   "edge",
-		Action:  "edge.node.register",
-		Subject: node.ID,
-		Input:   map[string]any{"name": node.Name, "tier": node.Tier, "region": node.Region},
-		Output:  map[string]any{"status": node.Status},
-		Payload: map[string]any{"node_id": node.ID, "name": node.Name, "tier": node.Tier, "region": node.Region},
+		Actor:    "edge",
+		Action:   "edge.node.register",
+		Subject:  node.ID,
+		Input:    map[string]any{"name": node.Name, "tier": node.Tier, "region": node.Region},
+		Output:   map[string]any{"status": node.Status},
+		Payload:  map[string]any{"node_id": node.ID, "name": node.Name, "tier": node.Tier, "region": node.Region},
 		Backends: []evidence.BackendFact{{Component: "edge.runtime", Mode: "simulated", Driver: "rest-stub"}},
 	})
 }
