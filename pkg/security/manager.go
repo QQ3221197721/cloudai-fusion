@@ -384,10 +384,16 @@ func (m *Manager) RunVulnerabilityScan(ctx context.Context, clusterID, scanType 
 		}
 	}
 
+	// Snapshot the just-created scan so the caller reads a stable, independent object.
+	// The async executeScan goroutine below mutates the tracked scan (in m.scans, under
+	// m.mu); returning the live pointer would race any caller reading its fields
+	// (e.g. status) without the lock. Progress is observed via GetScan/status queries.
+	snapshot := *scan
+
 	// Async scan execution via real scanner
 	go m.executeScan(ctx, scan)
 
-	return scan, nil
+	return &snapshot, nil
 }
 
 // GetComplianceReport generates a real compliance report for a cluster
