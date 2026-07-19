@@ -586,6 +586,11 @@ subcommand, or subpackage. The chain/inclusion/consistency guarantees are untouc
 > **Spine & fabric**
 > - **M-A completeness — SHIPPED.** `evidence.SubtreeSeal`/`CompletenessProof`/`VerifyCompleteness`
 >   (namespace-generic); `cafctl verify-completeness`; `GET /api/v1/evidence/completeness`.
+> - **M-A zkEvidence (Layer A1) — SHIPPED (real).** `pkg/evidence/zk`: a real gnark **Groth16**
+>   (BN254) prover over a **Poseidon2 mirror** commitment proves scope-compliance +
+>   completeness-under-predicate WITHOUT revealing receipts; pure offline `VerifyZK` + `cafctl
+>   verify-zk`; `evidence.zk.attest` ledger binding; `capability`-gated (a simulated prover is
+>   refused in production). Soundness is tested: an out-of-scope member is unprovable.
 > - **M-B provenance — SHIPPED.** `pkg/provenance` (`DatasetManifest`/`ModelProvenance`,
 >   `BuildDatasetManifest`/`VerifyModelProvenance`), `redteam.MineDPORecords`, `dataset.manifest` +
 >   `model.provenance` ledger receipts, `cafctl verify-model-provenance`, and the Python producer
@@ -608,11 +613,15 @@ subcommand, or subpackage. The chain/inclusion/consistency guarantees are untouc
 >   no-split-brain (`cafctl verify-failover`) · **DL-3** edge-autonomy reconciliation
 >   (`cafctl verify-edge`).
 >
-> **cafctl** ships 11 offline verifiers; the CI regression gate is
+> **cafctl** ships 12 offline verifiers (incl. `verify-zk`); the CI regression gate is
 > `.github/workflows/moat.yml` (build + `-race` moat tests + the Python provenance test).
-> **Pending (needs a research phase or real hardware, not in-environment verifiable):** M3
-> zkEvidence (Poseidon + Plonk/STARK); real physical backends (hermetic replay, MIG/MPS probe,
-> failover probes, cosign/SLSA deploy checks) - their interfaces are shipped and pluggable.
+> The nine wells' interconnection is itself a test (`pkg/fabric` `TestNineWellsInterconnect`):
+> all nine register uniformly, link cross-pillar in ONE VKG on a shared entity (a GPU touched by
+> cloud-native + red team + delivery), and a §5.4c cross-pillar saga verifies offline as one chain.
+> **Pending (needs real hardware / a productionization pass, not in-environment verifiable):**
+> real physical backends (hermetic replay, MIG/MPS probe, failover probes, cosign/SLSA deploy
+> checks) — their interfaces are shipped and pluggable; and M5 (zk `existence` /
+> `completeness-under-predicate` productionization + compliance packaging).
 
 ### M0 — Seal + Completeness (non-ZK) — ~1–2 wks
 - `evidence`: `SubtreeSeal`, `CompletenessProof`, `VerifyCompleteness`.
@@ -648,11 +657,15 @@ subcommand, or subpackage. The chain/inclusion/consistency guarantees are untouc
 - **Accept:** a cross-pillar saga (finding → quarantine → redeploy → re-proof) runs and verifies
   offline as one chain; adding a mock 10th well requires only a capability + PCA type.
 
-### M3 — Poseidon mirror + zkEvidence MVP — ~4–8 wks (research-grade)
-- Dual-commit leaves at write time; `pkg/evidence/zk` with `StmtScopeCompliance` and
-  `StmtNonOmission`; `cafctl verify-zk`.
-- **Accept:** prove scope-compliance and non-omission for an engagement **without revealing
-  receipts**; proof verifies offline; simulated prover blocked in production.
+### M3 — Poseidon mirror + zkEvidence — SHIPPED (real gnark Groth16)
+- `pkg/evidence/zk`: a **Poseidon2 mirror** commitment over the sealed members; a real gnark
+  **Groth16/BN254** circuit proving `StmtScopeCompliance` + `StmtCompletePredicate`; pure offline
+  `VerifyZK`; `cafctl verify-zk`; `evidence.zk.attest` ledger binding; `capability`-gated.
+- **Accept (met):** scope-compliance + completeness proven for a namespace **without revealing
+  receipts**; the proof verifies offline; a tampered public input or a wrong key fails; an
+  out-of-scope member is unprovable (soundness); a simulated prover is blocked in production.
+- **Note:** Groth16 uses a per-circuit setup (the `VKID` pins it); a universal-setup (Plonk) or a
+  transparent STARK backend plugs in behind the same `Prover` / `VerifyZK` interface unchanged.
 
 ### M4 — Differential exploit/remediation proofs — ~3–4 wks
 - `ExploitWitness` minimizer; hermetic replay; `redteam.exploit.proof` /
@@ -702,7 +715,7 @@ subcommand, or subpackage. The chain/inclusion/consistency guarantees are untouc
 | Subsystem | Real driver | Simulated fallback | Prod behavior |
 |-----------|-------------|--------------------|---------------|
 | Evidence completeness | RFC 6962 seal + Merkle (always real) | (none) | always real |
-| zkEvidence prover | Plonk/STARK prover + Poseidon mirror | dry-run (labeled) | real required for consequential attest |
+| zkEvidence prover | gnark Groth16 (BN254) + Poseidon2 mirror | dry-run (labeled) | real required for consequential attest |
 | Model provenance | Ed25519-signed `ModelProvenance` | (none) | always real |
 | Scheduling/fairness completeness | RFC 6962 seal per tenant (always real) | (none) | always real |
 | FinOps measured savings | DCGM/billing-real samples + signed receipt | labeled sim (`Measured=false`) | real required for `Measured=true` |
