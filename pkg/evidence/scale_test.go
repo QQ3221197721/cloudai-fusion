@@ -110,17 +110,19 @@ func TestScale_MemoryStore_ConcurrentWriters(t *testing.T) {
 }
 
 func TestScale_GORMStore_ConcurrentWriters(t *testing.T) {
+	// Private in-memory DB with a single connection: the concurrent writers serialize
+	// on that one connection (AppendChained retries on contention), and the DB is fully
+	// isolated per test so records never leak across other tests or -count reruns.
 	db, err := gorm.Open(
-		sqlite.Open("file:evscale?mode=memory&cache=shared&_pragma=busy_timeout(5000)"),
+		sqlite.Open(":memory:"),
 		&gorm.Config{Logger: gormlogger.Default.LogMode(gormlogger.Silent)},
 	)
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
-	// Serialize the shared in-memory DB's writers to avoid spurious lock churn;
-	// AppendChained still retries on contention (isSeqContention covers locks).
 	if sqlDB, e := db.DB(); e == nil {
 		sqlDB.SetMaxOpenConns(1)
+		defer sqlDB.Close()
 	}
 	store, err := NewGORMStore(db)
 	if err != nil {
