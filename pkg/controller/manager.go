@@ -147,13 +147,17 @@ func (m *Manager) Start(ctx context.Context) error {
 	if m.config.LeaderElection {
 		if err := m.setupLeaderElection(ctx); err != nil {
 			m.logger.WithError(err).Warn("Leader election setup failed, running as standalone leader")
+			m.mu.Lock()
 			m.isLeader = true
+			m.mu.Unlock()
 		} else {
 			// Wait for leadership or context cancellation
 			m.logger.Info("Waiting for leader election result...")
 		}
 	} else {
+		m.mu.Lock()
 		m.isLeader = true
+		m.mu.Unlock()
 	}
 
 	// Start each controller's reconcile loop(s)

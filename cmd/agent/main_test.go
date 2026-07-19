@@ -130,16 +130,16 @@ func TestStartAllAndStopAll(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 
 	for _, a := range o.agents {
-		if a.Status != "running" {
-			t.Errorf("agent %s: expected running, got %s", a.Name, a.Status)
+		if a.getStatus() != "running" {
+			t.Errorf("agent %s: expected running, got %s", a.Name, a.getStatus())
 		}
 	}
 
 	o.StopAll()
 
 	for _, a := range o.agents {
-		if a.Status != "stopped" {
-			t.Errorf("agent %s: expected stopped, got %s", a.Name, a.Status)
+		if a.getStatus() != "stopped" {
+			t.Errorf("agent %s: expected stopped, got %s", a.Name, a.getStatus())
 		}
 	}
 	cancel()
@@ -387,20 +387,21 @@ func TestAgentLifecycle(t *testing.T) {
 	// Wait for a few ticks
 	time.Sleep(180 * time.Millisecond)
 
-	if agent.Status != "running" {
-		t.Errorf("expected running, got %s", agent.Status)
+	status, lastAction, lastRun := agent.snapshot()
+	if status != "running" {
+		t.Errorf("expected running, got %s", status)
 	}
-	if agent.LastAction == "" {
+	if lastAction == "" {
 		t.Error("expected LastAction to be populated after ticks")
 	}
-	if agent.LastRunAt.IsZero() {
+	if lastRun.IsZero() {
 		t.Error("expected LastRunAt to be set")
 	}
 
 	cancel()
 	o.StopAll()
 
-	if agent.Status != "stopped" {
-		t.Errorf("expected stopped after StopAll, got %s", agent.Status)
+	if agent.getStatus() != "stopped" {
+		t.Errorf("expected stopped after StopAll, got %s", agent.getStatus())
 	}
 }

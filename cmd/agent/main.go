@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -49,6 +50,10 @@ type Agent struct {
 	Logger      *logrus.Logger
 	AIEngineURL string
 	cancel      context.CancelFunc
+
+	// mu guards the fields the agent loop mutates (Status/LastAction/LastRunAt)
+	// against concurrent reads from HTTP handlers and StopAll.
+	mu sync.RWMutex
 }
 
 // AgentOrchestrator manages all AI agents
@@ -228,6 +233,33 @@ func (o *AgentOrchestrator) RegisterAgent(agentType AgentType, agent *Agent) {
 	}).Info("Agent registered")
 }
 
+// setStatus/getStatus/recordRun/snapshot synchronize the agent's runtime fields,
+// which the agent loop mutates while HTTP handlers and StopAll read them.
+func (a *Agent) setStatus(s string) {
+	a.mu.Lock()
+	a.Status = s
+	a.mu.Unlock()
+}
+
+func (a *Agent) getStatus() string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.Status
+}
+
+func (a *Agent) recordRun(action string) {
+	a.mu.Lock()
+	a.LastRunAt = time.Now()
+	a.LastAction = action
+	a.mu.Unlock()
+}
+
+func (a *Agent) snapshot() (status, lastAction string, lastRun time.Time) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.Status, a.LastAction, a.LastRunAt
+}
+
 // StartAll starts all registered agents
 func (o *AgentOrchestrator) StartAll(ctx context.Context) {
 	for agentType, agent := range o.agents {
@@ -244,12 +276,12 @@ func (o *AgentOrchestrator) StopAll() {
 		if agent.cancel != nil {
 			agent.cancel()
 		}
-		agent.Status = "stopped"
+		agent.setStatus("stopped")
 	}
 }
 
 func (o *AgentOrchestrator) runAgentLoop(ctx context.Context, agent *Agent) {
-	agent.Status = "running"
+	agent.setStatus("running")
 	ticker := time.NewTicker(agent.Interval)
 	defer ticker.Stop()
 
@@ -264,7 +296,7 @@ func (o *AgentOrchestrator) runAgentLoop(ctx context.Context, agent *Agent) {
 }
 
 func (o *AgentOrchestrator) executeAgent(ctx context.Context, agent *Agent) {
-	agent.LastRunAt = time.Now()
+	var action string
 
 	// Use real metrics from collector for enriched agent actions
 	var metricsInfo string
@@ -292,29 +324,30 @@ func (o *AgentOrchestrator) executeAgent(ctx context.Context, agent *Agent) {
 	switch agent.Type {
 	case AgentTypeScheduler:
 		if metricsInfo != "" {
-			agent.LastAction = fmt.Sprintf("Analyzed real cluster metrics: %s; suggested 3 optimization actions", metricsInfo)
+			action = fmt.Sprintf("Analyzed real cluster metrics: %s; suggested 3 optimization actions", metricsInfo)
 		} else {
-			agent.LastAction = "Analyzed resource utilization, suggested 3 optimization actions"
+			action = "Analyzed resource utilization, suggested 3 optimization actions"
 		}
 	case AgentTypeSecurity:
-		agent.LastAction = "Scanned 12 clusters, no critical vulnerabilities found"
+		action = "Scanned 12 clusters, no critical vulnerabilities found"
 	case AgentTypeCost:
 		if metricsInfo != "" {
-			agent.LastAction = fmt.Sprintf("Cost analysis based on real metrics: %s; identified $2,340 potential savings", metricsInfo)
+			action = fmt.Sprintf("Cost analysis based on real metrics: %s; identified $2,340 potential savings", metricsInfo)
 		} else {
-			agent.LastAction = "Identified $2,340 potential monthly savings across 5 clusters"
+			action = "Identified $2,340 potential monthly savings across 5 clusters"
 		}
 	case AgentTypeOperations:
 		if metricsInfo != "" {
-			agent.LastAction = fmt.Sprintf("Health check with real metrics: %s", metricsInfo)
+			action = fmt.Sprintf("Health check with real metrics: %s", metricsInfo)
 		} else {
-			agent.LastAction = "Performed health checks on all managed services"
+			action = "Performed health checks on all managed services"
 		}
 	}
 
+	agent.recordRun(action)
 	o.logger.WithFields(logrus.Fields{
 		"agent":  agent.Name,
-		"action": agent.LastAction,
+		"action": action,
 	}).Debug("Agent executed")
 }
 
@@ -322,12 +355,13 @@ func (o *AgentOrchestrator) executeAgent(ctx context.Context, agent *Agent) {
 func (o *AgentOrchestrator) HandleListAgents(c *gin.Context) {
 	agents := make([]gin.H, 0)
 	for _, agent := range o.agents {
+		status, lastAction, lastRun := agent.snapshot()
 		agents = append(agents, gin.H{
 			"type":        agent.Type,
 			"name":        agent.Name,
-			"status":      agent.Status,
-			"last_action": agent.LastAction,
-			"last_run_at": agent.LastRunAt,
+			"status":      status,
+			"last_action": lastAction,
+			"last_run_at": lastRun,
 			"interval":    agent.Interval.String(),
 		})
 	}
@@ -341,12 +375,13 @@ func (o *AgentOrchestrator) HandleAgentStatus(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "agent not found"})
 		return
 	}
+	status, lastAction, lastRun := agent.snapshot()
 	c.JSON(http.StatusOK, gin.H{
 		"type":        agent.Type,
 		"name":        agent.Name,
-		"status":      agent.Status,
-		"last_action": agent.LastAction,
-		"last_run_at": agent.LastRunAt,
+		"status":      status,
+		"last_action": lastAction,
+		"last_run_at": lastRun,
 	})
 }
 
