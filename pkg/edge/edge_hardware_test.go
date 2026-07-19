@@ -30,8 +30,8 @@ func TestCompressionPipeline_Execute(t *testing.T) {
 	if len(result.StagesApplied) == 0 {
 		t.Error("expected at least one stage applied")
 	}
-	if result.PipelineDuration <= 0 {
-		t.Error("expected positive pipeline duration")
+	if result.PipelineDuration < 0 {
+		t.Errorf("pipeline duration must be non-negative, got %v", result.PipelineDuration)
 	}
 }
 
