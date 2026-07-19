@@ -45,7 +45,7 @@ type FluxStatus struct {
 	Ready      bool      `json:"ready"`
 	Reason     string    `json:"reason,omitempty"`
 	Message    string    `json:"message,omitempty"`
-	Revision   string    `json:"revision,omitempty"`  // lastAppliedRevision / artifact revision
+	Revision   string    `json:"revision,omitempty"` // lastAppliedRevision / artifact revision
 	Suspended  bool      `json:"suspended"`
 	ObservedAt time.Time `json:"observed_at"`
 }
@@ -176,16 +176,16 @@ func (c *FluxClient) SyncKustomization(ctx context.Context, namespace, name stri
 		Input:   map[string]any{"engine": "flux", "kind": "Kustomization", "namespace": namespace, "name": name},
 		Output:  map[string]any{"ready": st.Ready, "revision": st.Revision, "reason": st.Reason},
 		Payload: map[string]any{
-			"engine":     "flux",
-			"kind":       st.Kind,
-			"namespace":  st.Namespace,
-			"name":       st.Name,
-			"ready":      st.Ready,
-			"revision":   st.Revision,
-			"reason":     st.Reason,
-			"message":    st.Message,
-			"suspended":  st.Suspended,
-			"sync_real":  true,
+			"engine":      "flux",
+			"kind":        st.Kind,
+			"namespace":   st.Namespace,
+			"name":        st.Name,
+			"ready":       st.Ready,
+			"revision":    st.Revision,
+			"reason":      st.Reason,
+			"message":     st.Message,
+			"suspended":   st.Suspended,
+			"sync_real":   true,
 			"observed_at": st.ObservedAt,
 		},
 		Backends: []evidence.BackendFact{{Component: "gitops.sync", Mode: "real", Driver: "flux"}},

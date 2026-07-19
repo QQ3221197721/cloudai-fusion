@@ -33,9 +33,9 @@ const (
 
 // Backend is a single subsystem's capability record.
 type Backend struct {
-	Component    string    `json:"component"`     // e.g. "cache", "messaging", "scheduler.nodes"
-	Mode         Mode      `json:"mode"`          // real | simulated | disabled
-	Driver       string    `json:"driver"`        // e.g. "redis", "memory", "k8s", "sim"
+	Component    string    `json:"component"` // e.g. "cache", "messaging", "scheduler.nodes"
+	Mode         Mode      `json:"mode"`      // real | simulated | disabled
+	Driver       string    `json:"driver"`    // e.g. "redis", "memory", "k8s", "sim"
 	Detail       string    `json:"detail,omitempty"`
 	RegisteredAt time.Time `json:"registered_at"`
 }

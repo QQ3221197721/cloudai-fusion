@@ -286,12 +286,12 @@ func (m *Manager) Deploy(ctx context.Context, req *WasmDeployRequest) ([]*WasmIn
 		_ = capability.Report("wasm.runtime", driver, capability.ModeSimulated,
 			"in-memory Wasm instance tracking (no Spin/containerd endpoint configured)")
 		_, _ = m.recorder.Record(ctx, evidence.RecordInput{
-			Actor:   "wasm",
-			Action:  "wasm.deploy",
-			Subject: req.ModuleID,
-			Input:   map[string]any{"module": req.ModuleID, "replicas": req.Replicas, "runtime": runtime},
-			Output:  map[string]any{"instances": len(instances)},
-			Payload: map[string]any{"module_id": req.ModuleID, "cluster_id": req.ClusterID, "runtime": runtime, "replicas": req.Replicas},
+			Actor:    "wasm",
+			Action:   "wasm.deploy",
+			Subject:  req.ModuleID,
+			Input:    map[string]any{"module": req.ModuleID, "replicas": req.Replicas, "runtime": runtime},
+			Output:   map[string]any{"instances": len(instances)},
+			Payload:  map[string]any{"module_id": req.ModuleID, "cluster_id": req.ClusterID, "runtime": runtime, "replicas": req.Replicas},
 			Backends: []evidence.BackendFact{{Component: "wasm.runtime", Mode: "simulated", Driver: driver}},
 		})
 	}

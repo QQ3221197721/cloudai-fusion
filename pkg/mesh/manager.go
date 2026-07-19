@@ -439,12 +439,12 @@ func (m *Manager) emitPolicyEvidence(ctx context.Context, policy *NetworkPolicy)
 	}
 	_ = capability.Report("mesh.dataplane", driver, capMode, "eBPF/service-mesh dataplane")
 	_, _ = m.recorder.Record(ctx, evidence.RecordInput{
-		Actor:   "mesh",
-		Action:  "mesh.policy.apply",
-		Subject: policy.Name,
-		Input:   map[string]any{"policy": policy.Name, "mode": m.config.Mode},
-		Output:  map[string]any{"status": policy.Status},
-		Payload: map[string]any{"policy": policy, "dataplane": driver},
+		Actor:    "mesh",
+		Action:   "mesh.policy.apply",
+		Subject:  policy.Name,
+		Input:    map[string]any{"policy": policy.Name, "mode": m.config.Mode},
+		Output:   map[string]any{"status": policy.Status},
+		Payload:  map[string]any{"policy": policy, "dataplane": driver},
 		Backends: []evidence.BackendFact{{Component: "mesh.dataplane", Mode: mode, Driver: driver}},
 	})
 }
