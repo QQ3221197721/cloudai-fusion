@@ -28,12 +28,12 @@ jobs:
     name: Go Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
         with:
           version: v2.11.3
           args: --timeout=5m
@@ -59,8 +59,8 @@ jobs:
         image: redis:7-alpine
         ports: ['6379:6379']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Run tests
@@ -88,9 +88,9 @@ jobs:
           grep -oE "cloudai-fusion/[A-Za-z0-9_./-]+\.go:[0-9]+" /tmp/gotest.log \
             | sort -u | head -n 25 | sed -E 's#^#::error title=GoTestLoc::#' || true
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.out
+          files: ./coverage.out
           flags: go-backend
 
   go-build:
@@ -101,8 +101,8 @@ jobs:
       matrix:
         component: [apiserver, scheduler, agent]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Build ${{ matrix.component }}
@@ -111,7 +111,7 @@ jobs:
             -ldflags="-s -w -X main.version=${{ github.ref_name }} -X main.commit=${{ github.sha }}" \
             -o bin/${{ matrix.component }} \
             ./cmd/${{ matrix.component }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.component }}-binary
           path: bin/${{ matrix.component }}
@@ -123,8 +123,8 @@ jobs:
     name: Python Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: |
@@ -138,8 +138,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: python-lint
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: |
@@ -147,9 +147,9 @@ jobs:
           pip install pytest pytest-asyncio pytest-cov httpx
           cd ai
           python -m pytest tests/ -v --cov=agents --cov=anomaly --cov=scheduler --cov-report=xml:../coverage.xml --override-ini='addopts='
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           flags: python-ai
 
   # ============================================================================
@@ -159,7 +159,7 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -169,7 +169,7 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
       - name: Upload Trivy SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
@@ -198,7 +198,7 @@ jobs:
           - component: ai-engine
             dockerfile: docker/Dockerfile.ai
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -273,7 +273,7 @@ jobs:
           mkdir -p /tmp/digests
           echo "${{ steps.build.outputs.digest }}" > "/tmp/digests/${{ matrix.component }}.txt"
       - name: Upload digest artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digest-${{ matrix.component }}
           path: /tmp/digests/${{ matrix.component }}.txt
@@ -342,8 +342,8 @@ jobs:
     name: Helm Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
+      - uses: actions/checkout@v6
+      - uses: azure/setup-helm@v5
       - run: helm lint deploy/helm/cloudai-fusion
 
   helm-publish:
@@ -352,8 +352,8 @@ jobs:
     needs: [helm-lint, docker-build]
     if: github.event_name == 'release'
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
+      - uses: actions/checkout@v6
+      - uses: azure/setup-helm@v5
       - run: |
           helm package deploy/helm/cloudai-fusion --version ${{ github.ref_name }}
           helm push "cloudai-fusion-${{ github.ref_name }}.tgz" "oci://${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/charts"
@@ -372,7 +372,7 @@ jobs:
       CLOUDAI_DB_PASSWORD: ci-postgres-pw
       CLOUDAI_JWT_SECRET: ci-jwt-secret-not-for-production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Start core services
         # Only the core stack needed for the API smoke test (monitoring/ai-engine add
         # cold-build time). Poll apiserver from the host; on failure dump diagnostics
