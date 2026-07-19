@@ -33,9 +33,10 @@ import (
 // one implementation, every pillar (spec principle 6).
 //
 // A0's guarantee is completeness RELATIVE TO THE SEAL; closing the absolute gap
-// against a confidential verifier is Layer A1 (zkEvidence), deferred by design.
+// against a confidential verifier is Layer A1 (zkEvidence), implemented in
+// pkg/evidence/zk (a real gnark Groth16 proof over a Poseidon2 mirror commitment).
 // A0 therefore includes the full member receipts in the proof (the auditor is
-// permitted to see them); confidentiality is A1's job, not A0's.
+// permitted to see them); hiding them from an adversarial verifier is A1's job.
 
 // ActionSubtreeSeal is the action name of a terminal "seal" receipt. It appears
 // in the ledger like any other receipt and is itself hash-chained and signed.
