@@ -374,12 +374,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Start core services
-        # Build + wait for the core stack (apiserver + its deps) to be HEALTHY. The
-        # full monitoring/ai-engine stack is unnecessary for the API smoke test and
-        # only adds cold-build time and flakiness.
-        run: docker compose -f docker-compose.yml up -d --build --wait --wait-timeout 600 postgres redis kafka nats apiserver
-      - name: Health check
-        run: curl -sf http://localhost:8080/healthz
+        # Only the core stack needed for the API smoke test (monitoring/ai-engine add
+        # cold-build time). Poll apiserver from the host; on failure dump diagnostics
+        # as annotations (CI job logs need auth to read).
+        run: |
+          set +e
+          docker compose -f docker-compose.yml up -d --build postgres redis kafka nats apiserver
+          up_rc=$?
+          ok=0
+          for i in $(seq 1 72); do
+            if curl -sf http://localhost:8080/healthz >/dev/null 2>&1; then ok=1; echo "apiserver healthy after $((i*5))s"; break; fi
+            sleep 5
+          done
+          if [ "$up_rc" != "0" ] || [ "$ok" != "1" ]; then
+            echo "up_rc=$up_rc ok=$ok — dumping diagnostics"
+            echo "::group::compose ps"; docker compose -f docker-compose.yml ps || true; echo "::endgroup::"
+            for svc in apiserver kafka nats postgres redis; do
+              echo "::group::$svc logs"; docker compose -f docker-compose.yml logs --tail=120 "$svc" || true; echo "::endgroup::"
+            done
+            docker compose -f docker-compose.yml ps 2>&1 | sed -E 's/^/::error title=ComposePS::/' || true
+            for svc in apiserver kafka nats; do
+              docker compose -f docker-compose.yml logs --tail=50 "$svc" 2>&1 | grep -iE "error|fatal|panic|refus|cannot|unable|unhealthy|failed|exited|dependency" | head -n 8 | sed -E "s/^/::error title=$svc::/" || true
+            done
+            exit 1
+          fi
       - name: API smoke tests
         run: |
           # Login
