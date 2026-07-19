@@ -29,7 +29,7 @@ jobs:
       changelog: ${{ steps.cliff.outputs.content }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0      # full history for changelog
 
@@ -49,12 +49,12 @@ jobs:
     needs: changelog
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -100,7 +100,7 @@ jobs:
           GIT_TREE_STATE: ${{ env.GIT_TREE_STATE }}
 
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: dist/*.sbom.spdx.json
@@ -199,7 +199,7 @@ jobs:
     if: "!contains(github.ref, 'alpha') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Extract version
         id: version
@@ -230,7 +230,7 @@ jobs:
           echo "YUM repo metadata generated (stub)"
 
       - name: Upload package repo artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: package-repos
           path: |

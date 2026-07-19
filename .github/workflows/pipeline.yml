@@ -69,9 +69,9 @@ jobs:
       image_tag: ${{ steps.meta.outputs.version }}
       go_test_passed: ${{ steps.gotest.outcome }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -106,13 +106,13 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/apiserver
           tags: type=sha
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: binaries
           path: bin/
           retention-days: 3
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.out
@@ -139,7 +139,7 @@ jobs:
           - component: ai-engine
             dockerfile: docker/Dockerfile.ai
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
@@ -181,9 +181,9 @@ jobs:
       name: dev
       url: https://dev.cloudai-fusion.internal
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           version: 'v3.14.0'
 
@@ -241,9 +241,9 @@ jobs:
       !cancelled() && needs.deploy-dev.result == 'success' &&
       (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_tests != 'true')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -275,9 +275,9 @@ jobs:
       name: staging
       url: https://staging.cloudai-fusion.internal
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           version: 'v3.14.0'
 
@@ -333,9 +333,9 @@ jobs:
     if: >
       !cancelled() && needs.deploy-staging.result == 'success'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -372,9 +372,9 @@ jobs:
       name: production
       url: https://cloudai-fusion.io
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           version: 'v3.14.0'
 
