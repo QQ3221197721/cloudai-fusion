@@ -78,10 +78,15 @@ jobs:
       - name: Surface failing tests
         if: failure()
         run: |
-          echo "::group::Failed tests / data races"
-          grep -nE "^--- FAIL:|^[[:space:]]+--- FAIL:|^FAIL[[:space:]]|WARNING: DATA RACE|race detected" /tmp/gotest.log || echo "(no --- FAIL lines captured)"
+          echo "::group::Go test tail (last 200 lines)"
+          tail -n 200 /tmp/gotest.log || true
           echo "::endgroup::"
-          grep -E "^[[:space:]]*--- FAIL: " /tmp/gotest.log | sed -E 's/^[[:space:]]*--- FAIL: /::error title=Go Test::/' || true
+          # Failed packages / per-test FAIL / panics / races -> annotations (log needs auth).
+          grep -E "^FAIL[[:space:]]|^--- FAIL:|[[:space:]]--- FAIL:|^panic:|WARNING: DATA RACE|test timed out" /tmp/gotest.log \
+            | head -n 40 | sed -E 's/^[[:space:]]*/::error title=GoTest::/' || true
+          # Source locations named in race/panic stacks (the actionable file:line).
+          grep -oE "cloudai-fusion/[A-Za-z0-9_./-]+\.go:[0-9]+" /tmp/gotest.log \
+            | sort -u | head -n 25 | sed -E 's#^#::error title=GoTestLoc::#' || true
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
