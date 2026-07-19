@@ -72,8 +72,16 @@ jobs:
           DB_PASSWORD: test
           REDIS_ADDR: localhost:6379
         run: |
-          go test -v -race -coverprofile=coverage.out ./pkg/... ./cmd/...
+          set -o pipefail
+          go test -v -race -coverprofile=coverage.out ./pkg/... ./cmd/... 2>&1 | tee /tmp/gotest.log
           go tool cover -func=coverage.out | tail -1
+      - name: Surface failing tests
+        if: failure()
+        run: |
+          echo "::group::Failed tests / data races"
+          grep -nE "^--- FAIL:|^[[:space:]]+--- FAIL:|^FAIL[[:space:]]|WARNING: DATA RACE|race detected" /tmp/gotest.log || echo "(no --- FAIL lines captured)"
+          echo "::endgroup::"
+          grep -E "^[[:space:]]*--- FAIL: " /tmp/gotest.log | sed -E 's/^[[:space:]]*--- FAIL: /::error title=Go Test::/' || true
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
