@@ -6,6 +6,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -234,5 +235,31 @@ func handleEvidenceRotateKey(l *evidence.Ledger) gin.HandlerFunc {
 			resp["warning"] = "generated an EPHEMERAL key (dev/sim only); supply private_key_pem for a durable, verifiable identity"
 		}
 		c.JSON(http.StatusOK, resp)
+	}
+}
+
+// handleEvidenceCompleteness returns a namespace completeness proof ("no more, no
+// less") for ?namespace=<ns>: it proves the sealed set for that namespace is
+// EXACTLY its members, verifiable offline via `cafctl verify-completeness`. The
+// namespace is pillar-agnostic - redteam/engagement/<id>, scheduler/tenant/<t>,
+// finops/month/<YYYY-MM>, ... - all served by this one endpoint (the Verifiable
+// Fabric thesis over HTTP).
+func handleEvidenceCompleteness(l *evidence.Ledger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ns := c.Query("namespace")
+		if ns == "" {
+			apperrors.RespondError(c, apperrors.Validation("query parameter 'namespace' is required", nil))
+			return
+		}
+		proof, err := l.BuildCompletenessProof(c.Request.Context(), ns)
+		if err != nil {
+			if errors.Is(err, evidence.ErrNoSeal) {
+				apperrors.RespondError(c, apperrors.NotFound("completeness namespace", ns))
+				return
+			}
+			apperrors.RespondError(c, apperrors.Internal("completeness proof failed", err))
+			return
+		}
+		c.JSON(http.StatusOK, proof)
 	}
 }
