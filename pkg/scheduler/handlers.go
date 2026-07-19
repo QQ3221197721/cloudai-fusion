@@ -26,7 +26,7 @@ func (e *Engine) HandleStatus(c *gin.Context) {
 		"policy":        e.policy,
 		"queue_length":  len(e.queue),
 		"running_count": len(e.running),
-		"ready":         e.ready,
+		"ready":         e.ready.Load(),
 	})
 }
 

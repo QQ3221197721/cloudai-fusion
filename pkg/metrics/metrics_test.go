@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -471,13 +472,13 @@ func TestResourceCollector_StartStop(t *testing.T) {
 }
 
 func TestResourceCollector_GPUCollection(t *testing.T) {
-	gpuCollectorCalled := false
+	var gpuCollectorCalled atomic.Bool
 	c := NewResourceCollector(ResourceCollectorConfig{
 		CollectInterval: 50 * time.Millisecond,
 		NodeName:        "gpu-node",
 		ClusterID:       "c1",
 		GPUCollector: func() []GPUMetrics {
-			gpuCollectorCalled = true
+			gpuCollectorCalled.Store(true)
 			return []GPUMetrics{
 				{Index: "0", Model: "A100", Utilization: 85, MemoryUsed: 40e9, MemoryTotal: 80e9, Temperature: 72, PowerUsage: 250},
 			}
@@ -490,7 +491,7 @@ func TestResourceCollector_GPUCollection(t *testing.T) {
 	c.Stop()
 	cancel()
 
-	if !gpuCollectorCalled {
+	if !gpuCollectorCalled.Load() {
 		t.Error("GPU collector function was not called")
 	}
 }

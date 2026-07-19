@@ -502,7 +502,11 @@ func (m *Manager) GetClusterHealth(ctx context.Context, clusterID string) (*Clus
 		return nil, err
 	}
 
-	if cluster.Health == nil {
+	m.mu.RLock()
+	health := cluster.Health
+	m.mu.RUnlock()
+
+	if health == nil {
 		go m.syncClusterState(context.Background(), cluster)
 		return &ClusterHealth{
 			Status:        "checking",
@@ -510,7 +514,7 @@ func (m *Manager) GetClusterHealth(ctx context.Context, clusterID string) (*Clus
 		}, nil
 	}
 
-	return cluster.Health, nil
+	return health, nil
 }
 
 // GetGPUTopology discovers GPU topology for a cluster's nodes

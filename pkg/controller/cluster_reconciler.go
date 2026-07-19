@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -30,7 +31,11 @@ type ClusterReconciler struct {
 	manager        *Manager // back-reference for event recording
 	logger         *logrus.Logger
 
-	// statusCache tracks per-cluster reconcile status
+	// statusCache tracks per-cluster reconcile status. mu guards it AND the
+	// ResourceStatus values within: the reconcile worker mutates status while
+	// GetStatus is called concurrently, so all access is synchronized and
+	// GetStatus/getOrCreateStatus hand out COPIES (snapshots), never shared pointers.
+	mu          sync.Mutex
 	statusCache map[string]*ResourceStatus
 }
 
@@ -89,8 +94,9 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req Request) (Result,
 		return Result{}, nil
 	}
 
-	// 2. Initialize or retrieve status
+	// 2. Initialize or retrieve status (a working copy, committed on return)
 	status := r.getOrCreateStatus(desired.ID)
+	defer r.putStatus(desired.ID, status)
 	status.ReconcileCount++
 	now := time.Now().UTC()
 	status.LastReconcileTime = &now
@@ -255,25 +261,61 @@ func (r *ClusterReconciler) reconcileAll(ctx context.Context) (Result, error) {
 // Status helpers
 // ============================================================================
 
+// getOrCreateStatus returns a working COPY of the cluster's status (a fresh
+// "Pending" one if none exists yet). The reconcile worker mutates this copy and
+// commits it via putStatus, so it never shares a pointer with a concurrent reader.
 func (r *ClusterReconciler) getOrCreateStatus(id string) *ResourceStatus {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if s, ok := r.statusCache[id]; ok {
-		return s
+		return s.clone()
 	}
-	s := &ResourceStatus{Phase: "Pending"}
-	r.statusCache[id] = s
-	return s
+	return &ResourceStatus{Phase: "Pending"}
+}
+
+// putStatus commits a status snapshot for a cluster under the lock.
+func (r *ClusterReconciler) putStatus(id string, s *ResourceStatus) {
+	if s == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.statusCache[id] = s.clone()
 }
 
 func (r *ClusterReconciler) cleanupStatus(id string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	delete(r.statusCache, id)
 }
 
-// GetStatus returns the reconciliation status for a cluster.
+// GetStatus returns a snapshot of the reconciliation status for a cluster, or nil.
 func (r *ClusterReconciler) GetStatus(clusterID string) *ResourceStatus {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if s, ok := r.statusCache[clusterID]; ok {
-		return s
+		return s.clone()
 	}
 	return nil
+}
+
+// clone returns a deep-enough copy of a status: the Conditions slice and the
+// LastReconcileTime pointer are duplicated so snapshots never share mutable state
+// with the reconcile worker.
+func (s *ResourceStatus) clone() *ResourceStatus {
+	if s == nil {
+		return nil
+	}
+	cp := *s
+	if s.Conditions != nil {
+		cp.Conditions = make([]Condition, len(s.Conditions))
+		copy(cp.Conditions, s.Conditions)
+	}
+	if s.LastReconcileTime != nil {
+		t := *s.LastReconcileTime
+		cp.LastReconcileTime = &t
+	}
+	return &cp
 }
 
 func (r *ClusterReconciler) recordEvent(eventType EventType, reason, message string, obj Request) {

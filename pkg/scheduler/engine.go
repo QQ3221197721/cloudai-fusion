@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -93,7 +94,7 @@ type Engine struct {
 	// Defaults to a no-op so scheduling works when evidence is disabled.
 	evidenceRec evidence.Recorder
 	mu          sync.RWMutex
-	ready       bool
+	ready       atomic.Bool
 	stopCh      chan struct{}
 }
 
@@ -193,7 +194,7 @@ func (e *Engine) SetEvidenceRecorder(r evidence.Recorder) {
 }
 
 // IsReady returns whether the engine is ready to accept requests.
-func (e *Engine) IsReady() bool { return e.ready }
+func (e *Engine) IsReady() bool { return e.ready.Load() }
 
 // ============================================================================
 // Lifecycle
@@ -217,7 +218,7 @@ func (e *Engine) Run(ctx context.Context) {
 		go e.nodeCache.StartSyncLoop(ctx, e.k8sClient)
 	}
 
-	e.ready = true
+	e.ready.Store(true)
 	e.logger.Info("Scheduler engine running")
 
 	initialInterval := e.config.SchedulingInterval
@@ -261,7 +262,7 @@ func (e *Engine) Run(ctx context.Context) {
 // Stop gracefully stops the scheduling engine.
 func (e *Engine) Stop() {
 	close(e.stopCh)
-	e.ready = false
+	e.ready.Store(false)
 }
 
 // ============================================================================
@@ -1025,6 +1026,6 @@ func (e *Engine) GetStats() map[string]interface{} {
 	return map[string]interface{}{
 		"queue_length":  len(e.queue),
 		"running_count": len(e.running),
-		"ready":         e.ready,
+		"ready":         e.ready.Load(),
 	}
 }
