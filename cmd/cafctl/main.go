@@ -24,6 +24,7 @@ import (
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/delivery"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/fabric"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/provenance"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam"
@@ -47,6 +48,7 @@ func newRootCmd() *cobra.Command {
 	root.AddCommand(newVerifyInclusionCmd())
 	root.AddCommand(newVerifyConsistencyCmd())
 	root.AddCommand(newVerifyCompletenessCmd())
+	root.AddCommand(newVerifyZKCmd())
 	root.AddCommand(newVerifyModelProvenanceCmd())
 	root.AddCommand(newVerifyDeployCmd())
 	root.AddCommand(newVerifyFailoverCmd())
@@ -253,6 +255,43 @@ func newVerifyModelProvenanceCmd() *cobra.Command {
 	_ = cmd.MarkFlagRequired("manifest")
 	_ = cmd.MarkFlagRequired("provenance")
 	_ = cmd.MarkFlagRequired("pubkey")
+	return cmd
+}
+
+// newVerifyZKCmd verifies a zkEvidence attestation (Moat A, Layer A1) OFFLINE
+// against a pinned verifying key. It proves scope-compliance / completeness over a
+// sealed set WITHOUT revealing any receipt — the confidential complement to
+// verify-completeness. Exit is non-zero on any failure.
+func newVerifyZKCmd() *cobra.Command {
+	var attPath, vkPath string
+	cmd := &cobra.Command{
+		Use:   "verify-zk",
+		Short: "Offline-verify a zkEvidence attestation against a pinned verifying key",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			aBytes, err := os.ReadFile(attPath)
+			if err != nil {
+				return fmt.Errorf("read attestation: %w", err)
+			}
+			vkBytes, err := os.ReadFile(vkPath)
+			if err != nil {
+				return fmt.Errorf("read verifying key: %w", err)
+			}
+			var att zk.ZKAttestation
+			if err := json.Unmarshal(aBytes, &att); err != nil {
+				return fmt.Errorf("parse attestation: %w", err)
+			}
+			if err := zk.VerifyZK(&att, vkBytes); err != nil {
+				fmt.Fprintf(cmd.OutOrStdout(), "zkEvidence attestation: INVALID (%v)\n", err)
+				return fmt.Errorf("zkEvidence verification FAILED")
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "zkEvidence attestation: VALID (statement=%s, count=%d, no receipts revealed)\n", att.Statement, att.Count)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&attPath, "attestation", "", "path to the ZKAttestation JSON (required)")
+	cmd.Flags().StringVar(&vkPath, "vk", "", "path to the pinned verifying key bytes (required)")
+	_ = cmd.MarkFlagRequired("attestation")
+	_ = cmd.MarkFlagRequired("vk")
 	return cmd
 }
 
