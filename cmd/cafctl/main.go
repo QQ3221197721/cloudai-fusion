@@ -542,10 +542,10 @@ func runVerify(bundleBytes, pubkeyBytes []byte, jsonOut bool, out io.Writer) (bo
 	}
 
 	var (
-		report   *evidence.VerifyReport
-		err      error
-		pinned   bool
-		keyNote  string
+		report  *evidence.VerifyReport
+		err     error
+		pinned  bool
+		keyNote string
 	)
 	if len(pubkeyBytes) > 0 {
 		pub, perr := evidence.ParsePublicKeyPEM(pubkeyBytes)

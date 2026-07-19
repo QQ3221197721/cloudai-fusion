@@ -132,11 +132,11 @@ func TestAccept_CapabilityEnforceCleanInProduction(t *testing.T) {
 	capability.Reset()
 
 	ledger := newLedger(t)
-	mgr := NewManager(ledger, nil)                                    // redteam.authz = real
+	mgr := NewManager(ledger, nil)                                                 // redteam.authz = real
 	_ = NewLLMPlanner(NewOpenAICompatClient("http://llm:8000", "k", "qwen2"), nil) // redteam.planner = real
-	_ = NewWebExploitEngine(mgr, ledger, nil)                        // redteam.exploit.web = real
-	_ = NewADPathEngine(mgr, ledger, nil, "kind-adrange")            // ad.pathing + ad.isolation = real
-	_ = NewCostMeter(ledger, nil)                                    // redteam.finops = real
+	_ = NewWebExploitEngine(mgr, ledger, nil)                                      // redteam.exploit.web = real
+	_ = NewADPathEngine(mgr, ledger, nil, "kind-adrange")                          // ad.pathing + ad.isolation = real
+	_ = NewCostMeter(ledger, nil)                                                  // redteam.finops = real
 	if _, err := mgr.CreateForTenant(context.Background(), "tenant-A", readOnlyScope(), "alice"); err != nil {
 		t.Fatalf("create: %v", err) // redteam.tenant = real
 	}

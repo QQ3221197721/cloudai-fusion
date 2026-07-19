@@ -40,10 +40,10 @@ type ADPathResult struct {
 
 // ADPathEngine authorizes and records AD attack paths with per-hop evidence.
 type ADPathEngine struct {
-	mgr        *Manager
-	recorder   evidence.Recorder
-	logger     *logrus.Logger
-	isolation  string // isolation context (e.g. an isolated kind cluster); "" = none
+	mgr       *Manager
+	recorder  evidence.Recorder
+	logger    *logrus.Logger
+	isolation string // isolation context (e.g. an isolated kind cluster); "" = none
 }
 
 // NewADPathEngine builds the engine. A non-empty isolation context is reported

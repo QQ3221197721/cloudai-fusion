@@ -14,8 +14,8 @@ type navTechnique struct {
 }
 
 type navLayer struct {
-	Name        string `json:"name"`
-	Versions    struct {
+	Name     string `json:"name"`
+	Versions struct {
 		Attack    string `json:"attack"`
 		Navigator string `json:"navigator"`
 		Layer     string `json:"layer"`

@@ -594,6 +594,8 @@ subcommand, or subpackage. The chain/inclusion/consistency guarantees are untouc
 > - **MF fabric — SHIPPED.** `pkg/fabric`: `Well`/`Register`/`Seal`/`Completeness` (one-predicate-
 >   per-well), the `PCA` envelope, the VKG (`Graph`/`Lineage`/`Edges`, cross-pillar lineage test),
 >   and the Choreographer (verifiable cross-pillar sagas with compensation) + `cafctl verify-saga`.
+>   Post-seal guard (`Sealed`/`PostSealMembers`/`SealIntact`) enforces M0's "no post-seal actions"
+>   for the generic wells.
 >
 > **Nine wells — all SHIPPED (verifiable layer; physical backend pluggable)**
 > - **CN-1** scheduling-fairness completeness · **CN-2** FinOps monthly completeness

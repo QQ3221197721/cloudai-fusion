@@ -70,8 +70,8 @@ func TestEvidenceMiddleware_SkipsReadsAndAuth(t *testing.T) {
 	l := middlewareTestLedger(t)
 	r := newEvidenceTestRouter(l)
 
-	do(r, http.MethodGet, "/api/v1/workloads")     // read: no receipt
-	do(r, http.MethodPost, "/api/v1/auth/login")   // credentials: never receipted
+	do(r, http.MethodGet, "/api/v1/workloads")   // read: no receipt
+	do(r, http.MethodPost, "/api/v1/auth/login") // credentials: never receipted
 
 	all, _ := l.Store().All(context.Background())
 	if len(all) != 0 {

@@ -16,7 +16,7 @@ type realReclaim struct{ called bool }
 
 func (r *realReclaim) Reclaim(context.Context, ReclaimTarget) error { r.called = true; return nil }
 func (r *realReclaim) Real() bool                                   { return true }
-func (r *realReclaim) Backend() string                             { return "k8s" }
+func (r *realReclaim) Backend() string                              { return "k8s" }
 
 func testLedger(t *testing.T) *evidence.Ledger {
 	t.Helper()

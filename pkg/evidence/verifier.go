@@ -14,14 +14,14 @@ import (
 
 // RecordResult is the per-record verification outcome.
 type RecordResult struct {
-	Seq          uint64 `json:"seq"`
-	ID           string `json:"id"`
-	Action       string `json:"action"`
-	HashOK       bool   `json:"hash_ok"`       // recomputed hash matches stored hash
-	ChainOK      bool   `json:"chain_ok"`      // prev_hash + seq link the previous record
-	SignatureOK  bool   `json:"signature_ok"`  // signature verifies against the public key
-	AnchorReal   bool   `json:"anchor_real"`   // externally anchored (e.g. Rekor) vs simulated
-	Error        string `json:"error,omitempty"`
+	Seq         uint64 `json:"seq"`
+	ID          string `json:"id"`
+	Action      string `json:"action"`
+	HashOK      bool   `json:"hash_ok"`      // recomputed hash matches stored hash
+	ChainOK     bool   `json:"chain_ok"`     // prev_hash + seq link the previous record
+	SignatureOK bool   `json:"signature_ok"` // signature verifies against the public key
+	AnchorReal  bool   `json:"anchor_real"`  // externally anchored (e.g. Rekor) vs simulated
+	Error       string `json:"error,omitempty"`
 }
 
 // OK reports whether this record passed hash, chain, and signature checks.
@@ -53,20 +53,20 @@ func VerifyRecord(e *Evidence, pub ed25519.PublicKey) RecordResult {
 
 // VerifyReport is the aggregate result of verifying a chain.
 type VerifyReport struct {
-	Total       int            `json:"total"`
-	Verified    int            `json:"verified"`     // records that passed all checks
-	Failed      int            `json:"failed"`
-	AnchoredReal int           `json:"anchored_real"` // records with a real transparency anchor
-	RekorVerified int          `json:"rekor_verified"` // records whose Rekor inclusion proof verified offline
-	KeyID       string         `json:"key_id"`
-	Valid       bool           `json:"valid"` // true iff every record passed
-	Records     []RecordResult `json:"records"`
+	Total         int            `json:"total"`
+	Verified      int            `json:"verified"` // records that passed all checks
+	Failed        int            `json:"failed"`
+	AnchoredReal  int            `json:"anchored_real"`  // records with a real transparency anchor
+	RekorVerified int            `json:"rekor_verified"` // records whose Rekor inclusion proof verified offline
+	KeyID         string         `json:"key_id"`
+	Valid         bool           `json:"valid"` // true iff every record passed
+	Records       []RecordResult `json:"records"`
 
 	// Merkle transparency-log verification (populated by VerifyBundleWithKey).
-	MerkleRoot          string `json:"merkle_root,omitempty"`          // recomputed RFC 6962 root over records
-	CheckpointPresent   bool   `json:"checkpoint_present"`             // bundle carried a signed tree head
-	CheckpointVerified  bool   `json:"checkpoint_verified"`            // checkpoint signature valid
-	CheckpointRootMatch bool   `json:"checkpoint_root_match"`          // signed root == recomputed root & size
+	MerkleRoot          string `json:"merkle_root,omitempty"` // recomputed RFC 6962 root over records
+	CheckpointPresent   bool   `json:"checkpoint_present"`    // bundle carried a signed tree head
+	CheckpointVerified  bool   `json:"checkpoint_verified"`   // checkpoint signature valid
+	CheckpointRootMatch bool   `json:"checkpoint_root_match"` // signed root == recomputed root & size
 }
 
 // VerifyChain verifies an ascending-Seq chain against pub. It never returns an
@@ -82,7 +82,7 @@ func VerifyChain(records []*Evidence, pub ed25519.PublicKey) (*VerifyReport, err
 		rep.KeyID = KeyIDFor(pub)
 	}
 
-	var prevHash string = GenesisPrevHash
+	prevHash := GenesisPrevHash
 	var prevSeq uint64
 	for i, e := range records {
 		res := RecordResult{Seq: e.Seq, ID: e.ID, Action: e.Action}

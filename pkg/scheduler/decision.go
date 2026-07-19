@@ -18,33 +18,33 @@ import (
 
 // SchedulingDecision is the domain payload embedded in a "schedule.bind" receipt.
 type SchedulingDecision struct {
-	WorkloadID   string            `json:"workload_id"`
-	WorkloadName string            `json:"workload_name"`
-	Namespace    string            `json:"namespace,omitempty"`
-	Priority     int               `json:"priority"`
-	ChosenNode   string            `json:"chosen_node"`
-	GPUIndices   []int             `json:"gpu_indices"`
-	Score        float64           `json:"score"`
-	Reason       string            `json:"reason"`
+	WorkloadID   string  `json:"workload_id"`
+	WorkloadName string  `json:"workload_name"`
+	Namespace    string  `json:"namespace,omitempty"`
+	Priority     int     `json:"priority"`
+	ChosenNode   string  `json:"chosen_node"`
+	GPUIndices   []int   `json:"gpu_indices"`
+	Score        float64 `json:"score"`
+	Reason       string  `json:"reason"`
 	// NodeSourceReal records whether candidates came from a real Kubernetes node
 	// source (vs simulated). It mirrors the capability snapshot in the receipt's
 	// Backends, surfaced here so the decision payload is self-describing.
-	NodeSourceReal bool               `json:"node_source_real"`
-	Candidates     []CandidateScore   `json:"candidates"`
-	Preempted      []PreemptedVictim  `json:"preempted,omitempty"`
-	Fairness       *FairnessLedger    `json:"fairness,omitempty"`
-	DecidedAt      time.Time          `json:"decided_at"`
+	NodeSourceReal bool              `json:"node_source_real"`
+	Candidates     []CandidateScore  `json:"candidates"`
+	Preempted      []PreemptedVictim `json:"preempted,omitempty"`
+	Fairness       *FairnessLedger   `json:"fairness,omitempty"`
+	DecidedAt      time.Time         `json:"decided_at"`
 }
 
 // FairnessLedger is a verifiable Dominant Resource Fairness snapshot at decision
 // time: the configured resource pool plus each tenant's dominant-resource share.
 // It makes "is scheduling fair between tenants?" provable, not just assertable.
 type FairnessLedger struct {
-	Policy      string          `json:"policy"` // "dominant-resource-fairness"
-	TotalGPUs   int             `json:"total_gpus"`
-	TotalCPU    int64           `json:"total_cpu_millicores"`
-	TotalMemory int64           `json:"total_memory_bytes"`
-	Tenants     []TenantShare   `json:"tenants"`
+	Policy      string        `json:"policy"` // "dominant-resource-fairness"
+	TotalGPUs   int           `json:"total_gpus"`
+	TotalCPU    int64         `json:"total_cpu_millicores"`
+	TotalMemory int64         `json:"total_memory_bytes"`
+	Tenants     []TenantShare `json:"tenants"`
 }
 
 // TenantShare is one tenant's line on the fairness ledger.

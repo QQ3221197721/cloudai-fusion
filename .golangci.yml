@@ -17,6 +17,12 @@ linters:
     - unused          # 未使用代码检测
 
   settings:
+    errcheck:
+      # 向 stdout/stderr 打印的返回值按惯例不检查（失败不可恢复、无可操作性）
+      exclude-functions:
+        - fmt.Fprintf
+        - fmt.Fprint
+        - fmt.Fprintln
     staticcheck:
       checks:
         - all

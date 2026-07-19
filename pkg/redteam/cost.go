@@ -81,11 +81,11 @@ func (m *CostMeter) Flush(ctx context.Context, engagementID string) CostBreakdow
 		Input:   map[string]any{"engagement_id": engagementID},
 		Output:  map[string]any{"estimated_usd": total.EstimatedUSD, "llm_tokens": total.LLMTokens},
 		Payload: map[string]any{
-			"engagement_id": engagementID,
-			"llm_tokens":    total.LLMTokens,
-			"tool_seconds":  total.ToolSeconds,
-			"gpu_seconds":   total.GPUSeconds,
-			"estimated_usd": total.EstimatedUSD,
+			"engagement_id":   engagementID,
+			"llm_tokens":      total.LLMTokens,
+			"tool_seconds":    total.ToolSeconds,
+			"gpu_seconds":     total.GPUSeconds,
+			"estimated_usd":   total.EstimatedUSD,
 			"usd_is_estimate": true, // honest: rate-card estimate, not a live bill
 		},
 		Backends: []evidence.BackendFact{{Component: "redteam.finops", Mode: "real", Driver: "usage-meter"}},

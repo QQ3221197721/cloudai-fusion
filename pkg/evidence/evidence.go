@@ -47,21 +47,21 @@ type BackendFact struct {
 // Signature, KeyID and LogEntry); Signature is Ed25519(Hash). PrevHash links to
 // the preceding record's Hash to form the chain.
 type Evidence struct {
-	ID         string          `json:"id"`
-	Seq        uint64          `json:"seq"`       // monotonic, starts at 1
-	PrevHash   string          `json:"prev_hash"` // Hash of Seq-1 (GenesisPrevHash for Seq 1)
-	Timestamp  time.Time       `json:"timestamp"`
-	Actor      string          `json:"actor"`   // user/service identity that caused the action
-	Action     string          `json:"action"`  // e.g. "schedule.bind", "finops.reclaim"
-	Subject    string          `json:"subject"` // resource id the action acted upon
-	RunMode    string          `json:"run_mode"`
-	Backends   []BackendFact   `json:"backends"`
-	InputHash  string          `json:"input_hash"`  // sha256(canonical(input))
-	OutputHash string          `json:"output_hash"` // sha256(canonical(output))
-	Payload    json.RawMessage `json:"payload,omitempty"`
-	Hash       string          `json:"hash"`      // sha256(content) — the signed leaf
-	Signature  string          `json:"signature"` // base64 Ed25519 over Hash bytes
-	KeyID      string          `json:"key_id"`    // identifies the signing public key
+	ID         string           `json:"id"`
+	Seq        uint64           `json:"seq"`       // monotonic, starts at 1
+	PrevHash   string           `json:"prev_hash"` // Hash of Seq-1 (GenesisPrevHash for Seq 1)
+	Timestamp  time.Time        `json:"timestamp"`
+	Actor      string           `json:"actor"`   // user/service identity that caused the action
+	Action     string           `json:"action"`  // e.g. "schedule.bind", "finops.reclaim"
+	Subject    string           `json:"subject"` // resource id the action acted upon
+	RunMode    string           `json:"run_mode"`
+	Backends   []BackendFact    `json:"backends"`
+	InputHash  string           `json:"input_hash"`  // sha256(canonical(input))
+	OutputHash string           `json:"output_hash"` // sha256(canonical(output))
+	Payload    json.RawMessage  `json:"payload,omitempty"`
+	Hash       string           `json:"hash"`      // sha256(content) — the signed leaf
+	Signature  string           `json:"signature"` // base64 Ed25519 over Hash bytes
+	KeyID      string           `json:"key_id"`    // identifies the signing public key
 	LogEntry   *TransparencyRef `json:"log_entry,omitempty"`
 }
 
@@ -69,13 +69,13 @@ type Evidence struct {
 // When no real log is configured the Anchorer records Backend="simulated" so the
 // receipt never pretends to be externally anchored.
 type TransparencyRef struct {
-	Backend    string `json:"backend"`               // "rekor" | "simulated"
-	LogURL     string `json:"log_url,omitempty"`     // transparency log base URL
-	LogIndex   int64  `json:"log_index,omitempty"`   // entry index in the log
-	EntryUUID  string `json:"entry_uuid,omitempty"`  // Rekor entry UUID
-	InclusionProof string `json:"inclusion_proof,omitempty"` // raw proof JSON when available
-	Proof          *RekorProof `json:"proof,omitempty"`     // structured, offline-verifiable proof
-	Detail         string      `json:"detail,omitempty"`    // e.g. why anchoring was simulated
+	Backend        string      `json:"backend"`                   // "rekor" | "simulated"
+	LogURL         string      `json:"log_url,omitempty"`         // transparency log base URL
+	LogIndex       int64       `json:"log_index,omitempty"`       // entry index in the log
+	EntryUUID      string      `json:"entry_uuid,omitempty"`      // Rekor entry UUID
+	InclusionProof string      `json:"inclusion_proof,omitempty"` // raw proof JSON when available
+	Proof          *RekorProof `json:"proof,omitempty"`           // structured, offline-verifiable proof
+	Detail         string      `json:"detail,omitempty"`          // e.g. why anchoring was simulated
 	IntegratedAt   time.Time   `json:"integrated_at,omitempty"`
 }
 
@@ -84,11 +84,11 @@ type TransparencyRef struct {
 // included in a tree with RootHash; establishing full trust additionally requires
 // pinning Rekor's own log key to check the signed Checkpoint.
 type RekorProof struct {
-	LogIndex   int64    `json:"log_index"`  // leaf index within the tree
+	LogIndex   int64    `json:"log_index"` // leaf index within the tree
 	TreeSize   int64    `json:"tree_size"`
-	RootHash   string   `json:"root_hash"`  // hex Merkle root at TreeSize
-	LeafHash   string   `json:"leaf_hash"`  // hex RFC 6962 leaf hash of the entry body
-	Hashes     []string `json:"hashes"`     // hex audit path (leaf -> root)
+	RootHash   string   `json:"root_hash"`            // hex Merkle root at TreeSize
+	LeafHash   string   `json:"leaf_hash"`            // hex RFC 6962 leaf hash of the entry body
+	Hashes     []string `json:"hashes"`               // hex audit path (leaf -> root)
 	Checkpoint string   `json:"checkpoint,omitempty"` // Rekor signed note (verified with Rekor's key)
 }
 
