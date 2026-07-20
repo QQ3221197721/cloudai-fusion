@@ -20,6 +20,7 @@ on:
       - 'pkg/delivery/**'
       - 'pkg/api/**'
       - 'cmd/cafctl/**'
+      - 'cmd/cafdemo/**'
       - 'ai/scheduler/provenance.py'
       - 'ai/tests/test_provenance.py'
       - '.github/workflows/moat.yml'
@@ -55,7 +56,8 @@ jobs:
             ./pkg/provenance/... \
             ./pkg/delivery/... \
             ./pkg/api/... \
-            ./cmd/cafctl/...
+            ./cmd/cafctl/... \
+            ./cmd/cafdemo/...
 
   moat-provenance-py:
     name: Model Provenance Producer (Python)
