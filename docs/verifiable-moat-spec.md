@@ -606,8 +606,11 @@ subcommand, or subpackage. The chain/inclusion/consistency guarantees are untouc
 > - **CN-1** scheduling-fairness completeness · **CN-2** FinOps monthly completeness
 >   (`finops/month/<YYYY-MM>` — no tenant field yet) · **CN-3** GPU isolation attestation
 >   (`IsolationProbe` pluggable), `cafctl verify-isolation`.
-> - **RT-1** exploitability↔remediation differential (`ExploitWitness` + `Minimize` + pluggable
->   `Replayer`), `cafctl verify-remediation` · **RT-2** provably-complete reporting (= M0) ·
+> - **RT-1** exploitability↔remediation differential — DEEP: a **real hermetic replay engine**
+>   (`HermeticReplayer` over a deterministic in-process target, e.g. broken-access-control/IDOR),
+>   `ddmin` witness minimization against that real oracle, `cafctl verify-remediation`, and a
+>   ledger-backed **`WitnessLibrary`** (dedup + query-by-technique) — the compounding corpus of
+>   proven "vulnerable → fixed" witnesses · **RT-2** provably-complete reporting (= M0) ·
 >   **RT-3** signed `BenchAttestation` + `PassesGate` CI gate + `redteam.bench` receipt.
 > - **DL-1** deploy provenance (`cafctl verify-deploy`) · **DL-2** failover/DR: RTO/RPO +
 >   no-split-brain (`cafctl verify-failover`) · **DL-3** edge-autonomy reconciliation
@@ -720,7 +723,7 @@ subcommand, or subpackage. The chain/inclusion/consistency guarantees are untouc
 | Scheduling/fairness completeness | RFC 6962 seal per tenant (always real) | (none) | always real |
 | FinOps measured savings | DCGM/billing-real samples + signed receipt | labeled sim (`Measured=false`) | real required for `Measured=true` |
 | Hardware isolation attestation | nvidia-smi MIG/MPS (real) | labeled sim | real required in prod |
-| Exploit replay | hermetic kind range | dry-run (labeled) | real range required for `exploit.proof` |
+| Exploit replay | hermetic in-process target (real, deterministic) or kind range | dry-run (labeled) | real replay required for `exploit.proof` |
 | Deploy provenance (DL-1) | ArgoCD/Flux + cosign/SLSA (real) | labeled sim | real required in prod |
 | Failover/DR proof (DL-2) | client-go health probes + election receipts | labeled sim (no DR cluster) | real required in prod |
 | Edge autonomy proof (DL-3) | edge hash-chain + reconcile (real) | labeled sim | real required in prod |
