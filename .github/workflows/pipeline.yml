@@ -157,7 +157,7 @@ jobs:
             type=ref,event=branch
             type=raw,value=${{ github.ref_name }}-{{date 'YYYYMMDDHHmmss'}}
 
-      - uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ matrix.dockerfile }}
