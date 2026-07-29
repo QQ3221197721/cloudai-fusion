@@ -96,8 +96,8 @@ func validateCSURL(rawURL string) error {
 // escalation rates, confidence distribution, and model latency.
 type CSCollectorPlugin struct {
 	plugin.BasePlugin
-	config CSConfig
-	mu     sync.RWMutex
+	config    CSConfig
+	mu        sync.RWMutex
 	lastStats *CSStats
 }
 
@@ -199,12 +199,12 @@ func (p *CSCollectorPlugin) GetLastStats() *CSStats {
 
 // CSStats is the JSON response from the CS /api/v1/stats endpoint.
 type CSStats struct {
-	TotalRequests    int     `json:"total_requests"`
-	EscalatedCount   int     `json:"escalated_count"`
-	ResolvedCount    int     `json:"resolved_count"`
+	TotalRequests     int     `json:"total_requests"`
+	EscalatedCount    int     `json:"escalated_count"`
+	ResolvedCount     int     `json:"resolved_count"`
 	AverageConfidence float64 `json:"average_confidence"`
-	P95LatencyMs     int     `json:"p95_latency_ms"`
-	ActiveSessions   int     `json:"active_sessions"`
+	P95LatencyMs      int     `json:"p95_latency_ms"`
+	ActiveSessions    int     `json:"active_sessions"`
 }
 
 func (p *CSCollectorPlugin) fetchStats(ctx context.Context) (*CSStats, error) {
@@ -290,8 +290,8 @@ func (p *CSWebhookPlugin) Call(ctx context.Context, req *plugin.WebhookRequest) 
 			Allowed: true, // allow but with fallback response
 			Result:  plugin.SuccessResult(p.Metadata().Name),
 			MutatedObject: marshalMessage(&CustomerResponse{
-				Reply:           "抱歉，系统正在处理中，请稍候或联系人工客服。",
-				NeedEscalation:  true,
+				Reply:            "抱歉，系统正在处理中，请稍候或联系人工客服。",
+				NeedEscalation:   true,
 				EscalationReason: "AI服务暂时不可用",
 			}),
 		}, nil
@@ -408,8 +408,8 @@ func NewCSThreatDetectorPlugin(config CSConfig) (plugin.Plugin, error) {
 			Priority: 100,
 			Tags:     map[string]string{"category": "customer-service", "tier": "contrib"},
 		}),
-		config:         config,
-		userRequests:   make(map[string]*userRateState),
+		config:       config,
+		userRequests: make(map[string]*userRateState),
 	}, nil
 }
 

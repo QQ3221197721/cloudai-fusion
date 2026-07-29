@@ -121,9 +121,9 @@ func TestEdgeCache_StatsHitRate(t *testing.T) {
 	c := NewEdgeCache(testCacheConfig(64, CachePolicyLRU), newOfflineTestLogger())
 	_ = c.Put("k", 1024, "config")
 
-	c.Get("k")       // hit
-	c.Get("k")       // hit
-	c.Get("nope")    // miss
+	c.Get("k")    // hit
+	c.Get("k")    // hit
+	c.Get("nope") // miss
 
 	stats := c.GetStats()
 	if stats.Hits != 2 || stats.Misses != 1 {
