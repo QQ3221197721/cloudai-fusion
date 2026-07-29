@@ -79,29 +79,37 @@ func (s *ClickHouseStore) Driver() string { return "clickhouse" }
 // IsReal reports true: a connected ClickHouse is a real external backend.
 func (s *ClickHouseStore) IsReal() bool { return true }
 
-// ping issues a trivial query against the configured database.
+// ping issues a trivial query against the default database (which always exists)
+// to verify connectivity; it does NOT depend on the target database existing yet.
 func (s *ClickHouseStore) ping(ctx context.Context) error {
-	_, err := s.do(ctx, "SELECT 1", nil, "")
+	_, err := s.do(ctx, "SELECT 1", nil, "default")
 	return err
 }
 
 // ensureSchema creates the database and tables if they do not exist. ClickHouse
 // dedups CVEs / knowledge-graph rows by ORDER BY key via ReplacingMergeTree.
+// CREATE DATABASE runs against 'default' (which always exists); subsequent DDL
+// uses s.cfg.Database once it has been created.
 func (s *ClickHouseStore) ensureSchema(ctx context.Context) error {
+	// First, create the target database (must run in a real DB context).
+	if _, err := s.do(ctx, "CREATE DATABASE IF NOT EXISTS "+s.cfg.Database, nil, "default"); err != nil {
+		return err
+	}
+	// Now the target database exists; all following DDL can use it.
 	stmts := []string{
-		"CREATE DATABASE IF NOT EXISTS " + s.cfg.Database,
-		`CREATE TABLE IF NOT EXISTS cve_entries (
-			cve_id String, description String, cvss_v3_score Float32, cvss_v3_vector String,
-			mitre_tags Array(String), published_at DateTime, modified_date DateTime,
-			vulnerable_software Array(String)
-		) ENGINE = ReplacingMergeTree ORDER BY cve_id`,
-		`CREATE TABLE IF NOT EXISTS ioc_entries (
-			ioc_type String, value String, threat_actor String, severity String,
-			first_seen_at DateTime, last_seen_at DateTime, sources Array(String)
-		) ENGINE = ReplacingMergeTree ORDER BY (ioc_type, value)`,
-		`CREATE TABLE IF NOT EXISTS knowledge_graph (
-			type String, id String, name String, description String, tactic_ids Array(String)
-		) ENGINE = ReplacingMergeTree ORDER BY (type, id)`,
+		`CREATE TABLE IF NOT EXISTS cve_entries (` +
+			`cve_id String, description String, cvss_v3_score Float32, cvss_v3_vector String,` +
+			`mitre_tags Array(String), published_at DateTime, modified_date DateTime,` +
+			`vulnerable_software Array(String)` +
+			`) ENGINE = ReplacingMergeTree ORDER BY cve_id`,
+		`CREATE TABLE IF NOT EXISTS ioc_entries (` +
+			`ioc_type String, value String, threat_actor String, severity String,` +
+			`first_seen_at DateTime, last_seen_at DateTime, sources Array(String)` +
+			`) ENGINE = ReplacingMergeTree ORDER BY (ioc_type, value)`,
+		`CREATE TABLE IF NOT EXISTS knowledge_graph (` +
+			`type String, id String, name String, description String,` +
+			`tactic_ids Array(String)` +
+			`) ENGINE = ReplacingMergeTree ORDER BY (type, id)`,
 	}
 	for _, q := range stmts {
 		if _, err := s.do(ctx, q, nil, ""); err != nil {
@@ -286,15 +294,21 @@ func (s *ClickHouseStore) insertJSONEachRow(ctx context.Context, table string, r
 	return err
 }
 
-// do performs one ClickHouse HTTP call: the SQL is sent in the POST body, query
-// parameters are passed as param_<name>, and auth uses ClickHouse headers.
-func (s *ClickHouseStore) do(ctx context.Context, sql string, params map[string]string, _ string) ([]byte, error) {
+// do performs one ClickHouse HTTP call. dbOverride, when non-empty, overrides
+// the configured database (needed for bootstrap calls that run before the target
+// database exists). The SQL is sent in the POST body; query parameters are passed
+// as param_<name>; auth uses ClickHouse headers.
+func (s *ClickHouseStore) do(ctx context.Context, sql string, params map[string]string, dbOverride string) ([]byte, error) {
 	u, err := url.Parse(s.cfg.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("intel: clickhouse endpoint: %w", err)
 	}
 	q := u.Query()
-	q.Set("database", s.cfg.Database)
+	db := s.cfg.Database
+	if dbOverride != "" {
+		db = dbOverride
+	}
+	q.Set("database", db)
 	for k, v := range params {
 		q.Set("param_"+k, v)
 	}
