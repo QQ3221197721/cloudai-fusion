@@ -182,7 +182,7 @@ func (p *RenderFarmCloudProviderPlugin) Health(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("render-farm %s unreachable: %w", cfg.Name, err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode >= 500 {
 			return fmt.Errorf("render-farm %s returned HTTP %d", cfg.Name, resp.StatusCode)
 		}
@@ -245,7 +245,7 @@ func (p *RenderFarmCloudProviderPlugin) fetchClusterInfo(ctx context.Context, cf
 	if err != nil {
 		return info
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == 200 {
 		info.Status = "healthy"
@@ -425,8 +425,10 @@ func NewRenderFarmCollectorPlugin(configs []RenderFarmConfig, score *RenderFarmS
 	}, nil
 }
 
-func (p *RenderFarmCollectorPlugin) Init(_ context.Context, _ map[string]interface{}) error { return nil }
-func (p *RenderFarmCollectorPlugin) Health(_ context.Context) error                         { return nil }
+func (p *RenderFarmCollectorPlugin) Init(_ context.Context, _ map[string]interface{}) error {
+	return nil
+}
+func (p *RenderFarmCollectorPlugin) Health(_ context.Context) error { return nil }
 
 // MetricNames lists the metrics this collector produces.
 func (p *RenderFarmCollectorPlugin) MetricNames() []string {
@@ -487,7 +489,7 @@ func (p *RenderFarmCollectorPlugin) scrapeMetrics(ctx context.Context, cfg Rende
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, cfg.BaseURL)

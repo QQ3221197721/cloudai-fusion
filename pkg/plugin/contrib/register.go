@@ -25,9 +25,9 @@ import (
 
 // ContribConfig holds configuration for all contrib plugin subsystems.
 type ContribConfig struct {
-	RenderFarm        []renderfarm.RenderFarmConfig
-	DisasterRecovery  disasterrecovery.DRConfig
-	CustomerService   customerservice.CSConfig
+	RenderFarm       []renderfarm.RenderFarmConfig
+	DisasterRecovery disasterrecovery.DRConfig
+	CustomerService  customerservice.CSConfig
 }
 
 // DefaultContribConfig returns a config with sensible defaults (empty).

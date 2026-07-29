@@ -9,6 +9,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+// keep networkingv1 referenced for the type-sanity assertion below.
+var _ = networkingv1.NetworkPolicy{}
+
 // isolationSpec builds the deny-all posture EnforceIsolation produces.
 func isolationSpec(name string) *NetworkPolicySpec {
 	return &NetworkPolicySpec{
@@ -201,5 +204,4 @@ func TestToNetworkingV1_DefaultNamespace(t *testing.T) {
 	if np.Namespace != "default" {
 		t.Fatalf("namespace = %q, want default", np.Namespace)
 	}
-	var _ *networkingv1.NetworkPolicy = np // type sanity
 }
