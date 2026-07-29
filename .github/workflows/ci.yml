@@ -102,6 +102,10 @@ jobs:
           # Source locations named in race/panic stacks (the actionable file:line).
           grep -oE "cloudai-fusion/[A-Za-z0-9_./-]+\.go:[0-9]+" /tmp/gotest.log \
             | sort -u | head -n 25 | sed -E 's#^#::error title=GoTestLoc::#' || true
+          # Assertion detail lines (file.go:NN: message) so the actual t.Fatalf /
+          # t.Errorf text is visible in annotations without opening the log.
+          grep -E "^[[:space:]]+[A-Za-z0-9_.-]+\.go:[0-9]+: " /tmp/gotest.log \
+            | head -n 40 | sed -E 's/^[[:space:]]*/::error title=GoTestFail::/' || true
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
