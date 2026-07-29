@@ -64,8 +64,24 @@ func NewClickHouseStore(cfg ClickHouseConfig) (*ClickHouseStore, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	defer cancel()
-	if err := s.ping(ctx); err != nil {
-		return nil, fmt.Errorf("intel: clickhouse ping failed: %w", err)
+	// Ping with a bounded retry loop: a freshly-started ClickHouse (e.g. a CI
+	// service container) can pass its health check yet still briefly refuse HTTP
+	// connections while it finishes binding :8123, causing an instant
+	// "connection refused". Retry a few times so a readiness race does not fail
+	// the connect; a still-unreachable server returns the last error as before.
+	var pingErr error
+	for attempt := 0; attempt < 5; attempt++ {
+		if pingErr = s.ping(ctx); pingErr == nil {
+			break
+		}
+		select {
+		case <-time.After(500 * time.Millisecond):
+		case <-ctx.Done():
+			return nil, fmt.Errorf("intel: clickhouse ping failed after %d attempt(s): %w", attempt+1, pingErr)
+		}
+	}
+	if pingErr != nil {
+		return nil, fmt.Errorf("intel: clickhouse ping failed: %w", pingErr)
 	}
 	if err := s.ensureSchema(ctx); err != nil {
 		return nil, fmt.Errorf("intel: clickhouse schema init failed: %w", err)
