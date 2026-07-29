@@ -115,11 +115,11 @@ type DRCollectorPlugin struct {
 	config DRConfig
 
 	// cached metrics for webhook validation
-	mu              sync.RWMutex
-	lastLagSeconds  int
-	lastPrimaryUp   bool
-	lastStandbyUp   bool
-	lastCheckedAt   time.Time
+	mu             sync.RWMutex
+	lastLagSeconds int
+	lastPrimaryUp  bool
+	lastStandbyUp  bool
+	lastCheckedAt  time.Time
 }
 
 // NewDRCollectorPlugin creates the disaster-recovery collector.
@@ -253,12 +253,12 @@ func (p *DRCollectorPlugin) GetLastStatus() (lagSeconds int, primaryUp, standbyU
 
 // DRStatus is the JSON response from the DR monitoring endpoint.
 type DRStatus struct {
-	PrimaryHealthy      bool `json:"primary_healthy"`
-	StandbyHealthy      bool `json:"standby_healthy"`
+	PrimaryHealthy        bool `json:"primary_healthy"`
+	StandbyHealthy        bool `json:"standby_healthy"`
 	ReplicationLagSeconds int  `json:"replication_lag_seconds"`
-	RPOSeconds          int  `json:"rpo_seconds"`
-	RTOSeconds          int  `json:"rto_seconds"`
-	ConsistencyOK       bool `json:"consistency_ok"`
+	RPOSeconds            int  `json:"rpo_seconds"`
+	RTOSeconds            int  `json:"rto_seconds"`
+	ConsistencyOK         bool `json:"consistency_ok"`
 }
 
 // fetchDRStatus calls the DR monitoring HTTP endpoint.
@@ -547,8 +547,8 @@ func (p *DRWebhookPlugin) Validate(ctx context.Context, req *plugin.WebhookReque
 
 // FailoverOperation describes a failover/rollback operation request.
 type FailoverOperation struct {
-	Action      string `json:"action"`      // "failover" or "rollback"
-	SourceHost  string `json:"source_host"` // current primary
-	TargetHost  string `json:"target_host"` // target primary
+	Action      string `json:"action"`       // "failover" or "rollback"
+	SourceHost  string `json:"source_host"`  // current primary
+	TargetHost  string `json:"target_host"`  // target primary
 	ConfirmCode string `json:"confirm_code"` // safety confirmation
 }

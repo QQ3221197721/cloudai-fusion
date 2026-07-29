@@ -52,8 +52,8 @@ func TestIsTrustedRegistry(t *testing.T) {
 		"registry.k8s.io/coredns/coredns:v1.11.1":     true,
 		"evil.example.com/malware:latest":             false,
 		"randomuser/randomrepo:v1":                    false,
-		"nginx":                                       true,  // Docker Hub official (no slash)
-		"redis:7":                                     true,  // Docker Hub official (no slash)
+		"nginx":                                       true, // Docker Hub official (no slash)
+		"redis:7":                                     true, // Docker Hub official (no slash)
 	}
 	for image, want := range cases {
 		if got := isTrustedRegistry(image); got != want {

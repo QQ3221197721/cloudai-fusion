@@ -192,9 +192,9 @@ func TestRenderFarmCloudProvider_EstimateCost(t *testing.T) {
 func TestRenderFarmCloudProvider_SSRFProtection(t *testing.T) {
 	blocked := []string{
 		"http://169.254.169.254/latest/meta-data", // cloud metadata
-		"http://127.0.0.1:8000",                    // loopback
-		"http://10.1.2.3:8000",                     // private
-		"ftp://example.com",                        // bad scheme
+		"http://127.0.0.1:8000",                   // loopback
+		"http://10.1.2.3:8000",                    // private
+		"ftp://example.com",                       // bad scheme
 	}
 	for _, u := range blocked {
 		if err := validateRenderFarmURL(u); err == nil {
