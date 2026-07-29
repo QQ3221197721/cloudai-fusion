@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -30,6 +31,8 @@ import (
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/feature"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/finops"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/intel"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/logging"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/mesh"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/messaging"
@@ -40,10 +43,12 @@ import (
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/resilience"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/rpcserver"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/security"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/soc"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/websocket"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/wellreadiness"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/workload"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/controller"
@@ -531,12 +536,13 @@ func runServer(cmd *cobra.Command, args []string) error {
 	// Initialize API Gateway Security
 	apiGateway := security.NewGateway(security.GatewayConfig{
 		EnableWAF:     true,
-		EnableIPACL:   false, // Enable in production with proper allowlists
+		EnableIPACL:   cfg.GatewayEnableIPACL, // off by default; operators enable explicitly
 		EnableAPIKeys: true,
 		Logger:        logger,
 	})
 	_ = apiGateway // Gateway middleware applied to router below
-	logger.Info("API Gateway security initialized (WAF + API keys)")
+	logger.WithField("ip_acl", cfg.GatewayEnableIPACL).
+		Info("API Gateway security initialized (WAF + API keys)")
 
 	// Initialize Vault Client (secret rotation)
 	vaultClient := security.NewVaultClient(security.VaultConfig{
@@ -610,6 +616,167 @@ func runServer(cmd *cobra.Command, args []string) error {
 	redteamManager := redteam.NewManager(evidenceLedger, logger)
 	logger.Info("Verifiable AI Red Team subsystem initialized (evidence-backed)")
 
+	// AISecOps L1 Threat Intelligence store. Prefer the real ClickHouse TSDB when
+	// an endpoint is configured and reachable; otherwise fall back to the honest
+	// in-memory (simulated) store. The store's real-vs-simulated nature is
+	// reported to pkg/capability so a production boot requires a real backend.
+	var intelStore intel.Store = intel.NewMemoryStore()
+	if cfg.ClickHouseEndpoint != "" {
+		chStore, chErr := intel.NewClickHouseStore(intel.ClickHouseConfig{
+			Endpoint: cfg.ClickHouseEndpoint,
+			Database: cfg.ClickHouseDB,
+			User:     cfg.ClickHouseUser,
+			Password: cfg.ClickHousePassword,
+		})
+		if chErr != nil {
+			logger.WithError(chErr).Warn("ClickHouse unavailable - L1 intel falling back to in-memory (simulated)")
+		} else {
+			intelStore = chStore
+			logger.Info("L1 threat-intelligence store: ClickHouse (real)")
+		}
+	}
+	if err := capability.MustReal("intel.store", intelStore.Driver(), intelStore.IsReal(),
+		"L1 threat-intelligence store"); err != nil {
+		return fmt.Errorf("intel store capability: %w", err)
+	}
+
+	// AISecOps Operations layer (L3-L8): endpoint/network/workload/identity/image
+	// detection + SOAR response. Analyses and responses are signed into the SAME
+	// evidence ledger, so findings and response decisions are offline-verifiable.
+	socEngine := soc.NewEngine(intelStore, logger)
+	socEngine.SetEvidenceRecorder(evidenceLedger)
+	// Wire the REAL L8 actuator backed by existing security subsystems (gateway IP
+	// ACL + network-policy engine) instead of the placeholder recorder, so
+	// automated responses actually enforce/create control-plane objects.
+	socActuator := newNetworkPolicyActuator(apiGateway, netPolicyEngine)
+	// Opt-in data-plane closure: when enabled and a cluster is reachable, L8
+	// isolate/harden responses are applied as real networkingv1.NetworkPolicy
+	// objects (CNI-enforced), completing the detect→decide→enforce loop.
+	if cfg.SOARClusterApply {
+		if applier := buildSOARClusterApplier(logger); applier != nil {
+			socActuator.SetClusterApplier(applier)
+		}
+	}
+	socEngine.SetActuator(socActuator)
+	logger.WithField("actuator_real", socActuator.IsReal()).
+		Info("AISecOps SOC subsystem initialized (L3-L8, evidence-backed)")
+
+	// L3 EDR collector: the real /proc collector (Linux) gathers running-process
+	// executable hashes for endpoint detection; otherwise a simulated collector.
+	var edrCollector soc.EDRCollector
+	if cfg.EDRRealCollector {
+		edrCollector = soc.NewProcEDRCollector("")
+		logger.WithField("real", edrCollector.IsReal()).Info("L3 EDR collector: proc-edr")
+	} else {
+		edrCollector = soc.NewStaticEDRCollector(soc.EndpointTelemetry{})
+		logger.Info("L3 EDR collector: static (simulated)")
+	}
+
+	// ================================================================
+	// AISecOps deep-well fabric (EventBus v2) + well-readiness honesty
+	// ================================================================
+	wellreadiness.SetPolicy(cfg.EffectiveRunMode())
+
+	// Instantiate the well router so an event raised by one well really
+	// propagates to the wells that must react (L1→L2/L3/L4/L14; L3-L7→L8; ...),
+	// bounded by a hop cap. This is what makes "16 wells connected" a fact.
+	wellRouter := eventbus.NewWellRouter(bus, 4, logger)
+	if rErr := wellRouter.Connect(ctx); rErr != nil {
+		logger.WithError(rErr).Warn("well router connect failed")
+	}
+
+	// L1 Threat-Intelligence Hub over the shared store: offline sync + fabric emit.
+	intelHub := intel.NewHub(nil, intelStore, logger)
+	intelHub.SetEvidenceRecorder(evidenceLedger)
+	intelHub.SetWellPublisher(func(c context.Context, kind string, detail map[string]any) {
+		_ = eventbus.PublishWellEvent(c, bus, eventbus.WellIntel, kind, detail)
+	})
+
+	// L2 Threat-Hunting engine over the shared store: correlation + fabric emit.
+	huntEngine := hunt.NewEngine(intelStore, nil, logger)
+	huntEngine.SetEvidenceRecorder(evidenceLedger)
+	huntEngine.SetWellPublisher(func(c context.Context, kind string, detail map[string]any) {
+		_ = eventbus.PublishWellEvent(c, bus, eventbus.WellHunt, kind, detail)
+	})
+
+	// L3-L8 SOC engine: findings escalate onto the fabric toward L8.
+	socEngine.SetWellPublisher(func(c context.Context, well int, kind string, detail map[string]any) {
+		_ = eventbus.PublishWellEvent(c, bus, eventbus.DeepWell(well), kind, detail)
+	})
+
+	// L8 auto-consumer: subscribe once to the fabric and, for events routed to
+	// WellResponse (L8), run the SOAR response for the escalated findings. This
+	// closes the detection→response loop: an L3-L7 detection now automatically
+	// drives an evidence-signed L8 response, no manual API call required.
+	if _, subErr := bus.Subscribe(eventbus.TopicWellEvent, func(c context.Context, ev *eventbus.Event) error {
+		w, ok := eventbus.WellOf(ev)
+		if !ok || w != eventbus.WellResponse {
+			return nil
+		}
+		var we eventbus.WellEvent
+		if err := ev.UnmarshalData(&we); err != nil {
+			return nil
+		}
+		ids, _ := we.Detail["finding_ids"].(string)
+		if ids == "" {
+			return nil
+		}
+		socEngine.OnEscalation(c, strings.Split(ids, ","))
+		return nil
+	}); subErr != nil {
+		logger.WithError(subErr).Warn("L8 auto-consumer subscribe failed")
+	}
+
+	// Report each wired well's HONEST readiness. The maturity claim is derived
+	// from facts (real backend? fabric-connected?), never hand-written; an
+	// overclaim would fail wellreadiness.Enforce() below in production.
+	reportWell := func(well int, name string, realBackend, fabric, evidenceBacked bool) {
+		mode := wellreadiness.BackendSimulated
+		claim := wellreadiness.M1Wired
+		if realBackend {
+			mode = wellreadiness.BackendReal
+			claim = wellreadiness.M2RealBackend
+			if fabric {
+				claim = wellreadiness.M3FabricConnected
+			}
+		}
+		_ = wellreadiness.Report(wellreadiness.Status{
+			Well: well, Name: name, Claimed: claim, Wired: true,
+			BackendMode: mode, FabricConnected: fabric, EvidenceBacked: evidenceBacked,
+		})
+	}
+	reportWell(1, "L1-intel", intelStore.IsReal(), true, true)
+	reportWell(2, "L2-hunt", false, true, true) // heuristic reasoner (simulated backend)
+	reportWell(3, "L3-endpoint", edrCollector.IsReal(), true, true)
+	reportWell(4, "L4-network", false, true, true)
+	reportWell(5, "L5-workload", false, true, true)
+	reportWell(6, "L6-identity", false, true, true)
+	reportWell(7, "L7-image", false, true, true)
+	// L8 now genuinely CONSUMES fabric escalations and EXECUTES responses via the
+	// real network-policy actuator (gateway IP-ACL + policy engine). Its backend
+	// mode reflects whether a real data-plane enforcement path is active.
+	l8Backend := wellreadiness.BackendSimulated
+	l8Claim := wellreadiness.M1Wired
+	if socActuator.IsReal() {
+		l8Backend = wellreadiness.BackendReal
+		l8Claim = wellreadiness.M2RealBackend
+	}
+	_ = wellreadiness.Report(wellreadiness.Status{
+		Well: 8, Name: "L8-response", Claimed: l8Claim, Wired: true,
+		BackendMode: l8Backend, FabricConnected: true, EvidenceBacked: true,
+		Detail: "auto-consumes L3-L7 escalations; executes via network-policy actuator (gateway IP-ACL + policy engine)",
+	})
+	// L13 evidence: always-real crypto, fabric-reachable (L8→L13 edge), and its
+	// third-party OFFLINE verifiability is CI-verified by `cafctl moat-demo`
+	// (cmd/cafctl TestMoatDemo_*). It therefore honestly reaches M4-ci-verified.
+	_ = wellreadiness.Report(wellreadiness.Status{
+		Well: 13, Name: "L13-evidence", Claimed: wellreadiness.M4CIVerified,
+		Wired: true, BackendMode: wellreadiness.BackendReal, FabricConnected: true, EvidenceBacked: true,
+		Detail: "Ed25519+Merkle; offline third-party verification CI-verified (cafctl moat-demo)",
+	})
+	reportWell(14, "L14-redteam", false, false, true)
+	logger.WithField("wells", len(wellreadiness.Snapshot())).Info("AISecOps well-readiness reported")
+
 	// Fail fast: in production, refuse to boot if any initialized subsystem is
 	// backed by a simulation instead of a real dependency. This is the systemic
 	// cure for the previous "boots green on fakes" behavior.
@@ -618,9 +785,23 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 	logger.WithField("run_mode", capability.Policy().String()).Info("Run-mode capability check passed")
 
+	// Well-layer honesty backstop: in production, refuse to boot if any deep well
+	// overclaims its maturity (e.g. claims fabric-connected while unwired).
+	if err := wellreadiness.Enforce(); err != nil {
+		return fmt.Errorf("startup blocked by well-readiness policy: %w", err)
+	}
+
 	// Setup Gin router
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// Contrib plugin runtime (render-farm / disaster-recovery / customer-service).
+	// Inert unless configured; when active, plugins run under full lifecycle
+	// management (Init→Start→health→Stop) and surface via /api/v1/plugins.
+	pluginManager, err := setupContribPlugins(ctx, cfg, logger)
+	if err != nil {
+		return fmt.Errorf("contrib plugins: %w", err)
 	}
 
 	// Create API router (with infrastructure components injected)
@@ -642,6 +823,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 		EvidenceLedger:  evidenceLedger,
 		FinOpsReclaimer: finopsReclaimer,
 		RedTeamManager:  redteamManager,
+		SOCEngine:       socEngine,
+		SOCEDRCollector: edrCollector,
+		HuntEngine:      huntEngine,
+		IntelHub:        intelHub,
+		PluginManager:   pluginManager,
 	}
 	if tracingProvider != nil {
 		routerCfg.Tracer = tracingProvider.Tracer()
@@ -743,6 +929,13 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// Shutdown control plane (replaces direct controller manager stop)
 	ctrlPlane.Stop()
+
+	// Stop contrib plugins (reverse dependency order)
+	if pluginManager != nil {
+		if err := pluginManager.StopAll(shutdownCtx); err != nil {
+			logger.WithError(err).Error("contrib plugin shutdown reported errors")
+		}
+	}
 
 	// Stop observability components
 	sloTracker.Stop()

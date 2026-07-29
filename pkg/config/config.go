@@ -89,6 +89,33 @@ type Config struct {
 	EvidenceKeyPath string `mapstructure:"evidence_key_path"`
 	RekorURL        string `mapstructure:"rekor_url"`
 
+	// ClickHouse (L1 threat-intelligence TSDB). An empty endpoint selects the
+	// in-memory (simulated) intel store; a reachable endpoint (e.g.
+	// http://localhost:8123) selects the real ClickHouse-backed store.
+	ClickHouseEndpoint string `mapstructure:"clickhouse_endpoint"`
+	ClickHouseDB       string `mapstructure:"clickhouse_db"`
+	ClickHouseUser     string `mapstructure:"clickhouse_user"`
+	ClickHousePassword string `mapstructure:"clickhouse_password"` //nolint:gosec // G101: config field, not a hardcoded credential
+
+	// EDR (L3 endpoint telemetry). When true, the API's endpoint-collection route
+	// uses the real /proc collector (Linux); otherwise a simulated collector.
+	EDRRealCollector bool `mapstructure:"edr_real_collector"`
+
+	// GatewayEnableIPACL turns on API-gateway IP access-control ENFORCEMENT. Off by
+	// default; operators opt in explicitly (env: CLOUDAI_GATEWAY_ENABLE_IP_ACL=true).
+	// When on, the L8 SOAR block-network action is a real, enforced block at the gateway.
+	GatewayEnableIPACL bool `mapstructure:"gateway_enable_ip_acl"`
+
+	// SOARClusterApply enables applying L8 isolation NetworkPolicies to the live
+	// Kubernetes cluster (in-cluster config or $KUBECONFIG). Off by default;
+	// when on and a cluster is reachable, isolate-host/harden-workload become
+	// REAL data-plane enforcement (env: CLOUDAI_SOAR_CLUSTER_APPLY=true).
+	SOARClusterApply bool `mapstructure:"soar_cluster_apply"`
+
+	// Contrib plugins (pkg/plugin/contrib). All disabled unless the respective
+	// endpoint/host is configured — an unset value keeps the plugin unregistered.
+	Contrib ContribPluginConfig `mapstructure:"contrib"`
+
 	// Cloud Providers
 	CloudProviders []CloudProviderConfig `mapstructure:"cloud_providers"`
 
@@ -106,6 +133,41 @@ type CloudProviderConfig struct {
 	AccessKeyID     string            `mapstructure:"access_key_id"`
 	AccessKeySecret string            `mapstructure:"access_key_secret"` //nolint:gosec // G101: config field, not a hardcoded credential
 	Extra           map[string]string `mapstructure:"extra"`
+}
+
+// ContribPluginConfig configures the contrib plugin subsystems
+// (pkg/plugin/contrib). Each subsystem only registers when its endpoint/host
+// is non-empty, so an empty config keeps the plugin runtime inert.
+type ContribPluginConfig struct {
+	// RenderFarm endpoints (one entry per render cluster).
+	RenderFarms []RenderFarmEndpointConfig `mapstructure:"render_farms"`
+
+	// Disaster recovery (PostgreSQL cross-cloud DR).
+	DRPrimaryHost         string `mapstructure:"dr_primary_host"`
+	DRStandbyHost         string `mapstructure:"dr_standby_host"`
+	DRLagThresholdSeconds int    `mapstructure:"dr_lag_threshold_seconds"`
+	DRSlackWebhook        string `mapstructure:"dr_slack_webhook"`
+	DRDingtalkWebhook     string `mapstructure:"dr_dingtalk_webhook"`
+
+	// AI customer service.
+	CSBaseURL              string  `mapstructure:"cs_base_url"`
+	CSAPIKey               string  `mapstructure:"cs_api_key"` //nolint:gosec // G101: config field, not a hardcoded credential
+	CSThreatThreshold      float64 `mapstructure:"cs_threat_threshold"`
+	CSMaxRequestsPerMinute int     `mapstructure:"cs_max_requests_per_minute"`
+}
+
+// RenderFarmEndpointConfig describes one render-farm cluster endpoint.
+type RenderFarmEndpointConfig struct {
+	Name          string  `mapstructure:"name"`
+	BaseURL       string  `mapstructure:"base_url"`
+	CloudProvider string  `mapstructure:"cloud_provider"` // aliyun, aws
+	Region        string  `mapstructure:"region"`
+	SpotPriceUSD  float64 `mapstructure:"spot_price_usd"`
+}
+
+// Enabled reports whether any contrib plugin subsystem is configured.
+func (c ContribPluginConfig) Enabled() bool {
+	return len(c.RenderFarms) > 0 || c.DRPrimaryHost != "" || c.CSBaseURL != ""
 }
 
 // DatabaseURL constructs the PostgreSQL connection string
@@ -416,6 +478,34 @@ func setDefaults(v *viper.Viper) {
 	// NATS
 	v.SetDefault("nats_url", "nats://localhost:4222")
 	v.SetDefault("nats_cluster", "cloudai-fusion")
+
+	// ClickHouse (L1 intel TSDB) — empty endpoint => in-memory simulated store.
+	v.SetDefault("clickhouse_endpoint", "")
+	v.SetDefault("clickhouse_db", "security")
+	v.SetDefault("clickhouse_user", "")
+	v.SetDefault("clickhouse_password", "")
+
+	// EDR (L3) — real /proc collector off by default (opt in via env/config).
+	v.SetDefault("edr_real_collector", false)
+
+	// Gateway IP ACL enforcement — off by default; operators enable explicitly.
+	v.SetDefault("gateway_enable_ip_acl", false)
+
+	// SOAR cluster apply — off by default; when on, isolate/harden NetworkPolicies
+	// are applied to the live cluster (in-cluster config or $KUBECONFIG).
+	v.SetDefault("soar_cluster_apply", false)
+
+	// Contrib plugins — inert by default; each subsystem activates only when its
+	// endpoint/host is configured.
+	v.SetDefault("contrib.dr_primary_host", "")
+	v.SetDefault("contrib.dr_standby_host", "")
+	v.SetDefault("contrib.dr_lag_threshold_seconds", 30)
+	v.SetDefault("contrib.dr_slack_webhook", "")
+	v.SetDefault("contrib.dr_dingtalk_webhook", "")
+	v.SetDefault("contrib.cs_base_url", "")
+	v.SetDefault("contrib.cs_api_key", "")
+	v.SetDefault("contrib.cs_threat_threshold", 0.3)
+	v.SetDefault("contrib.cs_max_requests_per_minute", 60)
 
 	// Auth
 	v.SetDefault("jwt_secret", "") // MUST be set via CLOUDAI_JWT_SECRET env var

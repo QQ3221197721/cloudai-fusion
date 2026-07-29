@@ -373,6 +373,61 @@ Follow semantic versioning strictly:
 - **MINOR**: New features, backward compatible
 - **PATCH**: Bug fixes only
 
+### 5.5 Using Contrib Plugins
+
+CloudAI Fusion ships with 9 production-ready contrib plugins in `pkg/plugin/contrib/`.
+Enable them via configuration:
+
+```yaml
+contrib:
+  render_farm:
+    enabled: true
+    manager_url: "http://render-manager:8080"
+    metrics_url: "http://render-manager:9090/metrics"
+  disaster_recovery:
+    enabled: true
+    primary_host: "pg-primary.internal"
+    standby_host: "pg-standby.internal"
+    alert_webhook_url: "https://hooks.slack.com/..."
+  customer_service:
+    enabled: true
+    service_url: "http://ai-customer-service:8080"
+    threat_detection:
+      enabled: true
+```
+
+**When to use each plugin domain:**
+
+| Domain | Use When | Key Metrics |
+|--------|----------|-------------|
+| **Render Farm** | You have GPU/Spot render clusters for batch rendering | `render_frames_total`, `render_spot_interruptions_total`, `render_estimated_cost_usd` |
+| **PostgreSQL DR** | You run PostgreSQL with logical replication for HA/DR | `dr_replication_lag_seconds`, `dr_primary_healthy`, `dr_consistency_check_passed` |
+| **AI Customer Service** | You integrate AI-powered customer support | `cs_requests_total`, `cs_escalated_total`, `cs_avg_confidence` |
+
+**Deployment modes:**
+
+1. **In-process** (default): Plugins compiled into CloudAI Fusion binary. Lowest latency, tightest integration.
+   ```bash
+   go build -tags contrib_renderfarm,contrib_dr,contrib_cs ./cmd/apiserver
+   ```
+
+2. **Out-of-process**: Deploy Webhook adapters in the source projects. Plugins call adapters via HTTP.
+   ```bash
+   # In render-farm project
+   python docker/scripts/plugin_adapter.py --port 9090
+   
+   # In pg-disaster-recovery project
+   python scripts/dr_plugin_adapter.py --port 9091
+   
+   # In ai-customer-service project (Spring Boot auto-starts)
+   ```
+
+**Plugin dependencies:** Some plugins depend on others. The registry resolves dependencies automatically:
+- `renderfarm.monitor.collector` → `renderfarm.scheduler.score` (feeds interruption rates)
+- `dr.webhook.validating` → `dr.monitor.collector` (reads cached DR status)
+
+**SSRF protection:** All plugins validate outbound URLs and block sensitive IP ranges (loopback, link-local, cloud metadata, private ranges). Never disable this in production.
+
 ---
 
 ## 6. AIOps Configuration

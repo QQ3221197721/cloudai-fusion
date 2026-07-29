@@ -58,6 +58,17 @@ jobs:
       redis:
         image: redis:7-alpine
         ports: ['6379:6379']
+      # Real ClickHouse so the L1 intel live test (TestClickHouseStore_Live) runs
+      # in CI instead of being skipped — this is what makes "L1 backend is real"
+      # a CI-verified fact rather than a claim.
+      clickhouse:
+        image: clickhouse/clickhouse-server:24.8-alpine
+        ports: ['8123:8123']
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
@@ -71,6 +82,8 @@ jobs:
           DB_USER: test
           DB_PASSWORD: test
           REDIS_ADDR: localhost:6379
+          # Enables the L1 ClickHouse live test (else it self-skips).
+          CLOUDAI_TEST_CH_ENDPOINT: http://localhost:8123
         run: |
           set -o pipefail
           go test -v -race -coverprofile=coverage.out ./pkg/... ./cmd/... 2>&1 | tee /tmp/gotest.log
@@ -115,6 +128,37 @@ jobs:
         with:
           name: ${{ matrix.component }}-binary
           path: bin/${{ matrix.component }}
+
+  # ============================================================================
+  # Verifiable Moat (L13) — flagship differentiator, proven in CI
+  # ============================================================================
+  # Runs a REAL red-team engagement, then INDEPENDENTLY re-verifies its exported,
+  # signed evidence chain OFFLINE against a pinned public key using a separate
+  # `cafctl verify` invocation (no access to the producing process). This is what
+  # turns "the control plane is verifiable" from a claim into a CI-verified fact.
+  verifiable-moat:
+    name: Verifiable Moat (L13 offline proof)
+    runs-on: ubuntu-latest
+    needs: go-lint
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Produce a real engagement chain + self-verify (moat-demo)
+        run: go run ./cmd/cafctl moat-demo --out /tmp/moat
+      - name: Independently re-verify the exported chain OFFLINE (pinned key)
+        run: |
+          go run ./cmd/cafctl verify --bundle /tmp/moat/chain.json --pubkey /tmp/moat/trusted.pem
+      - name: Assert a tampered chain is rejected
+        run: |
+          # Corrupt the genesis prev_hash sentinel (always present in record #1);
+          # verification MUST now fail (exit != 0).
+          sed 's/genesis/genesiX/' /tmp/moat/chain.json > /tmp/moat/tampered.json
+          if go run ./cmd/cafctl verify --bundle /tmp/moat/tampered.json --pubkey /tmp/moat/trusted.pem; then
+            echo "::error title=Moat::tampered chain verified as VALID — moat broken"; exit 1
+          fi
+          echo "tampered chain correctly REJECTED"
 
   # ============================================================================
   # Python AI Engine - Lint, Test
@@ -408,6 +452,28 @@ jobs:
           # List providers
           curl -sf http://localhost:8080/api/v1/providers \
             -H "Authorization: Bearer $TOKEN" | jq .
+      - name: AISecOps honesty smoke tests
+        run: |
+          # /capabilities and /wells are unauthenticated honesty endpoints.
+          # They must exist and be self-consistent, proving the AISecOps wells are
+          # actually wired (not just described) — the CI-verified truth gate.
+          echo "::group::capabilities"
+          curl -sf http://localhost:8080/api/v1/capabilities | jq .
+          echo "::endgroup::"
+          echo "::group::wells"
+          WELLS=$(curl -sf http://localhost:8080/api/v1/wells)
+          echo "$WELLS" | jq .
+          echo "::endgroup::"
+          # Assert at least the wired wells are reported and none overclaims by
+          # declaring fabric-connected without being wired.
+          TOTAL=$(echo "$WELLS" | jq '.total')
+          if [ "$TOTAL" -lt 8 ]; then
+            echo "::error title=Wells::expected >=8 wired wells, got $TOTAL"; exit 1
+          fi
+          BAD=$(echo "$WELLS" | jq '[.wells[] | select(.fabric_connected==true and .wired==false)] | length')
+          if [ "$BAD" != "0" ]; then
+            echo "::error title=Wells::$BAD well(s) claim fabric-connected while not wired"; exit 1
+          fi
       - name: Cleanup
         if: always()
         run: docker compose down -v

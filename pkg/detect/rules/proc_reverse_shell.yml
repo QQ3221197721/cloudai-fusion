@@ -1,0 +1,23 @@
+title: Linux Reverse Shell via Interpreter
+id: f6c8e0d4-1a5b-4e9f-c237-4d5e6f7a8b06
+status: experimental
+description: Interpreter (bash/sh/python) spawning a network socket redirect, a hallmark of an interactive reverse shell.
+level: critical
+tags:
+  - attack.execution
+  - attack.t1059.004
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_shell:
+    CommandLine|re:
+      - 'bash\s+-i'
+      - '/dev/tcp/'
+      - 'sh\s+-i'
+  selection_python:
+    CommandLine|contains: 'socket'
+    CommandLine|contains|all:
+      - 'connect'
+      - 'subprocess'
+  condition: 1 of selection_*

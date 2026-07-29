@@ -354,6 +354,25 @@ func (gw *Gateway) ValidateAPIKey(keyValue string) (*APIKey, error) {
 	return key, nil
 }
 
+// BlockIP adds an IP or CIDR to the gateway's block list at runtime. When IP
+// access control is enabled, subsequent requests from that source are rejected
+// by GatewayMiddleware — a real, in-process enforcement action usable by
+// automated (SOAR) response. It returns whether IP ACL enforcement is active
+// (i.e. whether the block takes effect now).
+func (gw *Gateway) BlockIP(cidr string) bool {
+	gw.ipACL.AddBlock(cidr)
+	gw.mu.RLock()
+	defer gw.mu.RUnlock()
+	return gw.enableIP
+}
+
+// IPACLEnabled reports whether IP access-control enforcement is active.
+func (gw *Gateway) IPACLEnabled() bool {
+	gw.mu.RLock()
+	defer gw.mu.RUnlock()
+	return gw.enableIP
+}
+
 // ============================================================================
 // Gin Middleware
 // ============================================================================

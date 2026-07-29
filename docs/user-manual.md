@@ -444,6 +444,116 @@ output, _ := generator.Generate(plugin.ScaffoldConfig{
 // output.Files contains generated plugin.go, config.go, plugin_test.go
 ```
 
+### Built-in Contrib Plugins
+
+CloudAI Fusion ships with 9 production-ready plugins across 3 domains in `pkg/plugin/contrib/`:
+
+#### Render Farm Plugins
+
+Integrates GPU/Spot render clusters as schedulable cloud resources.
+
+| Plugin | Extension Point | Description |
+|--------|-----------------|-------------|
+| `renderfarm.cloud` | `cloud.provider` | Exposes render clusters with cost estimation |
+| `renderfarm.scheduler.score` | `scheduler.score` | Scores nodes by Spot price, interruption rate, GPU availability |
+| `renderfarm.monitor.collector` | `monitor.collector` | Collects Prometheus metrics (frame rate, interruptions, cost) |
+
+**Configuration:**
+```yaml
+contrib:
+  render_farm:
+    enabled: true
+    manager_url: "http://render-manager:8080"
+    metrics_url: "http://render-manager:9090/metrics"
+    region: "us-west-2"
+```
+
+**Scoring formula:** `base(50) + cost_bonus(30 - price*200) - interrupt_penalty(rate*40) + gpu_bonus(free_gpus*5)`
+
+#### PostgreSQL Disaster Recovery Plugins
+
+Monitors logical replication health and validates failover decisions.
+
+| Plugin | Extension Point | Description |
+|--------|-----------------|-------------|
+| `dr.monitor.collector` | `monitor.collector` | Tracks replication lag, RPO/RTO, consistency status |
+| `dr.monitor.alerter` | `monitor.alerter` | Sends Slack/DingTalk alerts for DR events |
+| `dr.webhook.validating` | `webhook.validating` | Validates failover/rollback safety |
+
+**Configuration:**
+```yaml
+contrib:
+  disaster_recovery:
+    enabled: true
+    primary_host: "pg-primary.internal"
+    standby_host: "pg-standby.internal"
+    port: 5432
+    database: "cloudai"
+    alert_webhook_url: "https://hooks.slack.com/..."
+    max_replication_lag: 30  # seconds
+```
+
+**Failover validation rules:**
+- Primary must be unreachable (3 consecutive failures)
+- Standby must be healthy and caught up (lag < threshold)
+- Prevents split-brain scenarios
+
+#### AI Customer Service Plugins
+
+Integrates AI-powered customer support with threat detection.
+
+| Plugin | Extension Point | Description |
+|--------|-----------------|-------------|
+| `cs.monitor.collector` | `monitor.collector` | Tracks request rate, escalation rate, AI confidence |
+| `cs.webhook.mutating` | `webhook.mutating` | Routes messages through AI agent |
+| `cs.security.threat.detect` | `security.threat.detect` | Detects prompt injection, rate abuse, adversarial inputs |
+
+**Configuration:**
+```yaml
+contrib:
+  customer_service:
+    enabled: true
+    service_url: "http://ai-customer-service:8080"
+    ai_endpoint: "/api/v1/chat"
+    timeout: 30s
+    threat_detection:
+      enabled: true
+      rate_limit_per_minute: 100
+      injection_patterns: true
+```
+
+**Threat detection capabilities:**
+- **Rate abuse**: Detects excessive requests from single session
+- **Prompt injection**: Matches patterns like "ignore previous instructions"
+- **Adversarial input**: Flags low-confidence AI responses
+
+### Out-of-Process Deployment
+
+Each contrib plugin has a Webhook adapter for out-of-process deployment:
+
+| Project | Adapter | Protocol |
+|---------|---------|----------|
+| `render-farm/` | `docker/scripts/plugin_adapter.py` | HTTP POST `/plugin/webhook` |
+| `pg-disaster-recovery/` | `scripts/dr_plugin_adapter.py` | HTTP POST `/dr/webhook` |
+| `ai-customer-service/` | `PluginAdapterController.java` | HTTP POST `/plugin/webhook` |
+
+Adapters speak the CloudAI Fusion `WebhookRequest`/`WebhookResponse` protocol:
+
+```json
+// Request
+{"uid": "req-123", "extension_point": "webhook.mutating", "object": {...}}
+
+// Response
+{"uid": "req-123", "allowed": true, "result": {"code": 200, "message": "ok"}}
+```
+
+### Security
+
+All contrib plugins include SSRF protection:
+- **URL allowlisting**: Only configured hosts are permitted
+- **IP blocking**: Loopback (127.0.0.0/8), link-local (169.254.0.0/16), cloud metadata (169.254.169.254), private ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+- **Redirect limiting**: Max 10 redirects, blocked to sensitive IPs
+
 ---
 
 ## 12. AIOps & Automation

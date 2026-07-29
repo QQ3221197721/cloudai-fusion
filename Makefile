@@ -226,6 +226,40 @@ k8s-delete: ## Delete Kubernetes resources
 	$(KUBECTL) delete -f deploy/kubernetes/
 
 # ============================================================================
+# AISecOps - Threat Intelligence & ClickHouse Integration
+# ============================================================================
+
+.PHONY: clickhouse-up
+clickhouse-up: ## Start ClickHouse L1 intelligence data store
+	docker compose -f docker-compose.intel.yml up -d clickhouse
+	@echo "ClickHouse started on :8123 (:9000 native)"
+	@sleep 5 && curl -s http://localhost:8123/ping || echo "Waiting for ClickHouse..."
+
+.PHONY: clickhouse-down
+clickhouse-down: ## Stop ClickHouse
+	docker compose -f docker-compose.intel.yml down
+
+.PHONY: intel-hub-up
+intel-hub-up: ## Start full AISecOps stack (ClickHouse + Intel Hub)
+	docker compose -f docker-compose.intel.yml up -d
+
+.PHONY: intel-hub-down
+intel-hub-down: ## Stop AISecOps stack
+	docker compose -f docker-compose.intel.yml down
+
+.PHONY: aiseccops-up
+aiseccops-up: ## Start complete AISecOps platform (L1-L16 deep wells)
+	@echo "Starting AISecOps with all 16 deep wells..."
+	docker compose -f docker-compose.intel.yml -f docker-compose.yml up -d
+	@echo "AISecOps platform ready"
+	@echo "  ClickHouse (L9):   http://localhost:8123"
+	@echo "  Security DB:       clickhouse://security_admin:secure-ch-password-2026@clickhouse:9000/security"
+
+.PHONY: test-intel
+test-intel: ## Run threat intelligence unit tests
+	$(GO) test -v -race ./pkg/intel/... -coverprofile=intel-coverage.out
+
+# ============================================================================
 # AI Components
 # ============================================================================
 

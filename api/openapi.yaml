@@ -63,6 +63,8 @@ tags:
     description: Verifiable Control Plane (signed, hash-chained receipts + Merkle log)
   - name: redteam
     description: Verifiable AI Red Team (authorized, evidence-grade security validation)
+  - name: soc
+    description: AISecOps Operations layer (L3-L8) — detection wells + SOAR response
 
 paths:
   /healthz:
@@ -73,6 +75,177 @@ paths:
       responses:
         "200":
           description: Service is healthy
+
+  /api/v1/wells:
+    get:
+      summary: AISecOps deep-well readiness (honest per-well maturity)
+      description: |
+        Well-layer counterpart of /api/v1/capabilities. Publishes each deep well's
+        machine-checked readiness: wired, backend_mode (real|simulated|none),
+        fabric_connected, evidence_backed, and claimed_maturity (0..5). Values are
+        reported by the composition root from facts; an overclaim fails the
+        production boot (wellreadiness.Enforce).
+      tags: [system]
+      security: []
+      responses:
+        "200":
+          description: Well-readiness snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_mode: {type: string}
+                  total: {type: integer}
+                  min_maturity: {type: integer}
+                  max_maturity: {type: integer}
+                  all_fabric_connected: {type: boolean}
+                  wells:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        well: {type: integer}
+                        name: {type: string}
+                        claimed_maturity: {type: integer, description: "0 scaffold .. 5 production-hardened"}
+                        wired: {type: boolean}
+                        backend_mode: {type: string, enum: [real, simulated, none]}
+                        fabric_connected: {type: boolean}
+                        evidence_backed: {type: boolean}
+                        detail: {type: string}
+                        registered_at: {type: string, format: date-time}
+
+  /api/v1/hunt:
+    post:
+      summary: L2 — run a threat-hunting correlation (security:manage)
+      description: |
+        Correlates recent CVEs and IOC hits from L1 into MITRE ATT&CK-mapped
+        findings via the pluggable Reasoner (rule-based by default).
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                since: {type: string, format: date-time}
+                min_cvss: {type: number, format: float}
+                ioc_type: {type: string}
+                ioc_values: {type: array, items: {type: string}}
+                limit: {type: integer}
+      responses:
+        "200":
+          description: Hunt findings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  findings: {type: array, items: {type: object}}
+        "400": {description: Invalid query}
+
+  /api/v1/hunt/behavior:
+    post:
+      summary: L2 — UEBA behavioral anomaly analysis (security:manage)
+      description: |
+        User & Entity Behavior Analytics. `train` observations warm the per-entity
+        baseline (Welford mean/variance + categorical frequency) without producing
+        findings; `observe` observations are scored for numeric deviation (Z-score)
+        and categorical rarity/first-seen, yielding MITRE-mapped findings. Each
+        observation is {entity, metrics{name:number}, categories{name:string}}.
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [observe]
+              properties:
+                name: {type: string}
+                train:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      entity: {type: string}
+                      metrics: {type: object, additionalProperties: {type: number}}
+                      categories: {type: object, additionalProperties: {type: string}}
+                observe:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      entity: {type: string}
+                      metrics: {type: object, additionalProperties: {type: number}}
+                      categories: {type: object, additionalProperties: {type: string}}
+      responses:
+        "200":
+          description: Behavioral anomaly findings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  findings: {type: array, items: {type: object}}
+        "400": {description: Invalid request}
+
+  /api/v1/intel/sync:
+    post:
+      summary: L1 — trigger an offline threat-intel feed synchronization (security:manage)
+      tags: [soc]
+      responses:
+        "200":
+          description: Sync result (partial result + error surfaced on partial failure)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      cve_added: {type: integer}
+                      ioc_added: {type: integer}
+                      errors: {type: array, items: {type: string}}
+                  error: {type: string}
+
+  /api/v1/intel/stix:
+    post:
+      summary: L1 — ingest a STIX 2.1 bundle pushed in the request body (security:manage)
+      description: |
+        Push-model threat-intel ingestion for STIX 2.1 (the OASIS standard exported
+        by MISP, AlienVault OTX, and most TIPs). Indicators (ipv4/ipv6-addr,
+        domain-name, url, email-addr, file:hashes.*), vulnerabilities (→ CVEs), and
+        attack-patterns (→ MITRE techniques) are parsed and upserted into L1. Body
+        is a raw STIX bundle JSON (max 16 MiB).
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: A STIX 2.1 bundle (type=bundle with an objects array)
+      responses:
+        "200":
+          description: Sync result (partial result + error surfaced on partial failure)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      cve_added: {type: integer}
+                      ioc_added: {type: integer}
+                      errors: {type: array, items: {type: string}}
+                  error: {type: string}
 
   /api/v1/auth/login:
     post:
@@ -1577,6 +1750,372 @@ paths:
       responses:
         "200": {description: Receipts}
 
+  /api/v1/redteam/benchmark/cases:
+    get:
+      summary: List built-in CVE-Bench v2 cases (security:read)
+      tags: [redteam]
+      responses:
+        "200":
+          description: Benchmark case catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  cases:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: {type: string}
+                        expect_technique: {type: string, description: "MITRE ATT&CK ID the case must solve"}
+                        actions: {type: integer}
+
+  /api/v1/redteam/benchmark:
+    post:
+      summary: Run the deterministic CVE-Bench v2 suite (security:manage)
+      description: |
+        Runs the built-in suite on isolated in-memory evidence chains and returns
+        NUMERIC metrics (solve rate, scope violations that MUST be 0, and whether
+        every receipt verified) plus per-case results.
+      tags: [redteam]
+      responses:
+        "200":
+          description: Benchmark metrics + per-case results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metrics:
+                    type: object
+                    properties:
+                      cases: {type: integer}
+                      solved: {type: integer}
+                      solve_rate: {type: number, format: float}
+                      scope_violations: {type: integer}
+                      all_verified: {type: boolean}
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        case: {type: string}
+                        solved: {type: boolean}
+                        actions_run: {type: integer}
+                        findings: {type: integer}
+                        scope_violations: {type: integer}
+                        receipts_verified: {type: boolean}
+        "500": {description: Benchmark run failed}
+
+  /api/v1/redteam/ranges:
+    get:
+      summary: List provisioned ephemeral ranges (security:read)
+      tags: [redteam]
+      responses:
+        "200":
+          description: Ranges
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  ranges: {type: array, items: {$ref: '#/components/schemas/Range'}}
+    post:
+      summary: Provision an ephemeral practice/eval range (security:manage)
+      tags: [redteam]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                apps: {type: array, items: {type: string}, description: "logical app names (e.g. juice-shop)"}
+                manifests: {type: array, items: {type: string}, description: "kubectl-appliable manifest paths/URLs"}
+      responses:
+        "201":
+          description: Range provisioned
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Range'}
+        "500": {description: Provisioning failed}
+
+  /api/v1/redteam/ranges/{id}:
+    get:
+      summary: Get a range by ID (security:read)
+      tags: [redteam]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: Range
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Range'}
+        "404": {description: Not found}
+    delete:
+      summary: Tear down a range by ID (security:manage)
+      tags: [redteam]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Torn down}
+        "404": {description: Not found}
+
+  /api/v1/soc/findings:
+    get:
+      summary: List recent SOC findings, newest first (security:read)
+      tags: [soc]
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, default: 100}}
+      responses:
+        "200":
+          description: Findings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  findings: {type: array, items: {$ref: '#/components/schemas/SOCFinding'}}
+
+  /api/v1/soc/playbooks:
+    get:
+      summary: List L8 SOAR playbooks (security:read)
+      tags: [soc]
+      responses:
+        "200":
+          description: Playbooks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  playbooks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: {type: string}
+                        match_technique: {type: string}
+                        min_severity: {type: string, enum: [low, medium, high, critical]}
+                        actions: {type: array, items: {type: string}}
+                        requires_approval: {type: boolean}
+
+  /api/v1/soc/mitigations:
+    get:
+      summary: List active L8 mitigations applied by automated responses (security:read)
+      description: |
+        The observable effect of L8 SOAR responses: currently-active mitigations
+        (e.g. blocked networks, isolated hosts) recorded by the response actuator.
+        `actuator_real` reports whether a real enforcement backend is wired.
+      tags: [soc]
+      responses:
+        "200":
+          description: Active mitigations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  actuator: {type: string}
+                  actuator_real: {type: boolean}
+                  mitigations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        action: {type: string}
+                        target: {type: string}
+                        since: {type: string, format: date-time}
+
+  /api/v1/soc/detect:
+    post:
+      summary: L3-L7 — run the Sigma detection engine over structured log events (security:manage)
+      description: |
+        Evaluates a batch of structured log events (a field→value map each) of the
+        given Sigma logsource category against the loaded Sigma rule set, returning
+        and storing a MITRE-mapped finding per rule match. `rules_total` reports how
+        many rules are loaded (embedded + any operator-provided corpus).
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, events]
+              properties:
+                category:
+                  type: string
+                  description: Sigma logsource category (e.g. process_creation, network_connection, dns_query, webserver)
+                events:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      responses:
+        "200":
+          description: Detection findings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  rules_total: {type: integer}
+                  findings:
+                    type: array
+                    items: {type: object}
+
+  /api/v1/soc/analyze/endpoint:
+    post:
+      summary: L3 — analyze endpoint file hashes against L1 IOCs (security:manage)
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                host: {type: string}
+                file_hashes: {type: array, items: {type: string}}
+      responses:
+        "200": {$ref: '#/components/responses/SOCFindings'}
+        "400": {description: Invalid request}
+
+  /api/v1/soc/analyze/network:
+    post:
+      summary: L4 — analyze connections (IPs/domains) against L1 IOCs (security:manage)
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                host: {type: string}
+                ips: {type: array, items: {type: string}}
+                domains: {type: array, items: {type: string}}
+      responses:
+        "200": {$ref: '#/components/responses/SOCFindings'}
+        "400": {description: Invalid request}
+
+  /api/v1/soc/analyze/workload:
+    post:
+      summary: L5 — CIS-style Kubernetes workload posture check (security:manage)
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: {type: string}
+                namespace: {type: string}
+                privileged: {type: boolean}
+                host_network: {type: boolean}
+                host_pid: {type: boolean}
+                run_as_root: {type: boolean}
+                allow_privilege_escalation: {type: boolean}
+      responses:
+        "200": {$ref: '#/components/responses/SOCFindings'}
+        "400": {description: Invalid request}
+
+  /api/v1/soc/analyze/identity:
+    post:
+      summary: L6 — detect brute-force and impossible-travel auth anomalies (security:manage)
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                events:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      user: {type: string}
+                      source_ip: {type: string}
+                      country: {type: string}
+                      success: {type: boolean}
+                      timestamp: {type: string, format: date-time}
+      responses:
+        "200": {$ref: '#/components/responses/SOCFindings'}
+        "400": {description: Invalid request}
+
+  /api/v1/soc/analyze/image:
+    post:
+      summary: L7 — triage container-image CVEs (security:manage)
+      tags: [soc]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reference: {type: string}
+                cves:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: {type: string}
+                      cvss: {type: number, format: float}
+      responses:
+        "200": {$ref: '#/components/responses/SOCFindings'}
+        "400": {description: Invalid request}
+
+  /api/v1/soc/findings/{id}/respond:
+    post:
+      summary: L8 — orchestrate a SOAR response for a finding (security:manage)
+      tags: [soc]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: Response verdict
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SOCResponse'}
+        "404": {description: Finding not found}
+
+  /api/v1/soc/collect/endpoint:
+    post:
+      summary: L3 — run a real EDR collection and detect (security:manage)
+      description: |
+        Collects running-process executable hashes from the host via the EDR
+        collector (real `/proc` on Linux, otherwise a simulated collector) and
+        matches them against L1 IOCs. The response reports the collector's
+        real-vs-simulated mode so the run is never a silent simulation.
+      tags: [soc]
+      responses:
+        "200":
+          description: Findings from collected endpoint telemetry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  collector: {type: string, description: "e.g. proc-edr | static-edr"}
+                  real: {type: boolean, description: "true when a real backend collected the telemetry"}
+                  findings: {type: array, items: {$ref: '#/components/schemas/SOCFinding'}}
+        "500": {description: Collection failed (e.g. /proc unavailable off-Linux)}
+
 components:
   securitySchemes:
     BearerAuth:
@@ -1593,7 +2132,61 @@ components:
         type: string
       description: Unique tenant identifier
 
+  responses:
+    SOCFindings:
+      description: Findings produced by a detection well
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              total: {type: integer}
+              findings: {type: array, items: {$ref: '#/components/schemas/SOCFinding'}}
+
   schemas:
+    Range:
+      type: object
+      description: An ephemeral red-team practice/eval range
+      properties:
+        id: {type: string}
+        name: {type: string}
+        kube_context: {type: string}
+        endpoints: {type: array, items: {type: string}}
+        apps: {type: array, items: {type: string}}
+        created_at: {type: string, format: date-time}
+    SOCFinding:
+      type: object
+      description: A MITRE ATT&CK-mapped detection from an operations-layer well (L3-L8)
+      properties:
+        id: {type: string}
+        well: {type: integer, description: "deep-well number (3-8)"}
+        well_name: {type: string, description: "e.g. L4-network"}
+        technique: {type: string, description: "MITRE ATT&CK technique, e.g. T1071"}
+        tactic: {type: string, description: "MITRE ATT&CK tactic, e.g. TA0011"}
+        severity: {type: string, enum: [low, medium, high, critical]}
+        asset: {type: string}
+        title: {type: string}
+        evidence: {type: object, additionalProperties: true}
+        detected_at: {type: string, format: date-time}
+    SOCResponse:
+      type: object
+      description: An L8 SOAR orchestration verdict for a finding
+      properties:
+        id: {type: string}
+        finding_id: {type: string}
+        playbook: {type: string}
+        executed: {type: boolean, description: "false when human approval is required"}
+        created_at: {type: string, format: date-time}
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              type: {type: string, enum: [isolate-host, block-network, quarantine-file, revoke-credential, rebuild-image, harden-workload, notify]}
+              target: {type: string}
+              automated: {type: boolean}
+              detail: {type: string}
+
     TokenResponse:
       type: object
       properties:

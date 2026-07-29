@@ -62,6 +62,7 @@ production).
 | **Cross-cluster failover** | client-go API-server health probes + promotion | `client-go` | reported simulated without a real DR cluster |
 | **Verifiable Control Plane** | Ed25519-signed, hash-chained, RFC 6962 Merkle transparency log + offline verifier | `crypto/ed25519`, `crypto/sha256` | always real (no external dependency) |
 | **Verifiable AI Red Team** | scope-gated engagements, evidence-signed actions, LLM planner, web/AD exploit chaining | `client-go` + orchestrated tools | tools real-when-installed; LLM real-when-endpoint-set |
+| **AISecOps deep wells** | L1 intel (ClickHouse HTTP + STIX 2.1 feeds), L3 endpoint (`/proc` EDR, Linux), L8 response (gateway IP-ACL + active NetworkPolicy) | `net/http`, `/proc`, `pkg/security` | in-memory/static/recording fallback; real when the resp. env var is set |
 | **AI / LLM** | OpenAI / DashScope / Ollama / vLLM; optional PyTorch/SB3 RL | OpenAI-compatible + `torch`/`stable-baselines3` | rule-based heuristics (honestly reported at `/api/v1/models/status`) |
 
 Real Flux reconcile-status reads, cross-cluster failover, and hashicorp/raft consensus
@@ -85,6 +86,8 @@ a live LLM endpoint, etcd election**. Progress is measured objectively by
 | **Full Observability** | Prometheus metrics, OpenTelemetry tracing, Grafana, intelligent alerting |
 | **Verifiable Control Plane** | Ed25519-signed, hash-chained, Merkle-transparency-logged receipts for consequential actions; offline-verifiable via `cafctl` |
 | **Verifiable AI Red Team** | Authorized, evidence-grade security validation: scope-gated engagements, human-in-the-loop approval, web/AD exploit chaining, CVE-Bench harness |
+| **AISecOps 16 Deep Wells** | Intelligence→Operations→Response security fabric (L1-L16): L1 intel (ClickHouse + STIX 2.1), L2 hunting + UEBA, L3-L8 SOC detectors (Sigma) + auto-SOAR, evidence-signed; honest per-well readiness at `/api/v1/wells` |
+| **Plugin Ecosystem** | 9 contrib plugins across 3 domains: Render Farm (cloud provider + scheduler scoring + metrics), PostgreSQL DR (collector + alerter + failover validation), AI Customer Service (metrics + webhook + threat detection) |
 
 ## Architecture
 
@@ -106,6 +109,27 @@ a live LLM endpoint, etcd election**. Progress is measured objectively by
 A cross-cutting **Verifiable Control Plane** (`pkg/evidence`) signs every consequential
 action into a hash-chained, Merkle-transparency-logged ledger; the **Verifiable AI Red
 Team** (`pkg/redteam`) runs authorized, evidence-grade security validation on top of it.
+
+### Plugin Ecosystem
+
+CloudAI Fusion provides a Kubernetes Scheduler Framework-style plugin system with 9
+extension points. The `pkg/plugin/contrib/` package ships 9 production-ready plugins
+across 3 domains:
+
+| Domain | Plugin | Extension Point | Description |
+|--------|--------|-----------------|-------------|
+| **Render Farm** | `renderfarm.cloud` | `cloud.provider` | Exposes render clusters (GPU/Spot) as schedulable cloud resources with cost estimation |
+| | `renderfarm.scheduler.score` | `scheduler.score` | Scores nodes based on Spot price, interruption rate, and GPU availability |
+| | `renderfarm.monitor.collector` | `monitor.collector` | Collects Prometheus metrics (frame rate, Spot interruptions, cost) |
+| **PostgreSQL DR** | `dr.monitor.collector` | `monitor.collector` | Monitors replication lag, RPO/RTO, consistency check status |
+| | `dr.monitor.alerter` | `monitor.alerter` | Sends Slack/DingTalk alerts for DR events |
+| | `dr.webhook.validating` | `webhook.validating` | Validates failover/rollback decisions for safety |
+| **AI Customer Service** | `cs.monitor.collector` | `monitor.collector` | Tracks request rate, escalation rate, AI confidence |
+| | `cs.webhook.mutating` | `webhook.mutating` | Routes customer messages through AI agent |
+| | `cs.security.threat.detect` | `security.threat.detect` | Detects prompt injection, rate abuse, adversarial inputs |
+
+Plugins can run in-process (compiled into CloudAI Fusion) or out-of-process via
+Webhook adapters. See [docs/architecture.md](docs/architecture.md) for details.
 
 See [docs/architecture.md](docs/architecture.md) for component and data-flow detail.
 
@@ -181,6 +205,7 @@ Full spec: [`api/openapi.yaml`](api/openapi.yaml).
 | `GET /api/v1/cost/summary` `GET /api/v1/mesh/status` `GET /api/v1/edge/topology` | Cost / mesh / edge |
 | `GET /api/v1/evidence` `GET /api/v1/evidence/export` | **Verifiable Control Plane**: signed receipts, chain export, offline verify |
 | `POST /api/v1/redteam/engagements` `GET /api/v1/redteam/engagements/:id/report` | **Verifiable AI Red Team**: scoped engagements + verifiable reports |
+| `GET /api/v1/wells` `POST /api/v1/hunt` `POST /api/v1/intel/sync` `GET·POST /api/v1/soc/*` | **AISecOps 16 wells**: honest per-well readiness, L2 hunting, L1 intel sync, L3-L8 SOC + auto-SOAR |
 | **AI Engine** (:8090) | `POST /scheduling/optimize`, `POST /anomaly/detect`, `POST /chat`, `GET /models/status` |
 
 ## Tech Stack
@@ -207,7 +232,7 @@ Full spec: [`api/openapi.yaml`](api/openapi.yaml).
 
 ```
 cloudai-fusion/
-├── cmd/            # apiserver, scheduler, agent, healthcheck
+├── cmd/            # apiserver, scheduler, agent, healthcheck, cafctl, cafdemo
 ├── pkg/
 │   ├── runmode/    # run-mode policy (simulation/degraded/production)
 │   ├── capability/ # real-vs-simulated registry + fail-fast enforcement
@@ -218,6 +243,12 @@ cloudai-fusion/
 │   ├── scheduler/  # GPU scheduling (real K8s nodes; no fake nodes in prod)
 │   ├── evidence/   # Verifiable Control Plane: signed hash-chain + Merkle log + verifier
 │   ├── redteam/    # Verifiable AI Red Team: scoped engagements, evidence, exploit chaining
+│   ├── intel/ hunt/ soc/           # AISecOps L1 intel, L2 hunting, L3-L8 SOC + auto-SOAR
+│   ├── detect/                     # Sigma-compatible detection engine (L3-L7 log detection)
+│   ├── eventbus/ wellreadiness/    # 16-well fabric (deepwell router) + per-well honesty
+│   ├── plugin/                     # Plugin system: types, registry, manager, webhook, SDK
+│   │   ├── builtin/                # Built-in plugins (resource quota, gang scheduling, etc.)
+│   │   └── contrib/                # Contrib plugins: render-farm, DR, customer-service
 │   ├── cloud/ cluster/ security/ monitor/ mesh/ edge/ ...
 ├── ai/             # Python AI engine (agents, anomaly, RL scheduler)
 ├── .github/workflows/  # ci.yml + devsecops.yml
@@ -229,8 +260,8 @@ cloudai-fusion/
 
 | Version | Focus |
 |---------|-------|
-| **Current** | Run-mode honesty framework; real Redis/NATS/Kafka/K8s-Lease/ArgoCD + Flux, cross-cluster failover, hashicorp/raft; Verifiable Control Plane (evidence) + Verifiable AI Red Team; DevSecOps + SLSA |
-| **Next** | Live-infra integration CI (real clouds / LLM / CVE-Bench in kind), red-team `/run` + `/ranges` API, AI-engine depth |
+| **Current** | Run-mode honesty framework; real Redis/NATS/Kafka/K8s-Lease/ArgoCD + Flux, cross-cluster failover, hashicorp/raft; Verifiable Control Plane (evidence) + Verifiable AI Red Team; AISecOps 16 deep wells (fabric + auto-SOAR + wellreadiness; real L1 ClickHouse / L3 EDR / L8 actuator, CI-verified moat); DevSecOps + SLSA |
+| **Next** | Live-infra integration CI (real clouds / LLM / CVE-Bench in kind), L16 cluster-reconciled data-plane enforcement, AI-engine depth |
 
 ## Contributing / License
 

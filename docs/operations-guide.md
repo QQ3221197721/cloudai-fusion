@@ -157,6 +157,21 @@ ingress:
 | AI Engine | `GET /healthz` | `{"status":"healthy"}` |
 | Scheduler | `GET /healthz` | `{"status":"healthy"}` |
 
+### AISecOps real-enforcement toggles (operator opt-in)
+
+AISecOps runs with honest simulated backends by default; operators arm the **real**
+enforcement paths explicitly. Each is off by default and surfaced honestly at
+`GET /api/v1/wells` (well `backend_mode`/maturity) and `GET /api/v1/capabilities`.
+
+| Env var | Default | Effect when enabled |
+|---------|---------|---------------------|
+| `CLOUDAI_CLICKHOUSE_ENDPOINT` (+ `_DB`/`_USER`/`_PASSWORD`) | (empty) | L1 intel uses a real ClickHouse HTTP store instead of in-memory |
+| `CLOUDAI_EDR_REAL_COLLECTOR` | `false` | L3 endpoint uses the real `/proc` EDR collector (Linux nodes only) |
+| `CLOUDAI_GATEWAY_ENABLE_IP_ACL` | `false` | Arms gateway IP-ACL enforcement; L8 `block-network` becomes a **real** block (requests from blocked IPs are rejected). Configure allowlists first to avoid locking out legitimate traffic. |
+
+> Verify after enabling: `GET /api/v1/wells` shows L1/L8 `backend_mode: real` (L8 → M2)
+> and `GET /api/v1/soc/mitigations` reports `actuator_real: true`.
+
 ---
 
 ## 3. Monitoring & Alerting

@@ -22,16 +22,21 @@ import (
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/feature"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/finops"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/intel"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/logging"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/mesh"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/middleware"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/monitor"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/plugin"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/security"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/soc"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/websocket"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/wellreadiness"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/workload"
 
 	"go.opentelemetry.io/otel/trace"
@@ -68,6 +73,26 @@ type RouterConfig struct {
 	// RedTeamManager backs the Verifiable AI Red Team subsystem
 	// (/api/v1/redteam). When nil, the red-team endpoints are not registered.
 	RedTeamManager *redteam.Manager
+
+	// SOCEngine backs the AISecOps Operations-layer wells L3-L8
+	// (/api/v1/soc). When nil, the SOC endpoints are not registered.
+	SOCEngine *soc.Engine
+
+	// SOCEDRCollector backs POST /api/v1/soc/collect/endpoint (L3 real endpoint
+	// telemetry). When nil, the collection route is not registered.
+	SOCEDRCollector soc.EDRCollector
+
+	// HuntEngine backs POST /api/v1/hunt (L2 threat hunting). When nil, the hunt
+	// route is not registered.
+	HuntEngine *hunt.Engine
+
+	// IntelHub backs POST /api/v1/intel/sync (L1 offline feed sync). When nil, the
+	// sync route is not registered.
+	IntelHub *intel.Hub
+
+	// PluginManager backs the contrib plugin runtime (/api/v1/plugins). When nil,
+	// only the static manifest catalog is served (runtime endpoints are omitted).
+	PluginManager *plugin.Manager
 }
 
 // NewRouter creates the main API router with all routes configured
@@ -105,7 +130,9 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 	// Capability transparency (no auth): honest real-vs-simulated backend status
 	// for every external-dependency-backed subsystem.
 	router.GET("/api/v1/capabilities", handleCapabilities)
-
+	// AISecOps well-readiness transparency (no auth): honest per-well maturity,
+	// wiring, and fabric-connectivity — the well-layer counterpart of capabilities.
+	router.GET("/api/v1/wells", handleWells)
 	// Evidence public key (no auth): publishing the verifying key is how third
 	// parties establish trust to verify exported chains offline.
 	if cfg.EvidenceLedger != nil {
@@ -290,7 +317,70 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 					rt.GET("/engagements/:id/report", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamReport(cfg.RedTeamManager, cfg.EvidenceLedger))
 					rt.GET("/engagements/:id/evidence", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamEvidence(cfg.EvidenceLedger))
 				}
+
+				// CVE-Bench v2: deterministic, evidence-verified capability suite.
+				rt.GET("/benchmark/cases", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamBenchmarkCases())
+				rt.POST("/benchmark", auth.RequirePermission(auth.PermSecurityManage), handleRedTeamBenchmarkRun(cfg.Logger))
+
+				// Ephemeral range farm: throwaway practice/eval targets. The
+				// in-memory provider is honestly simulated and needs no cluster,
+				// so the endpoints work in any run mode (kind-backed in integration).
+				var rangeRecorder evidence.Recorder
+				if cfg.EvidenceLedger != nil {
+					rangeRecorder = cfg.EvidenceLedger
+				}
+				rangeMgr := redteam.NewRangeManager(redteam.NewInMemoryRangeProvider(rangeRecorder, cfg.Logger), cfg.Logger)
+				rt.POST("/ranges", auth.RequirePermission(auth.PermSecurityManage), handleRedTeamRangeCreate(rangeMgr))
+				rt.GET("/ranges", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamRangeList(rangeMgr))
+				rt.GET("/ranges/:id", auth.RequirePermission(auth.PermSecurityRead), handleRedTeamRangeGet(rangeMgr))
+				rt.DELETE("/ranges/:id", auth.RequirePermission(auth.PermSecurityManage), handleRedTeamRangeTeardown(rangeMgr))
 			}
+		}
+
+		// AISecOps Operations layer (L3-L8): detection + SOAR response. Reads
+		// require security-read; telemetry submission and response are
+		// security-manage. Findings and responses are evidence-signed inside the
+		// engine.
+		if cfg.SOCEngine != nil {
+			sc := v1.Group("/soc")
+			{
+				sc.GET("/findings", auth.RequirePermission(auth.PermSecurityRead), handleSOCFindings(cfg.SOCEngine))
+				sc.GET("/playbooks", auth.RequirePermission(auth.PermSecurityRead), handleSOCPlaybooks(cfg.SOCEngine))
+				sc.GET("/mitigations", auth.RequirePermission(auth.PermSecurityRead), handleSOCMitigations(cfg.SOCEngine))
+				sc.POST("/detect", auth.RequirePermission(auth.PermSecurityManage), handleSOCDetect(cfg.SOCEngine))
+				sc.POST("/analyze/endpoint", auth.RequirePermission(auth.PermSecurityManage), handleSOCAnalyzeEndpoint(cfg.SOCEngine))
+				sc.POST("/analyze/network", auth.RequirePermission(auth.PermSecurityManage), handleSOCAnalyzeNetwork(cfg.SOCEngine))
+				sc.POST("/analyze/workload", auth.RequirePermission(auth.PermSecurityManage), handleSOCAnalyzeWorkload(cfg.SOCEngine))
+				sc.POST("/analyze/identity", auth.RequirePermission(auth.PermSecurityManage), handleSOCAnalyzeIdentity(cfg.SOCEngine))
+				sc.POST("/analyze/image", auth.RequirePermission(auth.PermSecurityManage), handleSOCAnalyzeImage(cfg.SOCEngine))
+				sc.POST("/findings/:id/respond", auth.RequirePermission(auth.PermSecurityManage), handleSOCRespond(cfg.SOCEngine))
+				if cfg.SOCEDRCollector != nil {
+					sc.POST("/collect/endpoint", auth.RequirePermission(auth.PermSecurityManage), handleSOCCollectEndpoint(cfg.SOCEngine, cfg.SOCEDRCollector))
+				}
+			}
+		}
+
+		// Plugin ecosystem: the manifest catalog is always served (static
+		// marketplace metadata); the runtime endpoints appear only when a
+		// plugin manager is actually running contrib plugins.
+		pl := v1.Group("/plugins")
+		{
+			pl.GET("/manifests", auth.RequirePermission(auth.PermClusterRead), handlePluginManifests())
+			if cfg.PluginManager != nil {
+				pl.GET("", auth.RequirePermission(auth.PermClusterRead), handlePluginList(cfg.PluginManager))
+				pl.GET("/:name/health", auth.RequirePermission(auth.PermClusterRead), handlePluginHealth(cfg.PluginManager))
+			}
+		}
+
+		// L2 Threat Hunting (correlation over L1 intelligence).
+		if cfg.HuntEngine != nil {
+			v1.POST("/hunt", auth.RequirePermission(auth.PermSecurityManage), handleHuntRun(cfg.HuntEngine))
+			v1.POST("/hunt/behavior", auth.RequirePermission(auth.PermSecurityManage), handleHuntBehavior(cfg.HuntEngine))
+		}
+		// L1 offline threat-intel feed synchronization trigger.
+		if cfg.IntelHub != nil {
+			v1.POST("/intel/sync", auth.RequirePermission(auth.PermSecurityManage), handleIntelSync(cfg.IntelHub))
+			v1.POST("/intel/stix", auth.RequirePermission(auth.PermSecurityManage), handleIntelSTIX(cfg.IntelHub))
 		}
 	}
 
@@ -498,6 +588,36 @@ func handleCapabilities(c *gin.Context) {
 		"simulated_count": len(sim),
 		"backends":        backends,
 		"simulated":       sim,
+	})
+}
+
+// handleWells is the AISecOps honesty instrument at the well layer: it publishes
+// the machine-checked readiness of every deep well (wired / backend / fabric-
+// connected / evidence-backed / maturity). It is the well-layer counterpart of
+// /api/v1/capabilities and cannot be a marketing claim — the values are reported
+// by the composition root from facts, and overclaims fail the production boot.
+func handleWells(c *gin.Context) {
+	wells := wellreadiness.Snapshot()
+	minM, maxM := 0, 0
+	allConnected := len(wells) > 0
+	for i, w := range wells {
+		if i == 0 || int(w.Claimed) < minM {
+			minM = int(w.Claimed)
+		}
+		if int(w.Claimed) > maxM {
+			maxM = int(w.Claimed)
+		}
+		if !w.FabricConnected {
+			allConnected = false
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"run_mode":             wellreadiness.Policy().String(),
+		"total":                len(wells),
+		"min_maturity":         minM,
+		"max_maturity":         maxM,
+		"all_fabric_connected": allConnected,
+		"wells":                wells,
 	})
 }
 

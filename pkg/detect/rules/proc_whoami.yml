@@ -1,0 +1,15 @@
+title: Whoami Utility Execution
+id: 9b1d0a3e-4c7f-4a2b-8e11-6c2f9a0b3d02
+status: stable
+description: Execution of whoami.exe, frequently used for situational-awareness discovery after initial access.
+level: low
+tags:
+  - attack.discovery
+  - attack.t1033
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\whoami.exe'
+  condition: selection

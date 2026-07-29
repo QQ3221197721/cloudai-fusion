@@ -431,3 +431,15 @@ func stringContains(s, sub string) bool {
 	}
 	return false
 }
+
+// TestLoadSecurityEnforcementDefaults locks in that real-enforcement backends are
+// OFF by default, so operators must enable them explicitly (honesty default).
+func TestLoadSecurityEnforcementDefaults(t *testing.T) {
+	cfg, _ := Load(nil)
+	if cfg.GatewayEnableIPACL {
+		t.Errorf("gateway IP ACL must be OFF by default (operator opt-in)")
+	}
+	if cfg.EDRRealCollector {
+		t.Errorf("EDR real collector must be OFF by default (operator opt-in)")
+	}
+}

@@ -1,0 +1,22 @@
+title: Outbound C2 to Rare Port on External Host
+id: e5b7d9c3-0f4a-4d8e-b126-3c4d5e6f7a05
+status: experimental
+description: Outbound-initiated connection to a known implant default port toward a non-RFC1918 destination. Excludes internal traffic.
+level: medium
+tags:
+  - attack.command_and_control
+  - attack.t1571
+logsource:
+  category: network_connection
+detection:
+  selection:
+    Initiated: 'true'
+    DestinationPort:
+      - '4444'
+      - '1337'
+      - '9001'
+  filter_internal:
+    DestinationIp|cidr:
+      - '10.0.0.0/8'
+      - '192.168.0.0/16'
+  condition: selection and not filter_internal

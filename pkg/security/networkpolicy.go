@@ -331,6 +331,41 @@ func (e *NetworkPolicyEngine) ListPolicies() []*NetworkPolicySpec {
 	return result
 }
 
+// EnforceIsolation creates and ACTIVATES a deny-by-default NetworkPolicy for the
+// given target (empty ingress/egress = deny all), storing it as an active policy.
+// It is a real, in-process control-plane action — the authoritative policy object
+// a cluster reconciler (Cilium/K8s operator) would apply to the data plane — and
+// is the executor an automated L8 response uses to isolate a host/workload.
+func (e *NetworkPolicyEngine) EnforceIsolation(namespace, name string, selector map[string]string) *NetworkPolicySpec {
+	if namespace == "" {
+		namespace = "default"
+	}
+	if len(selector) == 0 {
+		selector = map[string]string{"app": name}
+	}
+	now := time.Now().UTC()
+	policy := &NetworkPolicySpec{
+		ID:          common.NewUUID(),
+		Name:        name,
+		Namespace:   namespace,
+		Type:        "cilium",
+		Selector:    selector,
+		Ingress:     []NetworkRule{}, // deny-all ingress
+		Egress:      []NetworkRule{}, // deny-all egress
+		Status:      "active",
+		GeneratedAt: now,
+		AppliedAt:   &now,
+		Source:      "soar-isolation",
+	}
+	e.mu.Lock()
+	e.policies = append(e.policies, policy)
+	e.mu.Unlock()
+	e.logger.WithFields(logrus.Fields{
+		"policy": policy.Name, "namespace": namespace,
+	}).Info("Isolation network policy enforced (active)")
+	return policy
+}
+
 // ApprovePoliciy marks a draft policy as active.
 func (e *NetworkPolicyEngine) ApprovePolicy(policyID string) error {
 	e.mu.Lock()
