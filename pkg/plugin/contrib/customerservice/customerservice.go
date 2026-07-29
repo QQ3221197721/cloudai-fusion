@@ -147,7 +147,7 @@ func (p *CSCollectorPlugin) Health(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("CS service unreachable: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode >= 500 {
 		return fmt.Errorf("CS service returned HTTP %d", resp.StatusCode)
 	}
@@ -220,7 +220,7 @@ func (p *CSCollectorPlugin) fetchStats(ctx context.Context) (*CSStats, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("CS stats endpoint returned HTTP %d", resp.StatusCode)
@@ -352,7 +352,7 @@ func (p *CSWebhookPlugin) invokeAI(ctx context.Context, msg CustomerMessage) (*C
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))

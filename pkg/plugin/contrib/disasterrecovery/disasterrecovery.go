@@ -176,7 +176,7 @@ func (p *DRCollectorPlugin) Health(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("DR primary monitor unreachable: %w", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode >= 500 {
 		return fmt.Errorf("DR primary monitor returned HTTP %d", resp.StatusCode)
 	}
@@ -272,7 +272,7 @@ func (p *DRCollectorPlugin) fetchDRStatus(ctx context.Context) (*DRStatus, error
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("DR status endpoint returned HTTP %d", resp.StatusCode)
@@ -428,7 +428,7 @@ func (p *DRAlerterPlugin) postJSON(ctx context.Context, webhookURL string, paylo
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
