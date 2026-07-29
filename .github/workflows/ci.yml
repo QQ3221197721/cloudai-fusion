@@ -35,7 +35,9 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.11.3
+          # v2.12.2+ is built with Go >= 1.25 and can typecheck this module's
+          # `go 1.25.7` directive; v2.11.3 failed to load packages (exit code 3).
+          version: v2.12.2
           args: --timeout=5m
 
   go-test:
