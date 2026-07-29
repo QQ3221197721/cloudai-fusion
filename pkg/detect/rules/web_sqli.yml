@@ -1,0 +1,17 @@
+title: Web Request SQL Injection Attempt
+id: d4a6c8b2-9e3f-4c7d-a015-2b3c4d5e6f04
+status: stable
+description: Classic SQL-injection signatures in an HTTP request URI or body, indicating exploitation of a public-facing application.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+logsource:
+  category: webserver
+detection:
+  keywords:
+    - "' OR 1=1"
+    - "' OR '1'='1"
+    - 'UNION SELECT'
+    - "'; DROP TABLE"
+  condition: keywords

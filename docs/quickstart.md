@@ -133,6 +133,9 @@ Precedence: **CLI flags > environment (`CLOUDAI_` prefix) > `cloudai-fusion.yaml
 | `CLOUDAI_DEBUG_ENABLED` | false | Enable `/debug/*` (JWT admin + optional IP allowlist) |
 | `OPENAI_API_KEY` / `DASHSCOPE_API_KEY` | (empty) | Enable LLM features |
 | `ARGOCD_SERVER` / `ARGOCD_AUTH_TOKEN` | (empty) | Enable real ArgoCD GitOps sync |
+| `CLOUDAI_CLICKHOUSE_ENDPOINT` | (empty) | AISecOps L1 intel real store; empty ⇒ in-memory (simulated) |
+| `CLOUDAI_EDR_REAL_COLLECTOR` | false | AISecOps L3 real `/proc` EDR collector (Linux); else simulated |
+| `CLOUDAI_GATEWAY_ENABLE_IP_ACL` | false | Arm real gateway IP-ACL enforcement; makes L8 `block-network` a real block |
 
 ## Enabling LLM features
 

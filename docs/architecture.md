@@ -86,6 +86,11 @@ simulation is acceptable.
 - **LLM**: OpenAI / DashScope / Ollama / vLLM via a unified client with priority fallback.
 - **ML**: PyTorch / stable-baselines3 are **optional** (guarded by `try/except ImportError`);
   the default runtime uses NumPy heuristics (Z-score/IQR/EMA anomaly, tabular Q-learning).
+- **Multivariate anomaly detection** (`anomaly/mahalanobis.py`): a real
+  Mahalanobis-distance detector (mean + shrinkage covariance, chi-square threshold;
+  numpy/scipy only) catches JOINT anomalies that per-metric Z-scores miss. Its quality
+  is a CI-gated fact: `anomaly/benchmark.py` measures precision/recall/F1/ROC-AUC on a
+  labeled synthetic dataset, asserted in `tests/test_mahalanobis.py`.
 - **Honesty**: `GET /api/v1/models/status` reports exactly which models/LLMs are active
   versus rule-based.
 
@@ -105,6 +110,83 @@ simulation is acceptable.
   AD pathing; CVE-Bench harness; multi-tenant isolation; per-engagement FinOps receipts.
   Reachable at `/api/v1/redteam`. Full design: `docs/redteam-subsystem-spec.md`.
 
+### AISecOps Deep Wells (L1-L16)
+- A verifiable security-operations overlay organized as 16 "deep wells" in three
+  layers — Intelligence (L1 `pkg/intel`, L2 `pkg/hunt`), Operations (L3-L8
+  `pkg/soc`), and Foundation (L9-L16, incl. L10 `ai/scheduler`, L13 `pkg/evidence`,
+  L14 `pkg/redteam`). Detectors are deterministic and rule-based by default
+  (honestly reported), consume L1 IOC/CVE intelligence, produce MITRE ATT&CK-mapped
+  findings, and escalate to the L8 SOAR orchestrator; every analysis/response is a
+  signed L13 receipt.
+- **Sigma detection engine** (`pkg/detect`): L3-L7 also run a real, dependency-light
+  Sigma-compatible engine (parser + condition grammar + field modifiers) over
+  structured log events, with an embedded rule set and `LoadSigmaDir` for the full
+  upstream SigmaHQ corpus. Exposed at `POST /api/v1/soc/detect`.
+- **UEBA behavioral hunting** (`pkg/hunt/ueba.go`): L2 learns per-entity baselines
+  (Welford mean/variance) and flags numeric deviations (Z-score) and rare/first-seen
+  categorical values — the statistical core of Splunk UBA / Exabeam / Elastic ML.
+  Exposed at `POST /api/v1/hunt/behavior`.
+- The wells are connected by an **EventBus v2 fabric** (`pkg/eventbus/deepwell.go`):
+  a directed connectivity matrix + hop-bounded `WellRouter`, instantiated and wired
+  in `cmd/apiserver/main.go`. An **L8 auto-consumer** subscribes to the fabric and
+  runs an evidence-signed SOAR response automatically when an L3-L7 detection is
+  routed to L8 (idempotent per finding), closing the detection→response loop.
+- **Real backends:** L1 uses a ClickHouse HTTP store when `CLOUDAI_CLICKHOUSE_ENDPOINT`
+  is set (else in-memory, reported); L1 also parses **STIX 2.1** bundles (MISP/OTX)
+  via `stix.json` feeds or `POST /api/v1/intel/stix`; L3 uses a real `/proc` EDR
+  collector on Linux when `CLOUDAI_EDR_REAL_COLLECTOR=true`; L8 executes responses
+  through a real actuator (gateway IP-ACL block + active NetworkPolicy) that
+  operators arm with `CLOUDAI_GATEWAY_ENABLE_IP_ACL`.
+- **Well-readiness honesty** (`pkg/wellreadiness`): each wired well reports a
+  machine-checked maturity (wired / real-backend / fabric-connected / evidence-backed).
+  `wellreadiness.Enforce()` fails a production boot on any overclaim; `GET /api/v1/wells`
+  publishes the honest snapshot. L13's offline third-party verifiability is CI-verified
+  by the `verifiable-moat` job (`cafctl moat-demo`).
+  Reachable at `/api/v1/wells`, `/api/v1/intel/sync`, `/api/v1/hunt`, `/api/v1/soc`,
+  and `/api/v1/redteam`. Full design: `docs/aisecops-subsystem-spec.md`.
+
+### Plugin Ecosystem (`pkg/plugin`)
+
+CloudAI Fusion provides a **Kubernetes Scheduler Framework-style plugin system** with
+9 extension points (`scheduler.filter/score/bind`, `cloud.provider`, `monitor.collector/alerter`,
+`security.threat.detect`, `webhook.mutating/validating`). Plugins can run in-process
+(compiled into the binary) or out-of-process via HTTP webhook adapters.
+
+**Built-in plugins** (`pkg/plugin/builtin/`): Resource quota filtering, gang scheduling,
+preemption policies, cost-aware scoring — compiled directly into the platform.
+
+**Contrib plugins** (`pkg/plugin/contrib/`): Production-ready integrations for three
+external domains, each with a Webhook adapter for out-of-process deployment:
+
+| Domain | Source Project | Plugins | Extension Points |
+|--------|---------------|---------|------------------|
+| **Render Farm** | `render-farm/` | `RenderFarmCloudProviderPlugin`, `RenderFarmScorePlugin`, `RenderFarmCollectorPlugin` | `cloud.provider`, `scheduler.score`, `monitor.collector` |
+| **PostgreSQL DR** | `pg-disaster-recovery/` | `DRCollectorPlugin`, `DRAlerterPlugin`, `DRWebhookPlugin` | `monitor.collector`, `monitor.alerter`, `webhook.validating` |
+| **AI Customer Service** | `ai-customer-service/` | `CSCollectorPlugin`, `CSWebhookPlugin`, `CSThreatDetectorPlugin` | `monitor.collector`, `webhook.mutating`, `security.threat.detect` |
+
+**Render Farm plugins** expose GPU/Spot render clusters as schedulable cloud resources.
+The Score plugin ranks nodes by Spot price, interruption rate, and GPU availability;
+the Collector scrapes Prometheus metrics (`render_frames_total`, `render_spot_interruptions_total`,
+`render_estimated_cost_usd`) and feeds interruption rates back to the scorer.
+
+**PostgreSQL DR plugins** monitor logical replication health. The Collector tracks
+replication lag, RPO/RTO, and consistency check status; the Alerter sends Slack/DingTalk
+notifications; the Webhook validates failover/rollback decisions for safety (primary
+must be unreachable, standby must be caught up).
+
+**AI Customer Service plugins** integrate AI-powered customer support. The Collector
+tracks request rates, escalation rates, and AI confidence scores; the Webhook routes
+messages through the AI agent; the Threat Detector identifies prompt injection, rate
+abuse, and adversarial inputs.
+
+Each contrib plugin has a corresponding **Webhook adapter** in the source project
+(`render-farm/docker/scripts/plugin_adapter.py`, `pg-disaster-recovery/scripts/dr_plugin_adapter.py`,
+`ai-customer-service/.../PluginAdapterController.java`) that speaks the CloudAI Fusion
+WebhookRequest/WebhookResponse protocol, enabling out-of-process deployment.
+
+SSRF protection is built into all plugins: URL allowlisting, IP range blocking
+(loopback, link-local, cloud metadata), and redirect limiting.
+
 ## Real-vs-Simulated Matrix
 
 | Subsystem | Real driver | Simulated fallback | Prod behavior |
@@ -120,6 +202,9 @@ simulation is acceptable.
 | Cross-cluster failover | client-go health probes | simulated w/o DR cluster | must be real |
 | Verifiable Control Plane | Ed25519 + Merkle log + offline verifier | (always real) | always real |
 | Red team | scope gate + evidence + LLM/tools | tools/LLM real-when-configured | authorized-only |
+| AISecOps L1 intel | ClickHouse HTTP store | in-memory store (labeled) | real when `CLICKHOUSE_ENDPOINT` set |
+| AISecOps L3 endpoint | `/proc` EDR collector (Linux) | static/simulated collector | real when `EDR_REAL_COLLECTOR=true` |
+| AISecOps L8 response | gateway IP-ACL block + active NetworkPolicy | in-process recording | real block when `GATEWAY_ENABLE_IP_ACL=true` |
 | AI/LLM | OpenAI/DashScope/Ollama/vLLM + torch | heuristics | honest via `/models/status` |
 
 Flux reconcile-status reads, cross-cluster failover, and hashicorp/raft are now real

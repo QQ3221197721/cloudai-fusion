@@ -8,6 +8,13 @@
 > FinOps, hardware orchestration) is the *bedrock*. **Both** dig deep wells, on **one**
 > verifiable spine, and the wells **interconnect** — so depth finally matches breadth.
 > Everything here is authorized-security-validation only.
+>
+> **Update (implemented):** the Verifiable Fabric has since been generalized to the
+> **16-well AISecOps model** (`docs/aisecops-subsystem-spec.md`) — the nine moat wells
+> below are the highest-differentiation subset of those sixteen, all still on one spine.
+> The flagship claim is now **CI-verified**: `cmd/cafctl moat-demo` runs a REAL
+> engagement, exports its signed chain, and an INDEPENDENT `cafctl verify` re-checks it
+> OFFLINE against a pinned key (tamper ⇒ rejected), gated by the CI `verifiable-moat` job.
 
 ## 0. TL;DR
 

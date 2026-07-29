@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -56,6 +57,7 @@ func newRootCmd() *cobra.Command {
 	root.AddCommand(newVerifyRemediationCmd())
 	root.AddCommand(newVerifyIsolationCmd())
 	root.AddCommand(newVerifySagaCmd())
+	root.AddCommand(newMoatDemoCmd())
 	return root
 }
 
@@ -648,4 +650,82 @@ func keyKind(pinned bool) string {
 		return "pinned"
 	}
 	return "embedded"
+}
+
+// newMoatDemoCmd runs a REAL red-team engagement and verifies its full signed
+// evidence chain OFFLINE via the same core that backs `cafctl verify` — then
+// tampers with a receipt to show the tamper is caught. This is the flagship,
+// reproducible proof of L13 (the Verifiable Control Plane): a third party can
+// verify a genuine engagement's chain with no access to the platform.
+func newMoatDemoCmd() *cobra.Command {
+	var outDir string
+	cmd := &cobra.Command{
+		Use:   "moat-demo",
+		Short: "Run a real red-team engagement and verify its signed chain OFFLINE",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			out := cmd.OutOrStdout()
+			art, err := redteam.RunVerifiableEngagementDemo(cmd.Context())
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(out, "Real engagement %s: %d signed receipts, %d findings.\n",
+				art.EngagementID, art.ReceiptCount, art.FindingCount)
+
+			// Verify VALID via the exact core `cafctl verify` uses, pinned key.
+			ok, err := runVerify(art.BundleJSON, art.PublicKeyPEM, false, out)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return fmt.Errorf("engagement chain unexpectedly INVALID")
+			}
+
+			// Adversarial: tamper one receipt; verification MUST fail.
+			tampered, terr := tamperBundle(art.BundleJSON)
+			if terr != nil {
+				return terr
+			}
+			bad, _ := runVerify(tampered, art.PublicKeyPEM, false, io.Discard)
+			if bad {
+				return fmt.Errorf("a tampered chain MUST fail verification, but it passed")
+			}
+			fmt.Fprintln(out, "Tamper check: a mutated receipt is CAUGHT (chain INVALID).")
+
+			if outDir != "" {
+				if werr := writeMoatArtifacts(outDir, art); werr != nil {
+					return werr
+				}
+				fmt.Fprintf(out, "Artifacts written to %s (chain.json, trusted.pem).\n", outDir)
+				fmt.Fprintf(out, "Reproduce: cafctl verify --bundle %s --pubkey %s\n",
+					filepath.Join(outDir, "chain.json"), filepath.Join(outDir, "trusted.pem"))
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&outDir, "out", "", "optional directory to write chain.json + trusted.pem")
+	return cmd
+}
+
+// tamperBundle mutates one receipt's Action so the chain no longer verifies.
+func tamperBundle(bundleJSON []byte) ([]byte, error) {
+	var bundle evidence.ExportBundle
+	if err := json.Unmarshal(bundleJSON, &bundle); err != nil {
+		return nil, fmt.Errorf("parse bundle for tamper: %w", err)
+	}
+	if len(bundle.Records) == 0 {
+		return nil, fmt.Errorf("empty chain: nothing to tamper")
+	}
+	bundle.Records[0].Action += "-tampered"
+	return json.Marshal(bundle)
+}
+
+// writeMoatArtifacts persists the exported chain and pinned key for reproduction.
+func writeMoatArtifacts(dir string, art *redteam.VerifiableEngagementDemo) error {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(dir, "chain.json"), art.BundleJSON, 0o600); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, "trusted.pem"), art.PublicKeyPEM, 0o600)
 }

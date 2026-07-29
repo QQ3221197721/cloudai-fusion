@@ -1,0 +1,199 @@
+{
+  "namespace": "redteam/engagement/DEMO-2026",
+  "seal": {
+    "id": "848bc49f-84ca-4551-b596-87df56e3f316",
+    "seq": 4,
+    "prev_hash": "13a8141dde17b9ecc9d8bd12a8ff612c217a6bd998de5bd3ecbbeffbba90d50e",
+    "timestamp": "2026-07-20T03:08:14.3391966Z",
+    "actor": "redteam",
+    "action": "evidence.seal",
+    "subject": "redteam/engagement/DEMO-2026",
+    "run_mode": "simulation",
+    "backends": [
+      {
+        "component": "evidence.seal",
+        "mode": "real",
+        "driver": "rfc6962-merkle"
+      }
+    ],
+    "input_hash": "3e2c2aba427b486fb6c3e2b100f1a0ff592b4884ca75f8a73be231e512fb3716",
+    "output_hash": "a87a28f6f9b9287ca2b379103b5893b364cfa394ace285d496fd5f1ab8555189",
+    "payload": {
+      "namespace": "redteam/engagement/DEMO-2026",
+      "count": 3,
+      "subtree_root": "73ae913099158ee3d8b29c9f31b136a48ed4384e2bbcd509868da2c52be33d89",
+      "member_ids": [
+        "f8510e98-1a1c-42cb-b62f-127ec8d8bb2f",
+        "55111922-c8dd-46aa-a691-fc392458b4e2",
+        "94bdfd96-beaa-4561-86c3-da8c6fe457ef"
+      ]
+    },
+    "hash": "a5949acb2817529ceccbb8e41d1d9668362614fb9b6ff2537bb0d5711deeb165",
+    "signature": "ba3FhI3Fuhw1YrsIn02T/mMwvqeKtc+65NukrGc4lrSD8Z7K1l35JNX4ndUf3P+NGUP1tE0A2r/pITbPIBu2BA==",
+    "key_id": "790901b82a89fe50",
+    "log_entry": {
+      "backend": "simulated",
+      "integrated_at": "2026-07-20T03:08:14.3397302Z"
+    }
+  },
+  "seal_inclusion": {
+    "record_id": "848bc49f-84ca-4551-b596-87df56e3f316",
+    "leaf_index": 3,
+    "tree_size": 4,
+    "leaf_hash": "8fe97ba7a8daad4cc682ea9f5924a0575be08aa433d8b0e25b3e1d69c101cdcc",
+    "audit_path": [
+      "51bc8a0c32d4aca21c7527a4b6b299098a5ce65eef8a3137bbef72ef3c04d79a",
+      "4b396081a877e516b21e2497e474dde76b232e27551658291d57409cb298b4c3"
+    ],
+    "checkpoint": {
+      "origin": "cloudai-fusion/evidence",
+      "tree_size": 4,
+      "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
+      "timestamp": "2026-07-20T03:08:14.3397302Z",
+      "key_id": "790901b82a89fe50",
+      "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+    }
+  },
+  "members": [
+    {
+      "id": "f8510e98-1a1c-42cb-b62f-127ec8d8bb2f",
+      "seq": 1,
+      "prev_hash": "genesis",
+      "timestamp": "2026-07-20T03:08:14.3391966Z",
+      "actor": "redteam",
+      "action": "redteam.finding",
+      "subject": "redteam/engagement/DEMO-2026",
+      "run_mode": "simulation",
+      "backends": null,
+      "input_hash": "3e0042e8db452609aa251cd8c30d95cb1860fb9fe8826c033d3f866ea913c06b",
+      "output_hash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "payload": {
+        "finding_id": "F-1",
+        "title": "SQL injection in /api/login",
+        "severity": "CRITICAL",
+        "technique": "T1190",
+        "eidx": 0,
+        "in_scope": true
+      },
+      "hash": "d6efe6a8ea5650c4dd30eb6b630d6bd9f863e14a09bc5afb8a994ac9b3682fd9",
+      "signature": "0t4x2ywte+r1p4WWGDKWZhRGP0/FLyKNXJYYKPC2s4GC8Iyhn4SgtVU7fVjDhPHyKGkxjjlR5pcjRysFjLyPDg==",
+      "key_id": "790901b82a89fe50",
+      "log_entry": {
+        "backend": "simulated",
+        "integrated_at": "2026-07-20T03:08:14.3391966Z"
+      }
+    },
+    {
+      "id": "55111922-c8dd-46aa-a691-fc392458b4e2",
+      "seq": 2,
+      "prev_hash": "d6efe6a8ea5650c4dd30eb6b630d6bd9f863e14a09bc5afb8a994ac9b3682fd9",
+      "timestamp": "2026-07-20T03:08:14.3391966Z",
+      "actor": "redteam",
+      "action": "redteam.finding",
+      "subject": "redteam/engagement/DEMO-2026",
+      "run_mode": "simulation",
+      "backends": null,
+      "input_hash": "20da572198397e9b46459c334f05fbd7d6edfccc892eccc28c62b57d7f3f6b27",
+      "output_hash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "payload": {
+        "finding_id": "F-2",
+        "title": "IDOR in /api/orders/{id}",
+        "severity": "HIGH",
+        "technique": "A01-BrokenAccessControl",
+        "eidx": 1,
+        "in_scope": true
+      },
+      "hash": "b82d086b3b5268ea3bf6d7fc57a742652ce64aa8c727885d8617886e50380b0f",
+      "signature": "aOhbJOA9E6Uh14nbiGYk2dZYX8OStRWQel9SRRERh9tR+8W9EoMECBTNbsWfTemrVauJhFjhSQxbmxcW6gYmCg==",
+      "key_id": "790901b82a89fe50",
+      "log_entry": {
+        "backend": "simulated",
+        "integrated_at": "2026-07-20T03:08:14.3391966Z"
+      }
+    },
+    {
+      "id": "94bdfd96-beaa-4561-86c3-da8c6fe457ef",
+      "seq": 3,
+      "prev_hash": "b82d086b3b5268ea3bf6d7fc57a742652ce64aa8c727885d8617886e50380b0f",
+      "timestamp": "2026-07-20T03:08:14.3391966Z",
+      "actor": "redteam",
+      "action": "redteam.finding",
+      "subject": "redteam/engagement/DEMO-2026",
+      "run_mode": "simulation",
+      "backends": null,
+      "input_hash": "9badba00353d4dbb7c5f8c9103173f5f145442c76bda3677d0d851a476091135",
+      "output_hash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "payload": {
+        "finding_id": "F-3",
+        "title": "Verbose error disclosure",
+        "severity": "LOW",
+        "technique": "T1592",
+        "eidx": 2,
+        "in_scope": true
+      },
+      "hash": "13a8141dde17b9ecc9d8bd12a8ff612c217a6bd998de5bd3ecbbeffbba90d50e",
+      "signature": "jnP0r+06otASuH3dXQ7AX4/J6P9mqYvjcgzchkY/U+r/06IWhQuJrtiiBh7InM613PqDwhDkUiSP8Bm1sqeXDw==",
+      "key_id": "790901b82a89fe50",
+      "log_entry": {
+        "backend": "simulated",
+        "integrated_at": "2026-07-20T03:08:14.3391966Z"
+      }
+    }
+  ],
+  "member_proofs": [
+    {
+      "record_id": "f8510e98-1a1c-42cb-b62f-127ec8d8bb2f",
+      "leaf_index": 0,
+      "tree_size": 4,
+      "leaf_hash": "1ba19ecf8638ede2d74c98a5f7475510536e5f6427bb19efef5a8e28cab2c71e",
+      "audit_path": [
+        "7053841ba4f352bea78c34a9098147152dfccbf0ae36507fbaf8cb5f248553c0",
+        "0a85768d7b2e9a81e9551bce4248a34f7b3d99e17016a9bbca17361b8d939fd9"
+      ],
+      "checkpoint": {
+        "origin": "cloudai-fusion/evidence",
+        "tree_size": 4,
+        "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
+        "timestamp": "2026-07-20T03:08:14.3397302Z",
+        "key_id": "790901b82a89fe50",
+        "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+      }
+    },
+    {
+      "record_id": "55111922-c8dd-46aa-a691-fc392458b4e2",
+      "leaf_index": 1,
+      "tree_size": 4,
+      "leaf_hash": "7053841ba4f352bea78c34a9098147152dfccbf0ae36507fbaf8cb5f248553c0",
+      "audit_path": [
+        "1ba19ecf8638ede2d74c98a5f7475510536e5f6427bb19efef5a8e28cab2c71e",
+        "0a85768d7b2e9a81e9551bce4248a34f7b3d99e17016a9bbca17361b8d939fd9"
+      ],
+      "checkpoint": {
+        "origin": "cloudai-fusion/evidence",
+        "tree_size": 4,
+        "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
+        "timestamp": "2026-07-20T03:08:14.3397302Z",
+        "key_id": "790901b82a89fe50",
+        "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+      }
+    },
+    {
+      "record_id": "94bdfd96-beaa-4561-86c3-da8c6fe457ef",
+      "leaf_index": 2,
+      "tree_size": 4,
+      "leaf_hash": "51bc8a0c32d4aca21c7527a4b6b299098a5ce65eef8a3137bbef72ef3c04d79a",
+      "audit_path": [
+        "8fe97ba7a8daad4cc682ea9f5924a0575be08aa433d8b0e25b3e1d69c101cdcc",
+        "4b396081a877e516b21e2497e474dde76b232e27551658291d57409cb298b4c3"
+      ],
+      "checkpoint": {
+        "origin": "cloudai-fusion/evidence",
+        "tree_size": 4,
+        "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
+        "timestamp": "2026-07-20T03:08:14.3397302Z",
+        "key_id": "790901b82a89fe50",
+        "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+      }
+    }
+  ]
+}

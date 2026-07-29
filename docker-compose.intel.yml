@@ -1,0 +1,45 @@
+# ============================================================================
+# CloudAI Fusion - AISecOps L9 Data Store: ClickHouse (real TSDB backend for L1)
+# ----------------------------------------------------------------------------
+# The intel Hub (pkg/intel) is driver-agnostic: it talks to any database/sql
+# backend via SQLStore. This compose file provisions the REAL ClickHouse target.
+# Wire it at the composition root by opening the clickhouse driver and injecting
+# the *sql.DB into intel.NewSQLStore(db, "clickhouse").
+#
+#   docker compose -f docker-compose.intel.yml up -d
+# ============================================================================
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    container_name: cloudai-clickhouse
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9000:9000"   # Native protocol (database/sql driver)
+    environment:
+      - CLICKHOUSE_DB=security
+      - CLICKHOUSE_USER=security_admin
+      - CLICKHOUSE_PASSWORD=${CH_PASSWORD:?Set CH_PASSWORD in .env}
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - ch-data:/var/lib/clickhouse
+      - ./scripts/init-db-clickhouse.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - cloudai-net
+
+volumes:
+  ch-data:
+
+networks:
+  cloudai-net:
+    driver: bridge

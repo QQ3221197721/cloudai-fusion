@@ -123,7 +123,14 @@ type CompressionResult struct {
 	ConstraintReport []string      `json:"constraint_report"`
 	HardwareTarget   string        `json:"hardware_target"`
 	PipelineDuration time.Duration `json:"pipeline_duration"` // estimated compression wall-clock: sum of per-stage modeled times (see modelStageDuration)
-	CreatedAt        time.Time     `json:"created_at"`
+	// ExecutionMode is "modeled" when sizes/losses are analytical estimates
+	// (Execute) and "measured" when they were measured from a real weight
+	// tensor transformation (ExecuteOnWeights). Honest by construction.
+	ExecutionMode string `json:"execution_mode"`
+	// MeasuredStages holds the per-stage measured results for a "measured" run
+	// (real output bytes + real reconstruction error). Empty for modeled runs.
+	MeasuredStages []MeasuredStageResult `json:"measured_stages,omitempty"`
+	CreatedAt      time.Time             `json:"created_at"`
 }
 
 // NewCompressionPipeline creates a new compression pipeline.
@@ -275,6 +282,7 @@ func (p *CompressionPipeline) Execute(ctx context.Context, modelID string, origi
 		ConstraintReport: constraintReport,
 		HardwareTarget:   p.config.HardwareTarget,
 		PipelineDuration: pipelineModeledDuration,
+		ExecutionMode:    "modeled",
 		CreatedAt:        time.Now().UTC(),
 	}
 	p.results = append(p.results, result)

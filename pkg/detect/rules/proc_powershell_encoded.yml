@@ -1,0 +1,20 @@
+title: PowerShell EncodedCommand Execution
+id: 6e2a2c9a-2b6b-4f2e-9a4c-2b7d5f0c1a01
+status: stable
+description: Detects PowerShell launched with an encoded command payload, a common obfuscation used by malware and post-exploitation frameworks.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith: '\powershell.exe'
+  selection_flag:
+    CommandLine|contains:
+      - ' -enc '
+      - ' -encodedcommand '
+      - ' -ec '
+  condition: selection_img and selection_flag

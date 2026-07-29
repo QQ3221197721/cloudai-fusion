@@ -1,0 +1,26 @@
+title: Suspicious Download Utility Execution
+id: c3f5b7a1-8d2e-4b6c-9f03-1a2b3c4d5e03
+status: experimental
+description: A download utility (curl/wget) fetching a remote URL, excluding local traffic. Common for ingress tool transfer.
+level: medium
+tags:
+  - attack.command_and_control
+  - attack.t1105
+logsource:
+  category: process_creation
+detection:
+  selection_curl:
+    Image|endswith:
+      - '\curl.exe'
+      - '/curl'
+    CommandLine|contains: 'http'
+  selection_wget:
+    Image|endswith:
+      - '\wget.exe'
+      - '/wget'
+    CommandLine|contains: 'http'
+  filter_local:
+    CommandLine|contains:
+      - 'localhost'
+      - '127.0.0.1'
+  condition: (1 of selection_*) and not filter_local

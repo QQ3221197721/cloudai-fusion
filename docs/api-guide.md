@@ -541,6 +541,53 @@ GET  /api/v1/redteam/engagements/:id/evidence  # this engagement's signed receip
 
 Full design and milestones: [`redteam-subsystem-spec.md`](redteam-subsystem-spec.md).
 
+## AISecOps Deep Wells (L1-L16)
+
+A verifiable security-operations fabric. Reads require `security:read`; mutating
+analysis/response routes require `security:manage`. `GET /api/v1/wells` is
+unauthenticated transparency. Every analysis and response records a signed L13
+receipt; findings escalate on the fabric and the L8 auto-consumer responds
+automatically. Full design: [`aisecops-subsystem-spec.md`](aisecops-subsystem-spec.md).
+
+### Well readiness (no auth)
+
+```
+GET /api/v1/wells
+```
+
+Returns each wired well's honest status — `wired`, `backend_mode` (`real|simulated|none`),
+`fabric_connected`, `evidence_backed`, and a `claimed` maturity — plus `run_mode` and
+`all_fabric_connected`. A well can never claim more than it is (enforced at boot).
+
+### L1 intelligence · L2 hunting
+
+```
+POST /api/v1/intel/sync        # security:manage — sync offline IOC/CVE feeds into L1
+POST /api/v1/intel/stix        # security:manage — ingest a pushed STIX 2.1 bundle (MISP/OTX) into L1
+POST /api/v1/hunt              # security:manage — run an L2 threat hunt over L1 intel
+POST /api/v1/hunt/behavior     # security:manage — L2 UEBA (train baseline + score observations)
+```
+
+### L3-L8 SOC (detect → respond)
+
+```
+GET  /api/v1/soc/findings                       # security:read
+GET  /api/v1/soc/playbooks                       # security:read — L8 SOAR playbooks
+GET  /api/v1/soc/mitigations                      # security:read — active mitigations + actuator_real
+POST /api/v1/soc/analyze/endpoint                 # security:manage — L3 (file hashes vs L1 IOCs)
+POST /api/v1/soc/analyze/network                  # security:manage — L4 (IPs/domains)
+POST /api/v1/soc/analyze/workload                 # security:manage — L5 (K8s security context)
+POST /api/v1/soc/analyze/identity                 # security:manage — L6 (brute force / impossible travel)
+POST /api/v1/soc/analyze/image                    # security:manage — L7 (image posture)
+POST /api/v1/soc/detect                           # security:manage — L3-L7 Sigma log detection (batch of events)
+POST /api/v1/soc/collect/endpoint                 # security:manage — L3 real /proc EDR (when wired)
+POST /api/v1/soc/findings/:id/respond             # security:manage — run L8 SOAR for a finding
+```
+
+`GET /api/v1/soc/mitigations` reports `actuator` and `actuator_real`: the L8 actuator
+performs a real gateway IP-ACL block (when `CLOUDAI_GATEWAY_ENABLE_IP_ACL=true`) and
+creates active deny-by-default NetworkPolicies; otherwise it honestly reports simulated.
+
 ## Error Format
 
 All errors follow a consistent format:
