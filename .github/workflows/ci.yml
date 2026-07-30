@@ -65,6 +65,15 @@ jobs:
       # a CI-verified fact rather than a claim.
       clickhouse:
         image: clickhouse/clickhouse-server:24.8-alpine
+        env:
+          # The alpine image restricts the built-in `default` user to localhost
+          # (::1/127.0.0.1), so connections through the Docker port mapping arrive
+          # from the gateway IP and are rejected with HTTP 403. Defining an explicit
+          # user makes the image entrypoint create it with network access from
+          # anywhere (::/0), which is what the live test authenticates as.
+          CLICKHOUSE_USER: ci
+          CLICKHOUSE_PASSWORD: ci_pw
+          CLICKHOUSE_DB: security_test
         ports: ['8123:8123']
         options: >-
           --health-cmd "clickhouse-client --query 'SELECT 1'"
@@ -84,8 +93,13 @@ jobs:
           DB_USER: test
           DB_PASSWORD: test
           REDIS_ADDR: localhost:6379
-          # Enables the L1 ClickHouse live test (else it self-skips).
+          # Enables the L1 ClickHouse live test (else it self-skips). The user
+          # matches the clickhouse service's CLICKHOUSE_USER/PASSWORD above so the
+          # test can authenticate over the Docker network (the default user is
+          # localhost-only in the alpine image).
           CLOUDAI_TEST_CH_ENDPOINT: http://localhost:8123
+          CLOUDAI_TEST_CH_USER: ci
+          CLOUDAI_TEST_CH_PASSWORD: ci_pw
         run: |
           set -o pipefail
           go test -v -race -coverprofile=coverage.out ./pkg/... ./cmd/... 2>&1 | tee /tmp/gotest.log

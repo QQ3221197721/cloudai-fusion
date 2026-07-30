@@ -64,24 +64,8 @@ func NewClickHouseStore(cfg ClickHouseConfig) (*ClickHouseStore, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	defer cancel()
-	// The CI ClickHouse health check (ci.yml) confirms the server process is up
-	// via the native protocol, but its HTTP interface (:8123, which this store
-	// uses) can finish binding a little later. A robust client must wait for the
-	// endpoint to become ready rather than assume it is instantly available, so
-	// we retry the ping across the full context budget (cfg.Timeout, 15s default).
-	// A genuinely unreachable server still fails once the deadline passes.
-	var pingErr error
-	attempts := 0
-	for {
-		attempts++
-		if pingErr = s.ping(ctx); pingErr == nil {
-			break
-		}
-		select {
-		case <-time.After(500 * time.Millisecond):
-		case <-ctx.Done():
-			return nil, fmt.Errorf("intel: clickhouse ping failed after %d attempt(s) within %s: %w", attempts, cfg.Timeout, pingErr)
-		}
+	if err := s.ping(ctx); err != nil {
+		return nil, fmt.Errorf("intel: clickhouse ping failed: %w", err)
 	}
 	if err := s.ensureSchema(ctx); err != nil {
 		return nil, fmt.Errorf("intel: clickhouse schema init failed: %w", err)
@@ -196,7 +180,7 @@ type chCVERow struct {
 	Description string   `json:"description"`
 	CVSS        float32  `json:"cvss_v3_score"`
 	MitreTags   []string `json:"mitre_tags"`
-	PublishedAt string   `json:"published_at"`
+	PublishedAt string   `json:"published_at_str"`
 }
 
 // RecentCVEs returns CVEs published at/after since, newest first, capped at limit.
@@ -206,7 +190,11 @@ func (s *ClickHouseStore) RecentCVEs(since time.Time, limit int) ([]CVEEntry, er
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.Timeout)
 	defer cancel()
-	q := "SELECT cve_id, description, cvss_v3_score, mitre_tags, toString(published_at) AS published_at " +
+	// Alias the stringified timestamp to a DISTINCT name: if it were aliased back
+	// to `published_at`, ClickHouse would resolve the WHERE/ORDER BY references to
+	// the String alias instead of the DateTime column and fail with NO_COMMON_TYPE
+	// (String vs DateTime). The column keeps its real type for the comparison.
+	q := "SELECT cve_id, description, cvss_v3_score, mitre_tags, toString(published_at) AS published_at_str " +
 		"FROM cve_entries FINAL WHERE published_at >= {since:DateTime} " +
 		"ORDER BY published_at DESC LIMIT {lim:UInt32} FORMAT JSON"
 	params := map[string]string{"since": chTime(since), "lim": strconv.Itoa(limit)}
