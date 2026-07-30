@@ -64,19 +64,23 @@ func NewClickHouseStore(cfg ClickHouseConfig) (*ClickHouseStore, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	defer cancel()
-	// With the CI health check using curl http://localhost:8123/ping (ci.yml), the
-	// HTTP interface is guaranteed ready when job steps start. We keep a small
-	// retry loop here only as an extra safety margin; in normal CI runs it will
-	// succeed on the first attempt.
+	// The CI ClickHouse health check (ci.yml) confirms the server process is up
+	// via the native protocol, but its HTTP interface (:8123, which this store
+	// uses) can finish binding a little later. A robust client must wait for the
+	// endpoint to become ready rather than assume it is instantly available, so
+	// we retry the ping across the full context budget (cfg.Timeout, 15s default).
+	// A genuinely unreachable server still fails once the deadline passes.
 	var pingErr error
-	for attempt := 0; attempt < 3; attempt++ {
+	attempts := 0
+	for {
+		attempts++
 		if pingErr = s.ping(ctx); pingErr == nil {
 			break
 		}
 		select {
-		case <-time.After(300 * time.Millisecond):
+		case <-time.After(500 * time.Millisecond):
 		case <-ctx.Done():
-			return nil, fmt.Errorf("intel: clickhouse ping failed after %d attempt(s): %w", attempt+1, pingErr)
+			return nil, fmt.Errorf("intel: clickhouse ping failed after %d attempt(s) within %s: %w", attempts, cfg.Timeout, pingErr)
 		}
 	}
 	if err := s.ensureSchema(ctx); err != nil {
