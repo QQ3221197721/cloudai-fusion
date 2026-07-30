@@ -775,6 +775,31 @@ func runServer(cmd *cobra.Command, args []string) error {
 		Detail: "Ed25519+Merkle; offline third-party verification CI-verified (cafctl moat-demo)",
 	})
 	reportWell(14, "L14-redteam", false, false, true)
+	// L9 Data Storage: the shared GORM store (also backs the evidence ledger, WAL
+	// and mesh manager). Real SQL backend whenever the DB initialized above.
+	reportWell(9, "L9-data", dbStore != nil, false, true)
+	// L15 FinOps: the reclaim engine is wired; its default cost model is the
+	// static table (simulated) until a live cloud-pricing source is configured.
+	reportWell(15, "L15-finops", false, false, true)
+	// L16 Network Policy: mesh manager + network-policy actuator are wired; the
+	// backend is real when the actuator has a live enforcement path (the same
+	// fact L8 uses, so the two stay consistent).
+	reportWell(16, "L16-netpolicy", socActuator.IsReal(), false, true)
+	// L10-L12 (Compute/RL, Model Registry, Inference) are delivered by the Python
+	// ai/ sidecar (ai/scheduler, ai/agents), NOT wired into this Go control plane.
+	// Report them honestly as scaffold from the API server's perspective rather
+	// than overclaiming a maturity this process cannot attest — the wellreadiness
+	// contract forbids claiming a level we cannot structurally prove.
+	for _, sc := range []struct {
+		well int
+		name string
+	}{{10, "L10-compute"}, {11, "L11-model"}, {12, "L12-inference"}} {
+		_ = wellreadiness.Report(wellreadiness.Status{
+			Well: sc.well, Name: sc.name, Claimed: wellreadiness.M0Scaffold,
+			Wired: false, BackendMode: wellreadiness.BackendNone, FabricConnected: false,
+			Detail: "delivered by the Python ai/ sidecar (ai/scheduler, ai/agents); not wired into the Go control plane",
+		})
+	}
 	logger.WithField("wells", len(wellreadiness.Snapshot())).Info("AISecOps well-readiness reported")
 
 	// Fail fast: in production, refuse to boot if any initialized subsystem is

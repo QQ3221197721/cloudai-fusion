@@ -1,9 +1,13 @@
 # AISecOps Subsystem Specification (16 Deep Wells)
 
-> Status: L1-L8 + L10 wells implemented and unit-tested; L9/L11-L16 integrate
-> through existing platform packages. Every claim here is backed by code in
-> `pkg/…` and covered by tests — consistent with the platform's *honesty over
-> illusion* principle.
+> Status: all 16 wells report machine-checkable readiness at boot (surfaced by
+> `GET /api/v1/wells`). L1-L9 + L13-L16 are wired into the Go control plane
+> (L9 real SQL store; L15 wired with the static-cost simulated backend; L16 real
+> when the network-policy actuator has a live enforcement path); L10-L12
+> (Compute/RL, Model, Inference) are delivered by the Python `ai/` sidecar and
+> reported honestly as scaffold from the Go process rather than overclaimed.
+> Every claim here is backed by code in `pkg/…` and covered by tests — consistent
+> with the platform's *honesty over illusion* principle.
 
 ## 1. Overview
 
