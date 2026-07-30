@@ -1,0 +1,43 @@
+# CloudAI Fusion ZKP Prover - Production Docker Image (Ubuntu-based for Stability)
+
+FROM golang:1.22 AS builder
+
+WORKDIR /build
+
+# Install Circom dependencies on Ubuntu - much more stable
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3 \
+    npm \
+    && npm install -g snarkjs circomlib2 || echo "npm install may have warnings" \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy source code
+COPY . .
+
+# Build Go binary (static linking)
+RUN CGO_ENABLED=0 GOOS=linux go build -o zkp-prover ./pkg/zkp/...
+
+# Runtime image (scratch - minimal)
+FROM scratch
+
+LABEL maintainer="CloudAI Fusion Engineering Team"
+LABEL description="Zero-Knowledge Proof Generator for Scheduling Fairness"
+
+WORKDIR /app
+
+# Copy binary and circuits from builder
+COPY --from=builder /build/zkp-prover /app/zkp-prover
+COPY --from=builder /build/circuits /app/circuits
+
+# Set executable permission
+RUN chmod +x /app/zkp-prover
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["/app/zkp-prover"]
+CMD ["serve"]

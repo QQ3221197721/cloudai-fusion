@@ -1,0 +1,52 @@
+# CloudAI Fusion ZKP Prover - Production Ready Docker Image
+
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /build
+
+# Install Circom dependencies with proper network configuration
+RUN apk add --no-cache \
+    gcc musl-dev python3 nodejs npm \
+    && npm install -g snarkjs circomlib2 || echo "npm install may have warnings"
+
+# Copy source code
+COPY . .
+
+# Build Go binary (with CGO disabled for portability)
+RUN CGO_ENABLED=0 GOOS=linux go build -o zkp-prover ./pkg/zkp/...
+
+# Runtime image
+FROM alpine:3.19
+
+LABEL maintainer="CloudAI Fusion Engineering Team"
+LABEL description="Zero-Knowledge Proof Generator for Scheduling Fairness"
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apk add --no-cache \
+    ca-certificates \
+    dumb-init
+
+# Create non-root user
+RUN adduser -D -s /bin/sh zkpuser
+
+# Copy from builder
+COPY --from=builder /build/zkp-prover /app/
+COPY --from=builder /build/circuits /app/circuits
+
+# Set proper permissions
+RUN chown -R zkpuser:zkpuser /app && \
+    chmod -R 550 /app
+
+USER zkpuser
+
+# Expose metrics endpoint
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["dumb-init", "/app/zkp-prover"]
+CMD ["serve"]

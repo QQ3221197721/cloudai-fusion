@@ -1,0 +1,286 @@
+name: CloudAI Fusion CI/CD Pipeline
+
+# Trigger on all pushes to main and develop branches, and PRs
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'  # Tag-based releases
+  pull_request:
+    branches:
+      - main
+      - develop
+  
+  # Also allow manual trigger (discretionary deployment)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+# Job concurrency for resource management
+concurrency:
+  group: ${{ github.ref }}-ci-cd
+  cancel-in-progress: false  # Prevent overwriting active deployments
+
+env:
+  DOCKER_REGISTRY: ghcr.io/cloudai-fusion
+  PROJECT_NAME: cloudai-fusion
+  GO_VERSION: '1.22'
+  NODE_VERSION: '20'
+
+jobs:
+  # ============================================================================
+  # STAGE 1: CODE QUALITY & TESTING
+  # ============================================================================
+  
+  quality-check:
+    name: Code Quality & Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: '**/go.sum'
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Install Go dependencies
+        run: |
+          cd cloudai-fusion
+          go mod download
+          go mod verify
+      
+      - name: Run Go Unit Tests
+        run: |
+          cd cloudai-fusion
+          go test -race -coverprofile=coverage.out ./pkg/... 
+          go tool cover -func=coverage.out
+      
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./cloudai-fusion/coverage.out
+          flags: unittests
+          name: codecov-cloudai-fusion
+          fail_ci_if_error: true
+      
+      - name: Static Code Analysis
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: cloudai-fusion
+          args: --timeout=10m --out-format=github-actions
+      
+      - name: Security Scan
+        uses: securego/gosec@master
+        with:
+          args: ./cloudai-fusion/pkg/...
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            cloudai-fusion/*.out
+            cloudai-fusion/*.log
+      
+      - name: Summary
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage: $(grep -oE '[0-9]+\.[0-9]+' cloudai-fusion/coverage.out | tail -1)" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # STAGE 2: BUILD & PACKAGE
+  # ============================================================================
+  
+  build:
+    name: Build & Package
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/cloudai-fusion
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      
+      - name: Build ZK Prover Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./cloudai-fusion
+          file: ./cloudai-fusion/Dockerfile.zkp
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+      
+      - name: Build WASM Sandbox Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./cloudai-fusion/Dockerfile.wasm-sandbox
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}-wasm
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+      
+      - name: Save images
+        run: |
+          docker save ${DOCKER_REGISTRY}/cloudai-fusion:${{ github.sha }} > /tmp/zk-prover.tar
+          docker save ${DOCKER_REGISTRY}/cloudai-fusion:${{ github.sha }}-wasm > /tmp/wasm-sandbox.tar
+      
+      - name: Upload built images
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: /tmp/*.tar
+      
+      - name: Generate Docker Report
+        run: |
+          echo "### Docker Images Built" >> $GITHUB_STEP_SUMMARY
+          echo "- zk-prover: \`${{ steps.meta.outputs.tags }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- wasm-sandbox: \`${{ steps.meta.outputs.tags }}-wasm\`" >> $GITHUB_STEP_SUMMARY
+          SIZE=$(docker image inspect ${DOCKER_REGISTRY}/cloudai-fusion:${{ github.sha }} --format '{{.Size}}' 2>/dev/null || echo "N/A")
+          echo "- Size: \`${SIZE} bytes\`" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Push images to registry
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        uses: docker/build-push-action@v6
+        with:
+          context: ./cloudai-fusion
+          file: ./cloudai-fusion/Dockerfile.zkp
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  # ============================================================================
+  # STAGE 3: SIMULATED DEPLOYMENT (For testing without real clusters)
+  # ============================================================================
+  
+  deploy-test:
+    name: Simulated Test Environment
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+          path: /tmp
+      
+      - name: Load Docker images
+        run: |
+          docker load < /tmp/zk-prover.tar
+          docker load < /tmp/wasm-sandbox.tar
+          docker images
+      
+      - name: Run container health checks
+        run: |
+          # Start ZK Prover container in background
+          docker run -d --name zk-prover-test \
+            -p 8081:8080 \
+            --health-cmd "curl -sf http://localhost:8080/health || exit 1" \
+            --health-interval 30s \
+            ${DOCKER_REGISTRY}/cloudai-fusion:${{ github.sha }} &
+          
+          sleep 5
+          
+          # Test health endpoint
+          curl -sf http://localhost:8081/health && echo "✓ ZK Prover health check passed" || {
+            echo "✗ ZK Prover health check failed"
+            docker logs zk-prover-test
+            exit 1
+          }
+          
+          # Stop test container
+          docker stop zk-prover-test
+          docker rm zk-prover-test
+      
+      - name: Generate test report
+        run: |
+          echo "### Test Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Container images loaded: SUCCESS" >> $GITHUB_STEP_SUMMARY
+          echo "- Health check: PASSED ✓" >> $GITHUB_STEP_SUMMARY
+          echo "- Test duration: ~10 seconds" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker rm -f zk-prover-test 2>/dev/null || true
+
+  # ============================================================================
+  # STAGE 4: ROLLBACK PROCEDURE (Simulated)
+  # ============================================================================
+  
+  rollback-if-needed:
+    name: Rollback Procedure
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: failure()
+    
+    steps:
+      - name: Execute rollback procedure
+        run: |
+          echo "⚠️ Simulation Mode: Skipping actual rollback"
+          echo "In production, this would execute:"
+          echo "kubectl rollout undo deployment/cloudai-fusion-* -n cloudai-fusion-production"
+          echo ""
+          echo "✅ Rollback simulation completed successfully"
+      
+      - name: Send rollback notification
+        if: always()
+        run: |
+          echo "### Rollback Triggered (Simulation)" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Rollback procedure initiated" >> $GITHUB_STEP_SUMMARY

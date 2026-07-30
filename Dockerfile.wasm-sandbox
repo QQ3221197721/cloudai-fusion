@@ -1,0 +1,61 @@
+# CloudAI Fusion - Production-ready Docker Image for WASM Sandbox
+
+FROM alpine:3.19 AS base
+LABEL maintainer="CloudAI Fusion Engineering Team"
+LABEL description="WASM Plugin Executor with Comprehensive Security Hardening"
+
+WORKDIR /app
+
+# Install runtime dependencies (minimal footprint)
+RUN apk add --no-cache \
+    bash \
+    curl \
+    ca-certificates \
+    dumb-init && \
+    rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN adduser -D -s /bin/sh wasmuser
+
+# Copy pre-built binary (from build stage)
+COPY --from=builder /build/wasm-executor /app/wasm-executor
+COPY --from=builder /app/resources /app/resources
+
+# Set proper permissions
+RUN chown -R wasmuser:wasmuser /app && \
+    chmod -R 550 /app && \
+    chmod 750 /app/scripts
+
+USER wasmuser
+
+# Expose monitoring endpoint
+EXPOSE 8080
+
+# Health check command
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/app/scripts/health-check.sh"]
+
+# Run with proper signal handling
+ENTRYPOINT ["dumb-init", "/app/wasm-executor"]
+CMD ["serve"]
+
+# Build Stage
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /build
+
+# Install Go dependencies first (better layer caching)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY pkg/wasm ./pkg/wasm
+COPY cmd/wasm-executor ./cmd/wasm-executor
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o wasm-executor ./cmd/wasm-executor
+
+# Build scripts
+RUN mkdir -p /app/scripts && \
+    echo '#!/bin/bash\ncurl -sf http://localhost:8080/health || exit 1' > /app/scripts/health-check.sh && \
+    chmod +x /app/scripts/health-check.sh

@@ -1,0 +1,399 @@
+name: CloudAI Fusion CI/CD Pipeline
+
+# Trigger on all pushes to main and develop branches, and PRs
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'  # Tag-based releases
+  pull_request:
+    branches:
+      - main
+      - develop
+  
+  # Also allow manual trigger (discretionary deployment)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+# Job concurrency for resource management
+concurrency:
+  group: ${{ github.ref }}-ci-cd
+  cancel-in-progress: false  # Prevent overwriting active deployments
+
+env:
+  DOCKER_REGISTRY: ghcr.io/cloudai-fusion
+  PROJECT_NAME: cloudai-fusion
+  GO_VERSION: '1.22'
+  NODE_VERSION: '20'
+
+jobs:
+  # ============================================================================
+  # STAGE 1: CODE QUALITY & TESTING
+  # ============================================================================
+  
+  quality-check:
+    name: Code Quality & Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: '**/go.sum'
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Install Go dependencies
+        run: |
+          cd cloudai-fusion
+          go mod download
+          go mod verify
+      
+      - name: Run Go Unit Tests
+        run: |
+          cd cloudai-fusion
+          go test -race -coverprofile=coverage.out ./pkg/... 
+          go tool cover -func=coverage.out
+      
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./cloudai-fusion/coverage.out
+          flags: unittests
+          name: codecov-cloudai-fusion
+          fail_ci_if_error: true
+      
+      - name: Static Code Analysis
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: cloudai-fusion
+          args: --timeout=10m --out-format=github-actions
+      
+      - name: Security Scan
+        uses: securego/gosec@master
+        with:
+          args: ./cloudai-fusion/pkg/...
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            cloudai-fusion/*.out
+            cloudai-fusion/*.log
+
+  # ============================================================================
+  # STAGE 2: BUILD & PACKAGE
+  # ============================================================================
+  
+  build:
+    name: Build & Package
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      build_time: ${{ steps.meta.outputs.build-time }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/cloudai-fusion
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      
+      - name: Build ZK Prover Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./cloudai-fusion
+          file: ./cloudai-fusion/Dockerfile.zkp
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+      
+      - name: Build WASM Sandbox Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./cloudai-fusion/Dockerfile.wasm-sandbox
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}-wasm
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+      
+      - name: Save images
+        run: |
+          docker save ${DOCKER_REGISTRY}/cloudai-fusion:${{ github.sha }} > /tmp/zk-prover.tar
+          docker save ${DOCKER_REGISTRY}/cloudai-fusion:${{ github.sha }}-wasm > /tmp/wasm-sandbox.tar
+      
+      - name: Upload built images
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: /tmp/*.tar
+      
+      - name: Generate Docker Report
+        run: |
+          echo "### Docker Images Built" >> $GITHUB_STEP_SUMMARY
+          echo "- zk-prover: \`${{ steps.meta.outputs.tags }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- wasm-sandbox: \`${{ steps.meta.outputs.tags }}-wasm\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Size: $(docker image inspect ${DOCKER_REGISTRY}/cloudai-fusion:${{ github.sha }} | jq '.[0].Size' | numfmt --to=iec)" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Push images to registry
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        uses: docker/build-push-action@v6
+        with:
+          context: ./cloudai-fusion
+          file: ./cloudai-fusion/Dockerfile.zkp
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  # ============================================================================
+  # STAGE 3: DEPLOYMENT TEST
+  # ============================================================================
+  
+  deploy-test:
+    name: Deploy Test Environment
+    runs-on: ubuntu-latest
+    needs: [build]
+    environment: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+          path: /tmp
+      
+      - name: Load Docker images
+        run: |
+          docker load < /tmp/zk-prover.tar
+          docker load < /tmp/wasm-sandbox.tar
+      
+      - name: Configure Kubernetes
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBE_TEST_CONFIG }}
+      
+      - name: Create namespace
+        run: kubectl create namespace cloudai-fusion-test --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Deploy Soft Delete Audit Trail
+        run: |
+          kubectl create secret generic soft-delete-config \
+            --from-literal=AUDIT_ENABLED=true \
+            --namespace cloudai-fusion-test \
+            --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Deploy WASM Sandbox
+        run: |
+          kubectl create secret generic wasm-security-config \
+            --from-literal=cpu_limit=2.0 \
+            --namespace cloudai-fusion-test \
+            --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Wait for pods ready
+        run: |
+          kubectl wait --for=condition=ready pod -l app=cloudai-fusion-soft-delete -n cloudai-fusion-test --timeout=120s || true
+          kubectl wait --for=condition=ready pod -l app=cloudai-fusion-wasm -n cloudai-fusion-test --timeout=120s || true
+      
+      - name: Run smoke tests
+        run: |
+          kubectl port-forward svc/cloudai-fusion-soft-delete 8081:8080 -n cloudai-fusion-test &
+          kubectl port-forward svc/cloudai-fusion-wasm 8082:8080 -n cloudai-fusion-test &
+          sleep 5
+          
+          curl -sf http://localhost:8081/health/soft-delete > /dev/null || {
+            echo "Soft delete health check failed"
+            exit 1
+          }
+          
+          curl -sf http://localhost:8082/health/wasm-executor > /dev/null || {
+            echo "WASM executor health check failed"
+            exit 1
+          }
+          
+          echo "✓ All smoke tests passed!"
+      
+      - name: Clean up test resources
+        if: always()
+        run: |
+          kubectl delete namespace cloudai-fusion-test --ignore-not-found=true
+
+  # ============================================================================
+  # STAGE 4: PRODUCTION DEPLOYMENT
+  # ============================================================================
+  
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: deploy-test
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+          path: /tmp
+      
+      - name: Configure Kubernetes
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBE_PROD_CONFIG }}
+      
+      - name: Load Docker images
+        run: |
+          docker load < /tmp/zk-prover.tar
+          docker load < /tmp/wasm-sandbox.tar
+      
+      - name: Deploy to Production Cluster
+        run: |
+          helm upgrade --install cloudai-fusion-soft-delete \
+            deploy/helm/cloudai-fusion-soft-delete \
+            --namespace cloudai-fusion-production \
+            --set image.tag=${{ github.sha }} \
+            --wait --timeout 5m
+      
+          helm upgrade --install cloudai-fusion-wasm \
+            deploy/helm/cloudai-fusion-wasm \
+            --namespace cloudai-fusion-production \
+            --set image.tag=${{ github.sha }}-wasm \
+            --wait --timeout 5m
+      
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/cloudai-fusion-soft-delete -n cloudai-fusion-production --timeout=300s
+          kubectl rollout status deployment/cloudai-fusion-wasm -n cloudai-fusion-production --timeout=300s
+      
+      - name: Health verification
+        run: |
+          curl -sf https://api.cloudai-fusion.io/health > /dev/null || {
+            echo "Production health check failed"
+            exit 1
+          }
+      
+      - name: Send deployment notification
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "CloudAI Fusion Deployment Successful",
+              "attachments": [{
+                "color": "${{ job.status == 'success' && '#4cd137' || '#ed1d5b' }}",
+                "blocks": [{
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Deployment ${{ job.status == 'success' && '*SUCCEEDED* ✨" : "*FAILED* ❌" }}"
+                  }
+                }]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEPLOY_WEBHOOK }}
+
+  # ============================================================================
+  # STAGE 5: ROLLBACK PROCEDURE (if needed)
+  # ============================================================================
+  
+  rollback-if-needed:
+    name: Rollback Failed Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: failure()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure Kubernetes
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBE_PROD_CONFIG }}
+      
+      - name: Execute rollback procedure
+        run: |
+          kubectl rollout undo deployment/cloudai-fusion-soft-delete -n cloudai-fusion-production
+          kubectl rollout undo deployment/cloudai-fusion-wasm -n cloudai-fusion-production
+      
+      - name: Monitor rollback
+        run: |
+          kubectl rollout status deployment/cloudai-fusion-soft-delete -n cloudai-fusion-production --timeout=300s
+          kubectl rollout status deployment/cloudai-fusion-wasm -n cloudai-fusion-production --timeout=300s
+      
+      - name: Send rollback notification
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "🚨 Rollback Triggered",
+              "attachments": [{
+                "color": "#ed1d5b",
+                "blocks": [{
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Rollback executed successfully"
+                  }
+                }]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ROLLBACK_WEBHOOK }}
