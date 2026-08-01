@@ -28,6 +28,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.51
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tke v1.3.50
+	github.com/neo4j/neo4j-go-driver/v5/neo4j v5.28.1
 	go.opentelemetry.io/otel v1.40.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.28.0
 	go.opentelemetry.io/otel/sdk v1.40.0

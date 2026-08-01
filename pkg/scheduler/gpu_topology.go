@@ -219,13 +219,38 @@ func (td *TopologyDiscoverer) queryGPUDevices(ctx context.Context) ([]Discovered
 	return gpus, nil
 }
 
-// enrichNUMAInfo adds NUMA node information via nvidia-smi topo -m parsing or device query
+// enrichNUMAInfo adds NUMA node information via /sys/bus/pci/devices/<bus>/numa_node
 func (td *TopologyDiscoverer) enrichNUMAInfo(ctx context.Context, gpus []DiscoveredGPU) {
+	// Query NUMA affinity via sysfs on Linux
 	for i := range gpus {
-		// Try nvidia-smi -i <idx> --query-gpu=gpu_bus_id --format=csv,noheader
-		// Then map PCI bus to NUMA node via /sys/bus/pci/devices/<bus>/numa_node
-		// On Windows/no sysfs, default to NUMA 0
-		gpus[i].NUMANode = 0
+		// Map PCI bus ID to NUMA node
+		// PCI format: "0000:xx:yy.z" where xx = domain, yy = bus, zz = device/function
+		pciBusID := gpus[i].PCIBusID
+		if pciBusID == "" {
+			gpus[i].NUMANode = 0
+			continue
+		}
+		
+		// Extract bus number from PCI ID (format: 0000:xx:yy.z)
+		var busNum string
+		fmt.Sscanf(pciBusID, "%*x:%s", &busNum)
+		
+		// Try to read NUMA node from sysfs
+		numaNodePath := fmt.Sprintf("/sys/bus/pci/devices/%s/numa_node", pciBusID)
+		numaBytes, err := os.ReadFile(numaNodePath)
+		if err != nil {
+			// Fallback: try to use libnuma or default to 0
+			gpus[i].NUMANode = 0
+			continue
+		}
+		
+		num, err := strconv.Atoi(strings.TrimSpace(string(numaBytes)))
+		if err != nil {
+			gpus[i].NUMANode = 0
+			continue
+		}
+		
+		gpus[i].NUMANode = num
 	}
 }
 
@@ -310,6 +335,77 @@ func parseNVSmiTopoMatrix(output string) ([]NVLinkConnection, map[string]string,
 	return connections, p2pMatrix, nil
 }
 
+// NVLinkTopologyInfo contains detailed NVLink topology analysis
+type NVLinkTopologyInfo struct {
+	TotalNVLinks        int              `json:"total_nvlinks"`
+	MaxBandwidthGB      float64          `json:"max_bandwidth_gb"`
+	AverageBandwidthGB  float64          `json:"average_bandwidth_gb"`
+	FullMeshConnected   bool             `json:"full_mesh_connected"`
+	NVSwitchPresent     bool             `json:"nvswitch_present"`
+	HighestGenSupported int              `json:"highest_gen_supported"` // NVLink generation (2,3,4)
+	Topologies         []NVLinkConnection `json:"topologies"`
+}
+
+// AnalyzeNVLinkTopology provides comprehensive NVLink topology analysis
+func (td *TopologyDiscoverer) AnalyzeNVLinkTopology(ctx context.Context) (*NVLinkTopologyInfo, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	links, _, err := td.queryNVLinkTopology(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query NVLink topology: %w", err)
+	}
+
+	info := &NVLinkTopologyInfo{
+		TotalNVLinks:    len(links),
+		NVSwitchPresent: false,
+	}
+
+	if len(links) == 0 {
+		return info, nil
+	}
+
+	// Calculate bandwidth statistics
+	var totalBandwidth float64
+	maxGen := 0
+	for _, link := range links {
+		totalBandwidth += link.BandwidthGB
+		if link.BandwidthGB > info.MaxBandwidthGB {
+			info.MaxBandwidthGB = link.BandwidthGB
+		}
+		if link.NVLinkGen > maxGen {
+			info.HighestGenSupported = link.NVLinkGen
+		}
+		if link.LinkType == "NVS" {
+			info.NVSwitchPresent = true
+		}
+	}
+
+	info.AverageBandwidthGB = totalBandwidth / float64(len(links))
+	info.Topologies = links
+
+	// Check for full mesh connectivity
+	expectedPairs := len(links) * (len(links) - 1) / 2
+	actualPairs := 0
+	seenPairs := make(map[string]bool)
+	for _, link := range links {
+		key := fmt.Sprintf("%d-%d", min(link.GPU1Index, link.GPU2Index), max(link.GPU1Index, link.GPU2Index))
+		if !seenPairs[key] {
+			seenPairs[key] = true
+			actualPairs++
+		}
+	}
+
+	// Full mesh means all GPUs are directly connected
+	if info.NVSwitchPresent {
+		info.FullMeshConnected = true // NVSwitch provides full mesh
+	} else if len(links) > 0 && actualPairs >= expectedPairs/2 {
+		info.FullMeshConnected = true // Good interconnectivity
+	}
+
+	return info, nil
+}
+
 // estimateNVLinkBandwidth estimates bandwidth from connection type
 func estimateNVLinkBandwidth(connType string) float64 {
 	switch {
@@ -346,7 +442,7 @@ func estimateNVLinkGen(connType string) int {
 
 // queryDCGMTopology scrapes DCGM exporter for GPU info as fallback
 func (td *TopologyDiscoverer) queryDCGMTopology(ctx context.Context) ([]DiscoveredGPU, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", td.dcgmURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", td.dcgmURL+"/api/v2/dcgm/metrics", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -356,14 +452,34 @@ func (td *TopologyDiscoverer) queryDCGMTopology(ctx context.Context) ([]Discover
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("DCGM returned HTTP %d", resp.StatusCode)
 	}
 
-	// Parse DCGM Prometheus format - we use the same types as agent/collector
-	// but just need basic GPU info
+	// Parse DCGM JSON metrics response
+	var dcgmcData DCGMMetrics
+	if err := json.NewDecoder(resp.Body).Decode(&dcgmcData); err != nil {
+		return nil, fmt.Errorf("failed to decode DCGM metrics: %w", err)
+	}
+
+	// Convert DCGM metrics to DiscoveredGPU format
 	var gpus []DiscoveredGPU
-	// Simple approach: just note we have DCGM data available
+	for idx, gpuMetric := range dcgmcData.Data.GPU {
+		gpu := DiscoveredGPU{
+			Index:         idx,
+			UUID:          gpuMetric.UUID,
+			Name:          gpuMetric.Model,
+			MemoryTotalMiB: int(gpuMetric.MemoryInfo.Total / 1024 / 1024), // Convert bytes to MiB
+			MemoryUsedMiB:  int(gpuMetric.MemoryInfo.Used / 1024 / 1024),
+			MemoryFreeMiB:  int(gpuMetric.MemoryInfo.Free / 1024 / 1024),
+			Utilization:    gpuMetric.Utilization.GpuUtil,              
+			Temperature:    int(gpuMetric.Temperature.GpuTemp),
+			PowerUsageW:    gpuMetric.PowerDraw.Pwr,                    
+			PCIBusID:       gpuMetric.PCIBusID,
+		}
+		gpus = append(gpus, gpu)
+	}
+
 	return gpus, nil
 }
 
@@ -416,6 +532,61 @@ func ScoreTopology(topo *NodeGPUTopology, gpuCount int, requireNVLink bool, minB
 			score += 10.0 // all GPUs can fit on one NUMA node
 			break
 		}
+	}
+
+	// Memory bandwidth optimization: check MIG/MPS isolation capabilities
+	migEnabledGPUs := 0
+	mpsActiveGPUs := 0
+	for _, gpu := range topo.GPUs[:gpuCount] {
+		if gpu.MIGEnabled {
+			migEnabledGPUs++
+		}
+		if gpu.MPSServerActive {
+			mpsActiveGPUs++
+		}
+	}
+
+	// Bonus for isolation capabilities
+	if migEnabledGPUs == gpuCount {
+		score += 5.0 // All GPUs support MIG
+	}
+	if mpsActiveGPUs > 0 {
+		score += 3.0 // Some MPS capability
+	}
+
+	// Power efficiency consideration: prefer lower power draw
+	if gpuCount > 1 {
+		avgPowerDraw := 0.0
+		for _, gpu := range topo.GPUs[:gpuCount] {
+			avgPowerDraw += gpu.PowerUsageW
+		}
+		avgPowerDraw /= float64(gpuCount)
+		
+		// Prefer efficient GPUs (<300W average for training)
+		if avgPowerDraw < 300.0 {
+			score += 2.0
+		}
+	}
+
+	// Temperature headroom bonus (prefer cooler GPUs)
+	avgTemp := 0.0
+	for _, gpu := range topo.GPUs[:gpuCount] {
+		avgTemp += float64(gpu.Temperature)
+	}
+	avgTemp /= float64(gpuCount)
+	
+	// Prefer GPUs with good thermal headroom (<70°C average)
+	if avgTemp < 70.0 {
+		score += 2.0
+	}
+
+	// Penalize heterogeneous setups (mixing different GPU models)
+	uniqueModels := make(map[string]bool)
+	for _, gpu := range topo.GPUs[:gpuCount] {
+		uniqueModels[gpu.UUID] = true
+	}
+	if len(uniqueModels) > 1 {
+		score -= 5.0 // Mix of GPUs is less optimal
 	}
 
 	if score > 100 {

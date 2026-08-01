@@ -81,13 +81,14 @@ a live LLM endpoint, etcd election**. Progress is measured objectively by
 | **GPU Topology-Aware Scheduling** | NVLink-aware placement, GPU sharing (MPS/MIG), preemption, RL scoring |
 | **4 AI Agents** | Scheduling, security, cost, operations — LLM-enhanced with rule-based fallback |
 | **Real messaging & HA** | NATS/Kafka drivers, Kubernetes Lease leader election |
+| **Edge Autonomy (MVP Ready)** | Offline-first edge decisions with true Delta Sync + conflict resolution (Patent #16-17); real K8s API calls via client-go; full L15 implementation with L2 planning for TEE hardware support |
 | **Security & Compliance** | JWT + RBAC (4 roles), OIDC federation, CIS checks, threat detection, audit log |
 | **DevSecOps supply chain** | SAST, dep/secret/IaC scanning, SBOM, cosign signing, SLSA L3 provenance |
 | **Full Observability** | Prometheus metrics, OpenTelemetry tracing, Grafana, intelligent alerting |
 | **Verifiable Control Plane** | Ed25519-signed, hash-chained, Merkle-transparency-logged receipts for consequential actions; offline-verifiable via `cafctl` |
 | **Verifiable AI Red Team** | Authorized, evidence-grade security validation: scope-gated engagements, human-in-the-loop approval, web/AD exploit chaining, CVE-Bench harness |
 | **AISecOps 16 Deep Wells** | Intelligence→Operations→Response security fabric (L1-L16): L1 intel (ClickHouse + STIX 2.1), L2 hunting + UEBA, L3-L8 SOC detectors (Sigma) + auto-SOAR, evidence-signed; honest per-well readiness at `/api/v1/wells` |
-| **Plugin Ecosystem** | 9 contrib plugins across 3 domains: Render Farm (cloud provider + scheduler scoring + metrics), PostgreSQL DR (collector + alerter + failover validation), AI Customer Service (metrics + webhook + threat detection) |
+| **Plugin Ecosystem** | 9 contrib plugins across 3 domains: Render Farm (cloud provider + scheduler scoring + metrics), PostgreSQL DR (collector + alerter + failover validation), AI Customer Service (metrics + webhook + threat detection). **New: Third-party submission system with Poseidon-based model commitment** |
 
 ## Architecture
 
