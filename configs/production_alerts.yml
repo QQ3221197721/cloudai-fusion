@@ -1,0 +1,274 @@
+# CloudAI Fusion SLA Alert Configuration
+# Production-grade alert definitions with Prometheus integration
+# Version: 1.0.0
+
+alerts:
+  # ============================================================
+  # API & SERVICE HEALTH ALERTS
+  # ============================================================
+  
+  - id: api_latency_critical
+    name: "API Latency Critical"
+    description: "API response latency exceeds critical threshold, potential SLA breach imminent"
+    severity: critical
+    prometheus_query: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000 > 1000"
+    duration_sec: 60
+    threshold: 1000.0
+    group_by: ["service", "endpoint", "method"]
+    
+    labels:
+      service: "api-gateway"
+      type: "latency"
+      priority: "p0"
+    
+    annotations:
+      summary: "Critical API latency detected"
+      description: "P95 latency of {{ $labels.service }} is above 1 second for last {{ $value }} seconds"
+      runbook_url: "https://wiki.cloudai-fusion.com/alerts/api-latency-critical"
+      
+    auto_remediate: true
+    
+  - id: error_rate_critical
+    name: "Error Rate Critical"
+    description: "HTTP 5xx error rate exceeds critical threshold"
+    severity: critical
+    prometheus_query: "sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m])) * 100 > 10"
+    duration_sec: 30
+    threshold: 10.0
+    group_by: ["service", "status"]
+    
+    labels:
+      service: "all"
+      type: "errors"
+      priority: "p0"
+    
+    annotations:
+      summary: "High error rate detected"
+      description: "Error rate above {{ $value }}% over 5 minutes"
+      runbook_url: "https://wiki.cloudai-fusion.com/alerts/error-rate"
+      
+  - id: availability_below_sla_999
+    name: "Availability Below SLA 99.9%"
+    description: "Service availability falls below 99.9% target"
+    severity: critical
+    prometheus_query: "avg_over_time((1 - sum(rate(http_requests_total{status!~'2..'}[1h])) / sum(rate(http_requests_total[1h])) ) * 100) > 0.1"
+    duration_sec: 300
+    threshold: 0.1
+    group_by: ["service"]
+    
+    labels:
+      sla_target: "99.9%"
+      type: "availability"
+      priority: "p0"
+    
+    annotations:
+      summary: "SLA breach detected"
+      description: "Availability below 99.9% over last hour: {{ $value }}%"
+      
+  # ============================================================
+  # INFRASTRUCTURE RESOURCE ALERTS
+  # ============================================================
+  
+  - id: memory_usage_warning
+    name: "Memory Usage Warning"
+    description: "Container memory usage approaching limit"
+    severity: warning
+    prometheus_query: "process_resident_memory_bytes / container_spec_memory_limit_bytes * 100 > 80"
+    duration_sec: 120
+    threshold: 80.0
+    group_by: ["container", "pod"]
+    
+    labels:
+      metric: "memory"
+      type: "resource"
+      priority: "p2"
+    
+    annotations:
+      summary: "High memory usage"
+      description: "Container {{ $labels.container }} using {{ $value }}% of memory limit"
+      
+  - id: cpu_usage_high
+    name: "CPU Usage High"
+    description: "CPU usage exceeding 75% threshold"
+    severity: warning
+    prometheus_query: "rate(container_cpu_usage_seconds_total[5m]) * 100 > 75"
+    duration_sec: 120
+    threshold: 75.0
+    group_by: ["container", "pod"]
+    
+    labels:
+      metric: "cpu"
+      type: "resource"
+      priority: "p2"
+    
+    annotations:
+      summary: "High CPU usage"
+      description: "Container {{ $labels.container }} CPU usage at {{ $value }}%"
+      
+  - id: disk_space_critical
+    name: "Disk Space Critical"
+    description: "Disk space usage above 90%"
+    severity: critical
+    prometheus_query: "(1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 90"
+    duration_sec: 60
+    threshold: 90.0
+    group_by: ["mountpoint", "device"]
+    
+    labels:
+      metric: "disk"
+      type: "resource"
+      priority: "p1"
+    
+    annotations:
+      summary: "Critical disk space"
+      description: "Root partition at {{ $value }}% capacity"
+      
+  # ============================================================
+  # DATABASE HEALTH ALERTS
+  # ============================================================
+  
+  - id: postgres_connection_exhausted
+    name: "PostgreSQL Connection Pool Exhausted"
+    description: "Database connection pool near exhaustion"
+    severity: warning
+    prometheus_query: "pg_stat_activity_count{state='active'} / pg_settings_max_connections * 100 > 80"
+    duration_sec: 60
+    threshold: 80.0
+    group_by: ["instance", "database"]
+    
+    labels:
+      service: "postgres"
+      type: "connections"
+      priority: "p1"
+    
+    annotations:
+      summary: "Database connections high"
+      description: "{{ $value }}% of PostgreSQL connections in use"
+      runbook_url: "https://wiki.cloudai-fusion.com/db-connections"
+      
+  - id: database_replication_lag
+    name: "Database Replication Lag"
+    description: "Replica lag exceeds acceptable threshold"
+    severity: warning
+    prometheus_query: "pg_replication_lag_seconds > 30"
+    duration_sec: 60
+    threshold: 30.0
+    group_by: ["replica"]
+    
+    labels:
+      service: "postgres-replica"
+      type: "replication"
+      priority: "p1"
+    
+    annotations:
+      summary: "Database replication lag"
+      description: "Replica lag is {{ $value }} seconds"
+      
+  # ============================================================
+  # STORAGE & NETWORK ALERTS
+  # ============================================================
+  
+  - id: network_throughput_high
+    name: "Network Throughput High"
+    description: "Network throughput approaching limit"
+    severity: info
+    prometheus_query: "rate(node_network_receive_bytes_total[5m]) > 1000000000"
+    duration_sec: 120
+    threshold: 1000000000
+    group_by: ["interface", "node"]
+    
+    labels:
+      metric: "network"
+      type: "throughput"
+      priority: "p3"
+    
+    annotations:
+      summary: "High network throughput"
+      description: "Interface {{ $labels.interface }} receiving high traffic
+    
+      
+  - id: redis_memory_fragmentation
+    name: "Redis Memory Fragmentation"
+    description: "Redis memory fragmentation ratio high"
+    severity: info
+    prometheus_query: "redis_memory_fragmentation_ratio > 1.5"
+    duration_sec: 300
+    threshold: 1.5
+    group_by: ["instance"]
+    
+    labels:
+      service: "redis"
+      type: "memory"
+      priority: "p3"
+    
+    annotations:
+      summary: "Redis memory fragmentation"
+      description: "Fragmentation ratio is {{ $value }}"
+      
+  # ============================================================
+  # SECURITY ALERTS
+  # ============================================================
+  
+  - id: failed_auth_spike
+    name: "Failed Authentication Spike"
+    description: "Multiple failed authentication attempts detected"
+    severity: warning
+    prometheus_query: "sum(rate(auth_failed_total[5m])) > 10"
+    duration_sec: 60
+    threshold: 10.0
+    group_by: ["auth_provider", "user_agent"]
+    
+    labels:
+      type: "security"
+      category: "authentication"
+      priority: "p1"
+    
+    annotations:
+      summary: "Failed auth spike detected"
+      description: "{{ $value }} failed auth attempts in 5 minutes"
+      
+  - id: unusual_access_pattern
+    name: "Unusual Access Pattern"
+    description: "Access pattern anomaly detected"
+    severity: warning
+    prometheus_query: "increase(http_requests_total{path='/api/admin/*'}[1h]) > 50"
+    duration_sec: 300
+    threshold: 50.0
+    group_by: ["path", "client_ip"]
+    
+    labels:
+      type: "security"
+      category: "access_control"
+      priority: "p1"
+    
+    annotations:
+      summary: "Admin access anomaly"
+      description: "Increased admin panel access detected"
+      
+# ============================================================
+# NOTIFICATION CHANNELS CONFIGURATION
+# ============================================================
+
+notification_channels:
+  - type: slack
+    name: "Critical Alerts"
+    url: "${SLACK_WEBHOOK_URL}"
+    config:
+      channel: "#cloudai-alerts-critical"
+      username: "CloudAI Monitor"
+      icon_emoji: ":rotating_light:"
+      color: "#ff0000"
+      
+  - type: pagerduty
+    name: "On-Call Escalations"
+    url: "${PAGERDUTY_INTEGRATION_KEY}"
+    config:
+      service_key: "cloudai-production"
+      severity: "critical"
+      
+  - type: webhook
+    name: "Ops Genie Integration"
+    url: "${OPSGENIE_API_URL}"
+    config:
+      type: alerts
+   

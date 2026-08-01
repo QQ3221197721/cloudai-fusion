@@ -1,0 +1,4 @@
+// Additional dependencies for Metasploit Framework integration
+require (
+	github.com/desertbit/go-msfrpc v0.0.0-20231017095648-7eae9f9d72cc
+)
