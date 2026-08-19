@@ -140,3 +140,11 @@ func (m *MemoryStore) AppendChained(_ context.Context, build ChainedBuilder) (*E
 	m.byID[e.ID] = e
 	return e, nil
 }
+
+// Reset clears all stored evidence and resets counters. Intended for tests/benchmarks.
+func (m *MemoryStore) Reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.records = make([]*Evidence, 0)
+	m.byID = make(map[string]*Evidence)
+}

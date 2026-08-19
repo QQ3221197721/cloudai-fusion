@@ -1,18 +1,17 @@
+
 // Package edr_telemetry implements real-time telemetry ingestion and training pipeline
 package edr_telemetry
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 	
 	"github.com/sirupsen/logrus"
 )
 
 type TelemetryPipeline struct {
-	logger        *logrus.Logger
-	kafkaClient   KafkaClient // Placeholder for Kafka client
+	logger        *logrus.Entry
+	kafkaClient   KafkaClient
 	model         TrainingModel
 	batchSize     int
 	processRate   time.Duration
@@ -24,10 +23,10 @@ func NewTelemetryPipeline(logger *logrus.Logger) *TelemetryPipeline {
 	}
 	
 	return &TelemetryPipeline{
-		logger:    logger.WithField("component", "telemetry_pipeline"),
+		logger:      logger.WithField("component", "telemetry_pipeline"),
 		kafkaClient: NewKafkaClient(),
-		model:     NewTrainingModel(),
-		batchSize: 100,
+		model:       TrainingModel{},
+		batchSize:   100,
 		processRate: time.Second,
 	}
 }
@@ -46,7 +45,6 @@ func (tp *TelemetryPipeline) Start(ctx context.Context) error {
 	tp.logger.Info("Starting EDR telemetry pipeline...")
 	
 	go tp.consumeTelemetryStream(ctx)
-	go tp.trainOnNewData(ctx)
 	
 	return nil
 }
@@ -78,7 +76,7 @@ func (tp *TelemetryPipeline) processBatch(events []TelemetryEvent) {
 }
 
 func (tp *TelemetryPipeline) analyzeBehavior(event *TelemetryEvent) BehaviorAnalysis {
-	return tp.model.Infer(event)
+	return tp.model.Infer(*event)
 }
 
 func (tp *TelemetryPipeline) updateModel(event TelemetryEvent, analysis BehaviorAnalysis) {
@@ -120,7 +118,6 @@ func (tm *TrainingModel) TrainSingleSample(event TelemetryEvent, analysis Behavi
 }
 
 func (tm *TrainingModel) retrain() {
-	tm.logger.Info("Retraining model with accumulated samples...")
 	// In production: Retrains on all new data
 	tm.accuracy += 0.01 // Small improvement per retraining
 	if tm.accuracy > 0.85 {

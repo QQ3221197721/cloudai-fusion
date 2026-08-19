@@ -1,0 +1,19 @@
+﻿=== RUN   TestModelProvenance_VerifiesAndBinds
+--- PASS: TestModelProvenance_VerifiesAndBinds (0.00s)
+=== RUN   TestModelProvenance_DetectsWrongCorpusBinding
+--- PASS: TestModelProvenance_DetectsWrongCorpusBinding (0.00s)
+=== RUN   TestRecordProvenanceArtifacts
+--- PASS: TestRecordProvenanceArtifacts (0.00s)
+=== RUN   TestZKPProvenanceRecorder_RecordCheckpoint
+--- PASS: TestZKPProvenanceRecorder_RecordCheckpoint (0.00s)
+=== RUN   TestDatasetFingerprinter_MinHash
+--- PASS: TestDatasetFingerprinter_MinHash (0.00s)
+=== RUN   TestDatasetFingerprinter_VerifyUsage
+--- PASS: TestDatasetFingerprinter_VerifyUsage (0.00s)
+=== RUN   TestDatasetFingerprinter_Reproducibility
+--- PASS: TestDatasetFingerprinter_Reproducibility (0.00s)
+=== RUN   TestZKPProvenance_IndependentInnovation
+    zkp_provenance_test.go:205: Audit verification requires matching fingerprints from both sides
+--- PASS: TestZKPProvenance_IndependentInnovation (0.00s)
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/provenance	0.042s

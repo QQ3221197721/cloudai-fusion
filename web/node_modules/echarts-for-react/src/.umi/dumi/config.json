@@ -1,0 +1,129 @@
+{
+  "menus": {
+    "en-US": {
+      "*": [
+        {
+          "path": "/",
+          "title": "ECharts for React - 全网开发者下载量最高的 ECharts 的 React 组件封装",
+          "meta": {
+            "order": 1
+          }
+        }
+      ],
+      "/examples": [
+        {
+          "path": "/examples/simple",
+          "title": "Simple",
+          "meta": {
+            "order": 1
+          }
+        },
+        {
+          "path": "/examples/api",
+          "title": "ECharts API",
+          "meta": {
+            "order": 2
+          }
+        },
+        {
+          "path": "/examples/theme",
+          "title": "Theme",
+          "meta": {
+            "order": 3
+          }
+        },
+        {
+          "path": "/examples/event",
+          "title": "Event",
+          "meta": {
+            "order": 4
+          }
+        },
+        {
+          "path": "/examples/loading",
+          "title": "Loading",
+          "meta": {
+            "order": 5
+          }
+        },
+        {
+          "path": "/examples/dynamic",
+          "title": "Dynamic",
+          "meta": {
+            "order": 6
+          }
+        },
+        {
+          "path": "/examples/gl",
+          "title": "Web GL",
+          "meta": {
+            "order": 7
+          }
+        },
+        {
+          "path": "/examples/locale",
+          "title": "Locale",
+          "meta": {
+            "order": 8
+          }
+        },
+        {
+          "path": "/examples/svg",
+          "title": "SVG",
+          "meta": {
+            "order": 8
+          }
+        },
+        {
+          "path": "/examples/graph",
+          "title": "Graph",
+          "meta": {
+            "order": 9
+          }
+        },
+        {
+          "path": "/examples/html-props",
+          "title": "HTML Properties",
+          "meta": {
+            "order": 10
+          }
+        }
+      ]
+    }
+  },
+  "locales": [
+    {
+      "name": "en-US",
+      "label": "English"
+    }
+  ],
+  "navs": {
+    "en-US": [
+      {
+        "path": "/examples",
+        "title": "Examples"
+      },
+      {
+        "title": "G2",
+        "path": "https://github.com/antvis/G2"
+      },
+      {
+        "title": "在线文档",
+        "path": "https://github.com/hustcc/echarts-for-react"
+      },
+      {
+        "title": "GitHub",
+        "path": "https://github.com/hustcc/echarts-for-react"
+      }
+    ]
+  },
+  "title": "\b",
+  "logo": "https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/zh/images/logo.png?_v_=20200710_1",
+  "mode": "site",
+  "repository": {
+    "url": "https://github.com/hustcc/echarts-for-react",
+    "branch": "master"
+  },
+  "theme": {},
+  "exportStatic": {}
+}

@@ -1,0 +1,42 @@
+.stat-row {
+  margin-bottom: 20px;
+}
+
+.stat-box {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #9aa5b1;
+  margin-bottom: 4px;
+}
+
+.job-id {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #2fd4d4;
+}
+
+.metric-inline {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #cbd3d8;
+}
+
+.metric-empty {
+  color: #647079;
+  font-size: 12px;
+}
+
+.gang-state-machine {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: rgba(47,212,212,0.04);
+  border-left: 3px solid #2fd4d4;
+  border-radius: 4px;
+}
+
+.sm-note {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  color: #647079;
+  margin-top: 12px;
+}

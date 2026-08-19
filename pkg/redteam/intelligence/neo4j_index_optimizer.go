@@ -1,3 +1,4 @@
+
 package redteam
 
 import (
@@ -11,12 +12,12 @@ import (
 
 // Neo4jIndexOptimizer manages database indexes and constraints for optimal query performance
 type Neo4jIndexOptimizer struct {
-	driver   neo4j.Driver
+	driver   neo4j.DriverWithContext
 	logger   *logrus.Logger
 }
 
 // NewNeo4jIndexOptimizer creates an optimizer instance
-func NewNeo4jIndexOptimizer(driver neo4j.Driver, logger *logrus.Logger) *Neo4jIndexOptimizer {
+func NewNeo4jIndexOptimizer(driver neo4j.DriverWithContext, logger *logrus.Logger) *Neo4jIndexOptimizer {
 	return &Neo4jIndexOptimizer{
 		driver: driver,
 		logger: logger,
@@ -47,14 +48,11 @@ func (njo *Neo4jIndexOptimizer) EnsureIndexes(ctx context.Context) error {
 	}
 
 	sessionConfig := neo4j.SessionConfig{
-		AccessMode: neo4j.AccessWriteDefault,
+		AccessMode: neo4j.AccessModeWrite,
 	}
 
-	session, err := njo.driver.Session(ctx, sessionConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create Neo4j session: %w", err)
-	}
-	defer session.Close()
+	session := njo.driver.NewSession(ctx, sessionConfig)
+	defer session.Close(ctx)
 
 	for _, indexCmd := range indexes {
 		result, err := session.Run(ctx, indexCmd, nil)
@@ -63,10 +61,12 @@ func (njo *Neo4jIndexOptimizer) EnsureIndexes(ctx context.Context) error {
 			continue
 		}
 
-		record, err := result.Single()
+		record, err := result.Single(ctx)
 		if err == nil {
-			msg := record.Get("message").(string)
-			njo.logger.Debugf("Created index: %s - %s", indexCmd, msg)
+			vals := record.Values
+			if len(vals) > 0 {
+				njo.logger.Debugf("Created index: %s - %v", indexCmd, vals[0])
+			}
 		}
 	}
 
@@ -83,10 +83,12 @@ func (njo *Neo4jIndexOptimizer) EnsureIndexes(ctx context.Context) error {
 			continue
 		}
 
-		record, err := result.Single()
+		record, err := result.Single(ctx)
 		if err == nil {
-			msg := record.Get("message").(string)
-			njo.logger.Debugf("Created constraint: %s - %s", constraint, msg)
+			vals := record.Values
+			if len(vals) > 0 {
+				njo.logger.Debugf("Created constraint: %s - %v", constraint, vals[0])
+			}
 		}
 	}
 
@@ -100,14 +102,11 @@ func (njo *Neo4jIndexOptimizer) OptimizeQueryPerformance(ctx context.Context) er
 	defer cancel()
 
 	sessionConfig := neo4j.SessionConfig{
-		AccessMode: neo4j.AccessReadDefault,
+		AccessMode: neo4j.AccessModeRead,
 	}
 
-	session, err := njo.driver.Session(ctx, sessionConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create Neo4j session: %w", err)
-	}
-	defer session.Close()
+	session := njo.driver.NewSession(ctx, sessionConfig)
+	defer session.Close(ctx)
 
 	// Run Cypher query optimization
 	optimizationQueries := []struct {
@@ -125,7 +124,7 @@ func (njo *Neo4jIndexOptimizer) OptimizeQueryPerformance(ctx context.Context) er
 	}
 
 	for _, opt := range optimizationQueries {
-		result, err := session.Run(ctx, opt.query, nil)
+		_, err := session.Run(ctx, opt.query, nil)
 		if err != nil {
 			njo.logger.WithError(err).Warnf("Failed to run optimization query: %s", opt.name)
 			continue
@@ -142,14 +141,11 @@ func (njo *Neo4jIndexOptimizer) CleanStaleData(ctx context.Context, retentionDay
 	defer cancel()
 
 	sessionConfig := neo4j.SessionConfig{
-		AccessMode: neo4j.AccessWriteDefault,
+		AccessMode: neo4j.AccessModeWrite,
 	}
 
-	session, err := njo.driver.Session(ctx, sessionConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create Neo4j session: %w", err)
-	}
-	defer session.Close()
+	session := njo.driver.NewSession(ctx, sessionConfig)
+	defer session.Close(ctx)
 
 	// Remove duplicates based on ID
 	cleanupQuery := `
@@ -183,14 +179,11 @@ func (njo *Neo4jIndexOptimizer) GetDatabaseStatistics(ctx context.Context) (map[
 	defer cancel()
 
 	sessionConfig := neo4j.SessionConfig{
-		AccessMode: neo4j.AccessReadDefault,
+		AccessMode: neo4j.AccessModeRead,
 	}
 
-	session, err := njo.driver.Session(ctx, sessionConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Neo4j session: %w", err)
-	}
-	defer session.Close()
+	session := njo.driver.NewSession(ctx, sessionConfig)
+	defer session.Close(ctx)
 
 	stats := make(map[string]interface{})
 
@@ -210,10 +203,11 @@ func (njo *Neo4jIndexOptimizer) GetDatabaseStatistics(ctx context.Context) (map[
 		if err != nil {
 			continue
 		}
-		record, err := result.Single()
+		record, err := result.Single(ctx)
 		if err == nil {
-			count := record.Get("count").(int64)
-			stats[stat.label] = count
+			if v, ok := record.Get("count"); ok {
+				stats[stat.label] = v
+			}
 		}
 	}
 
@@ -232,19 +226,21 @@ func (njo *Neo4jIndexOptimizer) GetDatabaseStatistics(ctx context.Context) (map[
 		if err != nil {
 			continue
 		}
-		record, err := result.Single()
+		record, err := result.Single(ctx)
 		if err == nil {
-			count := record.Get("count").(int64)
-			stats[stat.label] = count
+			if v, ok := record.Get("count"); ok {
+				stats[stat.label] = v
+			}
 		}
 	}
 
 	// Get index information
 	indexResult, err := session.Run(ctx, "CALL db.indexes() YIELD name RETURN count(name) as total", nil)
 	if err == nil {
-		if record, err := indexResult.Single(); err == nil {
-			totalIndices := record.Get("total").(int64)
-			stats["Total Indexes"] = totalIndices
+		if record, err := indexResult.Single(ctx); err == nil {
+			if v, ok := record.Get("total"); ok {
+				stats["Total Indexes"] = v
+			}
 		}
 	}
 

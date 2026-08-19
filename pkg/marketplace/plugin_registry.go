@@ -5,9 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"net/http"
-	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -94,9 +93,9 @@ func (pr *PluginRegistry) ScanPlugins(ctx context.Context) error {
 func (pr *PluginRegistry) GetPluginsByCapability(cap Capability) ([]*PluginManifest, error) {
 	plugins := make([]*PluginManifest, 0)
 	
-	for _, cap := range AllExtensionPoints {
-		if cap.HasCapability(cap) {
-			pluginIDs := pr.pm.getCapabilityPluginIDs(cap)
+	for _, ep := range AllExtensionPoints {
+		if ep.HasCapability(cap) {
+			pluginIDs := pr.getCapabilityPluginIDs(cap)
 			for _, id := range pluginIDs {
 				if p, exists := pr.pm.plugins.Load(id); exists {
 					plugins = append(plugins, p.(*Plugin).Manifest)

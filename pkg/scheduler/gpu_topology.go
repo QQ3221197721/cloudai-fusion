@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -17,6 +18,35 @@ import (
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
+
+// ============================================================================
+// DCGM Metrics Stubs (for testing without DCGM exporter)
+// ============================================================================
+
+// DCGMMetrics represents DCGM JSON metrics response structure
+type DCGMMetrics struct {
+	Data struct {
+		GPU []struct {
+			UUID       string `json:"dcgmi_uuid"`
+			Model      string `json:"model_name"`
+			MemoryInfo struct {
+				Total int64 `json:"memory.total"`
+				Used  int64 `json:"memory.used"`
+				Free  int64 `json:"memory.free"`
+			} `json:"memory_info"`
+			Utilization struct {
+				GpuUtil float64 `json:"utilization_gpu"`
+			} `json:"utilization"`
+			Temperature struct {
+				GpuTemp float64 `json:"temperature_gpu"`
+			} `json:"temperature"`
+			PowerDraw struct {
+				Pwr float64 `json:"power_draw"`
+			} `json:"power_state"`
+			PCIBusID string `json:"pci_bus_id"`
+		}
+	}
+}
 
 // ============================================================================
 // GPU Topology Discovery
@@ -535,58 +565,63 @@ func ScoreTopology(topo *NodeGPUTopology, gpuCount int, requireNVLink bool, minB
 	}
 
 	// Memory bandwidth optimization: check MIG/MPS isolation capabilities
-	migEnabledGPUs := 0
-	mpsActiveGPUs := 0
-	for _, gpu := range topo.GPUs[:gpuCount] {
-		if gpu.MIGEnabled {
-			migEnabledGPUs++
+	// Only proceed if we have GPU metadata (topo.GPUs may be empty in tests)
+	actualGPUCount := min(gpuCount, len(topo.GPUs))
+	if actualGPUCount > 0 {
+		migEnabledGPUs := 0
+		mpsActiveGPUs := 0
+		for _, gpu := range topo.GPUs[:actualGPUCount] {
+			if gpu.MIGEnabled {
+				migEnabledGPUs++
+			}
+			if gpu.MPSServerActive {
+				mpsActiveGPUs++
+			}
 		}
-		if gpu.MPSServerActive {
-			mpsActiveGPUs++
-		}
-	}
 
-	// Bonus for isolation capabilities
-	if migEnabledGPUs == gpuCount {
-		score += 5.0 // All GPUs support MIG
-	}
-	if mpsActiveGPUs > 0 {
-		score += 3.0 // Some MPS capability
-	}
-
-	// Power efficiency consideration: prefer lower power draw
-	if gpuCount > 1 {
-		avgPowerDraw := 0.0
-		for _, gpu := range topo.GPUs[:gpuCount] {
-			avgPowerDraw += gpu.PowerUsageW
+		// Bonus for isolation capabilities
+		if migEnabledGPUs == gpuCount {
+			score += 5.0 // All GPUs support MIG
 		}
-		avgPowerDraw /= float64(gpuCount)
+		if mpsActiveGPUs > 0 {
+			score += 3.0 // Some MPS capability
+		}
+
+		// Power efficiency consideration: prefer lower power draw
+		if gpuCount > 1 {
+			avgPowerDraw := 0.0
+			for _, gpu := range topo.GPUs[:actualGPUCount] {
+				avgPowerDraw += gpu.PowerUsageW
+			}
+			// Use actual count for averaging
+			avgPowerDraw /= float64(actualGPUCount)
+			
+			// Prefer efficient GPUs (<300W average for training)
+			if avgPowerDraw < 300.0 {
+				score += 2.0
+			}
+		}
+
+		// Temperature headroom bonus (prefer cooler GPUs)
+		avgTemp := 0.0
+		for _, gpu := range topo.GPUs[:actualGPUCount] {
+			avgTemp += float64(gpu.Temperature)
+		}
+		avgTemp /= float64(actualGPUCount)
 		
-		// Prefer efficient GPUs (<300W average for training)
-		if avgPowerDraw < 300.0 {
+		// Prefer GPUs with good thermal headroom (<70°C average)
+		if avgTemp < 70.0 {
 			score += 2.0
 		}
-	}
 
-	// Temperature headroom bonus (prefer cooler GPUs)
-	avgTemp := 0.0
-	for _, gpu := range topo.GPUs[:gpuCount] {
-		avgTemp += float64(gpu.Temperature)
-	}
-	avgTemp /= float64(gpuCount)
-	
-	// Prefer GPUs with good thermal headroom (<70°C average)
-	if avgTemp < 70.0 {
-		score += 2.0
-	}
-
-	// Penalize heterogeneous setups (mixing different GPU models)
-	uniqueModels := make(map[string]bool)
-	for _, gpu := range topo.GPUs[:gpuCount] {
-		uniqueModels[gpu.UUID] = true
-	}
-	if len(uniqueModels) > 1 {
-		score -= 5.0 // Mix of GPUs is less optimal
+		// Penalize heterogeneous setups (mixing different GPU models)
+		uniqueModels := make(map[string]bool)
+		for _, gpu := range topo.GPUs[:actualGPUCount] {
+			uniqueModels[gpu.UUID] = true
+		}
+		if len(uniqueModels) > 1 {
+			score -= 5.0 // Mix of GPUs is less optimal
+		}
 	}
 
 	if score > 100 {

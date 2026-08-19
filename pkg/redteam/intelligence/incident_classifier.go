@@ -1,3 +1,4 @@
+
 package redteam
 
 import (
@@ -119,7 +120,7 @@ func (ic *IncidentClassifier) extractFeatures(event SecurityEvent) map[string]in
 	
 	// Context enrichment
 	features["is_internal_ip"] = isInternalIP(event.SourceIP)
-	features["is_known_malicious"] := event.KnownThreats.HasIndicator(event.SourceIP)
+	features["is_known_malicious"] = event.KnownThreats.HasIndicator(event.SourceIP)
 	
 	return features
 }

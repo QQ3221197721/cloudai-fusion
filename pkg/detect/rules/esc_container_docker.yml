@@ -1,0 +1,26 @@
+title: Container Escape via Host Namespace or Docker Socket
+id: 4d6a8f27-1c93-4e85-b7a2-9f3c0b6d1e58
+status: stable
+description: Detects the three canonical container-escape primitives - entering the host PID/mount namespace with nsenter, abusing the cgroup release_agent to execute on the host, and talking to a mounted Docker daemon socket from inside a container.
+level: critical
+tags:
+  - attack.privilege_escalation
+  - attack.t1611
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_nsenter:
+    CommandLine|contains:
+      - 'nsenter --target 1'
+      - 'nsenter -t 1 -m'
+      - 'nsenter -t 1 -p'
+  selection_release_agent:
+    CommandLine|contains:
+      - 'release_agent'
+      - 'notify_on_release'
+  selection_docker_socket:
+    CommandLine|contains:
+      - '/var/run/docker.sock'
+      - '/run/containerd/containerd.sock'
+  condition: 1 of them

@@ -1,10 +1,10 @@
 package store
 
 import (
-	"crypto/rand"
-	"encoding/hex"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,28 +14,33 @@ import (
 // Write-Ahead Log (WAL) — Crash Recovery & Durability
 // ============================================================================
 //
-// The WAL ensures durability by writing all state changes to a sequential
-// log BEFORE applying them to the main data store. If the system crashes
-// mid-operation, the WAL can be replayed on restart to recover to a
+// The WAL ensures durability by writing all state changes to a sequential,
+// on-disk log BEFORE applying them to the main data store. If the system
+// crashes mid-operation, the WAL can be replayed on restart to recover to a
 // consistent state.
 //
+// This is a REAL disk-backed implementation:
+//   - Records are serialized and appended to segment files on disk.
+//   - fsync(2) is invoked according to the configured SyncMode.
+//   - CRC32 checksums guard every entry against corruption.
+//   - Recovery replays entries from disk, skipping corrupted records.
+//
+// The disk engine lives in wal_segment.go (segment / DiskWAL). This file
+// keeps the higher-level, record-oriented API and an in-memory index used
+// for fast queries and record-state (PENDING/APPLIED/ABORTED) tracking.
+// Disk is authoritative; the in-memory index is rebuilt from disk on open.
+//
 // WAL record lifecycle:
-//   1. Application writes a WAL record (state: PENDING)
-//   2. WAL is fsynced to disk (guarantees durability)
-//   3. Operation is applied to the main data store
-//   4. WAL record is marked APPLIED
-//   5. On checkpoint, applied records are compacted
+//   1. Application writes a WAL record (state: PENDING) — persisted to disk.
+//   2. The record is fsynced according to SyncMode (guarantees durability).
+//   3. The operation is applied to the main data store.
+//   4. A COMMIT marker is appended to disk and the record marked APPLIED.
+//   5. On checkpoint, applied segments are compacted / deleted.
 //
 // On crash recovery:
-//   1. Read all WAL records from the last checkpoint
-//   2. For each PENDING record, re-apply the operation
-//   3. For each APPLIED record, skip (already committed)
-//
-// WAL supports:
-//   - Sequential writes (append-only, no random I/O)
-//   - Periodic checkpointing (compaction)
-//   - Segment rotation (bounded file sizes)
-//   - Batch writes (group commit for throughput)
+//   1. Read all WAL entries from disk (CRC-verified).
+//   2. Re-apply DATA records still in PENDING state.
+//   3. COMMIT/ABORT markers restore APPLIED/ABORTED states.
 
 // ============================================================================
 // WAL Record Types
@@ -63,7 +68,7 @@ func (s WALRecordState) String() string {
 	}
 }
 
-// WALRecord represents a single entry in the Write-Ahead Log.
+// WALRecord represents a single logical entry in the Write-Ahead Log.
 type WALRecord struct {
 	// Sequence is the monotonically increasing sequence number.
 	Sequence uint64 `json:"sequence"`
@@ -92,7 +97,10 @@ type WALRecord struct {
 	// Timestamp when the record was written.
 	Timestamp time.Time `json:"timestamp"`
 
-	// Checksum for integrity verification.
+	// CRC is the IEEE CRC32 checksum of the record's identifying fields.
+	CRC uint32 `json:"crc"`
+
+	// Checksum is the hex-encoded form of CRC (kept for backward compatibility).
 	Checksum string `json:"checksum"`
 }
 
@@ -111,9 +119,9 @@ type WALConfig struct {
 	MaxSegments int
 
 	// SyncMode determines when writes are fsynced:
-	//   "always"  — fsync after every write (safest, slowest)
-	//   "batch"   — fsync after a batch of writes (balanced)
-	//   "none"    — rely on OS buffer cache (fastest, least durable)
+	//   "always"/"immediate" — fsync after every write (safest, slowest)
+	//   "batch"              — fsync after a batch of writes (balanced)
+	//   "none"               — rely on OS page cache (fastest, least durable)
 	// Default: "batch"
 	SyncMode string
 
@@ -153,19 +161,22 @@ func DefaultWALConfig() WALConfig {
 }
 
 // ============================================================================
-// WAL Writer
+// WAL Writer (disk-backed)
 // ============================================================================
 
-// WAL provides write-ahead logging functionality.
-// In production, this writes to disk. The current implementation uses
-// an in-memory ring buffer for development/testing.
+// WAL provides write-ahead logging functionality backed by disk segments.
+// Durability is provided by the embedded DiskWAL; the in-memory index is a
+// cache/state-tracker rebuilt from disk on open.
 type WAL struct {
 	config WALConfig
 
-	// In-memory storage (production: file-backed segments)
+	// disk is the authoritative on-disk log.
+	disk *DiskWAL
+
+	// In-memory index for queries and record-state tracking.
 	records  []WALRecord
+	seqIndex map[uint64]int
 	sequence atomic.Uint64
-	batchBuf []WALRecord
 
 	// Checkpoint tracking
 	lastCheckpoint  uint64
@@ -177,8 +188,9 @@ type WAL struct {
 	mu sync.Mutex
 }
 
-// NewWAL creates a new Write-Ahead Log.
-func NewWAL(cfg WALConfig) *WAL {
+// NewWAL creates (or opens) a disk-backed Write-Ahead Log and replays any
+// existing on-disk entries to rebuild the in-memory index.
+func NewWAL(cfg WALConfig) (*WAL, error) {
 	if cfg.MaxSegmentSize <= 0 {
 		cfg.MaxSegmentSize = 64 * 1024 * 1024
 	}
@@ -197,12 +209,86 @@ func NewWAL(cfg WALConfig) *WAL {
 	if cfg.RetentionDuration <= 0 {
 		cfg.RetentionDuration = 1 * time.Hour
 	}
-
-	return &WAL{
-		config:   cfg,
-		records:  make([]WALRecord, 0, 4096),
-		batchBuf: make([]WALRecord, 0, cfg.BatchSize),
+	if cfg.SyncMode == "" {
+		cfg.SyncMode = "batch"
 	}
+	if cfg.DataDir == "" {
+		cfg.DataDir = "./data/wal"
+	}
+
+	disk, err := NewDiskWAL(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("wal: open disk log: %w", err)
+	}
+
+	w := &WAL{
+		config:   cfg,
+		disk:     disk,
+		records:  make([]WALRecord, 0, 4096),
+		seqIndex: make(map[uint64]int),
+	}
+
+	if err := w.replayFromDisk(); err != nil {
+		_ = disk.Close()
+		return nil, fmt.Errorf("wal: replay: %w", err)
+	}
+
+	return w, nil
+}
+
+// replayFromDisk rebuilds the in-memory index from the on-disk log.
+func (w *WAL) replayFromDisk() error {
+	entries, err := w.disk.Recover()
+	if err != nil {
+		return err
+	}
+
+	var maxSeq uint64
+	for _, e := range entries {
+		if e.Sequence > maxSeq {
+			maxSeq = e.Sequence
+		}
+
+		switch e.Type {
+		case EntryTypeData:
+			var rec WALRecord
+			if uerr := json.Unmarshal(e.Payload, &rec); uerr != nil {
+				// Undecodable payload — treat as skipped, disk still authoritative.
+				continue
+			}
+			if idx, ok := w.seqIndex[rec.Sequence]; ok {
+				w.records[idx] = rec
+			} else {
+				w.records = append(w.records, rec)
+				w.seqIndex[rec.Sequence] = len(w.records) - 1
+			}
+
+		case EntryTypeCommit:
+			if len(e.Payload) >= 8 {
+				target := binary.BigEndian.Uint64(e.Payload[:8])
+				if idx, ok := w.seqIndex[target]; ok {
+					w.records[idx].State = WALRecordApplied
+				}
+			}
+
+		case EntryTypeAbort:
+			if len(e.Payload) >= 8 {
+				target := binary.BigEndian.Uint64(e.Payload[:8])
+				if idx, ok := w.seqIndex[target]; ok {
+					w.records[idx].State = WALRecordAborted
+				}
+			}
+
+		case EntryTypeCheckpoint:
+			if len(e.Payload) >= 8 {
+				w.lastCheckpoint = binary.BigEndian.Uint64(e.Payload[:8])
+			}
+		}
+	}
+
+	w.sequence.Store(maxSeq)
+	w.stats.RecordsWritten = int64(len(w.records))
+	return nil
 }
 
 // ============================================================================
@@ -233,20 +319,17 @@ func (w *WAL) Append(recordType, table, key string, data interface{}) (uint64, e
 		Data:      dataBytes,
 		State:     WALRecordPending,
 		Timestamp: time.Now(),
-		Checksum:  generateChecksum(seq, recordType, table, key),
+	}
+	record.CRC = recordChecksum(record)
+	record.Checksum = fmt.Sprintf("%08x", record.CRC)
+
+	if err := w.persistRecordLocked(record); err != nil {
+		return 0, err
 	}
 
-	w.records = append(w.records, record)
+	w.appendIndexLocked(record)
 	w.stats.RecordsWritten++
 	w.stats.BytesWritten += int64(len(dataBytes))
-
-	// Batch sync
-	if w.config.SyncMode == "batch" {
-		w.batchBuf = append(w.batchBuf, record)
-		if len(w.batchBuf) >= w.config.BatchSize {
-			w.flushBatch()
-		}
-	}
 
 	return seq, nil
 }
@@ -285,10 +368,15 @@ func (w *WAL) AppendWithOldData(recordType, table, key string, newData, oldData 
 		OldData:   oldDataBytes,
 		State:     WALRecordPending,
 		Timestamp: time.Now(),
-		Checksum:  generateChecksum(seq, recordType, table, key),
+	}
+	record.CRC = recordChecksum(record)
+	record.Checksum = fmt.Sprintf("%08x", record.CRC)
+
+	if err := w.persistRecordLocked(record); err != nil {
+		return 0, err
 	}
 
-	w.records = append(w.records, record)
+	w.appendIndexLocked(record)
 	w.stats.RecordsWritten++
 
 	return seq, nil
@@ -307,62 +395,98 @@ func (w *WAL) AppendTxn(recordType, txnID string) (uint64, error) {
 		TxnID:     txnID,
 		State:     WALRecordPending,
 		Timestamp: time.Now(),
-		Checksum:  generateChecksum(seq, recordType, "", txnID),
+	}
+	record.CRC = recordChecksum(record)
+	record.Checksum = fmt.Sprintf("%08x", record.CRC)
+
+	if err := w.persistRecordLocked(record); err != nil {
+		return 0, err
 	}
 
-	w.records = append(w.records, record)
+	w.appendIndexLocked(record)
 	w.stats.RecordsWritten++
 
 	return seq, nil
+}
+
+// persistRecordLocked serializes a record and appends it to disk as a DATA
+// entry. Caller must hold w.mu.
+func (w *WAL) persistRecordLocked(record WALRecord) error {
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return fmt.Errorf("wal: marshal record: %w", err)
+	}
+	entry := WALEntry{
+		Sequence: record.Sequence,
+		Type:     EntryTypeData,
+		Payload:  payload,
+	}
+	if err := w.disk.Append(entry); err != nil {
+		return fmt.Errorf("wal: disk append: %w", err)
+	}
+	if w.config.SyncMode == "batch" {
+		w.stats.BatchesFlushed++
+	}
+	return nil
+}
+
+// appendIndexLocked adds a record to the in-memory index. Caller holds w.mu.
+func (w *WAL) appendIndexLocked(record WALRecord) {
+	w.records = append(w.records, record)
+	w.seqIndex[record.Sequence] = len(w.records) - 1
+}
+
+// markLocked appends a COMMIT/ABORT marker to disk and updates in-memory
+// state. Caller must hold w.mu.
+func (w *WAL) markLocked(sequence uint64, markerType EntryType, state WALRecordState) error {
+	idx, ok := w.seqIndex[sequence]
+	if !ok {
+		return fmt.Errorf("WAL record with sequence %d not found", sequence)
+	}
+
+	markerSeq := w.sequence.Add(1)
+	var payload [8]byte
+	binary.BigEndian.PutUint64(payload[:], sequence)
+
+	entry := WALEntry{
+		Sequence: markerSeq,
+		Type:     markerType,
+		Payload:  payload[:],
+	}
+	if err := w.disk.Append(entry); err != nil {
+		return fmt.Errorf("wal: append marker: %w", err)
+	}
+
+	w.records[idx].State = state
+	return nil
 }
 
 // MarkApplied marks a WAL record as successfully applied to the data store.
 func (w *WAL) MarkApplied(sequence uint64) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-
-	for i := range w.records {
-		if w.records[i].Sequence == sequence {
-			w.records[i].State = WALRecordApplied
-			return nil
-		}
-	}
-
-	return fmt.Errorf("WAL record with sequence %d not found", sequence)
+	return w.markLocked(sequence, EntryTypeCommit, WALRecordApplied)
 }
 
 // MarkAborted marks a WAL record as aborted.
 func (w *WAL) MarkAborted(sequence uint64) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-
-	for i := range w.records {
-		if w.records[i].Sequence == sequence {
-			w.records[i].State = WALRecordAborted
-			return nil
-		}
-	}
-
-	return fmt.Errorf("WAL record with sequence %d not found", sequence)
+	return w.markLocked(sequence, EntryTypeAbort, WALRecordAborted)
 }
 
 // ============================================================================
 // Batch Flush (Group Commit)
 // ============================================================================
 
-func (w *WAL) flushBatch() {
-	// In production, this would fsync the WAL file.
-	// For in-memory implementation, this is a no-op.
-	w.stats.BatchesFlushed++
-	w.batchBuf = w.batchBuf[:0]
-}
-
-// FlushSync forces an immediate fsync of all pending writes.
+// FlushSync forces an immediate flush + fsync of all pending writes to disk.
 func (w *WAL) FlushSync() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	w.flushBatch()
+	if err := w.disk.Sync(); err != nil {
+		return err
+	}
 	w.stats.SyncsForceed++
 	return nil
 }
@@ -422,24 +546,27 @@ func (w *WAL) RecoverSince(afterSequence uint64) []WALRecord {
 // Checkpoint & Compaction
 // ============================================================================
 
-// Checkpoint compacts the WAL by removing old applied records.
-// Returns the number of records compacted.
-func (w *WAL) Checkpoint() int {
+// Checkpoint compacts the WAL by removing old applied/aborted records from the
+// in-memory index and pruning fully-applied segments from disk. Returns the
+// number of records compacted from memory.
+func (w *WAL) Checkpoint() (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	cutoff := time.Now().Add(-w.config.RetentionDuration)
 
-	// Keep pending records and recently applied records
-	retained := make([]WALRecord, 0, len(w.records)/2)
+	// Highest sequence that is safely applied (used as the disk checkpoint bound).
+	var appliedUpTo uint64
+
+	retained := make([]WALRecord, 0, len(w.records)/2+1)
 	compacted := 0
 
 	for _, record := range w.records {
-		if record.State == WALRecordApplied && record.Timestamp.Before(cutoff) {
-			compacted++
-			continue
-		}
-		if record.State == WALRecordAborted && record.Timestamp.Before(cutoff) {
+		terminal := record.State == WALRecordApplied || record.State == WALRecordAborted
+		if terminal && record.Timestamp.Before(cutoff) {
+			if record.State == WALRecordApplied && record.Sequence > appliedUpTo {
+				appliedUpTo = record.Sequence
+			}
 			compacted++
 			continue
 		}
@@ -447,12 +574,29 @@ func (w *WAL) Checkpoint() int {
 	}
 
 	w.records = retained
+	w.rebuildIndexLocked()
 	w.lastCheckpoint = w.sequence.Load()
 	w.lastCompactedAt = time.Now()
 	w.stats.CheckpointsDone++
 	w.stats.RecordsCompacted += int64(compacted)
 
-	return compacted
+	// Persist a disk checkpoint marker and prune old segments.
+	if appliedUpTo > 0 {
+		if err := w.disk.Checkpoint(appliedUpTo); err != nil {
+			return compacted, fmt.Errorf("wal: disk checkpoint: %w", err)
+		}
+	}
+
+	return compacted, nil
+}
+
+// rebuildIndexLocked recomputes the seqIndex after records slice changes.
+// Caller must hold w.mu.
+func (w *WAL) rebuildIndexLocked() {
+	w.seqIndex = make(map[uint64]int, len(w.records))
+	for i := range w.records {
+		w.seqIndex[w.records[i].Sequence] = i
+	}
 }
 
 // ============================================================================
@@ -464,10 +608,9 @@ func (w *WAL) GetRecord(sequence uint64) (*WALRecord, bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	for i := range w.records {
-		if w.records[i].Sequence == sequence {
-			return &w.records[i], true
-		}
+	if idx, ok := w.seqIndex[sequence]; ok {
+		rec := w.records[idx]
+		return &rec, true
 	}
 	return nil, false
 }
@@ -486,11 +629,26 @@ func (w *WAL) GetRecordsByTable(table string) []WALRecord {
 	return result
 }
 
-// Len returns the number of records in the WAL.
+// Len returns the number of records in the in-memory index.
 func (w *WAL) Len() int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return len(w.records)
+}
+
+// Close flushes and closes the underlying disk log.
+func (w *WAL) Close() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.disk == nil {
+		return nil
+	}
+	return w.disk.Close()
+}
+
+// DiskWAL returns the underlying disk engine (for advanced use / testing).
+func (w *WAL) DiskWAL() *DiskWAL {
+	return w.disk
 }
 
 // ============================================================================
@@ -542,9 +700,9 @@ func NewWALStore(wal *WAL, applyFn func(record WALRecord) error) *WALStore {
 }
 
 // Write performs a WAL-protected write operation:
-// 1. Append to WAL
+// 1. Append to WAL (durably on disk)
 // 2. Apply to store
-// 3. Mark WAL record as applied
+// 3. Mark WAL record as applied (COMMIT marker on disk)
 func (ws *WALStore) Write(opType, table, key string, data interface{}) error {
 	// Step 1: Write to WAL
 	seq, err := ws.wal.Append(opType, table, key, data)
@@ -589,15 +747,34 @@ func (ws *WALStore) Recover() (int, error) {
 	return applied, nil
 }
 
+// Checkpoint triggers WAL compaction and segment pruning.
+// Returns the number of records compacted from the in-memory index.
+func (ws *WALStore) Checkpoint() (int, error) {
+	return ws.wal.Checkpoint()
+}
+
 // WALRef returns the underlying WAL for direct access.
 func (ws *WALStore) WALRef() *WAL {
 	return ws.wal
 }
 
-func generateChecksum(seq uint64, parts ...string) string {
-	b := make([]byte, 4)
-	if _, err := rand.Read(b); err != nil {
-		return fmt.Sprintf("%d", seq)
-	}
-	return hex.EncodeToString(b)
+// Close closes the underlying WAL and its disk segments.
+func (ws *WALStore) Close() error {
+	return ws.wal.Close()
+}
+
+// recordChecksum computes a REAL IEEE CRC32 over the record's identifying
+// fields (never random bytes). Used for integrity verification.
+func recordChecksum(rec WALRecord) uint32 {
+	h := crc32.NewIEEE()
+	var seqBytes [8]byte
+	binary.BigEndian.PutUint64(seqBytes[:], rec.Sequence)
+	h.Write(seqBytes[:])
+	h.Write([]byte(rec.Type))
+	h.Write([]byte(rec.Table))
+	h.Write([]byte(rec.Key))
+	h.Write(rec.Data)
+	h.Write(rec.OldData)
+	h.Write([]byte(rec.TxnID))
+	return h.Sum32()
 }

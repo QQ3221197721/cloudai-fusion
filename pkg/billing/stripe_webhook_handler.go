@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -70,7 +71,8 @@ func (h *StripeWebhookHandler) HandleEvent(ctx context.Context, requestBody []by
 	// Parse webhook event
 	var event WebhookEvent
 	if err := json.Unmarshal(requestBody, &event); err != nil {
-		return h.logger.WithError(err).Error("Failed to parse webhook event"), err
+		h.logger.WithError(err).Error("Failed to parse webhook event")
+		return nil, err
 	}
 	
 	h.logger.WithField("event_type", event.Type).Info("Received webhook event")
@@ -86,7 +88,8 @@ func (h *StripeWebhookHandler) HandleEvent(ctx context.Context, requestBody []by
 	case "customer.subscription.deleted":
 		return h.handleSubscriptionDeleted(event), nil
 	default:
-		return h.logger.WithField("type", event.Type).Warn("Unhandled event type"), nil
+		h.logger.WithField("type", event.Type).Warn("Unhandled event type")
+		return nil, nil
 	}
 }
 
@@ -248,6 +251,26 @@ type WebhookMetrics struct {
 
 func NewWebhookMetrics() *WebhookMetrics {
 	return &WebhookMetrics{}
+}
+
+// GetInvoiceByID returns a stored invoice by its identifier.
+func (b *SaaSBilling) GetInvoiceByID(id string) (*Invoice, error) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	for _, inv := range b.invoices {
+		if inv.ID == id {
+			return inv, nil
+		}
+	}
+	return nil, fmt.Errorf("invoice not found: %s", id)
+}
+
+// GetSubscription returns the subscription for a tenant and whether it exists.
+func (b *SaaSBilling) GetSubscription(tenantID string) (*Subscription, bool) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	sub, exists := b.subscriptions[tenantID]
+	return sub, exists
 }
 
 func (m *WebhookMetrics) IncrementEvents() {

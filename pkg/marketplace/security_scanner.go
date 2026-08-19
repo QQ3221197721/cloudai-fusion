@@ -3,9 +3,7 @@ package marketplace
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -58,10 +56,10 @@ type ScanResult struct {
 type ScanStatus string
 
 const (
-	StatusPending ScanStatus = "pending"
-	StatusScanning ScanStatus = "scanning"
-	StatusCompleted ScanStatus = "completed"
-	StatusError ScanStatus = "error"
+	ScanStatusPending ScanStatus = "pending"
+	ScanStatusScanning ScanStatus = "scanning"
+	ScanStatusCompleted ScanStatus = "completed"
+	ScanStatusError ScanStatus = "error"
 )
 
 // SecurityIssue describes a security issue found during scan
@@ -124,7 +122,7 @@ func (ss *SecurityScanner) ScanPlugin(ctx context.Context, pluginPath string) (*
 		ID: fmt.Sprintf("scan_%d", time.Now().UnixNano()),
 		PluginName: filepath.Base(pluginPath),
 		ScannedAt: time.Now(),
-		Status: StatusScanning,
+		Status: ScanStatusScanning,
 		Issues: make([]SecurityIssue, 0),
 	}
 	
@@ -133,7 +131,7 @@ func (ss *SecurityScanner) ScanPlugin(ctx context.Context, pluginPath string) (*
 	
 	// Check plugin path exists
 	if _, err := os.Stat(pluginPath); os.IsNotExist(err) {
-		result.Status = StatusError
+		result.Status = ScanStatusError
 		result.Issues = append(result.Issues, SecurityIssue{
 			Type: "FileNotFoundError",
 			Severity: "critical",
@@ -185,7 +183,7 @@ func (ss *SecurityScanner) ScanPlugin(ctx context.Context, pluginPath string) (*
 	
 	// Determine compliance
 	result.Compliance = ss.evaluateCompliance(result)
-	result.Status = StatusCompleted
+	result.Status = ScanStatusCompleted
 	
 	// Cache result
 	if len(ss.resultsCache) >= ss.cacheMaxSize {
@@ -207,16 +205,16 @@ func (ss *SecurityScanner) ScanPlugin(ctx context.Context, pluginPath string) (*
 // ============================================================================
 
 // runSonarQubeScan performs static code analysis with SonarQube (real implementation)
-func (ss *ScannerMetrics) runSonarQubeScan(ctx context.Context, pluginPath string) *ScanResult {
+func (ss *SecurityScanner) runSonarQubeScan(ctx context.Context, pluginPath string) *ScanResult {
 	result := &ScanResult{
 		PluginName: "Static Code Analysis",
-		Status: StatusScanning,
+		Status: ScanStatusScanning,
 		Issues: make([]SecurityIssue, 0),
 	}
 	
 	// Check if SonarQube available
 	if ss.sonarQubeURL == "" {
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 		return result
 	}
 	
@@ -229,7 +227,7 @@ func (ss *ScannerMetrics) runSonarQubeScan(ctx context.Context, pluginPath strin
 	
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		result.Status = StatusError
+		result.Status = ScanStatusError
 		result.Issues = append(result.Issues, SecurityIssue{
 			Type: "ScanError",
 			Severity: "critical",
@@ -251,12 +249,12 @@ func (ss *ScannerMetrics) runSonarQubeScan(ctx context.Context, pluginPath strin
 func (ss *SecurityScanner) runGitleaksScan(ctx context.Context, pluginPath string) *ScanResult {
 	result := &ScanResult{
 		PluginName: "Secret Detection",
-		Status: StatusScanning,
+		Status: ScanStatusScanning,
 		Issues: make([]SecurityIssue, 0),
 	}
 	
 	if ss.gitleaksPath == "" {
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 		return result
 	}
 	
@@ -265,7 +263,7 @@ func (ss *SecurityScanner) runGitleaksScan(ctx context.Context, pluginPath strin
 	output, err := cmd.CombinedOutput()
 	
 	if err != nil && !strings.Contains(string(output), "No leaks found") {
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 		
 		// Parse Gitleaks output
 		lines := strings.Split(string(output), "\n")
@@ -284,11 +282,11 @@ func (ss *SecurityScanner) runGitleaksScan(ctx context.Context, pluginPath strin
 		
 		result.TotalIssues = len(result.Issues)
 		result.Critical = ss.countIssuesBySeverity(result.Issues, "critical")
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 	}
 	
 	result.TotalIssues = len(result.Issues)
-	result.Status = StatusCompleted
+	result.Status = ScanStatusCompleted
 	
 	return result
 }
@@ -297,12 +295,12 @@ func (ss *SecurityScanner) runGitleaksScan(ctx context.Context, pluginPath strin
 func (ss *SecurityScanner) runTrivyScan(ctx context.Context, pluginPath string) *ScanResult {
 	result := &ScanResult{
 		PluginName: "Container Vulnerability Scan",
-		Status: StatusScanning,
+		Status: ScanStatusScanning,
 		Issues: make([]SecurityIssue, 0),
 	}
 	
 	if ss.trivyPath == "" {
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 		return result
 	}
 	
@@ -311,16 +309,16 @@ func (ss *SecurityScanner) runTrivyScan(ctx context.Context, pluginPath string) 
 	output, err := cmd.CombinedOutput()
 	
 	if err != nil && !strings.Contains(string(output), "Nothing to scan") {
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 		ss.logger.Debugf("Trivy output: %s", string(output))
 		
 		// Would parse Trivy JSON output here
 		// For now, add simulated finding
 		result.TotalIssues = 0
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 	}
 	
-	result.Status = StatusCompleted
+	result.Status = ScanStatusCompleted
 	
 	return result
 }
@@ -329,12 +327,12 @@ func (ss *SecurityScanner) runTrivyScan(ctx context.Context, pluginPath string) 
 func (ss *SecurityScanner) runGrypeScan(ctx context.Context, pluginPath string) *ScanResult {
 	result := &ScanResult{
 		PluginName: "Dependency Scanning",
-		Status: StatusScanning,
+		Status: ScanStatusScanning,
 		Issues: make([]SecurityIssue, 0),
 	}
 	
 	if ss.grypePath == "" {
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 		return result
 	}
 	
@@ -343,16 +341,16 @@ func (ss *SecurityScanner) runGrypeScan(ctx context.Context, pluginPath string) 
 	output, err := cmd.CombinedOutput()
 	
 	if err != nil && !strings.Contains(string(output), "No vulnerabilities found") {
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 		ss.logger.Debugf("Grype output: %s", string(output))
 		
 		// Would parse Grype JSON output here
 		// For now, assume no critical issues
 		result.TotalIssues = 0
-		result.Status = StatusCompleted
+		result.Status = ScanStatusCompleted
 	}
 	
-	result.Status = StatusCompleted
+	result.Status = ScanStatusCompleted
 	
 	return result
 }
@@ -417,7 +415,7 @@ func (ss *SecurityScanner) evaluateCompliance(result *ScanResult) ComplianceResu
 			violations = append(violations, Violation{
 				Check: issue.Type,
 				Message: issue.Description,
-				Severity: IssueSeverity(issue.Severity),
+				Severity: SeverityLevel(issue.Severity),
 				Evidence: map[string]string{"file": issue.File},
 			})
 		}

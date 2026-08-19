@@ -196,8 +196,10 @@ func (m *Manager) QueryEvents(filter EventFilter) []*AuditEvent {
 		}
 	}
 
-	// Sort by timestamp descending (newest first)
-	sort.Slice(result, func(i, j int) bool {
+	// Sort by timestamp descending (newest first).
+	// Use SliceStable so that events with equal timestamps preserve their
+	// original insertion order, providing a deterministic tiebreaker.
+	sort.SliceStable(result, func(i, j int) bool {
 		return result[i].Timestamp.After(result[j].Timestamp)
 	})
 

@@ -250,15 +250,21 @@ func (m *Manager) RegisterNode(ctx context.Context, node *EdgeNode) error {
 	return nil
 }
 
-// emitNodeEvidence records a signed receipt for an edge node registration. The
-// registration/persistence is real, but no live edge-device runtime link is
-// verified here, so the runtime backend is honestly tagged simulated.
+// emitNodeEvidence records a signed receipt for an edge node registration.
+// The registration/persistence is real, but no live edge-device runtime link
+// is verified here, so the runtime backend is honestly tagged as simulated.
+// This call MUST happen regardless of whether a recorder is available,
+// ensuring capability.Enforce() in production mode can reject simulated backends.
 func (m *Manager) emitNodeEvidence(ctx context.Context, node *EdgeNode) {
+	// Always report capability honesty - do NOT gate behind recorder != nil
+	// because Enforce() and runmode.Production() may reject simulated backends.
+	_ = capability.Report("edge.runtime", "rest-stub", capability.ModeSimulated,
+		"edge node registry (no live edge-device runtime link verified)")
+	
 	if m.recorder == nil {
 		return
 	}
-	_ = capability.Report("edge.runtime", "rest-stub", capability.ModeSimulated,
-		"edge node registry (no live edge-device runtime link verified)")
+	
 	_, _ = m.recorder.Record(ctx, evidence.RecordInput{
 		Actor:    "edge",
 		Action:   "edge.node.register",

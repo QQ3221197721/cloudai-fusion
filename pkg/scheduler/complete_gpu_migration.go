@@ -4,8 +4,10 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -37,7 +39,7 @@ func NewCompleteGPUChillerManager(ctx context.Context, logger *logrus.Logger) (*
 	}
 	
 	cgm := &CompleteGPUChillerManager{
-		logger: logger.WithFields(logrus.Fields{"component": "gpu_chiller"}),
+		logger: logger,
 	}
 	
 	// Step 1: Verify CRIU installation
@@ -166,4 +168,22 @@ func (cgm *CompleteGPUChillerManager) MigrateGPU(ctx context.Context, task TaskS
 		cgm.logger.Info("GPU migration completed successfully")
 		return nil
 	}
+}
+
+// getLibraryPath resolves the expected filesystem path for a shared dependency.
+func getLibraryPath(lib string) string {
+	if strings.HasSuffix(lib, ".so") {
+		return filepath.Join("/usr/lib", lib)
+	}
+	return filepath.Join("/usr/bin", lib)
+}
+
+// transferCheckpoint copies the CRIU checkpoint bundle to the target host.
+func (cgm *CompleteGPUChillerManager) transferCheckpoint(ctx context.Context, checkpointPath, targetHost string) error {
+	cmd := exec.CommandContext(ctx, "rsync", "-az", checkpointPath+"/", targetHost+":"+checkpointPath+"/")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("rsync checkpoint failed: %w\nOutput: %s", err, output)
+	}
+	cgm.logger.WithField("target", targetHost).Info("Checkpoint transferred")
+	return nil
 }

@@ -1,21 +1,21 @@
+﻿
 // Package redteam - Zero-Day research program and exploit development framework
 package redteam
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
 // ============================================================================
-// ZERO-DAY RESEARCH PROGRAM ✅ NEW IMPLEMENTATION
+// ZERO-DAY RESEARCH PROGRAM - NEW IMPLEMENTATION
 // ===========================================================================
 
 // ZeroDayResearchProgram orchestrates legitimate zero-day vulnerability research
 type ZeroDayResearchProgram struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Research tools and frameworks
 	vulnDiscovery *VulnDiscoveryEngine
@@ -28,7 +28,7 @@ type ZeroDayResearchProgram struct {
 
 // VulnDiscoveryEngine discovers potential vulnerabilities using multiple techniques
 type VulnDiscoveryEngine struct {
-	logger       *logrus.Logger
+	logger       *logrus.Entry
 	fuzzing      *FuzzingEngine
 	sast         *SASTEngine
 	dast         *DASTEngine
@@ -88,21 +88,21 @@ func (zrp *ZeroDayResearchProgram) DevelopSafeExploit(vuln PotentialVulnerabilit
 }
 
 // ============================================================================
-// EXPLOIT DEVELOPMENT FRAMEWORK WITH SAFETY CHECKS ✅
+// EXPLOIT DEVELOPMENT FRAMEWORK WITH SAFETY CHECKS ?
 // ============================================================================
 
 // ExploitDevelopmentFramework develops safe exploits only
 type ExploitDevelopmentFramework struct {
-	logger         *logrus.Logger
+	logger         *logrus.Entry
 	templateLib    []ExploitTemplate
 	sandbox        *SafeExecutionSandbox
 	verification   *ExploitVerificationFramework
 }
 
 // NewExploitDevelopmentFramework creates exploit dev framework with safety checks
-func NewExploitDevelopmentFramework(logger *logrus.Logger) *ExploitDevelopmentFramework {
+func NewExploitDevelopmentFramework(logger logrus.FieldLogger) *ExploitDevelopmentFramework {
 	return &ExploitDevelopmentFramework{
-		logger:       logger.WithField("component", "exploit_dev"),
+		logger:       logrus.NewEntry(logrus.StandardLogger()),
 		templateLib:  LoadSafeExploitTemplates(),
 		sandbox:      NewSafeExecutionSandbox(logger),
 		verification: NewExploitVerificationFramework(logger),
@@ -150,17 +150,17 @@ func (edf *ExploitDevelopmentFramework) DevelopExploit(vuln PotentialVulnerabili
 }
 
 // ============================================================================
-// EXPLOIT SAFETY VERIFICATION - CRITICAL FOR ETHICAL RESEARCH ✅
+// EXPLOIT SAFETY VERIFICATION - CRITICAL FOR ETHICAL RESEARCH ?
 // ============================================================================
 
 // ExploitVerificationFramework ensures exploits are always SAFE
 type ExploitVerificationFramework struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 }
 
 // NewExploitVerificationFramework creates verification framework
-func NewExploitVerificationFramework(logger *logrus.Logger) *ExploitVerificationFramework {
-	return &ExploitVerificationFramework{logger: logger.WithField("component", "verify")}
+func NewExploitVerificationFramework(logger logrus.FieldLogger) *ExploitVerificationFramework {
+	return &ExploitVerificationFramework{logger: logrus.NewEntry(logrus.StandardLogger())}
 }
 
 // VerifySafetyAndFunctionality ensures exploit is BOTH SAFE AND FUNCTIONAL

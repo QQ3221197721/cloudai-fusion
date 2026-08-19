@@ -1,0 +1,12 @@
+{
+  "id": "exp-3c683ae09b827740",
+  "name": "exp-1",
+  "hyperparams": {
+    "batch": "32",
+    "epochs": "50",
+    "lr": "0.001"
+  },
+  "status": "running",
+  "created_at": "2026-08-16T13:00:04.6275806Z",
+  "completed_at": "0001-01-01T00:00:00Z"
+}

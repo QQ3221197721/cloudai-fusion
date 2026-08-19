@@ -1,5 +1,4 @@
 // Package edgeautonomy - Reconciliation broker with bidirectional sync.
-// Implements Delta Sync, conflict resolution, and state synchronization between edge and cloud.
 package edgeautonomy
 
 import (
@@ -64,7 +63,7 @@ func NewReconciliationBroker(ctx context.Context, config Config) (*Reconciliatio
 	broker := &ReconciliationBroker{
 		cacheMgr:           config.CacheManager,
 		versionVector:      config.VersionVector,
-		conflictResolver:   NewConflictResolver(),
+		conflictResolver:   NewConflictResolver(config.Logger.(*logrus.Logger)),
 		logger:             logrus.New(),
 		isConnected:        true,
 		reconnectTimer:     time.NewTicker(1 * time.Minute),
@@ -96,7 +95,17 @@ func (b *ReconciliationBroker) StartBidirectionalSync(ctx context.Context) error
 	}
 
 	// Step 3: Resolve conflicts
-	resolved, reports := b.conflictResolver.ResolveConflicts(ctx, b.getPendingLocalDecisions(ctx), cloudDecisions)
+	localD := b.getPendingLocalDecisions(ctx)
+	
+	// Convert CloudDecisionRecords to DecisionRecords
+	cloudRecs := make([]DecisionRecord, len(cloudDecisions))
+	for i, c := range cloudDecisions {
+		cloudRecs[i] = DecisionRecord{
+			ID:      c.ID,
+			Version: c.Version,
+		}
+	}
+	resolved, _ := b.conflictResolver.ResolveConflicts(ctx, localD, cloudRecs)
 
 	// Step 4: Merge resolved decisions back
 	if err := b.mergeAndApplyResolvedDecisions(ctx, resolved); err != nil {
@@ -145,7 +154,7 @@ func (b *ReconciliationBroker) pushLocalDecisionsToCloud(ctx context.Context) er
 	for _, decision := range localDecisions {
 		b.logger.WithFields(logrus.Fields{
 			"decision_id": decision.ID,
-			"action":      *decision.Decision.Action,
+			"version":     decision.Version,
 		}).Info("Decision pushed to cloud successfully")
 	}
 
@@ -185,11 +194,7 @@ func (b *ReconciliationBroker) pullCloudStateFromServer(ctx context.Context) ([]
 	return cloudRecords, nil
 }
 
-// getPendingLocalDecisions retrieves all unsynced local decisions
-func (b *ReconciliationBroker) getPendingLocalDecisions(ctx context.Context) []LocalDecisionRecord {
-	// In production would query database
-	return make([]LocalDecisionRecord, 0)
-}
+
 
 // mergeAndApplyResolvedDecisions applies resolved decisions back to cache
 func (b *ReconciliationBroker) mergeAndApplyResolvedDecisions(ctx context.Context, resolved []ResolvedDecision) error {
@@ -227,9 +232,9 @@ func (b *ReconciliationBroker) updateLocalDecisionVersion(ctx context.Context, i
 	
 	// Update cache with new version
 	decision := DecisionRecord{
-		ID:      id,
-		Version: version,
-		Updated: time.Now(),
+		ID:        id,
+		Version:   version,
+		UpdatedAt: time.Now(),
 	}
 	
 	if err := b.cacheMgr.UpdateDecision(ctx, decision); err != nil {
@@ -342,7 +347,7 @@ func (b *ReconciliationBroker) mergeVersionVectors(versionVec []int) error {
 	}
 	
 	// Create new version vector and merge
-	cloudVV := NewVersionVector([]string{"node-1", "node-2", "node-3"})
+	cloudVV := NewVersionVector([]string{"node-1", "node-2", "node-3"}, b.logger)
 	for i, count := range versionVec {
 		if i < len(cloudVV.nodeIDs) {
 			cloudVV.vectors[cloudVV.nodeIDs[i]] = count

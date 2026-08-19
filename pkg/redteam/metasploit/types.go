@@ -1,3 +1,4 @@
+
 // Package metasploit - Data structures for Metasploit Framework integration
 package metasploit
 
@@ -10,7 +11,7 @@ type ExploitModule struct {
 	Name           string        `json:"name"`
 	Description    string        `json:"description"`
 	CVE            []string      `json:"cve_references"`
-	CVSSScore      float32       `json:"cvss_score,omitempty"`
+	CVSSScore      float64       `json:"cvss_score,omitempty"`
 	DefaultPayload string        `json:"default_payload"`
 	Platform       []string      `json:"platforms"`
 	TargetPlatforms []string     `json:"target_platforms"`

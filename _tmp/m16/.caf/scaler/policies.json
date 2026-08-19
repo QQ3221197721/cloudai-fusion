@@ -1,0 +1,14 @@
+[
+  {
+    "id": "pol-46d46a04d44e5bba",
+    "name": "p95-guard",
+    "metric": "latency_p95",
+    "threshold": 25,
+    "direction": "regression_triggers_up",
+    "min_nodes": 1,
+    "max_nodes": 10,
+    "cooldown_minutes": 10,
+    "enabled": true,
+    "created_at": "2026-08-16T14:38:53.1854674Z"
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "id": "exp-7686943bbf9f4079",
+  "name": "demo-pipeline-experiment",
+  "hyperparams": {
+    "batch": "32",
+    "epochs": "50"
+  },
+  "metrics": {
+    "accuracy": 0.94
+  },
+  "metric_history": [
+    {
+      "name": "accuracy",
+      "value": 0.94,
+      "at": "2026-08-16T13:51:09.3570157Z"
+    }
+  ],
+  "status": "completed",
+  "training_job_ref": "job-2e86cf7d38fb01e7",
+  "created_at": "2026-08-16T13:51:09.3558772Z",
+  "completed_at": "2026-08-16T13:51:09.3581191Z"
+}

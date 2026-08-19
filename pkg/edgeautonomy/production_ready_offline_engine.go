@@ -1,6 +1,4 @@
 // Package edgeautonomy - Production-ready offline engine for K3s integration.
-// Implements real K8s client-go calls for scaling, restarting, and migration operations.
-// This is the TRUE production-grade implementation of Edge Autonomy.
 package edgeautonomy
 
 import (
@@ -37,17 +35,6 @@ type K3sClient struct {
 	nodeName     string
 	namespace    string
 	logger       *logrus.Logger
-}
-
-// WorkloadRequest describes a workload to be scheduled/placed
-type WorkloadRequest struct {
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	Namespace       string            `json:"namespace"`
-	GPUCount        int               `json:"gpu_count"`
-	ResourceRequest ResourceRequest   `json:"resource_request"`
-	Priority        int               `json:"priority"`
-	NodeSelector    map[string]string `json:"node_selector"`
 }
 
 // ScheduledDecision represents a scheduled decision result
@@ -188,7 +175,7 @@ func calculateNodeScore(node *Node, workload WorkloadRequest) float64 {
 
 	// Memory availability
 	memReq := parseMemory(workload.ResourceRequest.MemoryRequest)
-	if memReq <= float64(node.MemoryAvailableGB*1024) {
+	if float64(memReq) <= node.MemoryAvailableGB*1024.0 {
 		score += 3.0
 	}
 
@@ -242,9 +229,8 @@ func (e *OfflineDecisionEngine) checkK8sHealth() HealthStatus {
 	start := time.Now()
 
 	// REAL K8s API call to check cluster health
-	err := e.k8sClient.Discovery().ServerGroups()
 	latencyMs := int(time.Since(start).Milliseconds())
-
+	_, err := e.k8sClient.Discovery().ServerGroups()
 	if err != nil {
 		return HealthStatus{
 			IsHealthy: false,

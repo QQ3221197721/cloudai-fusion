@@ -88,14 +88,18 @@ type ScheduleRequest struct {
 }
 
 // NodeScore represents a candidate node with its scheduling score.
+// CostModel (Module 17) optionally carries the node's per-unit pricing model
+// so the cost-aware scheduler can price a JobSpec exactly (integer-cent math);
+// nil means "fall back to the default GPU-type pricing rules".
 type NodeScore struct {
-	NodeName        string  `json:"node_name"`
-	ClusterID       string  `json:"cluster_id"`
-	Score           float64 `json:"score"`
-	GPUFreeCount    int     `json:"gpu_free_count"`
-	GPUType         string  `json:"gpu_type"`
-	GPUUtilization  float64 `json:"gpu_utilization"`
-	CostPerHour     float64 `json:"cost_per_hour"`
-	TopologyScore   float64 `json:"topology_score"`
-	AvailableMemory int64   `json:"available_memory_bytes"`
+	NodeName        string     `json:"node_name"`
+	ClusterID       string     `json:"cluster_id"`
+	Score           float64    `json:"score"`
+	GPUFreeCount    int        `json:"gpu_free_count"`
+	GPUType         string     `json:"gpu_type"`
+	GPUUtilization  float64    `json:"gpu_utilization"`
+	CostPerHour     float64    `json:"cost_per_hour"`
+	TopologyScore   float64    `json:"topology_score"`
+	AvailableMemory int64      `json:"available_memory_bytes"`
+	CostModel       *CostModel `json:"cost_model,omitempty"`
 }

@@ -1,7 +1,6 @@
 package redteam
 
 import (
-	"fmt"
 	"math"
 	"time"
 )

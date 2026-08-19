@@ -1,5 +1,9 @@
+//go:build integration
+
 // Package redteam - End-to-end attack scenario integration tests
-package redteam_test
+// This file requires integration test infrastructure (mock AD domain) to compile.
+// Build with: go test -tags integration ./...
+package redteam
 
 import (
 	"context"
@@ -9,7 +13,7 @@ import (
 )
 
 // ============================================================================
-// KERBEROASTING INTEGRATION TEST ✅
+// KERBEROASTING INTEGRATION TEST
 // ===========================================================================
 
 func TestKerberoasting_Integration(t *testing.T) {
@@ -59,7 +63,7 @@ func TestKerberoasting_Integration(t *testing.T) {
 }
 
 // ============================================================================
-// DCSYNC INTEGRATION TEST ✅
+// DCSYNC INTEGRATION TEST ???
 // ============================================================================
 
 func TestDCSync_Integration(t *testing.T) {
@@ -106,7 +110,7 @@ func TestDCSync_Integration(t *testing.T) {
 		t.Fatalf("Failed to access SAM database: %v", err)
 	}
 	
-	expectedHash, exists := samData[targetUser]
+	_, exists := samData[targetUser]
 	if !exists {
 		t.Fatalf("Target user %s not found in SAM database", targetUser)
 	}
@@ -116,7 +120,7 @@ func TestDCSync_Integration(t *testing.T) {
 }
 
 // ============================================================================
-// GOLDEN TICKET ATTACK INTEGRATION TEST ✅
+// GOLDEN TICKET ATTACK INTEGRATION TEST ???
 // ============================================================================
 
 func TestGoldenTicket_Integration(t *testing.T) {
@@ -198,7 +202,7 @@ func TestGoldenTicket_Integration(t *testing.T) {
 }
 
 // ============================================================================
-// LATERAL MOVEMENT INTEGRATION TEST ✅
+// LATERAL MOVEMENT INTEGRATION TEST ???
 // ============================================================================
 
 func TestLateralMovement_Integration(t *testing.T) {
@@ -247,15 +251,11 @@ func TestLateralMovement_Integration(t *testing.T) {
 	t.Logf("Extracted jsmith NTLM hash: %s (truncated for display)", jsmithHash[:8]+"...")
 	
 	// Step 4: Attempt lateral movement using pass-the-hash
-	movedAttacker, err := attacker.PassTheHash(jsmithHash)
+	err = attacker.PassTheHash(jsmithHash)
 	
 	if err != nil {
 		t.Logf("Pass-the-hash authentication failed (mock limitation): %v", err)
 		return
-	}
-	
-	if movedAttacker == nil {
-		t.Fatal("Pass-the-hash should return authenticated client")
 	}
 	
 	t.Logf("Lateral movement via pass-the-hash successful!")
@@ -263,7 +263,7 @@ func TestLateralMovement_Integration(t *testing.T) {
 }
 
 // ============================================================================
-// PASS-THE-TICKET INTEGRATION TEST ✅
+// PASS-THE-TICKET INTEGRATION TEST ???
 // ============================================================================
 
 func TestPassTheTicket_Integration(t *testing.T) {

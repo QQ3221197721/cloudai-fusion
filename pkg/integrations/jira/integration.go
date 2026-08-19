@@ -78,7 +78,7 @@ func NewJiraIntegration(baseURL, username, apiToken string, logger *logrus.Logge
 		username:  username,
 		apiToken:  apiToken,
 		client:    client,
-		logger:    logger.WithField("component", "jira_integration"),
+		logger:    logger.WithField("component", "jira_integration").Logger,
 		authCache: make(map[string]bool),
 	}
 	
@@ -192,7 +192,7 @@ func NewAlertToTicketConverter(logger *logrus.Logger) *AlertToTicketConverter {
 	}
 	
 	return &AlertToTicketConverter{
-		logger: logger.WithField("component", "alert_converter"),
+		logger: logger.WithField("component", "alert_converter").Logger,
 	}
 }
 
@@ -433,7 +433,7 @@ func NewWorkflowManager(jira *JiraIntegration, logger *logrus.Logger) *WorkflowM
 	
 	return &WorkflowManager{
 		jira:       jira,
-		logger:     logger.WithField("component", "workflow_manager"),
+		logger:     logger.WithField("component", "workflow_manager").Logger,
 		approvals:  make(map[string]*ApprovalRequest),
 		rejections: make(map[string]*RejectionLog),
 	}

@@ -1,0 +1,35 @@
+{
+  "id": "job-6c739ae06d2319fa",
+  "name": "ft-job",
+  "image": "pytorch:2.0",
+  "gpu_count": 2,
+  "memory_gb": 8,
+  "base_model": "resnet50:1.0.0",
+  "dataset_ref": "ds-base",
+  "command": "python train.py",
+  "status": "running",
+  "events": [
+    {
+      "timestamp": "2026-08-16T11:53:36.2674017Z",
+      "from": "",
+      "to": "queued",
+      "reason": "submitted"
+    },
+    {
+      "timestamp": "2026-08-16T11:54:55.2678384Z",
+      "from": "queued",
+      "to": "scheduled",
+      "reason": "resources allocated"
+    },
+    {
+      "timestamp": "2026-08-16T11:54:55.2705242Z",
+      "from": "scheduled",
+      "to": "running",
+      "reason": "execution started"
+    }
+  ],
+  "created_at": "2026-08-16T11:53:36.2674017Z",
+  "scheduled_at": "2026-08-16T11:54:55.2678384Z",
+  "started_at": "2026-08-16T11:54:55.2705242Z",
+  "actor": "cafctl-train"
+}

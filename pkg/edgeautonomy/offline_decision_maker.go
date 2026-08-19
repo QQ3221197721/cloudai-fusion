@@ -1,15 +1,13 @@
 // Package edgeautonomy - Offline decision maker for edge autonomy.
-// Implements real Kubernetes API calls for scaling, restart, and migration.
-// Version Vector causal ordering ensures correct conflict resolution during network partitions.
 package edgeautonomy
 
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
-
-	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
 
 // ============================================================================
@@ -24,6 +22,7 @@ type OfflineDecisionMaker struct {
 	dbStore       interface{} // Database for persistence
 	logger        interface{} // Logger
 	k8sClient     interface{} // K8s client for local execution
+	config        *Config    // Configuration reference
 }
 
 // Config holds configuration for OfflineDecisionMaker
@@ -34,6 +33,17 @@ type Config struct {
 	DBStore       interface{}
 	Logger        interface{}
 	K8sClient     interface{}
+}
+
+// NodeID returns unique identifier for this node
+func (o *OfflineDecisionMaker) NodeID() string {
+	if o.config != nil && o.config.NodeID != "" {
+		return o.config.NodeID
+	}
+	if o.cacheMgr != nil {
+		return o.cacheMgr.NodeID()
+	}
+	return "edge-node-01"
 }
 
 // MakeLocalDecision creates a decision based on cached node data and offline policies
@@ -47,7 +57,7 @@ func (o *OfflineDecisionMaker) MakeLocalDecision(ctx context.Context, workload W
 	}
 
 	// Update version vector with this node's perspective
-	vv := o.versionVector.Update(o.cacheMgr.NodeID())
+	_ = o.versionVector.Update(o.NodeID())
 
 	// Find best matching node using scoring algorithm
 	bestNode := o.scoreAndSelectNode(availableNodes, workload)
@@ -66,7 +76,7 @@ func (o *OfflineDecisionMaker) MakeLocalDecision(ctx context.Context, workload W
 		Cause:     "Network partition detected, executing offline decision",
 		Metrics: map[string]float64{
 			"node_gpu_utilization": bestNode.GPUUtilization,
-			"node_cpu_utilization": bestNode.CPUUtilization,
+			"node_cpu_usage":       bestNode.CPUUsage,
 			"memory_available_gb":  float64(bestNode.MemoryAvailableGB),
 		},
 	}
@@ -123,7 +133,7 @@ func (o *OfflineDecisionMaker) calculateNodeScore(node *Node, workload WorkloadR
 
 	// Quaternary criterion: Memory availability
 	memReq := parseMemory(workload.ResourceRequest.MemoryRequest)
-	if memReq <= float64(node.MemoryAvailableGB*1024) {
+	if float64(memReq) <= node.MemoryAvailableGB * 1024.0 {
 		score += 3.0
 	}
 
@@ -210,7 +220,7 @@ func (o *OfflineDecisionMaker) ExecuteLocally(ctx context.Context, action *Decis
 	case ActionRestart:
 		return o.executePodRestart(ctx, target)
 	case ActionMigrate:
-		return o.executeWorkloadMigration(ctx, target)
+		return o.executeWorkloadMigration(ctx, target, "")
 	default:
 		return fmt.Errorf("unsupported action: %s", *action)
 	}

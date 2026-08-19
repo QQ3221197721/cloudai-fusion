@@ -1,0 +1,23 @@
+{
+  "name": "bert-base",
+  "version": "1.1.0",
+  "sha256": "299281cf22253257cdd1da240ff96f662dd2ba9ca234cf0e133225fd92b806c2",
+  "size_bytes": 13,
+  "created_by": "cafctl-train",
+  "created_at": "2026-08-16T11:59:52.1977891Z",
+  "lineage": {
+    "dataset_ref": "ds-x",
+    "code_ref": "python train.py",
+    "hyperparams": {
+      "command": "python train.py",
+      "gpu_count": "1",
+      "memory_gb": "4"
+    },
+    "parent_version": "1.0.0"
+  },
+  "model_card": {
+    "summary": "Training job job-05069e8a0314372e completed",
+    "task_type": "fine-tuning",
+    "framework": "pytorch"
+  }
+}

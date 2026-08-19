@@ -1,16 +1,16 @@
+﻿
 // Package redteam - Full offensive capability coverage from 0% to 100%
 package redteam
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
 // ============================================================================
-// COMPLETE OFFENSIVE CAPABILITY COVERAGE ✅ NEW IMPLEMENTATION
+// COMPLETE OFFENSIVE CAPABILITY COVERAGE - NEW IMPLEMENTATION
 // FROM 0% TO 100% COVERAGE
 // ===========================================================================
 
@@ -50,12 +50,12 @@ type OffenseCapabilityMatrix struct {
 }
 
 // ============================================================================
-// INITIAL ACCESS (T1566, T1189, T1190) - 100% COVERAGE ✅
+// INITIAL ACCESS (T1566, T1189, T1190) - 100% COVERAGE ?
 // ============================================================================
 
 // InitialAccessCapability provides initial access methods
 type InitialAccessCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Phishing campaigns
 	phishing *PhishingCampaign
@@ -92,12 +92,12 @@ func (iac *InitialAccessCapability) ExecutePhishingCampaign(ctx context.Context,
 }
 
 // ============================================================================
-// EXECUTION (T1059, T1203) - 100% COVERAGE ✅
+// EXECUTION (T1059, T1203) - 100% COVERAGE ?
 // ============================================================================
 
 // ExecutionCapability provides execution methods
 type ExecutionCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Script execution
 	scriptExec *ScriptExecution
@@ -124,12 +124,12 @@ func (ec *ExecutionCapability) ExecuteScripts(ctx context.Context, target Target
 }
 
 // ============================================================================
-// PERSISTENCE (T1547, T1053) - 100% COVERAGE ✅
+// PERSISTENCE (T1547, T1053) - 100% COVERAGE ?
 // ============================================================================
 
 // PersistenceCapability provides persistence mechanisms
 type PersistenceCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Registry run keys
 	registryKeys *RegistryPersistence
@@ -160,7 +160,7 @@ func (pc *PersistenceCapability) InstallPersistence(ctx context.Context, target 
 	// Install registry run key persistence
 	regPersist, err := pc.registryKeys.Install(ctx, target)
 	if err == nil {
-		mechnisms = append(mechanisms, regPersist)
+		mechanisms = append(mechanisms, regPersist)
 	}
 	
 	// Install scheduled task persistence
@@ -169,17 +169,17 @@ func (pc *PersistenceCapability) InstallPersistence(ctx context.Context, target 
 		mechanisms = append(mechanisms, taskPersist)
 	}
 	
-	pc.logger.Infof("Installed %d persistence mechanisms", len(mechnisms))
-	return mechnisms, nil
+	pc.logger.Infof("Installed %d persistence mechanisms", len(mechanisms))
+	return mechanisms, nil
 }
 
 // ============================================================================
-// PRIVILEGE ESCALATION (T1068) - 100% COVERAGE ✅
+// PRIVILEGE ESCALATION (T1068) - 100% COVERAGE ?
 // ============================================================================
 
 // PrivEscalationCapability provides privilege escalation techniques
 type PrivEscalationCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Exploitation for privilege escalation
 	exploitation *PrivExploitation
@@ -230,12 +230,12 @@ func (pec *PrivEscalationCapability) EscalatePrivileges(ctx context.Context, tar
 }
 
 // ============================================================================
-// LATERAL MOVEMENT (T1021, T1028) - 100% COVERAGE ✅
+// LATERAL MOVEMENT (T1021, T1028) - 100% COVERAGE ?
 // ============================================================================
 
 // LateralMovementCapability provides lateral movement methods
 type LateralMovementCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Remote services
 	remoteServices *RemoteServiceMovement
@@ -286,12 +286,12 @@ func (lm *LateralMovementCapability) MoveLaterally(ctx context.Context, target T
 }
 
 // ============================================================================
-// COLLECTION (T1005, T1113) - 100% COVERAGE ✅
+// COLLECTION (T1005, T1113) - 100% COVERAGE ?
 // ============================================================================
 
 // CollectionCapability provides data collection methods
 type CollectionCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Local file discovery
 	localFiles *LocalFileDiscovery
@@ -342,12 +342,12 @@ func (cc *CollectionCapability) CollectData(ctx context.Context, target TargetSy
 }
 
 // ============================================================================
-// COMMAND & CONTROL (T1071, T1571) - 100% COVERAGE ✅
+// COMMAND & CONTROL (T1071, T1571) - 100% COVERAGE ?
 // ============================================================================
 
 // CommandAndControlCapability provides C2 infrastructure
 type CommandAndControlCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Network C2
 	networkC2 *NetworkC2
@@ -388,7 +388,7 @@ func (c2c *CommandAndControlCapability) EstablishC2Channel(ctx context.Context, 
 	}
 	
 	// Channel 3: Encrypted C2
-(encChan, err := c2c.encryptedC2.Establish(ctx, target)
+	encChan, err := c2c.encryptedC2.Establish(ctx, target)
 	if err == nil {
 		channels = append(channels, encChan)
 	}
@@ -398,12 +398,12 @@ func (c2c *CommandAndControlCapability) EstablishC2Channel(ctx context.Context, 
 }
 
 // ============================================================================
-// EXFILTRATION (T1041, T1048) - 100% COVERAGE ✅
+// EXFILTRATION (T1041, T1048) - 100% COVERAGE ?
 // ============================================================================
 
 // ExfiltrationCapability provides exfiltration methods
 type ExfiltrationCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Over C2 channel
 	c2Exfil *C2Exfiltration
@@ -454,12 +454,12 @@ func (exc *ExfiltrationCapability) ExfiltrateData(ctx context.Context, target Ta
 }
 
 // ============================================================================
-// IMPACT (T1485, T1486) - 100% COVERAGE ✅
+// IMPACT (T1485, T1486) - 100% COVERAGE ?
 // ============================================================================
 
 // ImpactCapability provides destructive capabilities
 type ImpactCapability struct {
-	logger *logrus.Logger
+	logger *logrus.Entry
 	
 	// Data destruction
 	dataDestruction *DataDestruction

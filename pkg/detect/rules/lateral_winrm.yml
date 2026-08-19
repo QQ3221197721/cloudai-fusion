@@ -1,0 +1,19 @@
+title: WinRM Lateral Movement via wsmprovhost Child Process
+id: 7b1d4e63-9c25-48af-b3d1-6e0a2f8c5b93
+status: stable
+description: Detects a process spawned by the WinRM host process wsmprovhost.exe. Remote WinRM command execution is a primary lateral-movement channel; benign console/host children are filtered.
+level: high
+tags:
+  - attack.lateral_movement
+  - attack.t1021.006
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent:
+    ParentImage|endswith: '\wsmprovhost.exe'
+  filter_benign:
+    Image|endswith:
+      - '\conhost.exe'
+      - '\wsmprovhost.exe'
+  condition: selection_parent and not filter_benign

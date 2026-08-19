@@ -1,0 +1,58 @@
+openapi: 3.0.3
+info:
+  title: Bookstore API
+  version: 2.1.0
+  description: A tiny bookstore API used to exercise the YAML parser path.
+paths:
+  /books:
+    get:
+      operationId: listBooks
+      summary: List books
+      parameters:
+        - name: author
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+  /books/{isbn}:
+    get:
+      operationId: getBook
+      summary: Fetch a single book
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+components:
+  schemas:
+    Book:
+      type: object
+      required:
+        - isbn
+        - title
+      properties:
+        isbn:
+          type: string
+        title:
+          type: string
+        pages:
+          type: integer
+          format: int32
+        inPrint:
+          type: boolean

@@ -140,7 +140,7 @@ func (cr *ConflictResolver) ResolveConflicts(ctx context.Context, localDecisions
 		})
 	}
 	
-	cr.metrics.RecordResolution(len(resolved), len(conflicts))
+	cr.metrics.RecordResolution(int64(len(resolved)), int64(len(conflicts)))
 	cr.logger.WithFields(logrus.Fields{
 		"resolved": len(resolved),
 		"conflicts": len(conflicts),
@@ -205,7 +205,7 @@ func (cr *ConflictResolver) resolveConflicts(conflicts []ConflictInfo, local, cl
 	// Determine final winner based on majority vote
 	winnerCounts := map[string]int{"local": 0, "cloud": 0}
 	
-	for _, v := range []bool{timestampWinner == "local", versionWinner == "local"} {
+	for _, v := range []bool{timestampWinner == "local", versionWinner == "local", businessWinner == "local"} {
 		if v {
 			winnerCounts["local"]++
 		} else {
@@ -377,10 +377,3 @@ func (brs *BusinessRuleStrategy) Resolve(local, cloud DecisionRecord) (*Resolved
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

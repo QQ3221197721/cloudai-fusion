@@ -1,0 +1,25 @@
+title: Setuid Bit Granting or SUID Binary Discovery
+id: 2a7b9d38-6e14-4f59-8c73-0d5e1a9b4c62
+status: stable
+description: Detects an attacker granting the setuid bit to a binary, or enumerating SUID binaries with find, both standard Linux privilege-escalation steps.
+level: high
+tags:
+  - attack.privilege_escalation
+  - attack.t1548.001
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_grant_setuid:
+    CommandLine|contains:
+      - 'chmod u+s'
+      - 'chmod g+s'
+      - 'chmod 4755'
+      - 'chmod 4777'
+      - 'chmod 6755'
+  selection_suid_discovery:
+    CommandLine|contains:
+      - '-perm -4000'
+      - '-perm -u=s'
+      - '-perm /4000'
+  condition: 1 of them

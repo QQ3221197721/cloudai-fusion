@@ -1,0 +1,25 @@
+.row-simulated {
+  background-color: rgba(245,166,35,0.06) !important;
+}
+
+.mock-banner {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff7e6;
+  border-left: 3px solid #f5a623;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #5c4d15;
+  border-radius: 4px;
+}
+
+.error-banner {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fff1f0;
+  border-left: 3px solid #ff5555;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #b22222;
+  border-radius: 4px;
+}

@@ -5,16 +5,15 @@ package marketplace
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
-	"net/http"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 )
 
@@ -309,7 +308,7 @@ func (pm *PluginManager) watchForChanges(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case event := <-pm.watcher.Events:
-			if event.Op&os.Write == os.Write {
+			if event.Op&fsnotify.Write == fsnotify.Write {
 				// File modified, trigger reload
 				pluginID := filepath.Base(event.Name)
 				go func(id string) {

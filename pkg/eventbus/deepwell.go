@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"sync/atomic"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/sirupsen/logrus"
 )
 
@@ -178,6 +180,19 @@ type WellRouter struct {
 	maxHops   int
 	forwarded atomic.Int64
 	sub       *Subscription
+
+	// --- Event Message Fabric extensions (fabric.go) ---
+	// These are optional and wired post-construction (SetEvidence/SetL8Consumer),
+	// following the project convention of configuring optional collaborators via
+	// setters rather than the constructor. They power the hop-bounded RouteEvent
+	// path with automatic L8 SOAR consumption and evidence-signed deliveries.
+	rb        *evidence.ReceiptBuilder // signs consumed events; nil disables evidence
+	l8        L8Consumer               // fired at the terminal hop; nil disables
+	l8Count   atomic.Int64             // number of L8 SOAR invocations
+	fabricSub *Subscription            // ConnectFabric subscription handle
+
+	recMu    sync.Mutex          // guards receipts
+	receipts []*evidence.Receipt // hash-chained receipts for consumed events
 }
 
 // NewWellRouter builds a router over bus. maxHops<=0 defaults to 4, which is

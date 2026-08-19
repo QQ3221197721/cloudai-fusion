@@ -2,9 +2,8 @@
 package redteam
 
 import (
-	"context"
 	"fmt"
-	"time"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 )
@@ -132,7 +131,7 @@ func (m *MITREATTandCK) populateInitialAccess() error {
 			Description: "Attackers send emails containing malicious links or attachments to compromise victim systems",
 			Detection:   "Email filtering, URL analysis, attachment sandboxing",
 			Mitigation:  "User training, email filtering, macro policies",
-			DataSources: ["email_gateway_logs", "endpoint_detection"],
+			DataSources: []string{"email_gateway_logs", "endpoint_detection"},
 			Samples: []Sample{
 				{Type: "yara", Pattern: "rule Phishing_Macro { strings: $mal = \"VBScript\" condition: $mal }"},
 				{Type: "sigma", Pattern: "EventID=4688 CommandLine contains powershell | DownloadFile"},

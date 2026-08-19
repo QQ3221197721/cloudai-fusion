@@ -145,3 +145,42 @@ func (s *MemoryStore) IOCCount() int {
 	defer s.mu.RUnlock()
 	return len(s.iocs)
 }
+
+// iocFreshness returns the reference time used for TTL aging of an IOC: its
+// LastSeenAt when set (an indicator re-observed by a later feed), else its
+// FirstSeenAt. Indicators go stale, so L1 ages them out from the most recent
+// sighting rather than from first ingestion.
+func iocFreshness(i IOCEntry) time.Time {
+	if !i.LastSeenAt.IsZero() {
+		return i.LastSeenAt
+	}
+	return i.FirstSeenAt
+}
+
+// EvictExpired removes IOCs whose freshness time is older than now-ttl and
+// returns the number evicted. A non-positive ttl disables eviction (returns 0),
+// so callers must opt in explicitly. This is the in-memory (simulated) backend's
+// TTL: a real TSDB backend (ClickHouse) instead relies on the engine's native
+// TTL clause on ioc_entries, so TTL is not part of the backend-agnostic Store
+// interface. IOCs with a zero freshness time (no timestamp in the feed) are
+// never evicted, since their age is unknown.
+func (s *MemoryStore) EvictExpired(now time.Time, ttl time.Duration) int {
+	if ttl <= 0 {
+		return 0
+	}
+	cutoff := now.Add(-ttl)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	evicted := 0
+	for k, i := range s.iocs {
+		ref := iocFreshness(i)
+		if ref.IsZero() {
+			continue
+		}
+		if ref.Before(cutoff) {
+			delete(s.iocs, k)
+			evicted++
+		}
+	}
+	return evicted
+}

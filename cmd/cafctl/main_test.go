@@ -1,3 +1,5 @@
+
+
 package main
 
 import (
@@ -40,9 +42,9 @@ func buildBundle(t *testing.T) ([]byte, *evidence.Ed25519Signer) {
 func TestRunVerify_ValidEmbeddedKey(t *testing.T) {
 	b, _ := buildBundle(t)
 	var out bytes.Buffer
-	ok, err := runVerify(b, nil, false, &out)
+	ok, err := verifyBundleBytes(b, nil, false, &out)
 	if err != nil {
-		t.Fatalf("runVerify: %v", err)
+		t.Fatalf("verifyBundleBytes: %v", err)
 	}
 	if !ok {
 		t.Fatalf("expected valid, got report:\n%s", out.String())
@@ -56,9 +58,9 @@ func TestRunVerify_ValidPinnedKey(t *testing.T) {
 	b, signer := buildBundle(t)
 	pem, _ := signer.PublicKeyPEM()
 	var out bytes.Buffer
-	ok, err := runVerify(b, pem, false, &out)
+	ok, err := verifyBundleBytes(b, pem, false, &out)
 	if err != nil {
-		t.Fatalf("runVerify: %v", err)
+		t.Fatalf("verifyBundleBytes: %v", err)
 	}
 	if !ok {
 		t.Fatalf("expected valid with pinned key, got:\n%s", out.String())
@@ -76,9 +78,9 @@ func TestRunVerify_TamperedBundleFails(t *testing.T) {
 		t.Fatal("test setup: expected to mutate the bundle bytes")
 	}
 	var out bytes.Buffer
-	ok, err := runVerify(tampered, nil, false, &out)
+	ok, err := verifyBundleBytes(tampered, nil, false, &out)
 	if err != nil {
-		t.Fatalf("runVerify: %v", err)
+		t.Fatalf("verifyBundleBytes: %v", err)
 	}
 	if ok {
 		t.Fatalf("expected INVALID after tamper, got:\n%s", out.String())
@@ -90,7 +92,7 @@ func TestRunVerify_WrongPinnedKeyFails(t *testing.T) {
 	other, _ := evidence.GenerateEphemeralSigner()
 	pem, _ := other.PublicKeyPEM()
 	var out bytes.Buffer
-	ok, _ := runVerify(b, pem, false, &out)
+	ok, _ := verifyBundleBytes(b, pem, false, &out)
 	if ok {
 		t.Fatalf("expected INVALID against wrong pinned key, got:\n%s", out.String())
 	}

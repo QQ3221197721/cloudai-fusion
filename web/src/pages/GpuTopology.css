@@ -1,0 +1,53 @@
+.ratio-cards {
+  margin-bottom: 16px;
+}
+
+.ratio-card {
+  background: #0b1113;
+  border: 1px solid #1f293a;
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+}
+
+.card-label {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #9aa5b1;
+  margin-bottom: 4px;
+}
+
+.card-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.solver-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.solver-table thead th {
+  background: #0b1113;
+  color: #cbd3d8;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #1f293a;
+}
+
+.solver-table tbody td {
+  padding: 10px 16px;
+  color: #9aa5b1;
+  border-bottom: 1px solid rgba(31,41,58,0.5);
+}
+
+.solver-table tbody tr:hover {
+  background: rgba(47,212,212,0.03);
+}

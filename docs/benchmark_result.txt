@@ -1,0 +1,10 @@
+﻿FAIL	. [setup failed]
+go : # .
+所在位置 行:1 字符: 45
++ ... ed\cloudai-fusion; go test -bench=. -benchmem ./pkg/sdk/ 2>&1 | Out-F ...
++                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# .:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+no Go files in D:\IdeaProjects\untitled\cloudai-fusion
+FAIL

@@ -1,0 +1,99 @@
+.overview-container {
+  padding: 32px 24px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero {
+  padding: 40px 0 32px;
+}
+
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #2fd4d4;
+}
+
+.hero-title {
+  margin: 12px 0 8px;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.hero-sub {
+  max-width: 620px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #9aa5b1;
+}
+
+.cards-grid {
+  margin-top: 8px;
+}
+
+.feature-link {
+  text-decoration: none;
+}
+
+.feature-card {
+  position: relative;
+  height: 100%;
+  background: #10161a;
+  border: 1px solid #1f293a;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: #2fd4d4;
+}
+
+.feature-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.feature-title {
+  margin: 0 0 8px;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.feature-desc {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #9aa5b1;
+}
+
+.feature-accent {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  opacity: 0.7;
+}
+
+.tips-panel {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(245,166,35,0.06);
+  border: 1px solid rgba(245,166,35,0.2);
+  border-radius: 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  color: #cbd3d8;
+}

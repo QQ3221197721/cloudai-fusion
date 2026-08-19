@@ -1,0 +1,16 @@
+.stat-row {
+  margin-bottom: 20px;
+}
+
+.stat-box {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #9aa5b1;
+  margin-bottom: 4px;
+}
+
+.run-id {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #2fd4d4;
+}

@@ -1,9 +1,9 @@
+
 // Package mitre_optimization implements advanced MITRE ATT&CK TID mapping optimization
 package mitre_optimization
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -12,7 +12,7 @@ import (
 )
 
 type MITREOptimizationPipeline struct {
-	logger        *logrus.Logger
+	logger        *logrus.Entry
 	baselineTIDs  map[string]TIDMapping
 	historicalData []BehaviorSample
 	accuracyRate  float64
@@ -108,7 +108,7 @@ func (mop *MITREOptimizationPipeline) optimizeMappings(ctx context.Context) {
 
 func (mop *MITREOptimizationPipeline) performBatchOptimization() {
 	if len(mop.historicalData) < 100 {
-		mop.logger().Infof("Insufficient data for optimization (current: %d samples)", len(mop.historicalData))
+		mop.logger.Infof("Insufficient data for optimization (current: %d samples)", len(mop.historicalData))
 		return
 	}
 
@@ -120,7 +120,7 @@ func (mop *MITREOptimizationPipeline) performBatchOptimization() {
 		mop.accuracyRate = 0.85
 	}
 
-	mop.logger().Infof("Optimization complete. New accuracy: %.2f%%", mop.accuracyRate*100)
+	mop.logger.Infof("Optimization complete. New accuracy: %.2f%%", mop.accuracyRate*100)
 }
 
 func (mop *MITREOptimizationPipeline) generateOptimizedMappings() map[string][]TIDMapping {
@@ -226,7 +226,7 @@ func (mop *MITREOptimizationPipeline) getMappingByTID(tid string) *TIDMapping {
 	return nil
 }
 
-func (mop *MITREOptimizationPipeline) logger() *logrus.Logger {
+func (mop *MITREOptimizationPipeline) getLogger() *logrus.Logger {
 	return logrus.New()
 }
 

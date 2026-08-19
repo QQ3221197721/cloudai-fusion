@@ -1,3 +1,4 @@
+
 // Package redteam_cache - Redis caching layer for Red Team performance optimization
 package redteam_cache
 
@@ -5,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"

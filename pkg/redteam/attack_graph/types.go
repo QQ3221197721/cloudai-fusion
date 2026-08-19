@@ -1,12 +1,5 @@
+
 // Package attack_graph - types.go defines core data structures for CVE knowledge graph.
-package attack_graph
-
-import (
-	"time"
-)
-
-// VulnerabilityStatus represents the current state of a vulnerability
-// TODO: Add more states based on real threat intelligence workflows
 package attack_graph
 
 import (
@@ -21,7 +14,7 @@ const (
 	StatusExploited   VulnerabilityStatus = "exploited"   // Being actively exploited
 	StatusPatchable   VulnerabilityStatus = "patchable"   // Patch available
 	StatusMitigated   VulnerabilityStatus = "mitigated"   // Mitigation deployed
-	StatusAcceptedRisk VulnerityStatus = "accepted_risk"  // Risk accepted
+	StatusAcceptedRisk VulnerabilityStatus = "accepted_risk"  // Risk accepted
 )
 
 // VulnerabilityState tracks lifecycle of a vulnerability in our environment
@@ -78,8 +71,8 @@ type KillChainNode struct {
 
 // KillChainEdge represents a directed edge between phases
 type KillChainEdge struct {
-	Source Phase `json:"source"`
-	Target Phase `json:"target"`
+	Source KillChainPhase `json:"source"`
+	Target KillChainPhase `json:"target"`
 	Method string `json:"method"` // delivery, exploitation, etc.
 }
 

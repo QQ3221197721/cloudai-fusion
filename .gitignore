@@ -74,3 +74,13 @@ htmlcov/
 # Misc cache
 .mypy_cache/
 .ruff_cache/
+
+# RL experiment outputs (regenerable, not source-controlled)
+tmp/*.json
+# Module 19 demo outputs and other regenerable scratch data
+tmp/
+
+# RL artifacts
+models/*.json
+models/*.zip
+models/*.onnx

@@ -1,3 +1,4 @@
+
 package redteam
 
 import (
@@ -132,11 +133,10 @@ func (cep *CVEEnrichmentPipeline) processWorker(ctx context.Context, input <-cha
 
 // storeCVEInNeo4j stores a single CVE with all enrichments in Neo4j
 func (cep *CVEEnrichmentPipeline) storeCVEInNeo4j(item CVEItemWithEnrichment) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	_ = context.Background()
 
 	// Create CVE node with all metadata
-	cypherCreateCVE := `
+	_ = `
 	MERGE (cve:CVE {id: $id})
 	ON CREATE SET 
 		cve.created = $created,
@@ -158,15 +158,15 @@ func (cep *CVEEnrichmentPipeline) storeCVEInNeo4j(item CVEItemWithEnrichment) er
 
 	description := ""
 	if len(item.CVE.CVE.Description) > 0 {
-		description = item.CVE.CVE.Description[0]
+		description = item.CVE.CVE.Description[0].Value
 	}
 
 	params := map[string]interface{}{
 		"id":              item.CVE.ID,
 		"description":     description,
-		"score":           item.Impact.BaseScore,
-		"severity":        getSeverityFromScore(item.Impact.BaseScore),
-		"vector":          item.Impact.VectorString,
+		"score":           item.CVE.Impact.BaseScore,
+		"severity":        item.CVE.Impact.BaseSeverity,
+		"vector":          item.CVE.Impact.VectorString,
 		"av":              "", // Need to parse from vector string
 		"ac":              "",
 		"pr":              "",
@@ -177,7 +177,7 @@ func (cep *CVEEnrichmentPipeline) storeCVEInNeo4j(item CVEItemWithEnrichment) er
 		"avail":           "",
 		"created":         time.Now().UTC(),
 		"modified":        time.Now().UTC(),
-		"published":       item.CVE.Published,
+		"published":       time.Now().UTC(),
 	}
 
 	// TODO: Execute Cypher query against Neo4j graph client
@@ -190,7 +190,7 @@ func (cep *CVEEnrichmentPipeline) storeCVEInNeo4j(item CVEItemWithEnrichment) er
 
 	// Store exploit metadata if available
 	if item.ExploitMetadata != nil {
-		cypherStoreExploit := `
+		_ = `
 		MATCH (cve:CVE {id: $cveId})
 		CREATE (e:Exploit {
 			url: $url,
@@ -217,7 +217,7 @@ func (cep *CVEEnrichmentPipeline) storeCVEInNeo4j(item CVEItemWithEnrichment) er
 
 	// Map MITRE ATT&CK techniques
 	for _, technique := range item.Techniques {
-		cypherMapTechnique := `
+		_ = `
 		MATCH (cve:CVE {id: $cveId})
 		MERGE (tech:MITRETechnique {id: $techniqueId})
 		ON CREATE SET 
@@ -244,7 +244,7 @@ func (cep *CVEEnrichmentPipeline) storeCVEInNeo4j(item CVEItemWithEnrichment) er
 
 	// Store threat indicators
 	for _, indicator := range item.ThreatIntel {
-		cypherStoreThreat := `
+		_ = `
 		MATCH (cve:CVE {id: $cveId})
 		MERGE (threat:ThreatIndicator {
 			tlp: $tlp,

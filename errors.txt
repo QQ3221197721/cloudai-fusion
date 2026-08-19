@@ -1,0 +1,35 @@
+﻿go : # github.com/cloudai-fusion/cloudai-fusion/pkg/redteam
+所在位置 行:1 字符: 70
++ ... \cloudai-fusion; $env:GOFLAGS="-count=1"; go build ./... 2>&1 | Out-F ...
++                                               ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# github.com/cl...ion/pkg/redteam:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+pkg\redteam\multi_agent_evolution.go:28:16: undefined: EvolutionCoordinator
+pkg\redteam\multi_agent_evolution.go:29:16: undefined: AdaptiveScorer
+pkg\redteam\multi_agent_evolution.go:40:21: undefined: EvolutionGeneration
+pkg\redteam\multi_agent_evolution.go:42:20: undefined: AttackScenario
+pkg\redteam\multi_agent_evolution.go:46:20: undefined: NashEquilibrium
+pkg\redteam\multi_agent_evolution.go:90:20: undefined: ToolConfig
+pkg\redteam\offensive_capability_matrix.go:62:12: undefined: PhishingCampaign
+pkg\redteam\offensive_capability_matrix.go:65:11: undefined: DriveByCompromise
+pkg\redteam\offensive_capability_matrix.go:68:16: undefined: AppExploitation
+pkg\redteam\offensive_capability_matrix.go:104:14: undefined: ScriptExecution
+pkg\redteam\offensive_capability_matrix.go:104:14: too many errors
+# github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/intelligence
+pkg\redteam\intelligence\cve_enrichment_pipeline.go:136:2: declared and not used: ctx
+pkg\redteam\intelligence\cve_enrichment_pipeline.go:140:2: declared and not used: cypherCreateCVE
+pkg\redteam\intelligence\cve_enrichment_pipeline.go:194:3: declared and not used: cypherStoreExploit
+pkg\redteam\intelligence\cve_enrichment_pipeline.go:221:3: declared and not used: cypherMapTechnique
+pkg\redteam\intelligence\cve_enrichment_pipeline.go:248:3: declared and not used: cypherStoreThreat
+pkg\redteam\intelligence\demo_obce3_enhancement.go:28:43: cannot use log (variable of type *logrus.Entry) as *logrus.Lo
+gger value in argument to NewMultiSourceFeedManager
+pkg\redteam\intelligence\demo_obce3_enhancement.go:32:62: cannot use log (variable of type *logrus.Entry) as *logrus.Lo
+gger value in argument to NewCVEEnrichmentPipeline
+pkg\redteam\intelligence\demo_obce3_enhancement.go:36:33: cannot use log (variable of type *logrus.Entry) as *logrus.Lo
+gger value in argument to NewKillChainChainer
+pkg\redteam\intelligence\demo_obce3_enhancement.go:79:3: unknown field MinConfidence in struct literal of type AttackCo
+nstraints
+pkg\redteam\intelligence\demo_obce3_enhancement.go:80:3: unknown field AllowedPhases in struct literal of type AttackCo
+nstraints
+pkg\redteam\intelligence\demo_obce3_enhancement.go:80:3: too many errors

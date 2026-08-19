@@ -52,3 +52,13 @@ func ParsePublicKeyPEM(pemBytes []byte) (ed25519.PublicKey, error) {
 	}
 	return edPub, nil
 }
+
+// MarshalPrivateKeyPEM encodes an Ed25519 private key as a PKCS#8 PEM block.
+// This is used for exporting keys for backup or import into new environments.
+func MarshalPrivateKeyPEM(priv ed25519.PrivateKey) ([]byte, error) {
+	der, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		return nil, fmt.Errorf("evidence: marshal private key: %w", err)
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}), nil
+}

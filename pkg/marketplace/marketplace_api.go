@@ -2,8 +2,6 @@
 package marketplace
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -272,8 +270,9 @@ func (h *APIHandler) handleStats(c *gin.Context) {
 		"capability_usage": make(map[string]int),
 	}
 	
+	capUsage := response["capability_usage"].(map[string]int)
 	for cap, count := range capabilityCounts {
-		response["capability_usage"][string(cap)] = count
+		capUsage[string(cap)] = count
 	}
 	
 	c.JSON(http.StatusOK, response)

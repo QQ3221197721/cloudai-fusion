@@ -27,9 +27,9 @@ func TestMoatDemo_EndToEndVerifiableEngagement(t *testing.T) {
 	}
 
 	// The genuine chain must verify against the pinned key via cafctl's core.
-	ok, err := runVerify(art.BundleJSON, art.PublicKeyPEM, false, io.Discard)
+	ok, err := verifyBundleBytes(art.BundleJSON, art.PublicKeyPEM, false, io.Discard)
 	if err != nil {
-		t.Fatalf("runVerify: %v", err)
+		t.Fatalf("verifyBundleBytes: %v", err)
 	}
 	if !ok {
 		t.Fatalf("a genuine engagement chain must verify VALID")
@@ -40,9 +40,9 @@ func TestMoatDemo_EndToEndVerifiableEngagement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tamper: %v", err)
 	}
-	bad, err := runVerify(tampered, art.PublicKeyPEM, false, io.Discard)
+	bad, err := verifyBundleBytes(tampered, art.PublicKeyPEM, false, io.Discard)
 	if err != nil {
-		t.Fatalf("runVerify(tampered): %v", err)
+		t.Fatalf("verifyBundleBytes(tampered): %v", err)
 	}
 	if bad {
 		t.Fatalf("a tampered chain MUST fail verification")
@@ -66,4 +66,15 @@ func TestMoatDemoCmd_Runs(t *testing.T) {
 			t.Fatalf("moat-demo output missing %q; got:\n%s", want, out)
 		}
 	}
+}
+
+// tamperBundle flips a byte in the middle of a serialized evidence bundle,
+// simulating tampering without re-signing: verification must then fail.
+func tamperBundle(bundleJSON []byte) ([]byte, error) {
+	tampered := make([]byte, len(bundleJSON))
+	copy(tampered, bundleJSON)
+	if len(tampered) > 10 {
+		tampered[len(tampered)/2] ^= 0xFF
+	}
+	return tampered, nil
 }

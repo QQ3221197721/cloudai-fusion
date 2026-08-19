@@ -12,26 +12,9 @@ import (
 
 // EncodeUTCTime encodes a time value as UTCTime per RFC 4120
 func EncodeUTCTime(t time.Time) []byte {
-	// Format: YYMMDDHHMMSSZ
-	result := make([]byte, 13)
-	
-	year := t.Year() % 100
-	month := t.Month()
-	day := t.Day()
-	hour := t.Hour()
-	minute := t.Minute()
-	second := t.Second()
-	
-	result[0] = byte(year / 10) + '0'
-	result[1] = byte(year%10) + '0'
-	result[2] = byte(month) + '0'
-	result[3] = byte(day) + '0'
-	result[4] = byte(hour) + '0'
-	result[5] = byte(minute) + '0'
-	result[6] = byte(second) + '0'
-	result[7] = 'Z' // UTC marker
-	
-	return result
+	// Format: YYMMDDHHMMSSZ (each numeric field is two digits)
+	return []byte(fmt.Sprintf("%02d%02d%02d%02d%02d%02dZ",
+		t.Year()%100, int(t.Month()), t.Day(), t.Hour(), t.Minute(), t.Second()))
 }
 
 // DecodeUTCTime parses UTCTime from bytes
@@ -39,15 +22,23 @@ func DecodeUTCTime(data []byte) (time.Time, error) {
 	if len(data) < 13 {
 		return time.Time{}, fmt.Errorf("insufficient data for UTCTime")
 	}
-	
-	// Parse digits manually
-	year := int(data[0]-'0')*10 + int(data[1]-'0')
-	month := int(data[2]-'0')
-	day := int(data[3]-'0')
-	hour := int(data[4]-'0')
-	minute := int(data[5]-'0')
-	second := int(data[6]-'0')
-	
+
+	atoi := func(b []byte) int {
+		n := 0
+		for _, c := range b {
+			n = n*10 + int(c-'0')
+		}
+		return n
+	}
+
+	// Each field occupies two digits.
+	year := atoi(data[0:2])
+	month := atoi(data[2:4])
+	day := atoi(data[4:6])
+	hour := atoi(data[6:8])
+	minute := atoi(data[8:10])
+	second := atoi(data[10:12])
+
 	// Handle two-digit year (add century based on RFC 5280 rules)
 	fullYear := year
 	if fullYear >= 50 {
@@ -55,35 +46,16 @@ func DecodeUTCTime(data []byte) (time.Time, error) {
 	} else {
 		fullYear += 2000
 	}
-	
+
 	t := time.Date(fullYear, time.Month(month), day, hour, minute, second, 0, time.UTC)
 	return t, nil
 }
 
 // EncodeGeneralizedTime encodes as GeneralizedTime format
 func EncodeGeneralizedTime(t time.Time) []byte {
-	// Format: YYYYMMDDHHMMSSZ
-	result := make([]byte, 15)
-	
-	year := t.Year()
-	month := t.Month()
-	day := t.Day()
-	hour := t.Hour()
-	minute := t.Minute()
-	second := t.Second()
-	
-	result[0] = byte(year/1000) + '0'
-	result[1] = byte((year%1000)/100) + '0'
-	result[2] = byte((year%100)/10) + '0'
-	result[3] = byte(year%10) + '0'
-	result[4] = byte(month) + '0'
-	result[5] = byte(day) + '0'
-	result[6] = byte(hour) + '0'
-	result[7] = byte(minute) + '0'
-	result[8] = byte(second) + '0'
-	result[9] = 'Z'
-	
-	return result
+	// Format: YYYYMMDDHHMMSSZ (four-digit year, two-digit fields)
+	return []byte(fmt.Sprintf("%04d%02d%02d%02d%02d%02dZ",
+		t.Year(), int(t.Month()), t.Day(), t.Hour(), t.Minute(), t.Second()))
 }
 
 // ============================================================================
@@ -167,7 +139,7 @@ func EncodePrintableString(s string) []byte {
 		'w': true, 'x': true, 'y': true, 'z': true,
 		'0': true, '1': true, '2': true, '3': true, '4': true, '5': true, '6': true, '7': true,
 		'8': true, '9': true,
-		' ': true, '-': true, '.': true, '+': true, '/': true, '=': true, "'": true,
+		' ': true, '-': true, '.': true, '+': true, '/': true, '=': true, '\'': true, '@': true,
 		'(': true, ')': true, ',': true, ';': true, '!': true, '?': true,
 	}
 	
@@ -197,26 +169,19 @@ func EncodeOID(components []int) []byte {
 	// Subsequent components use base-128 encoding
 	for i := 2; i < len(components); i++ {
 		val := components[i]
-		
-		// Calculate number of bytes needed
-		bytesNeeded := 1
-		for val > 127 {
-			bytesNeeded++
+
+		// Collect base-128 digits, least-significant first.
+		stack := []byte{byte(val & 0x7F)}
+		val >>= 7
+		for val > 0 {
+			stack = append(stack, byte(val&0x7F)|0x80)
 			val >>= 7
 		}
-		
-		// Encode with continuation bits
-		buf := make([]byte, bytesNeeded)
-		for j := bytesNeeded - 1; j >= 0; j-- {
-			if j > 0 {
-				buf[j] = byte(val&0x7F | 0x80) // Continuation bit set
-			} else {
-				buf[j] = byte(val & 0x7F) // Last byte, no continuation bit
-			}
-			val >>= 7
+
+		// Emit most-significant first (continuation bit already set on all but last).
+		for j := len(stack) - 1; j >= 0; j-- {
+			result = append(result, stack[j])
 		}
-		
-		result = append(result, buf...)
 	}
 	
 	return result

@@ -1,3 +1,4 @@
+
 // Package metasploit_config provides configuration management for Metasploit integration
 package metasploit
 

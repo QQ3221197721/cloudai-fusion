@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 )
 
 // ============================================================================
@@ -18,6 +19,16 @@ type Registry struct {
 	plugins   map[string]Plugin           // name → instantiated plugin
 	byExt     map[ExtensionPoint][]string // extension → ordered plugin names
 	disabled  map[string]bool             // name → disabled
+
+	// === Hot-load lifecycle tracking (Module 4) ===
+	// states tracks plugin lifecycle state: loading/running/failed/unloading/unloaded
+	states       map[string]PluginState
+	// limits records the resource budget declared for each plugin
+	limits       map[string]ResourceLimits
+	// loadedAt records when each plugin was successfully loaded
+	loadedAt     map[string]time.Time
+	// namespaces maps plugin to its logical namespace for scoping
+	namespaces   map[string]string
 }
 
 // NewRegistry creates an empty Registry.
@@ -27,6 +38,11 @@ func NewRegistry() *Registry {
 		plugins:   make(map[string]Plugin),
 		byExt:     make(map[ExtensionPoint][]string),
 		disabled:  make(map[string]bool),
+		// === Initialize hot-load fields ===
+		states:     make(map[string]PluginState),
+		limits:     make(map[string]ResourceLimits),
+		loadedAt:   make(map[string]time.Time),
+		namespaces: make(map[string]string),
 	}
 }
 
@@ -58,9 +74,18 @@ func (r *Registry) MustRegister(name string, factory Factory) {
 func (r *Registry) Unregister(name string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.unregisterLocked(name)
+}
 
+// unregisterLocked is the internal version that requires r.mu held.
+func (r *Registry) unregisterLocked(name string) {
 	delete(r.factories, name)
 	delete(r.plugins, name)
+	// Clean up all hot-load metadata to prevent leaks.
+	delete(r.states, name)
+	delete(r.limits, name)
+	delete(r.loadedAt, name)
+	delete(r.namespaces, name)
 	// Remove from extension point index.
 	for ext, names := range r.byExt {
 		filtered := names[:0]

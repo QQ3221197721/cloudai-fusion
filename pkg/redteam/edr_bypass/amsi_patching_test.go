@@ -1,13 +1,43 @@
+
+
 // Package edrbypass unit tests for AMSI patching module
 package edrbypass
 
 import (
 	"context"
+	"runtime"
 	"testing"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/sys/windows"
 )
+
+// requireAdminPrivileges skips the test when the process lacks the Windows
+// privileges needed to open/patch another process. AMSI work requires
+// OpenProcess with PROCESS_VM_OPERATION|PROCESS_VM_READ|PROCESS_VM_WRITE,
+// which non-elevated tokens cannot obtain for arbitrary target processes.
+func requireAdminPrivileges(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS != "windows" {
+		return // POSIX paths use different mechanisms; keep original behavior
+	}
+	if !hasElevatedToken() {
+		t.Skipf("requires elevated Windows token for AMSI patching; run as admin for real coverage")
+	}
+}
+
+// hasElevatedToken reports whether the current process token is elevated
+// (UAC-admin), probed via OpenProcessToken + TokenElevation from
+// golang.org/x/sys/windows.
+func hasElevatedToken() bool {
+	var token windows.Token
+	if err := windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_QUERY, &token); err != nil {
+		return false
+	}
+	defer token.Close()
+	return token.IsElevated()
+}
 
 func TestNewAMSIPatcher_Defaults(t *testing.T) {
 	logger := logrus.New()
@@ -22,6 +52,7 @@ func TestInitialize_Success(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test")
 	}
+	requireAdminPrivileges(t)
 	
 	logger := logrus.New()
 	logger.SetLevel(logrus.ErrorLevel)

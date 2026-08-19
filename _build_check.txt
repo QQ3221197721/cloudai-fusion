@@ -1,0 +1,19 @@
+go : pkg\api\redteam.go:16:2: found packages redteam (ad_attack_integration_test.go) and redteam_test (ad_attack_integration_tests.go) in D:\IdeaProjects\untitled\cloudai-fusion\pkg\
+redteam
+所在位置 行:1 字符: 49
++ ... :\IdeaProjects\untitled\cloudai-fusion" ; go build ./... 2>&1 | Out-F ...
++                                               ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (pkg\api\redteam...ion\pkg\redteam:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+found packages aisecops (core_engine.go) and aiops (self_heal.go) in D:\IdeaProjects\untitled\cloudai-fusion\pkg\aisecops
+pkg\edgeautonomy\pending_decisions.go:5:1: expected 'package', found 'func'
+pkg\federated\fed_scheduler.go:1:1: expected 'package', found 'EOF'
+pkg\hardware\aws_nitro_provider_real.go:1:1: expected 'package', found 'EOF'
+pkg\redteam\ad_kerberos\native\tickets\base_tickets.go:12:2: package cloudai-fusion/pkg/redteam/ad_kerberos/native/asn1 is not in std (C:\Program Files\Go\src\cloudai-fusion\pkg\redt
+eam\ad_kerberos\native\asn1)
+pkg\redteam\ad_kerberos\native\tickets\base_tickets.go:11:2: package cloudai-fusion/pkg/redteam/ad_kerberos/native/crypto is not in std (C:\Program Files\Go\src\cloudai-fusion\pkg\re
+dteam\ad_kerberos\native\crypto)
+found packages redteam_exploit_engine (cve_ingestion_pipeline.go) and exploit_engine (cve_pipeline_test.go) in D:\IdeaProjects\untitled\cloudai-fusion\pkg\redteam\exploit_engine
+found packages redteam (ai_chat_handler.go) and main (demo_obce3_enhancement.go) in D:\IdeaProjects\untitled\cloudai-fusion\pkg\redteam\intelligence
+found packages tee_integrations (integrations.go) and tee (integrations_test.go) in D:\IdeaProjects\untitled\cloudai-fusion\pkg\tee_integrations

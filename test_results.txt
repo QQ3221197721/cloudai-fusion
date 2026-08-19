@@ -1,0 +1,97 @@
+﻿
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/agent	0.047s	coverage: 40.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/aiops	0.124s	coverage: 68.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/aisecops	0.070s	coverage: 51.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/alerting	0.097s	coverage: 65.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/api	0.247s	coverage: 23.3% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/audit	0.181s	coverage: 98.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/auth	1.202s	coverage: 21.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/billing	0.205s	coverage: 15.3% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cache	0.280s	coverage: 43.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/capability	0.180s	coverage: 55.7% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cloud	0.135s	coverage: 36.4% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cluster	1.581s	coverage: 34.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/common	0.131s	coverage: 100.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/config	0.178s	coverage: 84.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/controller	4.134s	coverage: 77.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/controlplane	0.233s	coverage: 90.4% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cost	0.066s	coverage: 78.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/delivery	0.115s	coverage: 79.3% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/deploy	0.047s	coverage: 82.7% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/detect	0.097s	coverage: 81.7% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/devsecops	0.079s	coverage: 71.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/disaster	0.110s	coverage: 68.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/edge	0.448s	coverage: 46.2% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/election	2.026s	coverage: 60.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/enterprise	0.068s	coverage: 81.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/errors	0.059s	coverage: 60.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus	10.089s	coverage: 66.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/evidence	2.820s	coverage: 71.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk	3.222s	coverage: 85.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/exploit	0.059s	coverage: 78.7% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/fabric	0.163s	coverage: 81.7% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/feature	0.095s	coverage: 94.4% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/fed	0.124s	coverage: 58.7% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/finops	0.205s	coverage: 89.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/gitops	0.451s	coverage: 73.8% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/ha	0.196s	coverage: 70.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/hotswap	0.080s	coverage: 76.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/hunt	0.117s	coverage: 87.8% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/integrations/jira	0.071s	coverage: 41.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/intel	0.287s	coverage: 55.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/k8s	0.298s	coverage: 59.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/logging	0.195s	coverage: 51.8% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/manifest	0.287s	coverage: 45.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/mesh	0.236s	coverage: 21.3% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/messaging	0.485s	coverage: 40.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/metrics	0.748s	coverage: 84.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/middleware	0.228s	coverage: 59.2% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/migrate	0.070s	coverage: 11.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/monitor	0.092s	coverage: 23.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/multicluster	0.268s	coverage: 83.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/observability	0.596s	coverage: 79.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin	0.553s	coverage: 27.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/builtin	0.460s	coverage: 18.8% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib/customerservice	0.451s	coverage: 52.2% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib/disasterrecovery	3.430s	coverage: 40.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib/renderfarm	0.543s	coverage: 57.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/provenance	0.088s	coverage: 80.4% of statements
+FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam [build failed]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/ad_kerberos	0.036s	coverage: [no statements]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/ad_kerberos/native/asn1	0.062s	coverage: 50.7% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/attack_graph	2.278s	coverage: 57.6% of statements
+    amsi_patching_test.go:35: 
+        	Error Trace:	D:/IdeaProjects/untitled/cloudai-fusion/pkg/redteam/edr_bypass/amsi_patching_test.go:35
+    amsi_patching_test.go:100: 
+        	Error Trace:	D:/IdeaProjects/untitled/cloudai-fusion/pkg/redteam/edr_bypass/amsi_patching_test.go:100
+    amsi_patching_test.go:108: 
+        	Error Trace:	D:/IdeaProjects/untitled/cloudai-fusion/pkg/redteam/edr_bypass/amsi_patching_test.go:108
+	D:/IdeaProjects/untitled/cloudai-fusion/pkg/redteam/edr_bypass/amsi_patching_test.go:116 +0x1c7
+FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/edr_bypass	0.035s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/resilience	0.359s	coverage: 28.4% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/resources	0.227s	coverage: 84.6% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/rpcserver	0.270s	coverage: 54.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/runmode	0.304s	coverage: 73.4% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/sandbox	0.317s	coverage: 85.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/scanners	0.263s	coverage: 91.2% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler	21.584s	coverage: 49.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/sdk	0.047s	coverage: 51.4% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/security	0.329s	coverage: 53.3% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/soc	0.308s	coverage: 69.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/store	0.983s	coverage: 29.2% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/support	0.074s	coverage: 85.1% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tee	0.075s	coverage: 74.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tenant	0.094s	coverage: 82.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/testutil	0.108s	coverage: 60.3% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tracing	0.073s	coverage: 17.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tsdb	0.096s	coverage: 78.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/validation	0.074s	coverage: 95.8% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/version	0.069s	coverage: 80.9% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/wasm	0.119s	coverage: 27.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/websocket	0.157s	coverage: 50.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/wellreadiness	0.063s	coverage: 88.5% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/workload	0.096s	coverage: 33.0% of statements
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/zkp	0.079s	coverage: 0.0% of statements
+FAIL
+
+

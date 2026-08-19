@@ -1,4 +1,7 @@
-// Package marketplace - Third-party plugin submission and review system
+// Package marketplace - Third-party plugin submission and review system.
+// Independent alternative submission workflow (developer incentives, reviewer
+// queue). Uses marketplace-prefixed types so it can compile alongside the
+// primary plugin_submission.go manager without redeclaration conflicts.
 package marketplace
 
 import (
@@ -14,8 +17,8 @@ import (
 // Plugin Submission Workflow
 // ============================================================================
 
-// PluginSubmission represents a third-party plugin submission
-type PluginSubmission struct {
+// MarketplaceSubmission represents a third-party plugin submission
+type MarketplaceSubmission struct {
 	ID            string              `json:"id"`
 	Author        string              `json:"author"`
 	Email         string              `json:"email"`
@@ -34,7 +37,7 @@ type PluginSubmission struct {
 	Documentation []string            `json:"documentation"`
 	Metrics       SubmissionMetrics   `json:"metrics"`
 	
-	Status        SubmissionStatus    `json:"status"`
+	Status        SubmissionState    `json:"status"`
 	ReviewStage   ReviewStage         `json:"review_stage"`
 	Reviewer      string              `json:"reviewer,omitempty"`
 	CreatedAt     time.Time           `json:"created_at"`
@@ -44,17 +47,17 @@ type PluginSubmission struct {
 	Metadata      map[string]any      `json:"metadata,omitempty"`
 }
 
-// SubmissionStatus describes lifecycle state
-type SubmissionStatus string
+// SubmissionState describes lifecycle state
+type SubmissionState string
 
 const (
-	StatusDraft      SubmissionStatus = "draft"
-	StatusSubmitted  SubmissionStatus = "submitted"
-	StatusUnderReview SubmissionStatus = "under_review"
-	StatusRevisionRequested SubmissionStatus = "revision_requested"
-	StatusApproved   SubmissionStatus = "approved"
-	StatusRejected   SubmissionStatus = "rejected"
-	StatusPublished  SubmissionStatus = "published"
+	StatusDraft      SubmissionState = "draft"
+	StatusSubmitted  SubmissionState = "submitted"
+	StatusUnderReview SubmissionState = "under_review"
+	StatusRevisionRequested SubmissionState = "revision_requested"
+	StatusApproved   SubmissionState = "approved"
+	StateRejected   SubmissionState = "rejected"
+	StatePublished  SubmissionState = "published"
 )
 
 // ReviewStage indicates current review phase
@@ -71,6 +74,13 @@ const (
 // ============================================================================
 // Security Audit
 // ============================================================================
+
+// SBOMReport is a minimal software bill-of-materials summary.
+type SBOMReport struct {
+	Format     string   `json:"format"`
+	Components []string `json:"components,omitempty"`
+	Generated  bool     `json:"generated"`
+}
 
 // SecurityReport contains security audit results
 type SecurityReport struct {
@@ -195,16 +205,16 @@ type Achievement struct {
 
 // SubmissionManager handles plugin submissions and reviews
 type SubmissionManager struct {
-	submissions   sync.Map // ID -> *PluginSubmission
+	submissions   sync.Map // ID -> *MarketplaceSubmission
 	reviewers     []*Reviewer
 	devProfiles   sync.Map // DevID -> *DeveloperProfile
-	config        Config
+	config        SubmissionConfig
 	logger        *logrus.Logger
 	mu            sync.RWMutex
 }
 
-// Config holds submission configuration
-type Config struct {
+// SubmissionConfig holds submission configuration
+type SubmissionConfig struct {
 	EnableThirdParty bool
 	AutoApproveLowRisk bool
 	RequireSecurityScan bool
@@ -213,7 +223,7 @@ type Config struct {
 }
 
 // NewSubmissionManager creates new submission manager
-func NewSubmissionManager(ctx context.Context, config Config) (*SubmissionManager, error) {
+func NewSubmissionManager(ctx context.Context, config SubmissionConfig) (*SubmissionManager, error) {
 	if !config.EnableThirdParty {
 		return nil, fmt.Errorf("third-party submissions disabled")
 	}
@@ -230,7 +240,7 @@ func NewSubmissionManager(ctx context.Context, config Config) (*SubmissionManage
 }
 
 // SubmitPlugin initiates plugin submission process
-func (sm *SubmissionManager) SubmitPlugin(ctx context.Context, submission *PluginSubmission) error {
+func (sm *SubmissionManager) SubmitPlugin(ctx context.Context, submission *MarketplaceSubmission) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	
@@ -260,7 +270,7 @@ func (sm *SubmissionManager) SubmitPlugin(ctx context.Context, submission *Plugi
 }
 
 // validateSubmission performs basic validation
-func (sm *SubmissionManager) validateSubmission(sub *PluginSubmission) error {
+func (sm *SubmissionManager) validateSubmission(sub *MarketplaceSubmission) error {
 	if sub.Name == "" || sub.Version == "" {
 		return fmt.Errorf("missing required fields")
 	}
@@ -273,7 +283,7 @@ func (sm *SubmissionManager) validateSubmission(sub *PluginSubmission) error {
 }
 
 // runAutomatedChecks runs pre-review automated tests
-func (sm *SubmissionManager) runAutomatedChecks(sub *PluginSubmission) error {
+func (sm *SubmissionManager) runAutomatedChecks(sub *MarketplaceSubmission) error {
 	// Run security scan
 	securityReport, err := sm.runSecurityScan(sub)
 	if err != nil {
@@ -302,7 +312,7 @@ func (sm *SubmissionManager) runAutomatedChecks(sub *PluginSubmission) error {
 }
 
 // runSecurityScan executes static analysis
-func (sm *SubmissionManager) runSecurityScan(sub *PluginSubmission) (*SecurityReport, error) {
+func (sm *SubmissionManager) runSecurityScan(sub *MarketplaceSubmission) (*SecurityReport, error) {
 	report := &SecurityReport{
 		ScanDate:  time.Now(),
 		Scanner:   "internal-scanner",
@@ -316,7 +326,7 @@ func (sm *SubmissionManager) runSecurityScan(sub *PluginSubmission) (*SecurityRe
 }
 
 // runTestSuite executes test suite
-func (sm *SubmissionManager) runTestSuite(sub *PluginSubmission) (*TestReport, error) {
+func (sm *SubmissionManager) runTestSuite(sub *MarketplaceSubmission) (*TestReport, error) {
 	report := &TestReport{
 		ExecutedAt: time.Now(),
 		Status:     StatusPass,
@@ -329,7 +339,7 @@ func (sm *SubmissionManager) runTestSuite(sub *PluginSubmission) (*TestReport, e
 }
 
 // assignToReviewerQueue assigns submission to next available reviewer
-func (sm *SubmissionManager) assignToReviewerQueue(sub *PluginSubmission) {
+func (sm *SubmissionManager) assignToReviewerQueue(sub *MarketplaceSubmission) {
 	// Find least-busy reviewer
 	var bestReviewer *Reviewer
 	minWorkload := int(^uint(0) >> 1)
@@ -419,12 +429,12 @@ func (sm *SubmissionManager) calculateBadgeLevel(totalEarnings float64) BadgeLev
 }
 
 // loadSubmission retrieves submission by ID
-func (sm *SubmissionManager) loadSubmission(id string) (*PluginSubmission, bool) {
+func (sm *SubmissionManager) loadSubmission(id string) (*MarketplaceSubmission, bool) {
 	val, exists := sm.submissions.Load(id)
 	if !exists {
 		return nil, false
 	}
-	return val.(*PluginSubmission), true
+	return val.(*MarketplaceSubmission), true
 }
 
 // Reviewer manages plugin review workflow

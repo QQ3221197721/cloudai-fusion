@@ -1,0 +1,40 @@
+{
+  "id": "pipe-f9110c34951fb160",
+  "name": "demo-pipeline",
+  "stages": [
+    {
+      "name": "train",
+      "type": "train"
+    },
+    {
+      "name": "experiment",
+      "type": "experiment"
+    }
+  ],
+  "params": {
+    "batch": "32",
+    "epochs": "50"
+  },
+  "trigger": {
+    "type": "manual"
+  },
+  "status": "completed",
+  "stage_runs": [
+    {
+      "stage_name": "train",
+      "status": "succeeded",
+      "started_at": "2026-08-16T13:51:09.3485615Z",
+      "ended_at": "2026-08-16T13:51:09.3542943Z",
+      "detail": "job-2e86cf7d38fb01e7 succeeded (simulated train execution via Module 14 state machine)"
+    },
+    {
+      "stage_name": "experiment",
+      "status": "succeeded",
+      "started_at": "2026-08-16T13:51:09.3548151Z",
+      "ended_at": "2026-08-16T13:51:09.3586428Z",
+      "detail": "exp-7686943bbf9f4079 completed (metrics logged: accuracy=0.94)"
+    }
+  ],
+  "created_at": "2026-08-16T13:50:20.0134846Z",
+  "updated_at": "2026-08-16T13:51:09.3597076Z"
+}
