@@ -262,3 +262,43 @@ export interface AlertCorrelationResult {
 export interface AlertCorrelationSweep {
   results: AlertCorrelationResult[]
 }
+
+// --- API Client Generator (pkg/apiclientgen, M40) ---------------------------
+// Real go test -bench measurements: OpenAPI/Swagger spec -> idiomatic HTTP
+// client for Go / TypeScript / Python via apiclientgen.GenerateFromSpec.
+
+export interface ClientGenBenchRow {
+  stage: string // BenchmarkXxx name (ParseJSON, GenerateGo, FullCycle, ...)
+  category: 'parse' | 'model' | 'generate' | 'fullcycle'
+  target?: string // target language for generate rows (go / typescript / python)
+  nsPerOp: number
+  bytesPerOp: number
+  allocsPerOp: number
+  note: string
+}
+
+export interface ApiClientGenBenchmark {
+  languages: string[] // supported target languages (apiclientgen.Languages())
+  rows: ClientGenBenchRow[]
+  benchtime: string // e.g. '5x'
+  cpu: string
+}
+
+// --- Documentation Generator (pkg/docgen, M43) ------------------------------
+// Real go test -bench measurements: Go AST (go/ast + go/doc) -> Markdown API
+// reference via docgen.ParseDir + docgen.GenerateMarkdown.
+
+export interface DocGenBenchRow {
+  stage: string // BenchmarkXxx name (ParseDir_Small, GenerateDoc_Large, ...)
+  category: 'parse' | 'generate' | 'fullcycle'
+  symbols: number // documented symbol count for the benched package
+  nsPerOp: number
+  bytesPerOp: number
+  allocsPerOp: number
+}
+
+export interface DocGenBenchmark {
+  rows: DocGenBenchRow[]
+  benchtime: string
+  cpu: string
+}

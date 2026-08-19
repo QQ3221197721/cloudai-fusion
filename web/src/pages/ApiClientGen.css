@@ -1,0 +1,10 @@
+.bench-table .val-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #2fd4d4;
+}
+
+.bench-table .note-text {
+  color: #aab;
+  font-size: 12px;
+}

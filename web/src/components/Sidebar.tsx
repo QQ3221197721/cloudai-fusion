@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { HomeOutlined, ClusterOutlined, DashboardOutlined, SafetyCertificateOutlined, CloudOutlined, ThunderboltOutlined, SettingOutlined, RocketOutlined, AppstoreOutlined, FundOutlined, DesktopOutlined, BarChartOutlined, BugOutlined, SyncOutlined, LinkOutlined } from '@ant-design/icons'
+import { HomeOutlined, ClusterOutlined, DashboardOutlined, SafetyCertificateOutlined, CloudOutlined, ThunderboltOutlined, SettingOutlined, RocketOutlined, AppstoreOutlined, FundOutlined, DesktopOutlined, BarChartOutlined, BugOutlined, SyncOutlined, LinkOutlined, ApiOutlined, FileTextOutlined } from '@ant-design/icons'
 import './Sidebar.css'
 
 const NAV = [
@@ -19,6 +19,9 @@ const NAV = [
   { to: '/anomaly', label: 'Streaming Anomaly', icon: <BugOutlined /> },
   { to: '/deltasync', label: 'Delta Sync', icon: <SyncOutlined /> },
   { to: '/correlation', label: 'Causal Alert', icon: <LinkOutlined /> },
+  // Developer experience generators (real bench-backed)
+  { to: '/api-client-gen', label: 'API Client Gen', icon: <ApiOutlined /> },
+  { to: '/doc-gen', label: 'Doc Generator', icon: <FileTextOutlined /> },
 ]
 
 export function Sidebar(): JSX.Element {

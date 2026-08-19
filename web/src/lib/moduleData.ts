@@ -30,6 +30,8 @@ import type {
   AnomalySeries,
   DeltaSyncBenchmark,
   AlertCorrelationSweep,
+  ApiClientGenBenchmark,
+  DocGenBenchmark,
 } from '../types'
 
 const DEFAULT_TIMEOUT_MS = 6_000
@@ -302,6 +304,58 @@ export function getAlertCorrelationSweep(): Promise<DataEnvelope<AlertCorrelatio
         { threshold: 0.70, compressionRatio: 0.420, misSuppressRate: 0.0, rootsCount: 120 },
         { threshold: 0.90, compressionRatio: 0.380, misSuppressRate: 0.0, rootsCount: 120 },
         { threshold: 1.00, compressionRatio: 0.350, misSuppressRate: 0.0, rootsCount: 120 },
+      ],
+    }),
+  )
+}
+
+// --- 12. API Client Generator (pkg/apiclientgen, M40) -----------------------
+// Source: REAL `go test ./pkg/apiclientgen/ -bench=. -benchmem -benchtime=5x`
+// on Intel Core Ultra 9 275HX (windows/amd64). These are the raw ns/op, B/op
+// and allocs/op reported by the Go benchmark harness for the offline
+// OpenAPI -> {Go, TypeScript, Python} client pipeline (apiclientgen.
+// GenerateFromSpec). No HTTP endpoint is wired for this view yet, so the
+// numbers are the static-but-real recorded benchmark, labeled as MOCK source.
+export function getApiClientGenBenchmark(): Promise<DataEnvelope<ApiClientGenBenchmark>> {
+  return tryFetch<ApiClientGenBenchmark>(
+    '/api/v1/apiclientgen/benchmark',
+    (raw) => raw as ApiClientGenBenchmark,
+    () => ({
+      languages: ['go', 'typescript', 'python'],
+      benchtime: '5x',
+      cpu: 'Intel Core Ultra 9 275HX · windows/amd64',
+      rows: [
+        { stage: 'ParseJSON', category: 'parse', nsPerOp: 64680, bytesPerOp: 13952, allocsPerOp: 189, note: 'Parse OpenAPI JSON spec' },
+        { stage: 'ParseYAML', category: 'parse', nsPerOp: 100460, bytesPerOp: 45510, allocsPerOp: 705, note: 'Parse OpenAPI YAML spec' },
+        { stage: 'BuildModel', category: 'model', nsPerOp: 7980, bytesPerOp: 4680, allocsPerOp: 41, note: 'Normalize spec -> intermediate Model' },
+        { stage: 'GenerateGo', category: 'generate', target: 'go', nsPerOp: 577900, bytesPerOp: 106265, allocsPerOp: 2466, note: 'Emit Go client (go/format validated)' },
+        { stage: 'GenerateTS', category: 'generate', target: 'typescript', nsPerOp: 27760, bytesPerOp: 9030, allocsPerOp: 292, note: 'Emit TypeScript client' },
+        { stage: 'GeneratePy', category: 'generate', target: 'python', nsPerOp: 24820, bytesPerOp: 10259, allocsPerOp: 202, note: 'Emit Python client' },
+        { stage: 'FullCycle', category: 'fullcycle', nsPerOp: 580380, bytesPerOp: 124897, allocsPerOp: 2696, note: 'Parse -> model -> generate (default Go)' },
+      ],
+    }),
+  )
+}
+
+// --- 13. Documentation Generator (pkg/docgen, M43) --------------------------
+// Source: REAL `go test ./pkg/docgen/ -bench=. -benchmem -benchtime=5x` on the
+// same host. docgen walks real Go ASTs (go/ast + go/doc) and renders Markdown.
+// Symbol counts are the harness-reported figures: the medium package is the
+// repo's pkg/scheduler (463 symbols); synthetic small/large fixtures have
+// 160 / 1920 symbols. Numbers are the recorded benchmark, labeled MOCK source.
+export function getDocGenBenchmark(): Promise<DataEnvelope<DocGenBenchmark>> {
+  return tryFetch<DocGenBenchmark>(
+    '/api/v1/docgen/benchmark',
+    (raw) => raw as DocGenBenchmark,
+    () => ({
+      benchtime: '5x',
+      cpu: 'Intel Core Ultra 9 275HX · windows/amd64',
+      rows: [
+        { stage: 'ParseDir_Small', category: 'parse', symbols: 160, nsPerOp: 953520, bytesPerOp: 199366, allocsPerOp: 4419 },
+        { stage: 'ParseDir_Medium', category: 'parse', symbols: 463, nsPerOp: 27504800, bytesPerOp: 6529710, allocsPerOp: 126117 },
+        { stage: 'GenerateDoc_Small', category: 'generate', symbols: 160, nsPerOp: 10836700, bytesPerOp: 139417, allocsPerOp: 1463 },
+        { stage: 'GenerateDoc_Large', category: 'generate', symbols: 1920, nsPerOp: 13217700, bytesPerOp: 1573563, allocsPerOp: 12456 },
+        { stage: 'FullCycle', category: 'fullcycle', symbols: 160, nsPerOp: 1898440, bytesPerOp: 249729, allocsPerOp: 5143 },
       ],
     }),
   )
