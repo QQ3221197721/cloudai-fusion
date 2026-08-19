@@ -192,6 +192,34 @@ This reads `.caf/evidence.chain` offline and verifies each signature against you
 
 ---
 
+## Step 5: Launch the Web Dashboard (optional)
+
+The browser dashboard lives in [`web/`](../web/) (Vite 5 + React 18 + Ant Design 5 + ECharts).
+`node_modules/` is intentionally **not** committed, so restore dependencies from the
+check-in `package-lock.json` first:
+
+```bash
+cd web
+npm install          # reproducible install from package-lock.json
+npm run dev          # Vite dev server -> http://localhost:5173
+```
+
+Production build / local preview:
+
+```bash
+cd web
+npm run build        # tsc + vite build -> web/dist/
+npm run preview      # serve the built assets locally
+```
+
+Open `http://localhost:5173` to browse the module dashboards (Overview, GPU Heatmap,
+Evidence Verify, Provider Management, Event Fabric, Config Center, Training Jobs,
+Experiments, Model Drift, GPU Topology, Exact Quantile, Streaming Anomaly, Delta Sync,
+Causal Alert, Capability Security, Unified Metrics, ...). Pages without a live backend
+render a clearly-labeled **MOCK DATA** banner rather than faking real data.
+
+---
+
 ## Total Time Breakdown
 
 | Step | Command | Expected Duration |

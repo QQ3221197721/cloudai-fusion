@@ -166,6 +166,33 @@ go run ./cmd/apiserver --config cloudai-fusion.yaml
 
 Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
 
+### Frontend (Web Dashboard)
+
+The web dashboard lives in [`web/`](web/) (Vite 5 + React 18 + Ant Design 5 + ECharts).
+It is fully self-contained; `node_modules/` is intentionally **not** committed, so after
+forking/cloning you restore dependencies from the checked-in `package-lock.json`:
+
+```bash
+cd web
+npm install          # exact, reproducible deps from package-lock.json
+npm run dev          # Vite dev server -> http://localhost:5173
+```
+
+Production build / preview:
+
+```bash
+cd web
+npm run build        # tsc + vite build -> outputs to web/dist/
+npm run preview      # serve the production build locally
+```
+
+The dashboard ships module pages such as Overview, GPU Heatmap, Evidence Verify,
+Provider Management, Event Fabric, Config Center, Training Jobs, Experiments, Model
+Drift, GPU Topology, Exact Quantile, Streaming Anomaly, Delta Sync, Causal Alert,
+Capability Security, and Unified Metrics. Consistent with the platform's honesty
+principle, any page without a live backend shows a clearly-labeled **MOCK DATA** banner
+instead of pretending the data is real.
+
 ## DevSecOps & Supply-Chain Security
 
 CI (`.github/workflows/ci.yml`) + the dedicated security pipeline
