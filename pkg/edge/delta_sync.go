@@ -1,12 +1,12 @@
 // Package edgeautonomy - Delta sync with Merkle Tree for efficient data synchronization
-package edgeautonomy
+package edge
 
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/binary"
 	"fmt"
 	"hash"
+	"strconv"
 	"sync"
 	"time"
 
@@ -24,10 +24,10 @@ type DeltaSyncManager struct {
 	logger   *logrus.Logger
 	
 	// Root Merkle tree
-	rootTree *MerkleTree
+	rootTree *SyncMerkleTree
 	
 	// Node registry
-	nodes map[string]*EdgeNode
+	nodes map[string]*DeltaEdgeNode
 	
 	// Sync state tracking
 	syncSessions map[string]*SyncSession
@@ -39,8 +39,8 @@ type DeltaSyncManager struct {
 	config SyncConfig
 }
 
-// EdgeNode represents an edge computing node in the system
-type EdgeNode struct {
+// DeltaEdgeNode represents an edge computing node in the delta sync system
+type DeltaEdgeNode struct {
 	ID             string            `json:"id"`
 	Address        string            `json:"address"`
 	Port           int               `json:"port"`
@@ -108,6 +108,20 @@ type BlockDelta struct {
 	Timestamp  int64  `json:"timestamp"`
 }
 
+// ChangeResult describes the outcome of a vector-clock-based change
+type ChangeResult struct {
+	Applied    bool   `json:"applied"`
+	Key        string `json:"key,omitempty"`
+	OldValue   interface{} `json:"old_value,omitempty"`
+	NewValue   interface{} `json:"new_value,omitempty"`
+	Skipped    bool   `json:"skipped,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+	IsNew      bool   `json:"is_new,omitempty"`
+	Conflicted bool   `json:"conflicted,omitempty"`
+	Resolution string `json:"resolution,omitempty"`
+	Winner     *VectorClockChange `json:"winner,omitempty"`
+}
+
 // SyncConfig defines sync parameters
 type SyncConfig struct {
 	BlocksizeKB         int           `json:"block_size_kb"`
@@ -122,8 +136,8 @@ type SyncConfig struct {
 // CORE MERKLE TREE IMPLEMENTATION
 // ============================================================================
 
-// MerkleTree implements Merkle tree for data integrity verification
-type MerkleTree struct {
+// SyncMerkleTree implements Merkle tree for data integrity verification in delta sync
+type SyncMerkleTree struct {
 	root     hash.Hash
 	leaves   [][]byte
 	height   int
@@ -133,36 +147,35 @@ type MerkleTree struct {
 	hashCache map[string][]byte
 }
 
-// NewMerkleTree creates new merkle tree
-func NewMerkleTree(config SyncConfig, logger *logrus.Logger) *MerkleTree {
-	tree := &MerkleTree{
+// NewSyncMerkleTree creates new merkle tree for delta sync
+func NewSyncMerkleTree(config SyncConfig, logger *logrus.Logger) *SyncMerkleTree {
+	tree := &SyncMerkleTree{
 		root:      sha256.New(),
 		leaves:    make([][]byte, 0),
 		hashes:    make([][]byte, 0),
 		size:      config.BlocksizeKB * 1024, // Convert to bytes
 		hashCache: make(map[string][]byte),
-		logger:    logger,
 	}
 	
 	return tree
 }
 
 // AddLeaf adds data leaf to tree
-func (mt *MerkleTree) AddLeaf(data []byte) {
-	// Hash the leaf
-	leafHash := mt.hash(data)
+func (mt *SyncMerkleTree) AddLeaf(data []byte) {
+	// Hash the leaf correctly using SHA256
+	leafHash := sha256.Sum256(data)
 	
 	// Cache the hash
 	key := fmt.Sprintf("%d", len(mt.leaves))
-	mt.hashCache[key] = leafHash
+	mt.hashCache[key] = leafHash[:]
 	
 	// Store leaf and hash
 	mt.leaves = append(mt.leaves, data)
-	mt.hashes = append(mt.hashes, leafHash)
+	mt.hashes = append(mt.hashes, leafHash[:])
 }
 
 // GetRoot returns root hash of tree
-func (mt *MerkleTree) GetRoot() []byte {
+func (mt *SyncMerkleTree) GetRoot() []byte {
 	if len(mt.hashes) == 0 {
 		return nil
 	}
@@ -198,7 +211,7 @@ func (mt *MerkleTree) GetRoot() []byte {
 }
 
 // VerifyBlock verifies if a specific block belongs to the tree
-func (mt *MerkleTree) VerifyBlock(blockIndex int, blockHash []byte, proof [][]byte) bool {
+func (mt *SyncMerkleTree) VerifyBlock(blockIndex int, blockHash []byte, proof [][]byte) bool {
 	if blockIndex >= len(mt.hashes) {
 		return false
 	}
@@ -227,22 +240,187 @@ func (mt *MerkleTree) VerifyBlock(blockIndex int, blockHash []byte, proof [][]by
 }
 
 // hash computes SHA-256 hash of data
-func (mt *MerkleTree) hash(data []byte) []byte {
-	result := mt.root.Sum(nil)
-	mt.root.Reset()
-	return result
+func (mt *SyncMerkleTree) hash(data []byte) []byte {
+	result := sha256.Sum256(data)
+	return result[:]
 }
 
 // ============================================================================
-// DELTA SYNCHRONIZATION FUNCTIONS
+// DELTA SYNCHRONIZATION FUNCTIONS WITH VECTOR CLOCK SUPPORT
 // ============================================================================
+
+// VectorClockChange represents a versioned change with causal ordering
+type VectorClockChange struct {
+	Key       string                 `json:"key"`
+	Value     interface{}            `json:"value"`
+	Timestamp time.Time              `json:"timestamp"`
+	NodeID    string                 `json:"node_id"`
+	Clock     map[string]int         `json:"clock"`
+	Operation string                 `json:"operation"` // create, update, delete
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ChangeVector tracks changes per-key with their vector clocks
+type ChangeVector struct {
+	Changes []*VectorClockChange
+}
+
+// Apply applies a single change with vector-clock-aware merging
+func (cv *ChangeVector) Apply(change *VectorClockChange) (*ChangeResult, error) {
+	for i, existing := range cv.Changes {
+		if existing.Key == change.Key {
+			// Same key: compare vector clocks
+			cmp := compareClocks(existing.Clock, change.Clock)
+			switch cmp {
+			case 1: // Existing is newer -> skip incoming
+				return &ChangeResult{Applied: false, Skipped: true, Reason: "existing_newer"}, nil
+			case -1: // Incoming is newer -> apply
+				cv.Changes[i] = change
+				return &ChangeResult{Applied: true, Key: change.Key, OldValue: existing.Value, NewValue: change.Value}, nil
+			case 2: // Concurrent -> conflict resolution needed
+				resolved := resolveConflict(existing, change)
+				cv.Changes[i] = resolved.Winner
+				return &ChangeResult{
+					Applied:   resolved.Applied,
+					Conflicted: true,
+					Resolution: resolved.Resolution,
+					Winner:     resolved.Winner,
+				}, nil
+			default: // Equal -> no-op
+				return &ChangeResult{Applied: false, Skipped: true, Reason: "equal"}, nil
+			}
+		}
+	}
+	// New key -> append
+	cv.Changes = append(cv.Changes, change)
+	return &ChangeResult{Applied: true, Key: change.Key, IsNew: true}, nil
+}
+
+// Merge merges another change vector
+func (cv *ChangeVector) Merge(other *ChangeVector) int {
+	merged := 0
+	for _, change := range other.Changes {
+		result, _ := cv.Apply(change)
+		if result.Applied {
+			merged++
+		}
+	}
+	return merged
+}
+
+// CompareWith returns comparison between two change vectors
+func (cv *ChangeVector) CompareWith(other *ChangeVector) int {
+	// Simple lexicographic comparison of change sets
+	for i := 0; i < max(len(cv.Changes), len(other.Changes)); i++ {
+		var c1, c2 *VectorClockChange
+		if i < len(cv.Changes) {
+			c1 = cv.Changes[i]
+		}
+		if i < len(other.Changes) {
+			c2 = other.Changes[i]
+		}
+		if c1 == nil {
+			return -1
+		}
+		if c2 == nil {
+			return 1
+		}
+		// Compare keys
+		if c1.Key < c2.Key {
+			return -1
+		}
+		if c1.Key > c2.Key {
+			return 1
+		}
+	}
+	return 0
+}
+
+type ClockComparison int
+
+const (
+	ClockBefore ClockComparison = -1
+	ClockAfter  ClockComparison = 1
+	ClockEqual  ClockComparison = 0
+	ClockConcurrent ClockComparison = 2
+)
+
+// compareClocks compares two vector clocks
+func compareClocks(a, b map[string]int) ClockComparison {
+	hasLess := false
+	hasGreater := false
+	
+	allKeys := make(map[string]bool)
+	for k := range a {
+		allKeys[k] = true
+	}
+	for k := range b {
+		allKeys[k] = true
+	}
+	
+	for key := range allKeys {
+		aVal := a[key]
+		bVal := b[key]
+		
+		if aVal < bVal {
+			hasLess = true
+		} else if aVal > bVal {
+			hasGreater = true
+		}
+		
+		if hasLess && hasGreater {
+			return ClockConcurrent
+		}
+	}
+	
+	if hasLess {
+		return ClockBefore
+	}
+	if hasGreater {
+		return ClockAfter
+	}
+	return ClockEqual
+}
+
+type ConflictResolution struct {
+	Winner      *VectorClockChange
+	Lost        *VectorClockChange
+	Resolution  string
+	Applied     bool
+}
+
+// resolveConflict resolves concurrent write conflicts using LWW.
+// Ties on identical timestamps are broken deterministically by NodeID so
+// that the same inputs always yield the same winner (required for testable
+// convergence across replicas).
+func resolveConflict(c1, c2 *VectorClockChange) *ConflictResolution {
+	c1Wins := c1.Timestamp.After(c2.Timestamp)
+	if c1.Timestamp.Equal(c2.Timestamp) {
+		// Deterministic tie-break: higher NodeID wins
+		c1Wins = c1.NodeID > c2.NodeID
+	}
+	if c1Wins {
+		return &ConflictResolution{
+			Winner:     c1,
+			Lost:       c2,
+			Resolution: "last_writer_wins",
+			Applied:    true,
+		}
+	}
+	return &ConflictResolution{
+		Winner:     c2,
+		Lost:       c1,
+		Resolution: "last_writer_wins",
+		Applied:    true,
+	}
+}
 
 // NewDeltaSyncManager creates sync manager
 func NewDeltaSyncManager(config SyncConfig, logger *logrus.Logger) (*DeltaSyncManager, error) {
 	manager := &DeltaSyncManager{
 		logger:         logger,
-		rootTree:       NewMerkleTree(config, logger),
-		nodes:          make(map[string]*EdgeNode),
+		rootTree:       NewSyncMerkleTree(config, logger),
+		nodes:          make(map[string]*DeltaEdgeNode),
 		syncSessions:   make(map[string]*SyncSession),
 		metrics:        NewDeltaMetrics(),
 		config:         config,
@@ -252,7 +430,7 @@ func NewDeltaSyncManager(config SyncConfig, logger *logrus.Logger) (*DeltaSyncMa
 }
 
 // RegisterNode registers edge node in network
-func (ds *DeltaSyncManager) RegisterNode(node *EdgeNode) error {
+func (ds *DeltaSyncManager) RegisterNode(node *DeltaEdgeNode) error {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 	
@@ -305,7 +483,7 @@ func (ds *DeltaSyncManager) ComputeMerkleRoot(ctx context.Context, nodeID string
 	return rootHash, nil
 }
 
-// DetectChanges detects delta between two Merkle trees
+// DetectChanges detects delta between two Merkle trees using real hash comparison
 func (ds *DeltaSyncManager) DetectChanges(ctx context.Context, sourceNode, destNode string) ([]*BlockDelta, error) {
 	source, exists := ds.nodes[sourceNode]
 	if !exists {
@@ -327,13 +505,8 @@ func (ds *DeltaSyncManager) DetectChanges(ctx context.Context, sourceNode, destN
 		return []*BlockDelta{}, nil
 	}
 	
-	// Roots differ - need detailed comparison
-	changedBlocks := make([]*BlockDelta, 0)
-	
-	// Find which blocks changed (would implement binary search in production)
-	// For now, simulate delta detection
-	deltaCount := ds.calculateBlockDeltas(source, dest)
-	changedBlocks = make([]*BlockDelta, deltaCount)
+	// Roots differ - perform real block-level hash comparison
+	changedBlocks := ds.calculateBlockDeltas(source, dest)
 	
 	ds.logger.WithFields(logrus.Fields{
 		"source": sourceNode,
@@ -344,11 +517,73 @@ func (ds *DeltaSyncManager) DetectChanges(ctx context.Context, sourceNode, destN
 	return changedBlocks, nil
 }
 
-// calculateBlockDeltas simulates finding changed blocks
-func (ds *DeltaSyncManager) calculateBlockDeltas(source, dest *EdgeNode) int {
-	// In production would compare actual block hashes
-	// For now return simulated count
-	return 5
+// compareDataHashes performs real comparison of block hashes between nodes
+func (ds *DeltaSyncManager) compareDataHashes(source, dest *DeltaEdgeNode) []*BlockDelta {
+	if len(source.DataHashes) != len(dest.DataHashes) {
+		ds.logger.Warnf("Hash count mismatch: source=%d, dest=%d", len(source.DataHashes), len(dest.DataHashes))
+	}
+	
+	changedBlocks := make([]*BlockDelta, 0)
+	maxLen := max(len(source.DataHashes), len(dest.DataHashes))
+	
+	for i := 0; i < maxLen; i++ {
+		var oldHash, newHash string
+		var size int64 = 1024 // default block size
+		
+		if i < len(source.DataHashes) {
+			oldHash = source.DataHashes[i]
+		} else {
+			oldHash = ""
+		}
+		
+		if i < len(dest.DataHashes) {
+			newHash = dest.DataHashes[i]
+			if sizeBytes, ok := dest.Metadata[fmt.Sprintf("block_%d_size", i)]; ok {
+				if v, err := strconv.ParseInt(sizeBytes, 10, 64); err == nil {
+					size = v
+				}
+			}
+		} else {
+			newHash = ""
+		}
+		
+		if oldHash != newHash {
+			changedBlocks = append(changedBlocks, &BlockDelta{
+				BlockID:   fmt.Sprintf("block_%d", i),
+				OldHash:   oldHash,
+				NewHash:   newHash,
+				Size:      size,
+				Timestamp: time.Now().UnixNano(),
+			})
+		}
+	}
+	
+	return changedBlocks
+}
+
+// CalculateDeltaFromData calculates deltas directly from raw data slices
+func (ds *DeltaSyncManager) CalculateDeltaFromData(dataHashes []string) []*BlockDelta {
+	if dataHashes == nil {
+		return []*BlockDelta{}
+	}
+	
+	deltas := make([]*BlockDelta, 0, len(dataHashes))
+	for i, hash := range dataHashes {
+		deltas = append(deltas, &BlockDelta{
+			BlockID:   fmt.Sprintf("block_%d", i),
+			OldHash:   "",
+			NewHash:   hash,
+			Size:      1024,
+			Timestamp: time.Now().UnixNano(),
+		})
+	}
+	
+	return deltas
+}
+
+// calculateBlockDeltas returns actual changed block list by comparing hash arrays
+func (ds *DeltaSyncManager) calculateBlockDeltas(source, dest *DeltaEdgeNode) []*BlockDelta {
+	return ds.compareDataHashes(source, dest)
 }
 
 // StartSync initiates synchronized data transfer
@@ -408,7 +643,7 @@ func (ds *DeltaSyncManager) CompleteSync(ctx context.Context, sessionID string, 
 }
 
 // Helper functions
-func min(a, b int64) int64 {
+func minInt64(a, b int64) int64 {
 	if a < b {
 		return a
 	}

@@ -1,8 +1,8 @@
+
 package redteam
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -21,7 +21,7 @@ import (
 )
 
 // ============================================================================
-// MULTI-SOURCE CVE FEED MANAGER - 多源 CVE 数据聚合器
+// MULTI-SOURCE CVE FEED MANAGER - Multi-source CVE Data Aggregation
 // ============================================================================
 
 // ExploitInfo contains exploit metadata from various sources
@@ -77,7 +77,7 @@ type NVDContainer struct {
 }
 
 type NVDCoreData struct {
-	Description   []string                 `json:"descriptions"`
+	Descriptions   []NVDDescription         `json:"descriptions"`
 	References    []NVDReference           `json:"references"`
 	VendorProducts []string                `json:"vendorProducts"`
 }
@@ -180,7 +180,7 @@ func (mfs *MultiSourceFeedManager) fetchFromNVDAPI(ctx context.Context, limit in
 
 	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("NVD API request creation failed")
 		return
 	}
 
@@ -190,7 +190,7 @@ func (mfs *MultiSourceFeedManager) fetchFromNVDAPI(ctx context.Context, limit in
 
 	resp, err := mfs.httpClients["nvd"].Do(req)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("NVD API request failed")
 		return
 	}
 	defer resp.Body.Close()
@@ -198,20 +198,20 @@ func (mfs *MultiSourceFeedManager) fetchFromNVDAPI(ctx context.Context, limit in
 	// Validate response URL to prevent SSRF
 	if resp.Request.URL != nil {
 		if err := validateURL(resp.Request.URL); err != nil {
-			errChan <- fmt.Errorf("SSRF protection triggered: %w", err)
+			mfs.logger.WithError(err).Error("SSRF protection triggered")
 			return
 		}
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("NVD API body read failed")
 		return
 	}
 
 	var nvdResponse NVDAPIResponse
 	if err := json.Unmarshal(body, &nvdResponse); err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("NVD API JSON parse failed")
 		return
 	}
 
@@ -219,7 +219,7 @@ func (mfs *MultiSourceFeedManager) fetchFromNVDAPI(ctx context.Context, limit in
 		enriched := CVEItemWithEnrichment{
 			CVE:             cveToCVEItem(cve),
 			ExploitMetadata: nil,
-			Techniques:      extractMitreATT&CK(nvdResponse.CpeScanning),
+			Techniques:      nil,
 			ThreatIntel:     nil,
 		}
 		resultChan <- enriched
@@ -237,7 +237,7 @@ func (mfs *MultiSourceFeedManager) fetchFromExploitDB(ctx context.Context, limit
 
 	resp, err := mfs.httpClients["exploitdb"].Get(exploitListURL)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("ExploitDB fetch failed")
 		return
 	}
 	defer resp.Body.Close()
@@ -245,20 +245,20 @@ func (mfs *MultiSourceFeedManager) fetchFromExploitDB(ctx context.Context, limit
 	// Validate response URL to prevent SSRF
 	if resp.Request.URL != nil {
 		if err := validateURL(resp.Request.URL); err != nil {
-			errChan <- fmt.Errorf("SSRF protection triggered: %w", err)
+			mfs.logger.WithError(err).Error("SSRF protection triggered")
 			return
 		}
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("ExploitDB body read failed")
 		return
 	}
 
 	exploits := parseExploitDBTable(body)
 
-	for _, exploit := range exploits[:min(limit/3, len(exploits))] {
+	for _, exploit := range exploits[:minInt(limit/3, len(exploits))] {
 		cveItem := CVEItemWithEnrichment{
 			CVE: CVEItem{
 				CVE: CVEData{
@@ -313,7 +313,7 @@ func (mfs *MultiSourceFeedManager) fetchFromVulnersAPI(ctx context.Context, limi
 
 	req, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/search/all", strings.NewReader(string(queryBytes)))
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("Vulners API request creation failed")
 		return
 	}
 
@@ -322,25 +322,25 @@ func (mfs *MultiSourceFeedManager) fetchFromVulnersAPI(ctx context.Context, limi
 
 	resp, err := mfs.httpClients["vulners"].Do(req)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("Vulners API request failed")
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("Vulners API body read failed")
 		return
 	}
 
 	var vulnersResponse map[string]interface{}
 	if err := json.Unmarshal(body, &vulnersResponse); err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("Vulners API JSON parse failed")
 		return
 	}
 
 	hits := vulnersResponse["hits"].([]interface{})
-	for _, hit := range hits[:min(limit/6, len(hits))] {
+	for _, hit := range hits[:minInt(limit/6, len(hits))] {
 		hitMap := hit.(map[string]interface{})
 		
 		cveID := ""
@@ -349,6 +349,7 @@ func (mfs *MultiSourceFeedManager) fetchFromVulnersAPI(ctx context.Context, limi
 				cveID = id
 			}
 		}
+		_ = cveID
 
 		enriched := CVEItemWithEnrichment{
 			CVE:             extractCVEFromVulners(hitMap),
@@ -372,7 +373,7 @@ func (mfs *MultiSourceFeedManager) fetchFromPacketStorm(ctx context.Context, lim
 
 	resp, err := mfs.httpClients["packetstorm"].Get(feedsURL)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("PacketStorm fetch failed")
 		return
 	}
 	defer resp.Body.Close()
@@ -380,20 +381,20 @@ func (mfs *MultiSourceFeedManager) fetchFromPacketStorm(ctx context.Context, lim
 	// Validate response URL to prevent SSRF
 	if resp.Request.URL != nil {
 		if err := validateURL(resp.Request.URL); err != nil {
-			errChan <- fmt.Errorf("SSRF protection triggered: %w", err)
+			mfs.logger.WithError(err).Error("SSRF protection triggered")
 			return
 		}
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		errChan <- err
+		mfs.logger.WithError(err).Error("PacketStorm body read failed")
 		return
 	}
 
 	alerts := parsePacketStormAlerts(body)
 
-	for _, alert := range alerts[:min(limit/10, len(alerts))] {
+	for _, alert := range alerts[:minInt(limit/10, len(alerts))] {
 		cveItem := CVEItemWithEnrichment{
 			CVE: CVEItem{
 				CVE: CVEData{
@@ -474,7 +475,26 @@ func newRetryingClient(timeout time.Duration) *http.Client {
 	}
 }
 
-func min(a, b int) int {
+// RetryableTransport implements http.RoundTripper with retry logic
+type RetryableTransport struct {
+	MaxRetries int
+	BaseDelay  time.Duration
+}
+
+func (rt *RetryableTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	var lastErr error
+	for i := 0; i <= rt.MaxRetries; i++ {
+		resp, err := http.DefaultTransport.RoundTrip(req)
+		if err == nil {
+			return resp, nil
+		}
+		lastErr = err
+		time.Sleep(rt.BaseDelay * time.Duration(i+1))
+	}
+	return nil, lastErr
+}
+
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
@@ -576,12 +596,6 @@ func getVectorStringFromVulners(doc map[string]interface{}) string {
 // ============================================================================
 
 func cveToCVEItem(nvdCve NVDCVEItem) CVEItem {
-	// Extract description (usually first language is English)
-	description := ""
-	if len(nvdCve.Cve.Descriptions) > 0 {
-		description = nvdCve.Cve.Descriptions[0].Value
-	}
-
 	return CVEItem{
 		ID: nvdCve.CVEID,
 		CVE: CVEData{
@@ -597,7 +611,7 @@ func cveToCVEItem(nvdCve NVDCVEItem) CVEItem {
 	}
 }
 
-func extractMitreATT&CK(cps string) []TechniqueLink {
+func extractMitreATTCK(cps string) []TechniqueLink {
 	// Placeholder - would integrate with Vulners/MITRE APIs
 	return make([]TechniqueLink, 0)
 }
@@ -684,16 +698,21 @@ func extractCVEFromVulners(hitMap interface{}) CVEItem {
 		}
 	}
 
+	// Convert descriptions to NVDDescription format
+	nvdDescriptions := make([]NVDDescription, 0, len(descriptions))
+	for _, d := range descriptions {
+		nvdDescriptions = append(nvdDescriptions, NVDDescription{Value: d, Lang: "en"})
+	}
+
 	return CVEItem{
 		ID: cveID,
 		CVE: CVEData{
-			Description:   descriptions,
+			Description:   nvdDescriptions,
 			References:    extractReferencesFromVulners(doc),
-			VulnStatus:    getStatusFromVulners(doc),
-			Impact:        extractImpactFromVulners(doc),
+			Published:     &publishedTime,
 		},
 		Impact: ImpactScore{
-			BaseScore:     cvssScore,
+			BaseScore:     float64(cvssScore),
 			BaseSeverity:  getSeverityFromScore(cvssScore),
 			VectorString:  getVectorStringFromVulners(doc),
 		},
@@ -912,15 +931,7 @@ func parsePacketStormAlerts(body []byte) []SecurityAlert {
 // EXPLOIT-DB HTML PARSER
 // ============================================================================
 
-import (
-	"html"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
-)
-
-func parseExploitDBTable(body []byte) []ExploitEntry {
+func parseExploitDBTableHTML(body []byte) []ExploitEntry {
 	// Use html package to parse HTML table
 	htmlStr := html.UnescapeString(string(body))
 
@@ -928,6 +939,7 @@ func parseExploitDBTable(body []byte) []ExploitEntry {
 	cvePattern := regexp.MustCompile(`CVE-[0-9]{4}-[0-9]+`)
 	titlePattern := regexp.MustCompile(`<h[1-3]>.*?</h[1-3]>`)
 	datePattern := regexp.MustCompile(`(\d{4}-\d{2}-\d{2}|\w+ \d+, \d+)`)
+	_ = datePattern
 
 	exploits := make([]ExploitEntry, 0)
 

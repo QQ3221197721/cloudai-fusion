@@ -1,0 +1,7 @@
+﻿git : error: pathspec 'pkg/security/supply_chain_bench_test.go' did not match any file(s) known to git
+所在位置 行:1 字符: 58
++ ... ai-fusion"; git checkout HEAD -- pkg/security/supply_chain_bench_test ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (error: pathspec...s) known to git:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

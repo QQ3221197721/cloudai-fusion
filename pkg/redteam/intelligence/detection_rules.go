@@ -1,7 +1,6 @@
 package redteam
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"sort"
@@ -197,7 +196,7 @@ func parseFloat(s string) (float64, error) {
 
 func isInternalIP(ip string) bool {
 	// Simplified internal IP check
-	return len(ip) > 0 && (ip[0] == '1' || ip[0] == '1' || ip[0] == '1')
+	return len(ip) >= 7 && (ip[:3] == "10." || ip[:8] == "192.168." || ip[:7] == "172.16.")
 	// In production, use proper CIDR matching
 }
 

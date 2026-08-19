@@ -1,0 +1,499 @@
+{
+  "config": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "n_normal": 2000,
+    "n_anomaly": 100,
+    "contamination": 0.05
+  },
+  "availability": {
+    "Mahalanobis (ours)": {
+      "available": true,
+      "reason": null
+    },
+    "sklearn IsolationForest": {
+      "available": true,
+      "reason": null
+    },
+    "sklearn EllipticEnvelope": {
+      "available": true,
+      "reason": null
+    },
+    "z-score (univariate)": {
+      "available": true,
+      "reason": null
+    },
+    "PyOD ECOD": {
+      "available": true,
+      "reason": null
+    },
+    "River HalfSpaceTrees": {
+      "available": true,
+      "reason": null
+    }
+  },
+  "summary": {
+    "Mahalanobis (ours)": {
+      "latency_ms_per_sample": 0.0001784714293621835,
+      "regimes": {
+        "joint": {
+          "f1": {
+            "mean": 0.8883333178074603,
+            "std": 0.01430264639338859,
+            "ci_low": 0.8789889221637798,
+            "ci_high": 0.8976777134511408
+          },
+          "precision": {
+            "mean": 0.7993947690798804,
+            "std": 0.022879124241030387,
+            "ci_low": 0.7844470745757406,
+            "ci_high": 0.8143424635840202
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          }
+        },
+        "marginal": {
+          "f1": {
+            "mean": 0.8883333178074603,
+            "std": 0.01430264639338859,
+            "ci_low": 0.8789889221637798,
+            "ci_high": 0.8976777134511408
+          },
+          "precision": {
+            "mean": 0.7993947690798804,
+            "std": 0.022879124241030387,
+            "ci_low": 0.7844470745757406,
+            "ci_high": 0.8143424635840202
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          }
+        }
+      }
+    },
+    "sklearn IsolationForest": {
+      "latency_ms_per_sample": 0.06554216668674989,
+      "regimes": {
+        "joint": {
+          "f1": {
+            "mean": 0.6706129580493239,
+            "std": 0.009901970302812672,
+            "ci_low": 0.6641436707848196,
+            "ci_high": 0.6770822453138281
+          },
+          "precision": {
+            "mean": 0.5045360179866538,
+            "std": 0.011178466161868902,
+            "ci_low": 0.4972327534275661,
+            "ci_high": 0.5118392825457415
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 0.988073,
+            "std": 0.004296994996506274,
+            "ci_low": 0.9852656299356158,
+            "ci_high": 0.9908803700643841
+          }
+        },
+        "marginal": {
+          "f1": {
+            "mean": 0.6706129580493239,
+            "std": 0.009901970302812672,
+            "ci_low": 0.6641436707848196,
+            "ci_high": 0.6770822453138281
+          },
+          "precision": {
+            "mean": 0.5045360179866538,
+            "std": 0.011178466161868902,
+            "ci_low": 0.4972327534275661,
+            "ci_high": 0.5118392825457415
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 0.9999,
+            "std": 0.00030000000000000024,
+            "ci_low": 0.999704,
+            "ci_high": 1.000096
+          }
+        }
+      }
+    },
+    "sklearn EllipticEnvelope": {
+      "latency_ms_per_sample": 0.11765328097334578,
+      "regimes": {
+        "joint": {
+          "f1": {
+            "mean": 0.6720873156768449,
+            "std": 0.005456349434076044,
+            "ci_low": 0.6685225007132485,
+            "ci_high": 0.6756521306404413
+          },
+          "precision": {
+            "mean": 0.5061485527886123,
+            "std": 0.0061887896185909294,
+            "ci_low": 0.5021052102377995,
+            "ci_high": 0.510191895339425
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          }
+        },
+        "marginal": {
+          "f1": {
+            "mean": 0.6720873156768449,
+            "std": 0.005456349434076044,
+            "ci_low": 0.6685225007132485,
+            "ci_high": 0.6756521306404413
+          },
+          "precision": {
+            "mean": 0.5061485527886123,
+            "std": 0.0061887896185909294,
+            "ci_low": 0.5021052102377995,
+            "ci_high": 0.510191895339425
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          }
+        }
+      }
+    },
+    "z-score (univariate)": {
+      "latency_ms_per_sample": 0.00010247618359114443,
+      "regimes": {
+        "joint": {
+          "f1": {
+            "mean": 0.29073170731707315,
+            "std": 0.04314798904877264,
+            "ci_low": 0.26254168780520837,
+            "ci_high": 0.31892172682893793
+          },
+          "precision": {
+            "mean": 0.28380952380952384,
+            "std": 0.042120655976182815,
+            "ci_low": 0.25629069523841774,
+            "ci_high": 0.31132835238062995
+          },
+          "recall": {
+            "mean": 0.298,
+            "std": 0.04422668877499197,
+            "ci_low": 0.2691052300003386,
+            "ci_high": 0.3268947699996614
+          },
+          "roc_auc": {
+            "mean": 0.9533834999999999,
+            "std": 0.0030813406578955324,
+            "ci_low": 0.9513703574368415,
+            "ci_high": 0.9553966425631584
+          }
+        },
+        "marginal": {
+          "f1": {
+            "mean": 0.9756097560975612,
+            "std": 2.220446049250313e-16,
+            "ci_low": 0.9756097560975611,
+            "ci_high": 0.9756097560975613
+          },
+          "precision": {
+            "mean": 0.9523809523809523,
+            "std": 0.0,
+            "ci_low": 0.9523809523809523,
+            "ci_high": 0.9523809523809523
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          }
+        }
+      }
+    },
+    "PyOD ECOD": {
+      "latency_ms_per_sample": 0.0016978047455527955,
+      "regimes": {
+        "joint": {
+          "f1": {
+            "mean": 0.0758591094625193,
+            "std": 0.04380861243021247,
+            "ci_low": 0.04723748267478049,
+            "ci_high": 0.1044807362502581
+          },
+          "precision": {
+            "mean": 0.07842937615701057,
+            "std": 0.04084331065261714,
+            "ci_low": 0.05174507986396737,
+            "ci_high": 0.10511367245005376
+          },
+          "recall": {
+            "mean": 0.07400000000000001,
+            "std": 0.04758150901348128,
+            "ci_low": 0.04291341411119225,
+            "ci_high": 0.10508658588880777
+          },
+          "roc_auc": {
+            "mean": 0.9105025,
+            "std": 0.005271348617763759,
+            "ci_low": 0.9070585522363943,
+            "ci_high": 0.9139464477636057
+          }
+        },
+        "marginal": {
+          "f1": {
+            "mean": 0.7808798708742772,
+            "std": 0.013681474562247642,
+            "ci_low": 0.7719413074936088,
+            "ci_high": 0.7898184342549457
+          },
+          "precision": {
+            "mean": 0.6407340850747857,
+            "std": 0.018416228620050577,
+            "ci_low": 0.6287021490430194,
+            "ci_high": 0.652766021106552
+          },
+          "recall": {
+            "mean": 1.0,
+            "std": 0.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "roc_auc": {
+            "mean": 0.9945545000000001,
+            "std": 0.0010602368839084952,
+            "ci_low": 0.9938618119025132,
+            "ci_high": 0.995247188097487
+          }
+        }
+      }
+    },
+    "River HalfSpaceTrees": {
+      "latency_ms_per_sample": 0.018048857161331745,
+      "regimes": {
+        "joint": {
+          "f1": {
+            "mean": 0.30440759111967003,
+            "std": 0.2965528896327824,
+            "ci_low": 0.11065970322625218,
+            "ci_high": 0.4981554790130879
+          },
+          "precision": {
+            "mean": 0.30451225386834385,
+            "std": 0.2905051292372864,
+            "ci_low": 0.11471556943331676,
+            "ci_high": 0.49430893830337097
+          },
+          "recall": {
+            "mean": 0.305,
+            "std": 0.3030264014900352,
+            "ci_low": 0.10702275102651038,
+            "ci_high": 0.5029772489734896
+          },
+          "roc_auc": {
+            "mean": 0.9381689999999999,
+            "std": 0.04515441555374181,
+            "ci_low": 0.9086681151715552,
+            "ci_high": 0.9676698848284446
+          }
+        },
+        "marginal": {
+          "f1": {
+            "mean": 0.6862839332537052,
+            "std": 0.44928857797321764,
+            "ci_low": 0.3927487289778697,
+            "ci_high": 0.9798191375295406
+          },
+          "precision": {
+            "mean": 0.6731124862192823,
+            "std": 0.44069436383891125,
+            "ci_low": 0.38519216851119364,
+            "ci_high": 0.961032803927371
+          },
+          "recall": {
+            "mean": 0.7,
+            "std": 0.45825756949558394,
+            "ci_low": 0.4006050545962185,
+            "ci_high": 0.9993949454037814
+          },
+          "roc_auc": {
+            "mean": 0.9965000000000002,
+            "std": 0.004739461994783792,
+            "ci_low": 0.9934035514967414,
+            "ci_high": 0.9995964485032589
+          }
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "sklearn IsolationForest": {
+      "joint": {
+        "p_value": 4.8268486625851374e-17,
+        "cohen_d": 16.791530338158807,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.6706129580493239
+      },
+      "marginal": {
+        "p_value": 4.8268486625851374e-17,
+        "cohen_d": 16.791530338158807,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.6706129580493239
+      }
+    },
+    "sklearn EllipticEnvelope": {
+      "joint": {
+        "p_value": 4.736301657206988e-14,
+        "cohen_d": 18.952368688857227,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.6720873156768449
+      },
+      "marginal": {
+        "p_value": 4.736301657206988e-14,
+        "cohen_d": 18.952368688857227,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.6720873156768449
+      }
+    },
+    "z-score (univariate)": {
+      "joint": {
+        "p_value": 3.7028222084420965e-13,
+        "cohen_d": 17.638018104448115,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.29073170731707315
+      },
+      "marginal": {
+        "p_value": 1.9786138179087865e-08,
+        "cohen_d": -8.186850607211076,
+        "verdict": "LOSS",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.9756097560975612
+      }
+    },
+    "PyOD ECOD": {
+      "joint": {
+        "p_value": 1.7254820182047153e-14,
+        "cohen_d": 23.653373812742373,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.0758591094625193
+      },
+      "marginal": {
+        "p_value": 3.335721996573108e-12,
+        "cohen_d": 7.283715368406761,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.7808798708742772
+      }
+    },
+    "River HalfSpaceTrees": {
+      "joint": {
+        "p_value": 0.00022486330148849363,
+        "cohen_d": 2.638682777636622,
+        "verdict": "WIN",
+        "effect": "large",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.30440759111967003
+      },
+      "marginal": {
+        "p_value": 0.21040186510812045,
+        "cohen_d": 0.6030432496299897,
+        "verdict": "TIE",
+        "effect": "medium",
+        "our_mean": 0.8883333178074603,
+        "competitor_mean": 0.6862839332537052
+      }
+    }
+  },
+  "ledger": {
+    "WIN": [
+      "joint F1: ours 0.888 vs sklearn IsolationForest 0.671 (p=0.0000, d=+16.79)",
+      "marginal F1: ours 0.888 vs sklearn IsolationForest 0.671 (p=0.0000, d=+16.79)",
+      "joint F1: ours 0.888 vs sklearn EllipticEnvelope 0.672 (p=0.0000, d=+18.95)",
+      "marginal F1: ours 0.888 vs sklearn EllipticEnvelope 0.672 (p=0.0000, d=+18.95)",
+      "joint F1: ours 0.888 vs z-score (univariate) 0.291 (p=0.0000, d=+17.64)",
+      "joint F1: ours 0.888 vs PyOD ECOD 0.076 (p=0.0000, d=+23.65)",
+      "marginal F1: ours 0.888 vs PyOD ECOD 0.781 (p=0.0000, d=+7.28)",
+      "joint F1: ours 0.888 vs River HalfSpaceTrees 0.304 (p=0.0002, d=+2.64)"
+    ],
+    "LOSS": [
+      "marginal F1: ours 0.888 vs z-score (univariate) 0.976 (p=0.0000, d=-8.19)"
+    ],
+    "TIE": [
+      "marginal F1: ours 0.888 vs River HalfSpaceTrees 0.686 (p=0.2104, d=+0.60)"
+    ]
+  }
+}

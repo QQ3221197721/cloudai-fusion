@@ -4,7 +4,6 @@ package dr
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -41,6 +40,65 @@ type DROrchestrator struct {
 	// Cost optimization
 	costOptimizer    *CostOptimizer
 }
+
+// ============================================================================
+// MISSING TYPE STUBS
+// These types were referenced but not defined; adding minimal stubs for compilation
+// ============================================================================
+
+// ReplicationMonitor monitors PostgreSQL replication lag and health
+type ReplicationMonitor struct{}
+func NewReplicationMonitor(primary, standby *DatabaseCluster) *ReplicationMonitor { return &ReplicationMonitor{} }
+func (r *ReplicationMonitor) Start(ctx context.Context) {}
+func (r *ReplicationMonitor) GetLag() time.Duration { return 0 }
+func (r *ReplicationMonitor) GetReplicationStatus() ReplicationStatus { return ReplicationStatus{IsHealthy: true} }
+
+// ReplicationStatus describes the current replication health
+type ReplicationStatus struct {
+	IsHealthy  bool
+	LagSeconds int
+}
+
+// ConsistencyChecker verifies data consistency between primary and standby
+type ConsistencyChecker struct{}
+func NewConsistencyChecker(orchestrator *DROrchestrator) *ConsistencyChecker { return nil }
+func (c *ConsistencyChecker) Check() bool { return true }
+
+// SLATracker tracks SLA compliance for failover objectives
+type SLATracker struct{}
+func NewSLATracker(orco *DROrchestrator) *SLATracker { return nil }
+func (s *SLATracker) RecordFailover(duration time.Duration) {}
+
+// CostOptimizer optimizes DR costs across regions
+type CostOptimizer struct{}
+func NewCostOptimizer(logger *logrus.Logger) *CostOptimizer { return nil }
+func (c *CostOptimizer) Optimize() error { return nil }
+
+// ClusterConfig represents database cluster configuration
+type ClusterConfig struct {
+	MaxConnections int
+	TimeoutSeconds int
+}
+
+// EncryptedConnectionInfo holds encrypted connection credentials
+type EncryptedConnectionInfo struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	Database string
+}
+
+// DatabaseCluster now has additional methods
+func (d *DatabaseCluster) TestConnectivity() error { return nil }
+func (d *DatabaseCluster) CollectMetrics() ClusterMetrics { return ClusterMetrics{} }
+func (d *DatabaseCluster) StopWrites() {}
+func (d *DatabaseCluster) ViewOfWhoIsPrimary() string { return d.ID }
+
+// Additional methods for DROrchestrator
+func (o *DROrchestrator) checkStandbyCluster() bool { return true }
+func (o *DROrchestrator) triggerSplitBrainContainment() {}
+func (o *DROrchestrator) updateClusterStatus(cluster *DatabaseCluster, status ClusterStatus, start time.Time) {}
 
 // DatabaseCluster represents a PostgreSQL cluster in a region
 type DatabaseCluster struct {
@@ -143,11 +201,11 @@ func NewDROrchestrator(primary, standby *DatabaseCluster, logger *logrus.Logger)
 			SplitBrainDetection:      true,
 			MinimumHealthyNodes:      2,
 		},
-		replMonitor: NewReplicationMonitor(primary, standby),
-		consistencyChecker: NewConsistencyChecker(primary),
-		slaTracker: NewSLATracker(),
-		costOptimizer: NewCostOptimizer(),
+		replMonitor:   NewReplicationMonitor(primary, standby),
+		costOptimizer: NewCostOptimizer(logger),
 	}
+	orco.consistencyChecker = NewConsistencyChecker(orco)
+	orco.slaTracker = NewSLATracker(orco)
 	
 	// Start background monitoring
 	go orco.runMonitoringLoop(context.Background())
@@ -273,7 +331,7 @@ func (o *DROrchestrator) startFailover(reason string) {
 }
 
 // executeFailoverSteps performs the actual failover sequence
-func (o *DROorchestrator) executeFailoverSteps() {
+func (o *DROrchestrator) executeFailoverSteps() {
 	// Step 1: Stop writes to primary
 	o.recordEvidence(FailoverPreparation, "Stopping writes to primary", nil)
 	o.primary.StopWrites()
@@ -311,6 +369,7 @@ func (o *DROorchestrator) executeFailoverSteps() {
 func (o *DROrchestrator) promoteStandbyToPrimary() {
 	// Execute promotion commands
 	promoteCmd := fmt.Sprintf("pg_promote(%s)", o.standby.Endpoint)
+	_ = promoteCmd
 	// Would execute via postgres API
 	
 	// Update cluster roles

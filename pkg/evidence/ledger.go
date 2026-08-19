@@ -2,12 +2,9 @@ package evidence
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"sync"
 	"time"
-
-	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
 
 // Recorder is the narrow interface control-plane subsystems (scheduler, finops,
@@ -94,104 +91,17 @@ func initialKeyHistory(s Signer) []PublicKeyEntry {
 	return []PublicKeyEntry{{KeyID: s.KeyID(), PEM: string(pemBytes)}}
 }
 
-// Record builds, hashes, signs, anchors, and durably appends a receipt.
+// Record builds, hashes, signs, anchors, and durably appends a receipt. It is
+// the single-record path; BatchRecord (batch_append.go) reuses the same
+// prepare/append primitives to pipeline a batch. The per-record content hashing
+// is factored into prepareRecordInput (pure) and the sign+chain+append critical
+// section into appendPrepared, so both paths agree byte-for-byte.
 func (l *Ledger) Record(ctx context.Context, in RecordInput) (*Evidence, error) {
-	inputHash, err := HashAny(in.Input)
+	p, err := prepareRecordInput(in)
 	if err != nil {
 		return nil, err
 	}
-	outputHash, err := HashAny(in.Output)
-	if err != nil {
-		return nil, err
-	}
-	var payload json.RawMessage
-	if in.Payload != nil {
-		b, err := marshalCanonical(in.Payload)
-		if err != nil {
-			return nil, err
-		}
-		payload = b
-	}
-
-	backends := in.Backends
-	if backends == nil {
-		backends = l.snapshotBackends(in.Components)
-	}
-
-	// build assembles, hashes, signs, and anchors a record given the current
-	// chain head. It runs either under the ledger mutex or inside the store's
-	// atomic append, so Seq/PrevHash assignment is race-free.
-	sgn := l.currentSigner()
-	build := func(last *Evidence) (*Evidence, error) {
-		prev := GenesisPrevHash
-		var seq uint64 = 1
-		if last != nil {
-			prev = last.Hash
-			seq = last.Seq + 1
-		}
-		e := &Evidence{
-			ID:         common.NewUUID(),
-			Seq:        seq,
-			PrevHash:   prev,
-			Timestamp:  time.Now().UTC(),
-			Actor:      in.Actor,
-			Action:     in.Action,
-			Subject:    in.Subject,
-			RunMode:    l.cap.RunMode(),
-			Backends:   backends,
-			InputHash:  inputHash,
-			OutputHash: outputHash,
-			Payload:    payload,
-		}
-		hash, herr := e.ComputeHash()
-		if herr != nil {
-			return nil, herr
-		}
-		e.Hash = hash
-		// Sign over the hex leaf hash; the Verifier signs/verifies the same bytes.
-		sig, serr := sgn.Sign([]byte(hash))
-		if serr != nil {
-			return nil, serr
-		}
-		e.Signature = sig
-		e.KeyID = sgn.KeyID()
-		// Anchor is best-effort but always truthful. NOTE: the simulated anchor is
-		// a pure struct assignment (safe inside a DB tx); Phase 5's real Rekor
-		// client must anchor post-commit and update LogEntry, which is excluded
-		// from the signed content by design.
-		if ref, aerr := l.anchorer.Anchor(ctx, AnchorRequest{LeafHex: hash, SignatureB64: sig, PublicKey: sgn.PublicKey()}); aerr == nil {
-			e.LogEntry = ref
-		} else {
-			e.LogEntry = &TransparencyRef{Backend: "simulated", Detail: aerr.Error(), IntegratedAt: time.Now().UTC()}
-		}
-		return e, nil
-	}
-
-	// Prefer the store's atomic append (race-free across concurrent writers, e.g.
-	// multiple processes sharing a DB); otherwise serialize within this process.
-	if as, ok := l.store.(AtomicStore); ok {
-		e, aerr := as.AppendChained(ctx, build)
-		if aerr != nil {
-			return nil, aerr
-		}
-		observeRecord(e)
-		return e, nil
-	}
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	last, err := l.store.Last(ctx)
-	if err != nil {
-		return nil, err
-	}
-	e, err := build(last)
-	if err != nil {
-		return nil, err
-	}
-	if err := l.store.Append(ctx, e); err != nil {
-		return nil, err
-	}
-	observeRecord(e)
-	return e, nil
+	return l.appendPrepared(ctx, p)
 }
 
 // snapshotBackends returns the capability snapshot, optionally filtered to the

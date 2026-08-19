@@ -1,0 +1,2 @@
+﻿# github.com/cloudai-fusion/cloudai-fusion/pkg/edge
+pkg\edge\node_manager.go:169:26: n.Location.Region undefined (type *GeoLocation has no field or method Region)

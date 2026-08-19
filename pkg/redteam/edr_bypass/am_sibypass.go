@@ -1,8 +1,8 @@
+
 // Package edrbypass provides complete AMSI bypass implementation with real-world testing
 package edrbypass
 
 import (
-	"context"
 	"fmt"
 	"time"
 	
@@ -31,8 +31,7 @@ func VerifyAMSIBypass(targetPID uint32, logger *logrus.Logger) *AMBypassResult {
 	result.DetectionTime = -1 // Not detected
 	result.Evidence = append(result.Evidence, Evidence{
 		Type:    "amsi_bypass",
-		Data:    "AMSI successfully patched and bypassed",
-		Success: true,
+		Data:    map[string]interface{}{"message": "AMSI successfully patched"},
 	})
 	
 	result.Error = fmt.Sprintf("Test completed in %v", time.Since(startTime))

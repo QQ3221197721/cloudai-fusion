@@ -459,9 +459,18 @@ func runServer(cmd *cobra.Command, args []string) error {
 	// ================================================================
 	// Data Consistency: Write-Ahead Log (WAL)
 	// ================================================================
-	wal := store.NewWAL(store.DefaultWALConfig())
-	_ = wal // Available for WAL-protected store operations
-	logger.Info("Write-Ahead Log (WAL) initialized")
+	wal, err := store.NewWAL(store.DefaultWALConfig())
+	if err != nil {
+		return fmt.Errorf("create WAL: %w", err)
+	}
+	defer wal.Close()
+
+	// Initial checkpoint to clean up any pending entries before startup.
+	if _, err := wal.Checkpoint(); err != nil {
+		logger.WithError(err).Error("initial checkpoint failed")
+	} else {
+		logger.Info("Write-Ahead Log initialized and recovered")
+	}
 
 	// ================================================================
 	// Observability: SLO Tracker & Resource Collector

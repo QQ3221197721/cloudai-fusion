@@ -1,0 +1,53 @@
+.tutorial-container {
+  padding: 24px;
+}
+
+.tutorial-title {
+  margin: 0 0 20px;
+  font-size: 22px;
+  color: #0b1113;
+}
+
+.tutorial-steps {
+  margin-bottom: 24px;
+}
+
+.tutorial-body {
+  display: flex;
+  gap: 16px;
+  min-height: 180px;
+  padding: 16px;
+  background: #f6f9fa;
+  border-radius: 8px;
+}
+
+.tutorial-icon {
+  font-size: 32px;
+  color: #2fd4d4;
+  flex-shrink: 0;
+}
+
+.tutorial-content {
+  flex: 1;
+}
+
+.step-title {
+  margin: 0 0 8px;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.step-desc {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #444;
+}
+
+.tutorial-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+}

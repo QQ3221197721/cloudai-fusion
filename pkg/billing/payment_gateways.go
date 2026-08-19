@@ -2,10 +2,12 @@
 package billing
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -126,7 +128,7 @@ func (sg *StripeGateway) CreateCustomer(ctx context.Context, customer CustomerDa
 	defer resp.Body.Close()
 	
 	if resp.StatusCode != http.StatusOK {
-		var errorMsg map[string]string
+		var errorMsg map[string]map[string]string
 		json.NewDecoder(resp.Body).Decode(&errorMsg)
 		return nil, fmt.Errorf("Stripe returned status %d: %s", resp.StatusCode, errorMsg["error"]["message"])
 	}
@@ -217,7 +219,7 @@ func (sg *StripeGateway) ProcessPayment(ctx context.Context, payment PaymentData
 	defer resp.Body.Close()
 	
 	if resp.StatusCode != http.StatusOK {
-		var errorMsg map[string]string
+		var errorMsg map[string]map[string]string
 		json.NewDecoder(resp.Body).Decode(&errorMsg)
 		return nil, fmt.Errorf("Stripe payment failed: %s", errorMsg["error"]["message"])
 	}
@@ -402,7 +404,7 @@ func (pg *PaddleGateway) ProcessPayment(ctx context.Context, payment PaymentData
 	// For Paddle, we return checkout URL instead of direct processing
 	// Redirect user to Paddle Checkout Page
 	checkoutURL := fmt.Sprintf(
-		"https://checkout.paddle.com?user[email]=%s&user[phone]=&customer[type]=individual&products[123456789][price_id]=987654321&customer_fields[name][value]=%%s&customer_fields[billing_address][line1][value]=%%s",
+		"https://checkout.paddle.com?user[email]=%s&user[phone]=&customer[type]=individual&products[123456789][price_id]=987654321&customer_fields[name][value]=%s&customer_fields[billing_address][line1][value]=%s",
 		payment.CustomerEmail,
 		payment.CustomerName,
 		payment.Address.Line1,
@@ -562,9 +564,4 @@ type CheckoutSessionResponse struct {
 }
 
 // Helper function
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+

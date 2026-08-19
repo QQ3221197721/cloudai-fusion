@@ -1,0 +1,37 @@
+﻿go : go: downloading golang.org/x/net v0.53.0
+所在位置 行:1 字符: 58
++ ... n "d:\IdeaProjects\untitled\cloudai-fusion"; go mod tidy 2>&1 | Out-F ...
++                                                  ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (go: downloading golang.org/x/net v0.53.0:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+go: downloading github.com/prometheus/client_model v0.5.0
+go: downloading k8s.io/klog v1.0.0
+go: downloading k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
+go: downloading github.com/jackc/pgx/v5 v5.4.3
+go: downloading github.com/Azure/azure-sdk-for-go/sdk/azcore v1.13.0
+go: downloading github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2
+go: downloading github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0
+go: downloading cloud.google.com/go/auth v0.7.3
+go: downloading github.com/blang/semver v3.5.0+incompatible
+go: downloading github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a
+go: downloading github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.11.3
+go: downloading cloud.google.com/go/auth/oauth2adapt v0.2.3
+go: downloading go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0
+go: downloading github.com/go-playground/assert/v2 v2.0.1
+go: downloading github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
+go: downloading github.com/googleapis/enterprise-certificate-proxy v0.3.2
+go: downloading github.com/emicklei/go-restful v2.9.5+incompatible
+go: downloading github.com/grpc-ecosystem/grpc-gateway v1.9.5
+go: downloading golang.org/x/tools v0.42.0
+go: downloading golang.org/x/mod v0.33.0
+go: finding module for package github.com/gorilla/mux
+go: finding module for package github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1
+go: finding module for package github.com/tetratelabs/wazero
+go: finding module for package github.com/tetratelabs/wazero/api
+go: finding module for package github.com/neo4j/neo4j-go-driver/v5/neo4j
+go: found github.com/neo4j/neo4j-go-driver/v5/neo4j in github.com/neo4j/neo4j-go-driver/v5 v5.28.4
+go: found github.com/gorilla/mux in github.com/gorilla/mux v1.8.1
+go: found github.com/tetratelabs/wazero in github.com/tetratelabs/wazero v1.12.0
+go: found github.com/tetratelabs/wazero/api in github.com/tetratelabs/wazero v1.12.0
+go: found github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1 in github.com/tetratelabs/wazero v1.12.0

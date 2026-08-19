@@ -1,5 +1,5 @@
 // Package edgeautonomy - Vector Clock for distributed system coordination
-package edgeautonomy
+package edge
 
 import (
 	"sync"
@@ -13,8 +13,8 @@ import (
 // IMPLEMENTS PROPER CAUSAL ORDERING WITH EVENT MERGING!
 // ============================================================================
 
-// VectorClock implements causal ordering in distributed systems
-type VectorClock struct {
+// CausalVectorClock implements causal ordering in distributed systems
+type CausalVectorClock struct {
 	mu       sync.RWMutex
 	processes map[string]int
 	logger   *logrus.Logger
@@ -35,9 +35,9 @@ type Event struct {
 // CORE VECTOR CLOCK OPERATIONS
 // ============================================================================
 
-// NewVectorClock creates new clock instance
-func NewVectorClock(processIDs []string, logger *logrus.Logger) *VectorClock {
-	vc := &VectorClock{
+// NewCausalVectorClock creates new clock instance
+func NewCausalVectorClock(processIDs []string, logger *logrus.Logger) *CausalVectorClock {
+	vc := &CausalVectorClock{
 		processes: make(map[string]int),
 		logger:    logger,
 	}
@@ -51,7 +51,7 @@ func NewVectorClock(processIDs []string, logger *logrus.Logger) *VectorClock {
 }
 
 // Tick increments own counter and returns new timestamp
-func (vc *VectorClock) Tick() time.Time {
+func (vc *CausalVectorClock) Tick() time.Time {
 	vc.mu.Lock()
 	defer vc.mu.Unlock()
 	
@@ -68,7 +68,7 @@ func (vc *VectorClock) Tick() time.Time {
 }
 
 // GetTimestamp returns current vector clock state
-func (vc *VectorClock) GetTimestamp() map[string]int {
+func (vc *CausalVectorClock) GetTimestamp() map[string]int {
 	vc.mu.RLock()
 	defer vc.mu.RUnlock()
 	
@@ -81,7 +81,7 @@ func (vc *VectorClock) GetTimestamp() map[string]int {
 }
 
 // Compare compares two vector clocks
-func (vc *VectorClock) Compare(other *VectorClock) int {
+func (vc *CausalVectorClock) Compare(other *CausalVectorClock) int {
 	vc.mu.RLock()
 	defer vc.mu.RUnlock()
 	other.mu.RLock()
@@ -114,7 +114,7 @@ func (vc *VectorClock) Compare(other *VectorClock) int {
 }
 
 // Merge combines two vector clocks (element-wise maximum)
-func (vc *VectorClock) Merge(other *VectorClock) {
+func (vc *CausalVectorClock) Merge(other *CausalVectorClock) {
 	vc.mu.Lock()
 	defer vc.mu.Unlock()
 	other.mu.RLock()
@@ -141,14 +141,14 @@ func (vc *VectorClock) Merge(other *VectorClock) {
 }
 
 // SendEvent creates event with timestamp
-func (vc *VectorClock) SendEvent(event Event) time.Time {
+func (vc *CausalVectorClock) SendEvent(event Event) time.Time {
 	event.Timestamp = vc.Tick()
 	event.Version = vc.processes["self"]
 	return event.Timestamp
 }
 
 // ReceiveEvent updates clock based on received event
-func (vc *VectorClock) ReceiveEvent(event Event) {
+func (vc *CausalVectorClock) ReceiveEvent(event Event) {
 	vc.mu.Lock()
 	defer vc.mu.Unlock()
 	
@@ -162,7 +162,7 @@ func (vc *VectorClock) ReceiveEvent(event Event) {
 }
 
 // Extract version from event metadata
-func (vc *VectorClock) extractVersionFromEvent(event *Event) map[string]int {
+func (vc *CausalVectorClock) extractVersionFromEvent(event *Event) map[string]int {
 	versionMap := make(map[string]int)
 	versionMap[event.ProcessID] = event.Version
 	return versionMap

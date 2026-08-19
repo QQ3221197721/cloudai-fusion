@@ -10,9 +10,6 @@
 package edgeautonomy
 
 import (
-	"fmt"
-	"sort"
-	"strings"
 	"time"
 )
 

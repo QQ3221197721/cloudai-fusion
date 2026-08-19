@@ -1,0 +1,12 @@
+.mock-data-banner {
+  padding: 8px 20px;
+  background: #fff7e6;
+  border-bottom: 1px solid #ffe58f;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+}
+
+.mock-data-banner .ant-alert {
+  margin: 0;
+  padding: 4px 0;
+}

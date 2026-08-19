@@ -4,13 +4,11 @@ package dr_integrations
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/cloudai-fusion/cloudai-fusion/pkg/dr"
 )
 
 // ============================================================================
@@ -91,7 +89,7 @@ func (ii *IntelligenceIntegration) ReportClusterHealth(ctx context.Context, repo
 }
 
 // AggregateHealthMetrics aggregates health data for L1 analysis
-func (ii *IntelligenceIntegration) AggregateHealthMetrics(ctx context.Context) ([]*ClusterHealthReport, error) {
+func (ii *IntelligenceIntegration) AggregateHealthMetrics(ctx context.Context) ([]ClusterHealthReport, error) {
 	ii.mu.RLock()
 	defer ii.mu.RUnlock()
 	
@@ -102,6 +100,15 @@ func (ii *IntelligenceIntegration) AggregateHealthMetrics(ctx context.Context) (
 // ============================================================================
 // SECURITY INTEGRATION (L3-L8 SOC ↔ L16 DR)
 // ============================================================================
+
+// SecurityMetric represents a security-related monitoring metric
+type SecurityMetric struct {
+	Name      string            `json:"name"`
+	Value     float64           `json:"value"`
+	Labels    map[string]string `json:"labels,omitempty"`
+	Timestamp time.Time         `json:"timestamp"`
+	Unit      string            `json:"unit"`
+}
 
 // SecurityIntegration connects L16 DR with L3-L8 SOC monitoring
 type SecurityIntegration struct {
@@ -197,6 +204,9 @@ func (si *SecurityIntegration) DetectSplitBrain(primaryHealthy, standbyHealthy b
 // ============================================================================
 // COST INTEGRATION (L9 FinOps ↔ L16 DR)
 // ============================================================================
+
+// CostTrackingSystem tracks cross-region DR operational costs
+type CostTrackingSystem struct{}
 
 // CostIntegration connects L16 DR with FinOps cost tracking
 type CostIntegration struct {

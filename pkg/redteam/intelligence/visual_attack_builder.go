@@ -1,8 +1,10 @@
+
 package redteam
 
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -59,7 +61,7 @@ func (vab *VisualAttackPathBuilder) BuildVisualization(ctx context.Context, opti
 	return &VisualAttackData{
 		GraphData: filtered,
 		PathAnalysis: PathAnalysisResult{
-			TotalSteps: chainResult.Path.Steps.Count(),
+			TotalSteps: len(chainResult.Path.Steps),
 			TotalDuration: chainResult.EstimatedTime,
 			DetectionRisk: chainResult.DetectionRisk,
 			ExploitReliability: chainResult.ExploitReliability,
@@ -92,7 +94,7 @@ func (vab *VisualAttackPathBuilder) convertToVisualGraph(path *AttackChain, incl
 	// Add kill chain phases as base nodes
 	for _, phase := range AllKillChainPhases {
 		node := GraphNode{
-			ID:              fmt.Sprintf("phase-%s", phase),
+			ID:              fmt.Sprintf("phase-%v", phase),
 			Label:           phase.Name,
 			Type:            NodeTypeKillChainPhase,
 			Size:           15.0,
@@ -111,7 +113,7 @@ func (vab *VisualAttackPathBuilder) convertToVisualGraph(path *AttackChain, incl
 	}
 	
 	// Add CVE nodes and exploit relationships
-	for stepIndex, step := range path.Steps {
+	for _, step := range path.Steps {
 		if step.CVEID != "" {
 			cveNode := GraphNode{
 				ID:              fmt.Sprintf("cve-%s", step.CVEID),
@@ -287,7 +289,7 @@ func (vab *VisualAttackPathBuilder) layoutHierarchical(graph *VisualGraphData) {
 	// Assign layers based on kill chain phase order
 	for _, node := range graph.Nodes {
 		if node.Type == NodeTypeKillChainPhase {
-			for layer, phase := range KillChainPhases {
+			for layer, phase := range AllKillChainPhases {
 				if phase.Name == node.Label {
 					nodeLayer[node.ID] = layer
 					break
@@ -296,8 +298,8 @@ func (vab *VisualAttackPathBuilder) layoutHierarchical(graph *VisualGraphData) {
 		}
 	}
 	
-	rows := len(killChainPhases)
-	columnsPerRow := math.Ceil(float64(len(graph.Nodes)) / float64(rows))
+	rows := len(AllKillChainPhases)
+	_ = math.Ceil(float64(len(graph.Nodes)) / float64(rows))
 	rowHeight := 100.0
 	colWidth := 150.0
 	marginX := 50.0
@@ -339,7 +341,7 @@ func (vab *VisualAttackPathBuilder) layoutForceDirected(graph *VisualGraphData) 
 	}
 	
 	// Simple spring simulation iterations
-	iteratons := 50
+	iterations := 50
 	k := 0.5 // Spring constant
 	
 	for iter := 0; iter < iterations; iter++ {
@@ -461,7 +463,10 @@ func (vab *VisualAttackPathBuilder) applyFilters(graph *VisualGraphData, filters
 }
 
 // Helper functions for layout
-func distance(a, b Vector2D) float64 {
+func distance(a, b *Vector2D) float64 {
+	if a == nil || b == nil {
+		return 1
+	}
 	dx := b.X - a.X
 	dy := b.Y - a.Y
 	return math.Sqrt(dx*dx + dy*dy)
@@ -477,4 +482,24 @@ func (g *VisualGraphData) Clone() *VisualGraphData {
 	copy(clone.Nodes, g.Nodes)
 	copy(clone.Links, g.Links)
 	return clone
+}
+
+// getSeverityLabel returns a human-readable severity label for a risk score
+func getSeverityLabel(score float64) string {
+	switch {
+	case score >= 9.0:
+		return "Critical"
+	case score >= 7.0:
+		return "High"
+	case score >= 4.0:
+		return "Medium"
+	default:
+		return "Low"
+	}
+}
+
+// getTechniqueName returns the display name for a MITRE ATT&CK technique ID
+func getTechniqueName(techniqueID string) string {
+	// Simplified lookup - in production would query a full MITRE database
+	return techniqueID
 }

@@ -1,0 +1,27 @@
+.cap-tag {
+  margin-right: 4px;
+}
+
+.driver-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #f5a623;
+  background: rgba(245,166,35,0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.provider-table .ant-table-thead > tr > th {
+  background: #0b1113;
+  color: #cbd3d8;
+  font-weight: 600;
+  border-bottom: 1px solid #1f293a;
+}
+
+.provider-table .ant-table-tbody > tr:hover {
+  background: rgba(47,212,212,0.03);
+}
+
+.dashboard-stats {
+  margin-bottom: 20px;
+}

@@ -2,9 +2,8 @@
 package jira
 
 import (
-	"context"
-	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

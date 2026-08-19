@@ -1,3 +1,4 @@
+
 package redteam
 
 import (
@@ -61,7 +62,7 @@ func (h *AIChatHandler) HandleCommand(ctx context.Context, sessionID string, use
 	
 	// Step 4: Store parsed intent in metadata
 	userTurn.Metadata.Intent = string(intent)
-	userTurn.Metadata.ParsedIntentData = json.Marshal(parsedData)
+	userTurn.Metadata.ParsedIntentData, _ = json.Marshal(parsedData)
 	if err := h.memoryStore.Append(sessionID, userTurn); err != nil {
 		h.logger.Warn("Failed to update metadata - continuing anyway")
 	}
@@ -69,7 +70,7 @@ func (h *AIChatHandler) HandleCommand(ctx context.Context, sessionID string, use
 	// Step 5: Translate intent to API calls
 	apiCalls, err := h.translateToAPICalls(ctx, intent, parsedData)
 	if err != nil {
-		response := h.generateFallbackResponse(userMessage, intent, err)
+		response := h.fallbackResponse(userMessage, intent, err)
 		h.respondToUser(sessionID, response)
 		return response, nil
 	}
@@ -122,33 +123,33 @@ func (h *AIChatHandler) parseIntent(message string) (ChatIntent, map[string]inte
 			targetParts := strings.Split(message, "on ")
 			if len(targetParts) > 1 {
 				target := targetParts[1]
-				return IntentLaunchAttack, map[string]string{"target": target}, nil
+				return IntentLaunchAttack, map[string]interface{}{"target": target}, nil
 			}
 		}
 		return IntentGenericQuery, nil, fmt.Errorf("specify target for attack")
 	}
 	
 	if containsAny(message, []string{"report", "summary", "analyze"}) {
-		return IntentGenerateReport, map[string]string{"type": extractReportType(message)}, nil
+		return IntentGenerateReport, map[string]interface{}{"type": extractReportType(message)}, nil
 	}
 	
 	if containsAny(message, []string{"cve", "vulnerability", "risk", "severity"}) {
-		return IntentAnalyzeVulnerability, map[string]string{"keyword": extractKeyword(message)}, nil
+		return IntentAnalyzeVulnerability, map[string]interface{}{"keyword": extractKeyword(message)}, nil
 	}
 	
 	if containsAny(message, []string{"chain", "path", "kill chain", "attack path"}) {
-		return IntentBuildAttackPath, map[string]string{"description": message}, nil
+		return IntentBuildAttackPath, map[string]interface{}{"description": message}, nil
 	}
 	
 	if containsAny(message, []string{"automate", "self-heal", "remediate", "fix"}) {
-		return IntentTriggerAutoRemediation, map[string]string{"trigger": message}, nil
+		return IntentTriggerAutoRemediation, map[string]interface{}{"trigger": message}, nil
 	}
 	
 	if containsAny(message, []string{"chat", "help", "what can you do", "capabilities"}) {
 		return IntentCapabilitiesOverview, nil, nil
 	}
 	
-	return IntentGenericQuery, map[string]string{"raw_query": message}, nil
+	return IntentGenericQuery, map[string]interface{}{"raw_query": message}, nil
 }
 
 // translateToAPICalls converts intent into executable steps
@@ -252,7 +253,11 @@ func (h *AIChatHandler) executeSingleStep(ctx context.Context, step APIStep) (st
 // respondToUser sends a response back to the chat interface
 func (h *AIChatHandler) respondToUser(sessionID string, response *ChatResponse) {
 	// In production, this would send WebSocket/HTTP response
-	h.logger.Infof("Responding to user: %s", response.Message[:min(100, len(response.Message))]+"...")
+	msg := response.Message
+	if len(msg) > 100 {
+		msg = msg[:100]
+	}
+	h.logger.Infof("Responding to user: %s...", msg)
 }
 
 // generateResponseSummary creates human-readable output
@@ -277,17 +282,17 @@ func (h *AIChatHandler) generateResponseSummary(ctx context.Context, userMsg str
 	// Add context-specific responses
 	switch intent {
 	case IntentLaunchAttack:
-		parts = append(parts, "🚀 Attack vectors prepared and ready for execution.")
+		parts = append(parts, "???? Attack vectors prepared and ready for execution.")
 	case IntentGenerateReport:
-		parts = append(parts, "📊 Report generated with detailed vulnerability analysis.")
+		parts = append(parts, "???? Report generated with detailed vulnerability analysis.")
 	case IntentAnalyzeVulnerability:
-		parts = append(parts, "🔍 Vulnerability analysis complete with risk assessment.")
+		parts = append(parts, "???? Vulnerability analysis complete with risk assessment.")
 	case IntentBuildAttackPath:
-		parts = append(parts, "⚡ Attack path constructed with multiple exploitation vectors.")
+		parts = append(parts, "???Attack path constructed with multiple exploitation vectors.")
 	case IntentTriggerAutoRemediation:
-		parts = append(parts, "🛠️ Auto-remediation initiated for detected security incidents.")
+		parts = append(parts, "???????Auto-remediation initiated for detected security incidents.")
 	default:
-		parts = append(parts, "✅ Request processed successfully.")
+		parts = append(parts, "???Request processed successfully.")
 	}
 	
 	responseText := strings.Join(parts, "\n\n")

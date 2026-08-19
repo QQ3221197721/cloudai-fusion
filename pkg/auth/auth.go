@@ -126,6 +126,24 @@ var rolePermissions = map[Role][]Permission{
 	},
 }
 
+// rolePermissionIndex is a precomputed set view of rolePermissions that enables
+// O(1), zero-allocation permission checks on the RBAC hot path. It is built once
+// at package initialization; rolePermissions above remains the source of truth.
+var rolePermissionIndex = buildRolePermissionIndex()
+
+// buildRolePermissionIndex materializes rolePermissions into per-role sets.
+func buildRolePermissionIndex() map[Role]map[Permission]struct{} {
+	idx := make(map[Role]map[Permission]struct{}, len(rolePermissions))
+	for role, perms := range rolePermissions {
+		set := make(map[Permission]struct{}, len(perms))
+		for _, p := range perms {
+			set[p] = struct{}{}
+		}
+		idx[role] = set
+	}
+	return idx
+}
+
 // User represents an authenticated user
 type User struct {
 	ID          string    `json:"id"`
@@ -362,18 +380,16 @@ func (s *Service) ValidateToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-// HasPermission checks if a role has a specific permission
+// HasPermission checks if a role has a specific permission.
+// Backed by a precomputed index for O(1), zero-allocation lookups; behavior is
+// identical to a linear scan of rolePermissions.
 func HasPermission(role Role, perm Permission) bool {
-	perms, ok := rolePermissions[role]
+	perms, ok := rolePermissionIndex[role]
 	if !ok {
 		return false
 	}
-	for _, p := range perms {
-		if p == perm {
-			return true
-		}
-	}
-	return false
+	_, ok = perms[perm]
+	return ok
 }
 
 // ============================================================================

@@ -1,3 +1,4 @@
+
 // Package redteam - Self-evolving attack graph engine (Patent #13)
 // ORIGINAL ALGORITHM: Machine learning-driven attack path discovery and evolution
 // This is NOT Neo4j integration - it's a COMPLETELY ORIGINAL algorithm!
@@ -6,8 +7,8 @@ package redteam
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/binary"
 	"fmt"
+	"math"
 	"math/rand"
 	"sync"
 	"time"
@@ -143,7 +144,7 @@ func NewSelfEvolvingGraph(ctx context.Context, logger *logrus.Logger) (*SelfEvol
 		edges: make(map[string][]string),
 		evolutionState: &EvolutionState{
 			CurrentGeneration: 0,
-			 genesisBlock: GenerateGenesisBlock(),
+			GenesisBlock: GenerateGenesisBlock(),
 			EvolutionCycleMS: 0,
 		},
 		mlModel:       evolutionModel,
@@ -241,8 +242,7 @@ func (g *SelfEvolvingGraph) evolveGraph(ctx context.Context) *EvolutionResult {
 	
 	selectedNodes := g.selectFittestNodes(0.7) // Select top 70%
 	crossedPaths := g.performCrossover(selectedNodes)
-	mutatedPaths := g.applyMutation(crossedPaths, generationNum)
-	evaluatedResults := g.evaluateMutations(mutatedPaths)
+	evaluatedResults := g.applyMutation(crossedPaths, generationNum)
 	
 	// Update graph with successful mutations
 	for _, result := range evaluatedResults {
@@ -289,11 +289,6 @@ func (g *SelfEvolvingGraph) selectFittestNodes(selectionRatio float64) []*Attack
 	nodes := make([]*AttackNode, 0, len(g.nodes))
 	
 	// Calculate fitness scores for all nodes
-	type scoredNode struct {
-		node    *AttackNode
-		fitness float64
-	}
-	
 	scored := make([]scoredNode, 0)
 	for _, node := range g.nodes {
 		fitness := g.calculateFitness(node)
@@ -324,8 +319,8 @@ func (g *SelfEvolvingGraph) performCrossover(parentNodes []*AttackNode) []*Explo
 		// Perform crossover on exploit paths
 		for _, pathA := range parentA.Exploits {
 			for _, pathB := range parentB.Exploits {
-				if shouldCrossover(pathA, pathB) {
-					childPath := crossoverPaths(pathA, pathB)
+			if shouldCrossover(&pathA, &pathB) {
+					childPath := crossoverPaths(&pathA, &pathB)
 					crossedPaths = append(crossedPaths, childPath)
 				}
 			}
@@ -379,15 +374,15 @@ func (g *SelfEvolvingGraph) calculateFitness(node *AttackNode) float64 {
 	weightedSum := 0.0
 	
 	// Apply dynamic weights based on graph evolution state
-	baseScore := g.scoreWeights.CVSSWeight*node.Metrics.CVSSBase +
-		g.scoreWeights.CostWeight*(1.0/(1.0+node.Metrics.ExploitCost)) +
-		g.scoreWeights.RelevanceWeight*node.Metrics.Relevance +
-		g.scoreWeights.CriticalityWeight*node.Metrics.Criticality +
-		g.scoreWeights.ComplexityWeight*(1.0/node.Metrics.Complexity)
+	baseScore := g.scoringWeight.CVSSWeight*node.Metrics.CVSSBase +
+		g.scoringWeight.CostWeight*(1.0/(1.0+node.Metrics.ExploitCost)) +
+		g.scoringWeight.RelevanceWeight*node.Metrics.Relevance +
+		g.scoringWeight.CriticalityWeight*node.Metrics.Criticality +
+		g.scoringWeight.ComplexityWeight*(1.0/node.Metrics.Complexity)
 	
 	// Apply temporal decay factor (patented time-decay)
 	timeAge := time.Since(node.LastUpdated).Hours()
-	temporalFactor := 1.0 / (1.0 + g.scoreWeights.TimeDecayWeight*timeAge)
+	temporalFactor := 1.0 / (1.0 + g.scoringWeight.TimeDecayWeight*timeAge)
 	
 	weightedSum = baseScore * temporalFactor
 	
@@ -445,7 +440,7 @@ func (g *SelfEvolvingGraph) pruneWeakPath(sourceID, targetID string) {
 func (g *SelfEvolvingGraph) evaluatePath(path *ExploitPath) float64 {
 	// Complex evaluation using multiple factors
 	sum := 0.0
-	sum += path.SuccessProbability * 0.4
+	sum += path.SuccessProb * 0.4
 	sum += (1.0/path.CostUSD) * 0.3
 	sum += float64(10-path.EffortLevel)/10.0 * 0.3
 	return sum
@@ -483,6 +478,12 @@ type EvaluatedPath struct {
 	Path               *ExploitPath `json:"path"`
 	SuccessProbability float64 `json:"success_probability"`
 	Success            bool    `json:"success"`
+}
+
+// scoredNode holds a node and its calculated fitness
+type scoredNode struct {
+	node    *AttackNode
+	fitness float64
 }
 
 // Helper functions (would be imported from utils package)

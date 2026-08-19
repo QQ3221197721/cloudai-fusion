@@ -1,0 +1,8 @@
+﻿go : go: downloading golang.org/x/perf v0.0.0-20260813145340-fd4a688df892
+所在位置 行:1 字符: 58
++ ... ai-fusion"; go install golang.org/x/perf/cmd/benchstat@latest 2>&1 |  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (go: downloading...40-fd4a688df892:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+go: downloading github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794

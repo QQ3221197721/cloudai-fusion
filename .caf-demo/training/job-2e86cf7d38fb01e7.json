@@ -1,0 +1,45 @@
+{
+  "id": "job-2e86cf7d38fb01e7",
+  "name": "demo-pipeline-train",
+  "image": "pytorch:2.0",
+  "gpu_count": 1,
+  "memory_gb": 8,
+  "dataset_ref": "ds-pipeline",
+  "command": "python train.py",
+  "status": "succeeded",
+  "events": [
+    {
+      "timestamp": "2026-08-16T13:51:09.349142Z",
+      "from": "",
+      "to": "queued",
+      "reason": "submitted"
+    },
+    {
+      "timestamp": "2026-08-16T13:51:09.3507071Z",
+      "from": "queued",
+      "to": "scheduled",
+      "reason": "resources allocated"
+    },
+    {
+      "timestamp": "2026-08-16T13:51:09.3527116Z",
+      "from": "scheduled",
+      "to": "running",
+      "reason": "execution started"
+    },
+    {
+      "timestamp": "2026-08-16T13:51:09.3537613Z",
+      "from": "running",
+      "to": "succeeded",
+      "reason": "completed (pipeline orchestrated training)"
+    }
+  ],
+  "created_at": "2026-08-16T13:51:09.349142Z",
+  "scheduled_at": "2026-08-16T13:51:09.3507071Z",
+  "started_at": "2026-08-16T13:51:09.3527116Z",
+  "completed_at": "2026-08-16T13:51:09.3537613Z",
+  "actor": "cafctl-pipeline",
+  "hyperparams": {
+    "batch": "32",
+    "epochs": "50"
+  }
+}

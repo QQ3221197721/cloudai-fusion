@@ -1,0 +1,27 @@
+title: Shadow File Read by Interactive Utility
+id: 5c8e2a91-4d63-4b7f-8a92-1e7c3b5d9f04
+status: stable
+description: Detects reading or copying of /etc/shadow or /etc/gshadow by a standard file utility, indicating offline password-hash theft on Linux hosts.
+level: critical
+tags:
+  - attack.credential_access
+  - attack.t1003.008
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_util:
+    Image|endswith:
+      - '/cat'
+      - '/head'
+      - '/tail'
+      - '/less'
+      - '/more'
+      - '/cp'
+      - '/base64'
+      - '/xxd'
+  selection_target:
+    CommandLine|contains:
+      - '/etc/shadow'
+      - '/etc/gshadow'
+  condition: selection_util and selection_target

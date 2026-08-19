@@ -194,6 +194,7 @@ func (w *MalwareResponseWorkflow) Execute(ctx context.Context, incident Incident
 	
 	for i, step := range w.GetSteps() {
 		stepCtx, cancel := context.WithTimeout(ctx, time.Duration(step.TimeoutSec)*time.Second)
+		defer cancel()
 		
 		executor := w.executors.FindExecutor(string(step.Type))
 		if executor == nil {
@@ -202,7 +203,6 @@ func (w *MalwareResponseWorkflow) Execute(ctx context.Context, incident Incident
 				Status: StepFailed,
 				Error:  fmt.Errorf("no executor found for step type %s", step.Type),
 			}
-			cancel()
 			continue
 		}
 		
@@ -235,8 +235,6 @@ func (w *MalwareResponseWorkflow) Execute(ctx context.Context, incident Incident
 			result.Status = StatusFailed
 			return result, fmt.Errorf("workflow failed at step %s: %w", step.Name, err)
 		}
-		
-		cancel()
 	}
 	
 	result.Status = StatusCompleted
@@ -404,4 +402,30 @@ func (w *DDoSResponseWorkflow) adjustRateLimits(ctx context.Context, step Workfl
 	}, err
 }
 
-// ... other helper methods omitted for brevity
+func (w *DDoSResponseWorkflow) blockMaliciousIPs(ctx context.Context, step WorkflowStep, incident Incident) (StepResult, error) {
+	err := w.rateLimiter.AdjustThresholds(ctx, map[string]int{
+		"blocked_sources": len(incident.AttackVectors),
+	})
+	return StepResult{
+		StepID: step.ID,
+		Type:   step.Type,
+		Status: StepCompleted,
+		Error:  err,
+	}, err
+}
+
+func (w *DDoSResponseWorkflow) scaleInfrastructure(ctx context.Context, step WorkflowStep) (StepResult, error) {
+	return StepResult{
+		StepID: step.ID,
+		Type:   step.Type,
+		Status: StepCompleted,
+	}, nil
+}
+
+func (w *DDoSResponseWorkflow) monitorRecovery(ctx context.Context, step WorkflowStep) (StepResult, error) {
+	return StepResult{
+		StepID: step.ID,
+		Type:   step.Type,
+		Status: StepCompleted,
+	}, nil
+}

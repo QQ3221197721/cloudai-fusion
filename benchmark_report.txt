@@ -1,0 +1,1 @@
+﻿ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/wasm	0.618s

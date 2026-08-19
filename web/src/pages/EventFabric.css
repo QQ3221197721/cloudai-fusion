@@ -1,0 +1,32 @@
+.metric-cards {
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  background: #0b1113;
+  border: 1px solid #1f293a;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.metric-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #9aa5b1;
+  margin-bottom: 8px;
+}
+
+.sig-overhead-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  color: #cbd3d8;
+  margin: 12px 0;
+}
+
+.sig-overhead-note {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  color: #647079;
+  margin-top: 8px;
+}

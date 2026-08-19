@@ -1,0 +1,22 @@
+title: Scheduled Task Created with SYSTEM or Highest Privileges
+id: 9e2f6c14-3b58-4d72-a9e6-8c1b7d0f2a45
+status: stable
+description: Detects creation of a scheduled task that runs as SYSTEM or with the highest available privileges — a standard privilege-escalation and persistence primitive.
+level: high
+tags:
+  - attack.privilege_escalation
+  - attack.t1053.005
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith: '\schtasks.exe'
+  selection_create:
+    CommandLine|contains: '/create'
+  selection_elevated:
+    CommandLine|contains:
+      - '/ru system'
+      - '/ru "nt authority\system"'
+      - '/rl highest'
+  condition: selection_img and selection_create and selection_elevated

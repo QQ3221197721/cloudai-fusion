@@ -1,0 +1,2 @@
+{"model_version":"demo:1.0.0","timestamp":"2026-08-16T12:39:06.7977883Z","latency_p50_ms":40,"latency_p95_ms":120,"latency_p99_ms":200,"throughput_qps":850,"accuracy":0.9,"error_rate":0.002,"sample_count":0}
+{"model_version":"demo:1.0.0","timestamp":"2026-08-16T12:39:06.9379196Z","latency_p50_ms":80,"latency_p95_ms":240,"latency_p99_ms":400,"throughput_qps":400,"accuracy":0.83,"error_rate":0.02,"sample_count":0}

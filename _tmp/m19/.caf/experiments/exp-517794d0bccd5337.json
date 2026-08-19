@@ -1,0 +1,23 @@
+{
+  "id": "exp-517794d0bccd5337",
+  "name": "exp-a",
+  "hyperparams": {
+    "batch": "32",
+    "epochs": "50",
+    "lr": "0.001"
+  },
+  "metrics": {
+    "accuracy": 0.9
+  },
+  "metric_history": [
+    {
+      "name": "accuracy",
+      "value": 0.9,
+      "at": "2026-08-16T13:00:55.437853Z"
+    }
+  ],
+  "status": "completed",
+  "model_version_ref": "resnet50:1.0.0",
+  "created_at": "2026-08-16T13:00:17.4595241Z",
+  "completed_at": "2026-08-16T13:00:55.5218137Z"
+}

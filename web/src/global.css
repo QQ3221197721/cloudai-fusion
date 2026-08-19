@@ -1,0 +1,47 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #ffffff;
+  background: #080c0e;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 60px);
+}
+
+.main-content {
+  flex: 1;
+  overflow-x: auto;
+  background: linear-gradient(to bottom, #0a0e0f, #0b1113);
+}
+
+.ant-modal-content {
+  background: #f6f9fa !important;
+  color: #0b1113 !important;
+}
+
+/* Ant Design overrides */
+.ant-table-tbody tr:hover:not(.ant-table-expanded-row):not(.row-simulated) {
+  background: rgba(47,212,212,0.04) !important;
+}
+
+.ant-tag {
+  font-weight: 600;
+}
+
+.ant-progress-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}

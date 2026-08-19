@@ -60,7 +60,7 @@ type ResourcePrice struct {
 // TieredPrice describes tiered pricing (volume discount)
 type TieredPrice struct {
 	ResourceType string `json:"resource_type"`
-	 tiers []PriceTier `json:"tiers"`
+	Tiers []PriceTier `json:"tiers"`
 }
 
 // PriceTier describes a single pricing tier
@@ -190,7 +190,7 @@ func (bm *BillingManager) createDefaultPricing() *PricingModel {
 		TieredPrices: []*TieredPrice{
 			{
 				ResourceType: "storage",
-				tiers: []PriceTier{
+				Tiers: []PriceTier{
 					{MinQuantity: 0, MaxQuantity: 100, PricePerUnit: 0.1, DiscountPercent: 0},
 					{MinQuantity: 100, MaxQuantity: 500, PricePerUnit: 0.09, DiscountPercent: 10},
 					{MinQuantity: 500, MaxQuantity: 1000, PricePerUnit: 0.08, DiscountPercent: 20},
@@ -252,7 +252,7 @@ func (bm *BillingManager) applyTieredPricing(tiered *TieredPrice, quantity int64
 	var totalCharge float64
 	remainingQuantity := quantity
 	
-	for _, tier := range tiered.tiers {
+	for _, tier := range tiered.Tiers {
 		if remainingQuantity <= 0 {
 			break
 		}
@@ -260,12 +260,12 @@ func (bm *BillingManager) applyTieredPricing(tiered *TieredPrice, quantity int64
 		if tier.MaxQuantity > 0 && quantity > tier.MaxQuantity {
 			// Use this tier for max allowed
 			payableInTier := min(remainingQuantity, tier.MaxQuantity-tier.MinQuantity)
-			totalCharge += payableInTier * tier.PricePerUnit
+			totalCharge += float64(payableInTier) * tier.PricePerUnit
 			remainingQuantity -= payableInTier
 		} else if tier.MaxQuantity == 0 || quantity >= tier.MinQuantity {
 			// Apply this tier
 			payableInTier := remainingQuantity
-			totalCharge += payableInTier * tier.PricePerUnit
+			totalCharge += float64(payableInTier) * tier.PricePerUnit
 			remainingQuantity = 0
 		}
 	}
@@ -356,12 +356,7 @@ func (bm *BillingManager) CalculateWithDiscount(subtotal float64, discount *Disc
 // HELPER FUNCTIONS
 // ============================================================================
 
-func min(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
-}
+
 
 // ============================================================================
 // METRICS TRACKING

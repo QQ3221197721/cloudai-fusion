@@ -285,7 +285,7 @@ func (e *SelfHealingEngine) DetectFaults(ctx context.Context, metrics map[string
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	var faults []*FaultEvent
+	faults := make([]*FaultEvent, 0, len(e.detectors))
 
 	for _, detector := range e.detectors {
 		if !detector.Enabled {
@@ -359,7 +359,7 @@ func (e *SelfHealingEngine) CreateIncident(faults []*FaultEvent) *Incident {
 	}
 
 	eventIDs := make([]string, len(faults))
-	resources := make([]string, 0)
+	resources := make([]string, 0, len(faults))
 	for i, f := range faults {
 		eventIDs[i] = f.ID
 		e.faultEvents[f.ID] = f

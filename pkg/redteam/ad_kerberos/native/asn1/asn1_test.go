@@ -67,7 +67,7 @@ func TestDecodeInteger_Positive(t *testing.T) {
 	}{
 		{[]byte{0x00}, 0},
 		{[]byte{0x01}, 1},
-		{[]byte{0xFF}, 255},
+		{[]byte{0xFF}, -1}, // DER two's-complement: single 0xFF byte is -1, not 255
 		{[]byte{0x01, 0x00}, 256},
 	}
 	
@@ -89,8 +89,8 @@ func TestDecodeInteger_Negative(t *testing.T) {
 }
 
 func TestEncodeUTCTime_Valid(t *testing.T) {
-	t := time.Date(2026, 8, 5, 14, 30, 45, 0, time.UTC)
-	result := EncodeUTCTime(t)
+	tm := time.Date(2026, 8, 5, 14, 30, 45, 0, time.UTC)
+	result := EncodeUTCTime(tm)
 	
 	// Should be exactly 13 bytes: YYMMDDHHMMSSZ
 	assert.Len(t, result, 13)
@@ -127,7 +127,7 @@ func TestEncodeOID_Simple(t *testing.T) {
 	result := EncodeOID(oid)
 	
 	assert.NotEmpty(t, result)
-	assert.Len(t, result, 5) // Minimum length for this OID
+	assert.Len(t, result, 6) // 2A 86 48 86 F7 0D (DER encoding of 1.2.840.113549)
 }
 
 func TestEncodeOID_Complex(t *testing.T) {
@@ -151,14 +151,14 @@ func TestDecodeBitString(t *testing.T) {
 
 func TestDecodeBitString_WithUnused(t *testing.T) {
 	input := []byte{0x03, 0xFF} // 3 unused bits
-	// After unmasking: 0b11100000 & 0xFF = 0xE0
+	// After masking the 3 low padding bits: 0xFF & 0xF8 = 0xF8
 	
 	result, err := DecodeBitString(input)
 	
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
-	// Check that unused bits are removed
-	assert.Equal(t, byte(0xE0&0b00111111), result[0])
+	// Check that the 3 unused (low) bits are cleared
+	assert.Equal(t, byte(0xF8), result[0])
 }
 
 func TestEncodePrintableString_Valid(t *testing.T) {

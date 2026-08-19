@@ -55,6 +55,7 @@ const (
 // ============================================================================
 
 // NewVersionVector creates optimized version vector
+// If logger is nil, no logging will be performed
 func NewVersionVector(nodeIDs []string, logger *logrus.Logger) *VersionVector {
 	vv := &VersionVector{
 		nodeIDs:       nodeIDs,
@@ -189,7 +190,7 @@ func (vv *VersionVector) Merge(other *VersionVector) error {
 	// This preserves causality information WITHOUT creating artificial merges!
 	mergedCount := 0
 	
-	for i, nodeID := range vv.nodeIDs {
+	for _, nodeID := range vv.nodeIDs {
 		currentCount := vv.vectors[nodeID]
 		otherCount := other.vectors[nodeID]
 		
@@ -285,7 +286,7 @@ func (vv *VersionVector) Compare(other *VersionVector) CompareResult {
 	hasGreater := false
 	
 	// Check each component
-	for i, nodeID := range vv.nodeIDs {
+	for _, nodeID := range vv.nodeIDs {
 		count := vv.vectors[nodeID]
 		otherCount := other.vectors[nodeID]
 		
@@ -514,12 +515,42 @@ func (vv *VersionVector) SerializeCompact() ([]byte, error) {
 
 // Helper Functions
 
+// NewVersionVectorWrapper creates version vector without logger - legacy API compatibility
+func NewVersionVectorWrapper(nodeIDs []string) *VersionVector {
+	return NewVersionVector(nodeIDs, nil)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// Update increments a node's counter and returns merged vectors
+func (vv *VersionVector) Update(nodeID string) []int {
+	vv.mu.Lock()
+	defer vv.mu.Unlock()
+	
+	// Increment if exists
+	if _, ok := vv.vectors[nodeID]; ok {
+		vv.vectors[nodeID]++
+	}
+	
+	// Return copy of current state
+	result := make([]int, len(vv.nodeIDs))
+	for i, id := range vv.nodeIDs {
+		result[i] = vv.vectors[id]
+	}
+	return result
+}
+
 func sortByPriorityAndTimestamp(lus []lazyUpdate) {
 	// Custom sort: higher priority first, then earlier timestamp
 	for i := 0; i < len(lus)-1; i++ {
 		for j := 0; j < len(lus)-i-1; j++ {
 			swap := false
-			
+
 			if lus[j].priority < lus[j+1].priority {
 				swap = true
 			} else if lus[j].priority == lus[j+1].priority {
@@ -528,17 +559,10 @@ func sortByPriorityAndTimestamp(lus []lazyUpdate) {
 					swap = true
 				}
 			}
-			
+
 			if swap {
 				lus[j], lus[j+1] = lus[j+1], lus[j]
 			}
 		}
 	}
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

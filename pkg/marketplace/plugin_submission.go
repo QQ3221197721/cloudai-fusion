@@ -233,7 +233,7 @@ func (m *PluginSubmissionManager) processSubmission(ctx context.Context, submiss
 
 // performSecurityScan runs security checks on uploaded plugin
 func (m *PluginSubmissionManager) performSecurityScan(submission *PluginSubmission) error {
-	submission.SecurityCheck = SecurityCheck{
+	submission.SecurityScan = SecurityCheck{
 		CheckedAt: time.Now(),
 	}
 	
@@ -246,8 +246,8 @@ func (m *PluginSubmissionManager) performSecurityScan(submission *PluginSubmissi
 	
 	// Run security scan (would use Trivy/Grype in production)
 	vulnCount := m.scanArtifactForVulnerabilities(submission.DockerImage)
-	submission.SecurityCheck.Vulnerabilities = vulnCount
-	submission.SecurityCheck.IsSecure = vulnCount == 0
+	submission.SecurityScan.Vulnerabilities = vulnCount
+	submission.SecurityScan.IsSecure = vulnCount == 0
 	
 	m.logger.WithFields(logrus.Fields{
 		"id": submission.ID,

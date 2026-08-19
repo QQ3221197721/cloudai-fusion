@@ -142,21 +142,24 @@ type WAFRule struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	Target      string `json:"target"`   // path, query, header, body, user-agent
-	Pattern     string `json:"pattern"`  // regex
+	Pattern     string `json:"pattern"`  // regex or literal
 	Action      string `json:"action"`   // block, log, challenge
 	Severity    string `json:"severity"` // critical, high, medium, low
 	Enabled     bool   `json:"enabled"`
 	compiled    *regexp.Regexp
 }
 
-// WAFEngine inspects requests against security rules.
+// WAFEngine inspects requests against security rules using Aho-Corasick + hybrid matching.
 type WAFEngine struct {
-	rules  []*WAFRule
-	logger *logrus.Logger
-	mu     sync.RWMutex
+	rules           []*WAFRule
+	logger          *logrus.Logger
+	mu              sync.RWMutex
+	ac              *AhoCorasick // Aho-Corasick for default literal patterns
+	lastBestLogMatch ACMatch      // temporary store for log-level AC match
+	lastMatchText   string       // text used for AC search
 }
 
-// NewWAFEngine creates a WAF engine with default rules.
+// NewWAFEngine creates a WAF engine with default rules and builds AC automaton.
 func NewWAFEngine(logger *logrus.Logger) *WAFEngine {
 	if logger == nil {
 		logger = logrus.StandardLogger()
@@ -164,8 +167,10 @@ func NewWAFEngine(logger *logrus.Logger) *WAFEngine {
 	engine := &WAFEngine{
 		rules:  DefaultWAFRules(),
 		logger: logger,
+		ac:     NewAhoCorasick(),
 	}
 	engine.compileRules()
+	engine.buildACAutomaton()
 	return engine
 }
 
@@ -180,43 +185,146 @@ func (w *WAFEngine) compileRules() {
 	}
 }
 
-// Inspect checks a request against WAF rules.
+// buildACAutomaton builds the Aho-Corasick automaton from default attack patterns.
+// This replaces the linear-scan regex loop with O(N+M+Z) matching for builtin rules.
+func (w *WAFEngine) buildACAutomaton() {
+	if w.ac == nil {
+		w.ac = NewAhoCorasick()
+	}
+	// Add all OWASP-inspired literal attack patterns
+	patterns := DefaultWAFPatterns()
+	w.ac.AddPatterns(patterns)
+	w.ac.Build()
+}
+
+// Inspect checks a request against WAF rules using hybrid AC + regex scanning.
 func (w *WAFEngine) Inspect(c *gin.Context) *WAFViolation {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
+	// Step 1: Use Aho-Corasick for fast multi-pattern detection of known attack signatures
+	if w.ac != nil && w.ac.IsBuilt() {
+		// Collect inspection text from all relevant targets
+		var target strings.Builder
+		switch c.Request.URL.Path {
+		case "path":
+			target.WriteString(c.Request.URL.Path)
+		default:
+			target.WriteString(c.Request.URL.Path)
+		}
+		if c.Request.URL.RawQuery != "" {
+			target.WriteRune('?')
+			target.WriteString(c.Request.URL.RawQuery)
+		}
+		target.WriteString(" ")
+		target.WriteString(c.Request.UserAgent())
+		for key, vals := range c.Request.Header {
+			target.WriteString(key)
+			for _, v := range vals {
+				target.WriteRune(':')
+				target.WriteString(v)
+				target.WriteRune(';')
+			}
+		}
+
+		// Search using lowercase AC automaton (case-insensitive)
+		text := NormalizeToLower(target.String())
+		matches := w.ac.Search(text)
+		bestMatch := (*ACMatch)(nil)
+
+		if len(matches) > 0 {
+			// Return critical/high severity matches immediately
+			for _, m := range matches {
+				if m.Pattern.Security == "critical" || m.Pattern.Security == "high" {
+					return &WAFViolation{
+						RuleID:   m.Pattern.ID,
+						RuleName: fmt.Sprintf("%s (%s)", m.Pattern.Category, m.Pattern.ID),
+						Action:   "block",
+						Severity: m.Pattern.Security,
+						Matched:  text[m.From:maxInt(m.To, m.From+1)],
+					}
+				}
+				if bestMatch == nil || severityScore(m.Pattern.Security) > severityScore(bestMatch.Pattern.Security) {
+					bestMatch = &m
+				}
+			}
+		}
+
+		// No critical/high found; store best log-level match for later
+		if bestMatch != nil {
+			w.lastBestLogMatch = *bestMatch
+			w.lastMatchText = text
+		}
+	}
+
+	// Step 2: Check for block-level regex rules FIRST (they override AC log-level matches)
 	for _, rule := range w.rules {
 		if !rule.Enabled || rule.compiled == nil {
 			continue
 		}
-
-		var target string
-		switch rule.Target {
-		case "path":
-			target = c.Request.URL.Path
-		case "query":
-			target = c.Request.URL.RawQuery
-		case "user-agent":
-			target = c.Request.UserAgent()
-		case "header":
-			for _, vals := range c.Request.Header {
-				target += strings.Join(vals, " ")
+		if rule.Action == "block" {
+			var target string
+			switch rule.Target {
+			case "path":
+				target = c.Request.URL.Path
+			case "query":
+				target = c.Request.URL.RawQuery
+			case "user-agent":
+				target = c.Request.UserAgent()
+			case "header":
+				for _, vals := range c.Request.Header {
+					target += strings.Join(vals, " ")
+				}
+			default:
+				continue
 			}
-		default:
-			continue
-		}
 
-		if rule.compiled.MatchString(target) {
-			return &WAFViolation{
-				RuleID:   rule.ID,
-				RuleName: rule.Name,
-				Action:   rule.Action,
-				Severity: rule.Severity,
-				Matched:  target,
+			if rule.compiled.MatchString(target) {
+				return &WAFViolation{
+					RuleID:   rule.ID,
+					RuleName: rule.Name,
+					Action:   rule.Action,
+					Severity: rule.Severity,
+					Matched:  target,
+				}
 			}
 		}
 	}
+
+	// Step 3: Fall back to AC log-level match if no block-level regex matched
+	if w.lastBestLogMatch.Pattern.ID != "" {
+		return &WAFViolation{
+			RuleID:   w.lastBestLogMatch.Pattern.ID,
+			RuleName: fmt.Sprintf("%s (%s)", w.lastBestLogMatch.Pattern.Category, w.lastBestLogMatch.Pattern.ID),
+			Action:   "log",
+			Severity: w.lastBestLogMatch.Pattern.Security,
+			Matched:  w.lastMatchText[w.lastBestLogMatch.From:maxInt(w.lastBestLogMatch.To, w.lastBestLogMatch.From+1)],
+		}
+	}
 	return nil
+}
+
+// severityScore maps severity level to numeric score for comparison.
+func severityScore(severity string) int {
+	switch severity {
+	case "critical":
+		return 4
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
+	}
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 // AddRule adds a custom WAF rule.

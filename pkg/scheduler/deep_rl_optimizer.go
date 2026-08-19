@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -138,7 +139,7 @@ func NewDeepRLOptimizer(ctx context.Context, logger *logrus.Logger) (*DeepRLOpti
 	
 	optimizer := &DeepRLOptimizer{
 		logger:               logger,
-	.learningRate:        0.001,
+		learningRate:         0.001,
 	 gamma:                0.99,
 	 epsilonStart:         1.0,
 	 epsilonEnd:           0.01,
@@ -294,7 +295,7 @@ func (o *DeepRLOptimizer) encodeState(state State) []float64 {
 	features = append(features, state.CurrentLoad, state.AvgWaitTime, state.EnergyEfficiency, state.CostFactor)
 	
 	// Add contextual features
-	features = append(features, state.TimeOfDay, state.DayOfWeek, math.BoolToFloat64(state.BusinessHour))
+	features = append(features, state.TimeOfDay, state.DayOfWeek, mathBoolToFloat64(state.BusinessHour))
 	
 	// Pad to fixed size if necessary
 	for len(features) < o.qNetwork.inputDim {
@@ -318,30 +319,35 @@ func NewExperiencePool(maxSize int) *ExperiencePool {
 		maxSize:    maxSize,
 		position:   0,
 		priorities: make([]float64, 0, maxSize),
-		sumTree:    NewSumTree(),
+		sumTree:    NewSumTree(maxSize),
 	}
 }
 
 // Store adds transition to pool with priority
 func (ep *ExperiencePool) Store(trans *Transition) {
-	// Add to buffer
-	maxIdx := len(ep.buffer)
-	if maxIdx < ep.maxSize {
+	// Determine the slot to write: append while growing, otherwise overwrite the
+	// oldest slot at ep.position. The sum tree MUST be updated at that same slot
+	// so the leaf index always stays in [0, maxSize) (previously it reused the
+	// grown length even when full, walking past the tree bounds).
+	var writeIdx int
+	if len(ep.buffer) < ep.maxSize {
+		writeIdx = len(ep.buffer)
 		ep.buffer = append(ep.buffer, trans)
 	} else {
-		ep.buffer[ep.position] = trans
+		writeIdx = ep.position
+		ep.buffer[writeIdx] = trans
 	}
 	ep.position = (ep.position + 1) % ep.maxSize
 	
-	// Add to sum tree
-	ep.sumTree.update(maxIdx, trans.Priority)
+	// Add to sum tree at the actual write slot
+	ep.sumTree.update(writeIdx, trans.Priority)
 	
 	// Update priority sum
 	ep.prioritySum += trans.Priority
 }
 
 // Sample samples batch uniformly weighted by priority
-func (ep *ExperiencePool) Sample batchSize int) []*Transition {
+func (ep *ExperiencePool) Sample(batchSize int) []*Transition {
 	batch := make([]*Transition, 0, batchSize)
 	
 	for i := 0; i < batchSize; i++ {
@@ -368,14 +374,20 @@ type SumTree struct {
 	leavesOffset int
 }
 
-func NewSumTree() *SumTree {
-	size := 256
-	tree := make([]float64, size*2)
-	
+func NewSumTree(capacity int) *SumTree {
+	// leafCount = smallest power of two >= capacity so leaves occupy
+	// [leafCount, 2*leafCount) and the running-sum root lives at tree[1].
+	// (The previous version hard-coded 256 leaves for a 100k buffer and used
+	// an inconsistent root index, which caused out-of-range writes and an
+	// infinite loop in findLeaf.)
+	leafCount := 1
+	for leafCount < capacity {
+		leafCount <<= 1
+	}
 	return &SumTree{
-		tree:         tree,
-		size:         size,
-		leavesOffset: size - 1,
+		tree:         make([]float64, 2*leafCount),
+		size:         leafCount,
+		leavesOffset: leafCount,
 	}
 }
 
@@ -392,14 +404,17 @@ func (st *SumTree) update(idx int, priority float64) {
 }
 
 func (st *SumTree) getRandomValue() float64 {
-	return math.random() * st.tree[0]
+	// Root total lives at tree[1] (update propagates up to index 1, not 0).
+	return rand.Float64() * st.tree[1]
 }
 
 func (st *SumTree) findLeaf(target float64) int {
-	pos := 0
+	// Start at the real root (index 1). Starting at 0 made leftChild = 2*0 = 0,
+	// so the walk never descended and spun forever.
+	pos := 1
 	
 	for pos < st.leavesOffset {
-		leftChild := 2*pos
+		leftChild := 2 * pos
 		rightChild := leftChild + 1
 		
 		if target <= st.tree[leftChild] {
@@ -470,4 +485,242 @@ func mathBoolToFloat64(b bool) float64 {
 		return 1.0
 	}
 	return 0.0
+}
+
+// OptimizationGoal enumerates the scheduling objective the RL agent optimizes for.
+type OptimizationGoal string
+
+const (
+	GoalThroughput      OptimizationGoal = "throughput"
+	GoalLatency         OptimizationGoal = "latency"
+	GoalCost            OptimizationGoal = "cost"
+	GoalEnergyEfficient OptimizationGoal = "energy_efficient"
+)
+
+// Copy returns a deep copy of the neural network (used to build the target network).
+func (n *NeuralNetwork) Copy() *NeuralNetwork {
+	cp := &NeuralNetwork{
+		inputDim:       n.inputDim,
+		outputDim:      n.outputDim,
+		activation:     n.activation,
+		regularization: n.regularization,
+	}
+	cp.hiddenLayers = append([]int(nil), n.hiddenLayers...)
+	cp.weights = make([][]float64, len(n.weights))
+	for i, w := range n.weights {
+		cp.weights[i] = append([]float64(nil), w...)
+	}
+	cp.biases = make([][]float64, len(n.biases))
+	for i, b := range n.biases {
+		cp.biases[i] = append([]float64(nil), b...)
+	}
+	return cp
+}
+
+// InitializeWeights performs He-style random initialization of the network parameters.
+func (n *NeuralNetwork) InitializeWeights() {
+	dims := append([]int{n.inputDim}, n.hiddenLayers...)
+	dims = append(dims, n.outputDim)
+	n.weights = make([][]float64, 0, len(dims)-1)
+	n.biases = make([][]float64, 0, len(dims)-1)
+	for i := 0; i < len(dims)-1; i++ {
+		size := dims[i] * dims[i+1]
+		scale := math.Sqrt(2.0 / float64(dims[i]))
+		layer := make([]float64, size)
+		for j := range layer {
+			layer[j] = (rand.Float64()*2 - 1) * scale
+		}
+		n.weights = append(n.weights, layer)
+		n.biases = append(n.biases, make([]float64, dims[i+1]))
+	}
+}
+
+// Forward runs a REAL forward pass through the neural network using matrix multiplication.
+// Architecture: input → hidden1(ReLU) → hidden2(ReLU) → hidden3(ReLU) → output(linear)
+func (n *NeuralNetwork) Forward(features []float64) []float64 {
+	if len(n.weights) == 0 {
+		// Network not initialized, return zeros
+		return make([]float64, n.outputDim)
+	}
+
+	current := features
+
+	// Process each layer: output = ReLU(input × W + b)
+	for layer := 0; layer < len(n.weights); layer++ {
+		inputSize := len(current)
+		outputSize := len(n.biases[layer])
+		next := make([]float64, outputSize)
+
+		W := n.weights[layer]
+		B := n.biases[layer]
+
+		// Matrix multiplication: next[j] = sum_k(current[k] * W[k*outputSize+j]) + B[j]
+		for j := 0; j < outputSize; j++ {
+			sum := B[j]
+			for k := 0; k < inputSize; k++ {
+				if k*outputSize+j < len(W) {
+					sum += current[k] * W[k*outputSize+j]
+				}
+			}
+			// ReLU activation for hidden layers, linear for output
+			if layer < len(n.weights)-1 {
+				if sum < 0 {
+					sum = 0
+				}
+			}
+			next[j] = sum
+		}
+		current = next
+	}
+
+	return current
+}
+
+// experienceSampleBatch draws a prioritized mini-batch from the experience pool.
+func (o *DeepRLOptimizer) experienceSampleBatch(batchSize int) []*Transition {
+	return o.experiencePool.Sample(batchSize)
+}
+
+// updateQNetwork applies REAL gradient descent using the Bellman equation.
+// For each transition: target_Q[action] = reward + gamma * max(targetNet.Forward(nextState))
+// Then backpropagate MSE loss between predicted Q and target Q.
+func (o *DeepRLOptimizer) updateQNetwork(batch []*Transition) {
+	lr := o.learningRate
+	gamma := o.gamma
+
+	for _, trans := range batch {
+		if trans == nil {
+			continue
+		}
+
+		// Current Q-values for state
+		stateFeatures := o.encodeState(trans.State)
+		currentQ := o.qNetwork.Forward(stateFeatures)
+
+		// Target Q-value via Bellman equation
+		var targetQVal float64
+		if trans.Done {
+			targetQVal = trans.Reward
+		} else {
+			nextFeatures := o.encodeState(trans.NextState)
+			nextQ := o.targetNetwork.Forward(nextFeatures)
+			maxNextQ := nextQ[0]
+			for _, q := range nextQ[1:] {
+				if q > maxNextQ {
+					maxNextQ = q
+				}
+			}
+			targetQVal = trans.Reward + gamma*maxNextQ
+		}
+
+		// Compute target vector (only update the taken action)
+		targetQ := make([]float64, len(currentQ))
+		copy(targetQ, currentQ)
+		action := trans.Action
+		if action >= 0 && action < len(targetQ) {
+			targetQ[action] = targetQVal
+		}
+
+		// Backpropagation through layers
+		o.backpropagate(stateFeatures, targetQ, lr)
+
+		// Track best reward
+		if trans.Reward > o.bestReward {
+			o.bestReward = trans.Reward
+		}
+	}
+	o.globalStep++
+}
+
+// backpropagate performs real gradient descent through the network layers.
+func (o *DeepRLOptimizer) backpropagate(input []float64, targetQ []float64, lr float64) {
+	nn := o.qNetwork
+	if len(nn.weights) == 0 {
+		return
+	}
+
+	// Forward pass with cached activations
+	activations := make([][]float64, len(nn.weights)+1)
+	activations[0] = input
+	current := input
+
+	for layer := 0; layer < len(nn.weights); layer++ {
+		inputSize := len(current)
+		outputSize := len(nn.biases[layer])
+		next := make([]float64, outputSize)
+		W := nn.weights[layer]
+		B := nn.biases[layer]
+
+		for j := 0; j < outputSize; j++ {
+			sum := B[j]
+			for k := 0; k < inputSize; k++ {
+				if k*outputSize+j < len(W) {
+					sum += current[k] * W[k*outputSize+j]
+				}
+			}
+			if layer < len(nn.weights)-1 {
+				if sum < 0 { sum = 0 } // ReLU
+			}
+			next[j] = sum
+		}
+		current = next
+		activations[layer+1] = next
+	}
+
+	// Output error: delta = predicted - target
+	outputLayer := len(nn.weights) - 1
+	outputSize := len(nn.biases[outputLayer])
+	delta := make([]float64, outputSize)
+	for i := 0; i < outputSize && i < len(targetQ); i++ {
+		delta[i] = activations[len(activations)-1][i] - targetQ[i]
+		// Gradient clipping [-1, 1]
+		if delta[i] > 1.0 { delta[i] = 1.0 }
+		if delta[i] < -1.0 { delta[i] = -1.0 }
+	}
+
+	// Backpropagate through layers
+	for layer := len(nn.weights) - 1; layer >= 0; layer-- {
+		inputAct := activations[layer]
+		inputSize := len(inputAct)
+		curOutputSize := len(nn.biases[layer])
+		W := nn.weights[layer]
+
+		// Update weights: W -= lr * input^T × delta
+		for k := 0; k < inputSize; k++ {
+			for j := 0; j < curOutputSize; j++ {
+				idx := k*curOutputSize + j
+				if idx < len(W) {
+					W[idx] -= lr * inputAct[k] * delta[j]
+				}
+			}
+		}
+
+		// Update biases: b -= lr * delta
+		for j := 0; j < curOutputSize; j++ {
+			nn.biases[layer][j] -= lr * delta[j]
+		}
+
+		// Propagate delta to previous layer
+		if layer > 0 {
+			prevDelta := make([]float64, inputSize)
+			for k := 0; k < inputSize; k++ {
+				for j := 0; j < curOutputSize; j++ {
+					idx := k*curOutputSize + j
+					if idx < len(W) {
+						prevDelta[k] += delta[j] * W[idx]
+					}
+				}
+				// ReLU derivative: zero gradient if activation was <= 0
+				if activations[layer][k] <= 0 {
+					prevDelta[k] = 0
+				}
+			}
+			delta = prevDelta
+		}
+	}
+}
+
+// softCopyTargetNetwork synchronizes the target network with the online network.
+func (o *DeepRLOptimizer) softCopyTargetNetwork() {
+	o.targetNetwork = o.qNetwork.Copy()
 }

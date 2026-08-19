@@ -1,8 +1,8 @@
+
 // Package edrbypass provides complete process hollowing validation
 package edrbypass
 
 import (
-	"context"
 	"fmt"
 	"time"
 	
@@ -30,8 +30,7 @@ func VerifyProcessHollow(shellcode []byte, targetPID uint32, logger *logrus.Logg
 	result.DetectionTime = -1
 	result.Evidence = append(result.Evidence, Evidence{
 		Type:    "process_hollowed",
-		Data:    "Process hollowing completed successfully with anti-detection measures",
-		Success: true,
+		Data:    map[string]interface{}{"message": "Process hollowing completed successfully"},
 	})
 	
 	result.Error = fmt.Sprintf("Test completed in %v", time.Since(startTime))

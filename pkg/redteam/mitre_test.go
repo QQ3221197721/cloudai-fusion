@@ -121,7 +121,7 @@ func TestMitrePersistence_Cron(t *testing.T) {
 	
 	m.addTechnique(t1053)
 	
-	found, exists := m.GetTechniqueByID("T1053.005")
+	_, exists := m.GetTechniqueByID("T1053.005")
 	if !exists {
 		t.Fatal("Cron persistence technique should exist")
 	}
@@ -380,9 +380,9 @@ func TestGetTechniquesByTactic_InitialAccess(t *testing.T) {
 	}
 	
 	// Verify all are indeed Initial Access
-	for _, t := range techniques {
-		if t.Tactic != "Initial Access" {
-			t.Errorf("Technique %s has wrong tactic: %s", t.ID, t.Tactic)
+	for _, tech := range techniques {
+		if tech.Tactic != "Initial Access" {
+			t.Errorf("Technique %s has wrong tactic: %s", tech.ID, tech.Tactic)
 		}
 	}
 }
@@ -417,9 +417,6 @@ func TestCalculateCoverage_WithTechniques(t *testing.T) {
 	
 	// Add sample technique
 	m.addTechnique(&Technique{ID: "T1234", Name: "Test", Tactic: "Initial Access"})
-	
-	totalTechniques := float64(845) // Total in latest ATT&CK framework
-	expectedPercent := (1.0 / totalTechniques) * 100
 	
 	m.calculateCoverage()
 	

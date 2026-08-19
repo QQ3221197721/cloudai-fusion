@@ -1,0 +1,95 @@
+.dashboard-page {
+  padding: 32px 24px;
+  max-width: 1200px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.dashboard-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.dashboard-subtitle {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  color: #9aa5b1;
+  margin: 0;
+}
+
+.dashboard-module {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #2fd4d4;
+  background: rgba(47,212,212,0.08);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(47,212,212,0.25);
+}
+
+.dashboard-refresh {
+  cursor: pointer;
+  font-size: 18px;
+  color: #9aa5b1;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-refresh:hover {
+  color: #ffffff;
+  transform: rotate(90deg);
+}
+
+.dashboard-mock-banner {
+  margin-bottom: 16px;
+  border-left: 4px solid #f5a623;
+  background: #fff7e6;
+  border-radius: 4px;
+  padding-left: 12px;
+}
+
+.dashboard-source-note {
+  border-left: 4px solid #2fd4d4;
+  background: #e6fffb;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  padding-left: 12px;
+}
+
+.dashboard-error {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fff1f0;
+  border-left: 4px solid #ff5555;
+  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: #b22222;
+}
+
+.dashboard-loading {
+  padding: 48px 0;
+  text-align: center;
+}
+
+.dashboard-body {
+  background: #10161a;
+  border: 1px solid #1f293a;
+  border-radius: 8px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}

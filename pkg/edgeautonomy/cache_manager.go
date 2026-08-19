@@ -1,8 +1,10 @@
-// Package cache - Production-ready distributed cache for edge autonomy
-package cache
+// Package edgeautonomy - Core production cache for edge autonomy
+package edgeautonomy
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -36,6 +38,9 @@ type CacheManager struct {
 	// Persistence layer (future enhancement)
 	persistEnabled bool
 	persistPath    string
+	
+	// Node cache for offline decision making
+	nodeStore *cachedNodesStore
 }
 
 // DecisionRecord represents a single decision in the system
@@ -87,6 +92,7 @@ func NewCacheManager() *CacheManager {
 		maxDecisions:   10000,
 		historyMaxSize: 1000,
 		metrics:        NewCacheMetrics(),
+		nodeStore:      newCachedNodesStore(),
 	}
 }
 
@@ -102,6 +108,24 @@ func (cm *CacheManager) GetDecision(ctx context.Context, id string) *DecisionRec
 	
 	cm.metrics.RecordMiss()
 	return nil
+}
+
+// GetAllDecisions returns all decisions
+func (cm *CacheManager) GetAllDecisions(ctx context.Context) []*DecisionRecord {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	
+	result := make([]*DecisionRecord, 0, len(cm.decisions))
+	for _, record := range cm.decisions {
+		result = append(result, record)
+	}
+	
+	return result
+}
+
+// NodeID returns unique identifier for this node
+func (cm *CacheManager) NodeID() string {
+	return "edge-node-01"
 }
 
 // StoreDecision persists decision to cache
@@ -211,7 +235,7 @@ func (cm *CacheManager) pruneOldest() {
 	})
 	
 	oldestVer := cm.versionHistory[0]
-	delete(cm.versionHistory, 0)
+	cm.versionHistory = cm.versionHistory[1:]
 	
 	for _, id := range cm.byVersion[oldestVer] {
 		delete(cm.decisions, id)
@@ -238,20 +262,8 @@ func (cm *CacheManager) pruneOldMerged() {
 		}
 	}
 	
-	cm.metrics.RecordMergePrune(removed)
-}
-
-// GetAllDecisions returns all decisions
-func (cm *CacheManager) GetAllDecisions(ctx context.Context) []*DecisionRecord {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	
-	result := make([]*DecisionRecord, 0, len(cm.decisions))
-	for _, record := range cm.decisions {
-		result = append(result, record)
-	}
-	
-	return result
+	cm.metrics.RecordMergePrune()
+	_ = removed
 }
 
 // GetByVersionRange retrieves decisions within version range
@@ -260,8 +272,8 @@ func (cm *CacheManager) GetByVersionRange(start, end int64) []*DecisionRecord {
 	defer cm.mu.RUnlock()
 	
 	result := make([]*DecisionRecord, 0)
-	for _, ids := range cm.byVersion {
-		if start <= ids && ids <= end {
+	for ver, ids := range cm.byVersion {
+		if start <= ver && ver <= end {
 			for _, id := range ids {
 				if record, exists := cm.decisions[id]; exists {
 					result = append(result, record)
@@ -273,10 +285,53 @@ func (cm *CacheManager) GetByVersionRange(start, end int64) []*DecisionRecord {
 	return result
 }
 
+// GetCachedNodes returns all cached nodes for offline decision making
+func (cm *CacheManager) GetCachedNodes(ctx context.Context) []*Node {
+	if cm.nodeStore == nil {
+		return make([]*Node, 0)
+	}
+	return cm.nodeStore.GetAllNodes()
+}
+
 // Helper functions
 func min(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
+}
+
+// cachedNodes stores node cache for offline decision making
+type cachedNodesStore struct {
+	nodes map[string]*Node
+	mu    sync.RWMutex
+}
+
+func newCachedNodesStore() *cachedNodesStore {
+	return &cachedNodesStore{
+		nodes: make(map[string]*Node),
+	}
+}
+
+func (cns *cachedNodesStore) SetNode(node *Node) {
+	cns.mu.Lock()
+	defer cns.mu.Unlock()
+	cns.nodes[node.Name] = node
+}
+
+func (cns *cachedNodesStore) GetNode(name string) *Node {
+	cns.mu.RLock()
+	defer cns.mu.RUnlock()
+	return cns.nodes[name]
+}
+
+func (cns *cachedNodesStore) GetAllNodes() []*Node {
+	cns.mu.RLock()
+	defer cns.mu.RUnlock()
+	
+	result := make([]*Node, 0, len(cns.nodes))
+	for _, node := range cns.nodes {
+		result = append(result, node)
+	}
+	return result
 }

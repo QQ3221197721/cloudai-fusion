@@ -1,0 +1,36 @@
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/cloudprovider
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkLocalMock_ListInstances-24                            	   62388	     19313 ns/op	   16616 B/op	       4 allocs/op
+BenchmarkLocalMock_ListInstances-24                            	   71044	     16755 ns/op	   16616 B/op	       4 allocs/op
+BenchmarkLocalMock_ListInstances-24                            	   68413	     17754 ns/op	   16616 B/op	       4 allocs/op
+BenchmarkLocalMock_CreateInstance-24                           	 1385842	       731.9 ns/op	     368 B/op	       8 allocs/op
+BenchmarkLocalMock_CreateInstance-24                           	 1599776	       763.8 ns/op	     357 B/op	       8 allocs/op
+BenchmarkLocalMock_CreateInstance-24                           	 1625404	       730.2 ns/op	     356 B/op	       8 allocs/op
+BenchmarkLocalMock_DeleteInstance-24                           	 6032990	       238.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLocalMock_DeleteInstance-24                           	 6419676	       245.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLocalMock_DeleteInstance-24                           	 5730385	       230.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLocalMock_GetPricing-24                               	23031302	        70.39 ns/op	      96 B/op	       1 allocs/op
+BenchmarkLocalMock_GetPricing-24                               	24207164	        65.19 ns/op	      96 B/op	       1 allocs/op
+BenchmarkLocalMock_GetPricing-24                               	21368776	        69.34 ns/op	      96 B/op	       1 allocs/op
+BenchmarkRegistry_DispatchOverhead-24                          	20695113	        54.81 ns/op	      24 B/op	       1 allocs/op
+BenchmarkRegistry_DispatchOverhead-24                          	27463598	        57.83 ns/op	      24 B/op	       1 allocs/op
+BenchmarkRegistry_DispatchOverhead-24                          	21369157	        55.14 ns/op	      24 B/op	       1 allocs/op
+BenchmarkRegistry_LookupOverhead-24                            	264720091	         4.706 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistry_LookupOverhead-24                            	264974714	         4.435 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistry_LookupOverhead-24                            	280900783	         4.793 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCloudAdapter_CredentialsRequired_HonorableError-24    	 1000000	      1483 ns/op	     176 B/op	       4 allocs/op
+BenchmarkCloudAdapter_CredentialsRequired_HonorableError-24    	 1372657	       791.8 ns/op	     176 B/op	       4 allocs/op
+BenchmarkCloudAdapter_CredentialsRequired_HonorableError-24    	 1824961	       617.2 ns/op	     176 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/AWS-24       	 3466017	       357.5 ns/op	     304 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/AWS-24       	 3684926	       343.1 ns/op	     304 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/AWS-24       	 3596925	       331.4 ns/op	     304 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/Azure-24     	 3488247	       389.2 ns/op	     320 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/Azure-24     	 2736440	       392.8 ns/op	     320 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/Azure-24     	 2865913	       430.5 ns/op	     320 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/GCP-24       	 3598238	       338.2 ns/op	     304 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/GCP-24       	 4298461	       361.2 ns/op	     304 B/op	       4 allocs/op
+BenchmarkCloudAdapter_Adapters_ReturnCapabilities/GCP-24       	 3760983	       315.1 ns/op	     304 B/op	       4 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cloudprovider	66.545s

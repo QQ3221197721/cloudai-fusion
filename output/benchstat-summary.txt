@@ -1,0 +1,115 @@
+﻿C:\Users\admin\go\bin\benchstat.exe : output/benchmark-module31.txt:289: parsing iteration count: invalid syntax
+所在位置 行:1 字符: 58
++ ... ai-fusion"; C:\Users\admin\go\bin\benchstat.exe output/benchmark-modu ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (output/benchmar... invalid syntax:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+output/benchmark-module31.txt:147239: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:238347: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:332078: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:421334: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:512813: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:599447: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:642956: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:687086: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:731337: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:731353: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:731385: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:731428: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:822977: parsing iteration count: invalid syntax
+output/benchmark-module31.txt:922989: parsing iteration count: invalid syntax
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/security
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+                                         鈹?output/benchmark-module31.txt 鈹?                                         鈹?           sec/op             鈹?AhoCorasick_100Rules-24                                     28.16碌 卤 鈭?鹿
+AhoCorasick_1000Rules-24                                    29.34碌 卤 鈭?鹿
+AhoCorasick_10000Rules-24                                   29.28碌 卤 鈭?鹿
+Regexp_100Rules-24                                          289.9碌 卤 鈭?鹿
+Regexp_1000Rules-24                                         5.130m 卤 鈭?鹿
+Regexp_10000Rules-24                                        61.84m 卤 鈭?鹿
+AhoCorasick_vs_Regexp_Comparative-24                        28.43碌 卤 鈭?鹿
+AhoCorasick_BuildTime_100Rules-24                           247.2碌 卤 鈭?鹿
+AhoCorasick_BuildTime_1000Rules-24                          1.488m 卤 鈭?鹿
+AhoCorasick_BuildTime_10000Rules-24                         15.54m 卤 鈭?鹿
+AhoCorasick_Search_SingleMatch-24                           2.122碌 卤 鈭?鹿
+AhoCorasick_Search_MultipleMatches-24                       14.54碌 卤 鈭?鹿
+AhoCorasick_Search_NoMatch-24                               7.099碌 卤 鈭?鹿
+AhoCorasick_Stress_LongInput_1kChars-24                     107.6碌 卤 鈭?鹿
+AhoCorasick_Stress_LongInput_10kChars-24                    1.167m 卤 鈭?鹿
+ComplianceEngine_CheckAndUpdate-24                          31.85碌 卤 鈭?鹿
+GenerateSBOM-24                                             1.266碌 卤 鈭?鹿
+VerifyImage-24                                              271.1n 卤 鈭?鹿
+ComplianceCIS-24                                            844.0n 卤 鈭?鹿
+ComplianceNIST-24                                           777.3n 卤 鈭?鹿
+EvidenceComplianceCheck-24                                  90.95碌 卤 鈭?鹿
+ComplianceSOC2-24                                           932.3n 卤 鈭?鹿
+CompliancePCIDSS-24                                         1.289碌 卤 鈭?鹿
+ComplianceHIPAA-24                                          1.147碌 卤 鈭?鹿
+ThreatDetectionIngest-24                                    131.4碌 卤 鈭?鹿
+EvidenceComplianceSign-24                                   30.08碌 卤 鈭?鹿
+SupplyChainManager_GenerateSBOM-24                          1.057碌 卤 鈭?鹿
+geomean                                                     31.82碌
+鹿 need >= 6 samples for confidence interval at level 0.95
+
+                                         鈹?output/benchmark-module31.txt 鈹?                                         鈹?            B/op              鈹?AhoCorasick_100Rules-24                                      704.0 卤 鈭?鹿
+AhoCorasick_1000Rules-24                                   2.062Ki 卤 鈭?鹿
+AhoCorasick_10000Rules-24                                  2.062Ki 卤 鈭?鹿
+Regexp_100Rules-24                                           10.00 卤 鈭?鹿
+Regexp_1000Rules-24                                          173.0 卤 鈭?鹿
+Regexp_10000Rules-24                                       2.068Ki 卤 鈭?鹿
+AhoCorasick_vs_Regexp_Comparative-24                       2.062Ki 卤 鈭?鹿
+AhoCorasick_BuildTime_100Rules-24                          209.3Ki 卤 鈭?鹿
+AhoCorasick_BuildTime_1000Rules-24                         833.4Ki 卤 鈭?鹿
+AhoCorasick_BuildTime_10000Rules-24                        5.483Mi 卤 鈭?鹿
+AhoCorasick_Search_SingleMatch-24                            704.0 卤 鈭?鹿
+AhoCorasick_Search_MultipleMatches-24                      2.062Ki 卤 鈭?鹿
+AhoCorasick_Search_NoMatch-24                                704.0 卤 鈭?鹿
+AhoCorasick_Stress_LongInput_1kChars-24                      704.0 卤 鈭?鹿
+AhoCorasick_Stress_LongInput_10kChars-24                     704.0 卤 鈭?鹿
+ComplianceEngine_CheckAndUpdate-24                         2.542Ki 卤 鈭?鹿
+GenerateSBOM-24                                            1.656Ki 卤 鈭?鹿
+VerifyImage-24                                               432.0 卤 鈭?鹿
+ComplianceCIS-24                                           1.328Ki 卤 鈭?鹿
+ComplianceNIST-24                                          1.203Ki 卤 鈭?鹿
+EvidenceComplianceCheck-24                                 1.924Ki 卤 鈭?鹿
+ComplianceSOC2-24                                          1.453Ki 卤 鈭?鹿
+CompliancePCIDSS-24                                        2.203Ki 卤 鈭?鹿
+ComplianceHIPAA-24                                         1.953Ki 卤 鈭?鹿
+ThreatDetectionIngest-24                                   258.1Ki 卤 鈭?鹿
+EvidenceComplianceSign-24                                  1.812Ki 卤 鈭?鹿
+SupplyChainManager_GenerateSBOM-24                         1.656Ki 卤 鈭?鹿
+geomean                                                    2.642Ki
+鹿 need >= 6 samples for confidence interval at level 0.95
+
+                                         鈹?output/benchmark-module31.txt 鈹?                                         鈹?          allocs/op           鈹?AhoCorasick_100Rules-24                                      1.000 卤 鈭?鹿
+AhoCorasick_1000Rules-24                                     2.000 卤 鈭?鹿
+AhoCorasick_10000Rules-24                                    2.000 卤 鈭?鹿
+Regexp_100Rules-24                                           0.000 卤 鈭?鹿
+Regexp_1000Rules-24                                          0.000 卤 鈭?鹿
+Regexp_10000Rules-24                                         0.000 卤 鈭?鹿
+AhoCorasick_vs_Regexp_Comparative-24                         2.000 卤 鈭?鹿
+AhoCorasick_BuildTime_100Rules-24                           2.125k 卤 鈭?鹿
+AhoCorasick_BuildTime_1000Rules-24                          8.477k 卤 鈭?鹿
+AhoCorasick_BuildTime_10000Rules-24                         41.49k 卤 鈭?鹿
+AhoCorasick_Search_SingleMatch-24                            1.000 卤 鈭?鹿
+AhoCorasick_Search_MultipleMatches-24                        2.000 卤 鈭?鹿
+AhoCorasick_Search_NoMatch-24                                1.000 卤 鈭?鹿
+AhoCorasick_Stress_LongInput_1kChars-24                      1.000 卤 鈭?鹿
+AhoCorasick_Stress_LongInput_10kChars-24                     1.000 卤 鈭?鹿
+ComplianceEngine_CheckAndUpdate-24                           44.00 卤 鈭?鹿
+GenerateSBOM-24                                              22.00 卤 鈭?鹿
+VerifyImage-24                                               4.000 卤 鈭?鹿
+ComplianceCIS-24                                             4.000 卤 鈭?鹿
+ComplianceNIST-24                                            4.000 卤 鈭?鹿
+EvidenceComplianceCheck-24                                   24.00 卤 鈭?鹿
+ComplianceSOC2-24                                            4.000 卤 鈭?鹿
+CompliancePCIDSS-24                                          4.000 卤 鈭?鹿
+ComplianceHIPAA-24                                           4.000 卤 鈭?鹿
+ThreatDetectionIngest-24                                     7.000 卤 鈭?鹿
+EvidenceComplianceSign-24                                    25.00 卤 鈭?鹿
+SupplyChainManager_GenerateSBOM-24                           22.00 卤 鈭?鹿
+geomean                                                                虏
+鹿 need >= 6 samples for confidence interval at level 0.95
+虏 summaries must be >0 to compute geomean

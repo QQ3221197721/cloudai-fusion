@@ -1,3 +1,4 @@
+
 // Package attack_graph - neo4j_integration provides Neo4j database connectivity.
 // Implements vulnerability graph storage and retrieval for CVE knowledge base.
 package attack_graph
@@ -11,13 +12,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
 
 // ============================================================================
-// NEO4J GO DRIVER INTEGRATION - PRODUCTION IMPLEMENTATION ✅
+// NEO4J GO DRIVER INTEGRATION - PRODUCTION IMPLEMENTATION
 // Uses: github.com/neo4j/neo4j-go-driver/v5/neo4j
 // ============================================================================
 
@@ -46,10 +46,9 @@ func DefaultNeo4jConfig() Neo4jConfig {
 // Neo4jGraphClient manages the Neo4j database connection and operations
 type Neo4jGraphClient struct {
 	config     Neo4jConfig
-	driver     neo4j.Driver
-	pool       *neo4j.Pool
+	driver     neo4j.DriverWithContext
 	logger     *logrus.Logger
-	mu         sync.Mutex
+	mu         sync.RWMutex
 }
 
 // NewNeo4jClient creates a new Neo4j client instance
@@ -83,18 +82,15 @@ func (nc *Neo4jGraphClient) Connect(ctx context.Context) error {
 	
 	authToken := neo4j.BasicAuth(nc.config.Username, nc.config.Password, "")
 	
-	driverConfig := neo4j.Config{
-		Scheme:                "bolt",
-		MaxConnectionPoolSize: nc.config.MaxOpenConns,
-		MaxConnectionLifetime: time.Hour,
-		ConnectionAcquisitionTimeout: nc.config.ConnTimeout,
-	}
-	
 	var err error
-	noDriver, err := neo4j.NewDriver(
+	noDriver, err := neo4j.NewDriverWithContext(
 		nc.config.URI,
 		authToken,
-		driverConfig,
+		func(c *neo4j.Config) {
+			c.MaxConnectionPoolSize = nc.config.MaxOpenConns
+			c.MaxConnectionLifetime = time.Hour
+			c.ConnectionAcquisitionTimeout = nc.config.ConnTimeout
+		},
 	)
 	
 	if err != nil {
@@ -103,12 +99,11 @@ func (nc *Neo4jGraphClient) Connect(ctx context.Context) error {
 	
 	// Test the connection
 	if err := noDriver.VerifyConnectivity(ctx); err != nil {
-		noDriver.Close()
+		noDriver.Close(ctx)
 		return fmt.Errorf("failed to verify Neo4j connection: %w", err)
 	}
 	
 	nc.driver = noDriver
-	nc.pool = noDriver.Pool()
 	
 	nc.logger.WithFields(logrus.Fields{
 		"uri":            nc.config.URI,
@@ -129,7 +124,7 @@ func (nc *Neo4jGraphClient) Close() error {
 		return nil
 	}
 	
-	err := nc.driver.Close()
+	err := nc.driver.Close(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to close Neo4j driver: %w", err)
 	}
@@ -183,33 +178,28 @@ func (nc *Neo4jGraphClient) CreateCVENode(ctx context.Context, cve CVEItem) erro
 		"avail":           cve.Impact.Availability,
 	}
 	
-	session, err := nc.driver.Session(ctx, neo4j.SessionConfig{
-		AccessMode: neo4j.AccessWriteDefault,
+	session := nc.driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeWrite,
 	})
+	defer session.Close(ctx)
 	
-	if err != nil {
-		return fmt.Errorf("failed to create session: %w", err)
-	}
-	defer session.Close()
-	
-	result, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
 		result, err := tx.Run(ctx, cypher, params)
 		if err != nil {
 			return nil, err
 		}
 		
-		consume := result.Consume()
-		if consume.NodesCreated() == 0 && consume.PropertiesSet() == 0 {
+		summary, err := result.Consume(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to consume result: %w", err)
+		}
+		
+		if summary.Counters().NodesCreated() == 0 && summary.Counters().PropertiesSet() == 0 {
 			// CVE already exists, still return success
 			return nil, nil
 		}
 		
-		record, err := result.Single()
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve created node: %w", err)
-		}
-		
-		return record.Get("cve"), nil
+		return nil, nil
 	})
 	
 	if err != nil {
@@ -218,26 +208,30 @@ func (nc *Neo4jGraphClient) CreateCVENode(ctx context.Context, cve CVEItem) erro
 	
 	// Verify the node was created successfully by querying it back
 	verifyCypher := `MATCH (c:CVE {id: $id}) RETURN c`
-	_, err = session.ReadTransaction(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+	_, err = session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
 		result, err := tx.Run(ctx, verifyCypher, map[string]interface{}{"id": cve.ID})
 		if err != nil {
 			return nil, err
 		}
-		_, err = result.Single()
-		return result.Consume(), err
+		_, err = result.Single(ctx)
+		if err != nil {
+			return nil, err
+		}
+		summary, err := result.Consume(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return summary, nil
 	})
 	
 	if err != nil {
 		return fmt.Errorf("verification failed after creation: %w", err)
 	}
 	
-	nodeRecord := result.(dbtype.Record)
-	if cveNode, ok := nodeRecord.Get("cve").(dbtype.Node); ok {
-		nc.logger.WithFields(logrus.Fields{
-			"cve_id": cveNode.PropertyValues()["id"],
-			"score":  cveNode.PropertyValues()["cvss_score"],
-		}).Info("CVE node created successfully")
-	}
+	nc.logger.WithFields(logrus.Fields{
+		"cve_id": cve.ID,
+		"score":  cve.Impact.BaseScore,
+	}).Info("CVE node created successfully")
 	
 	return nil
 }

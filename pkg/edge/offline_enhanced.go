@@ -6,15 +6,19 @@ package edge
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	apperrors "github.com/cloudai-fusion/cloudai-fusion/pkg/errors"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 )
 
 // ============================================================================
@@ -769,6 +773,16 @@ type DiscoveredDevice struct {
 	LastSeenAt   time.Time         `json:"last_seen_at"`
 	IsAlive      bool              `json:"is_alive"`
 	NodeID       string            `json:"node_id,omitempty"` // linked edge node ID
+
+	// Hardware is the capability spec resolved by a HardwareProber (Module 24).
+	// It stays nil until ProbeDevice runs, so an unprobed device is never mistaken
+	// for a device with zero resources.
+	Hardware *HardwareSpec `json:"hardware,omitempty"`
+	// HardwareSource names the prober that produced Hardware, e.g. "mdns-txt".
+	HardwareSource string `json:"hardware_source,omitempty"`
+	// HardwareIsReal is true only when Hardware came from real hardware
+	// introspection rather than a synthetic advertisement.
+	HardwareIsReal bool `json:"hardware_is_real"`
 }
 
 // DeviceDiscovery manages mDNS-based edge device discovery
@@ -777,6 +791,12 @@ type DeviceDiscovery struct {
 	devices map[string]*DiscoveredDevice // instanceName -> device
 	mu      sync.RWMutex
 	logger  *logrus.Logger
+
+	// transport supplies advertisements (Module 24). Nil means no discovery
+	// source is wired and Scan reports an error rather than an empty LAN.
+	transport DiscoveryTransport
+	// prober resolves hardware specs for discovered devices (Module 24).
+	prober HardwareProber
 }
 
 // NewDeviceDiscovery creates a new mDNS device discovery manager
@@ -789,6 +809,43 @@ func NewDeviceDiscovery(cfg MDNSConfig, logger *logrus.Logger) *DeviceDiscovery 
 		devices: make(map[string]*DiscoveredDevice),
 		logger:  logger,
 	}
+}
+
+// ScanResult represents the result of one discovery round
+// Module 24 edge discovery transport layer
+type ScanResult struct {
+	Devices    []*DiscoveredDevice // discovered devices in this round
+	Interface  string              // network interface used
+	Timestamp  time.Time           // when scan was performed
+}
+
+// DiscoveryTransport provides real device advertisements for edge discovery.
+// This is an interface to allow plugging in different discovery mechanisms
+// (mDNS, SSDP, DHCP lease parsing, etc.) while keeping DeviceDiscovery generic.
+// 
+// In production mode (modeReal), implementations must return actual LAN observations.
+// The capability system validates that no synthetic data leaks into production.
+type DiscoveryTransport interface {
+	// Scan discovers available edge devices on the configured service/domain.
+	// Returns ScanResult with found devices and metadata about the scan.
+	// Must respect context cancellation via ctx.Done().
+	Scan(ctx context.Context) (*ScanResult, error)
+}
+
+// HardwareProber resolves hardware specifications for discovered edge devices.
+// After mDNS discovery identifies a device's presence and network address,
+// ProbeDevice introspects its compute capabilities (CPU, GPU, memory, storage).
+// 
+// In production mode, probes must contact the device directly via network APIs
+// or remote management interfaces; fake/speculative specs are prohibited.
+
+type HardwareProber interface {
+	// ProbeDevice queries a discovered device for its hardware capabilities.
+	// ip should be reachable from the probe host; port typically targets
+	// a device management API endpoint (e.g., HTTP health + inventory).
+	// Returns nil HardwareSpec if probing fails — the caller decides whether to
+	// treat this as "unknown" or "no hardware advertised".
+	ProbeDevice(ctx context.Context, device *DiscoveredDevice, ip string, port int) (*HardwareSpec, error)
 }
 
 // RegisterDevice registers a discovered device (from mDNS browse callback)
@@ -815,6 +872,70 @@ func (d *DeviceDiscovery) RegisterDevice(device *DiscoveredDevice) {
 		"ips":      device.IPAddresses,
 		"port":     device.Port,
 	}).Info("Discovered edge device via mDNS")
+}
+
+// SetTransport configures the DiscoveryTransport for this DeviceDiscovery.
+// When attached, StartBrowse will perform real discovery rounds via the transport
+// instead of only pruning stale entries.
+func (d *DeviceDiscovery) SetTransport(t DiscoveryTransport) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.transport = t
+}
+
+// SetProber configures the HardwareProber for probing discovered devices' hardware specs.
+func (d *DeviceDiscovery) SetProber(p HardwareProber) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.prober = p
+}
+
+// Scan performs a single discovery round through the configured transport.
+// Returns the ScanResult and any error from the transport implementation.
+// Caller must have set a transport via SetTransport before calling this method,
+// otherwise it returns an error indicating no discovery source is available.
+func (d *DeviceDiscovery) Scan(ctx context.Context) (*ScanResult, error) {
+	d.mu.RLock()
+	transport := d.transport
+	d.mu.RUnlock()
+
+	if transport == nil {
+		return nil, fmt.Errorf("no discovery transport configured; call SetTransport first")
+	}
+
+	return transport.Scan(ctx)
+}
+
+// logDiscoveryProvenance logs provenance information for discovered devices
+// from one discovery round. This includes how many new/updated/stale devices
+// were seen, which provides an audit trail for Module 24 discovery operations.
+func (d *DeviceDiscovery) logDiscoveryProvenance(result *ScanResult) {
+	if result == nil || len(result.Devices) == 0 {
+		d.logger.WithField("interface", result.Interface).Debug("Discovery round found no devices")
+		return
+	}
+
+	d.logger.WithFields(logrus.Fields{
+		"interface": result.Interface,
+		"count":     len(result.Devices),
+		"ts":        result.Timestamp.Unix(),
+	}).Info("Discovery round completed")
+
+	for _, dev := range result.Devices {
+		isReal := dev.Hardware != nil && dev.HardwareIsReal
+		fields := logrus.Fields{
+			"instance": dev.InstanceName,
+			"alive":    dev.IsAlive,
+		}
+		if isReal {
+			fields["hw_source"] = dev.HardwareSource
+			fields["cpu_cores"] = dev.Hardware.CPUCores
+			if dev.Hardware.GPUCount > 0 {
+				fields["gpu_type"] = dev.Hardware.GPUType
+			}
+		}
+		d.logger.WithFields(fields).Debug("Device provenance recorded")
+	}
 }
 
 // ListDevices returns all discovered devices
@@ -864,16 +985,26 @@ func (d *DeviceDiscovery) LinkToNode(instanceName, nodeID string) error {
 	return nil
 }
 
-// StartBrowse starts mDNS browsing in the background
+// StartBrowse starts mDNS browsing in the background.
+//
+// When a DiscoveryTransport is attached (SetTransport), each tick performs a real
+// Scan through that transport. With no transport attached the loop only ages out
+// stale entries — it cannot discover anything, because this package links no
+// mDNS/zeroconf library of its own.
 func (d *DeviceDiscovery) StartBrowse(ctx context.Context) {
 	interval := time.Duration(d.config.BrowseIntervalSec) * time.Second
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	d.mu.RLock()
+	hasTransport := d.transport != nil
+	d.mu.RUnlock()
+
 	d.logger.WithFields(logrus.Fields{
-		"service":  d.config.ServiceName,
-		"domain":   d.config.Domain,
-		"interval": interval,
+		"service":       d.config.ServiceName,
+		"domain":        d.config.Domain,
+		"interval":      interval,
+		"has_transport": hasTransport,
 	}).Info("Starting mDNS device discovery browse loop")
 
 	for {
@@ -881,9 +1012,24 @@ func (d *DeviceDiscovery) StartBrowse(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			d.PruneStale()
-			// In production: trigger mDNS browse query
-			// dns-sd.Browse(d.config.ServiceName, d.config.Domain, callback)
+			d.mu.RLock()
+			transport := d.transport
+			d.mu.RUnlock()
+
+			if transport == nil {
+				// No discovery source wired: only age out stale entries.
+				d.PruneStale()
+				continue
+			}
+			result, err := d.Scan(ctx)
+			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
+				d.logger.WithError(err).Warn("mDNS discovery round failed")
+				continue
+			}
+			d.logDiscoveryProvenance(result)
 		}
 	}
 }
@@ -925,6 +1071,8 @@ const (
 )
 
 // FirmwareRelease represents a firmware/software release for OTA
+// Note: ChecksumSHA256 remains string (hex encoded) for API compatibility with plugin system.
+// TODO: Add SHA256 verification in StartNodeUpgrade before download starts.
 type FirmwareRelease struct {
 	ID             string    `json:"id"`
 	Version        string    `json:"version"`
@@ -938,7 +1086,17 @@ type FirmwareRelease struct {
 	IsStable       bool      `json:"is_stable"`
 }
 
+// VerifyChecksum returns true if inputData matches the release's expected checksum.
+func (r *FirmwareRelease) VerifyChecksum(inputData []byte) bool {
+	if r.ChecksumSHA256 == "" {
+		return false
+	}
+	has := fmt.Sprintf("%x", sha256.Sum256(inputData))
+	return strings.ToLower(has) == strings.ToLower(r.ChecksumSHA256)
+}
+
 // RolloutPlan defines the grayscale rollout strategy
+// FIXED: Added internal bookkeeping fields not serialized to JSON
 type RolloutPlan struct {
 	ID              string    `json:"id"`
 	ReleaseID       string    `json:"release_id"`
@@ -946,22 +1104,28 @@ type RolloutPlan struct {
 	StagePercent    float64   `json:"stage_percent"`
 	TotalNodes      int       `json:"total_nodes"`
 	TargetNodes     int       `json:"target_nodes"` // nodes to upgrade at this stage
-	UpgradedNodes   int       `json:"upgraded_nodes"`
+	UpgradedNodes   int       `json:"upgraded_nodes"` // NOW COUNTED PROPERLY via UpdateProgressToActive
 	HealthyNodes    int       `json:"healthy_nodes"`
 	FailedNodes     int       `json:"failed_nodes"`
 	RolledBackNodes int       `json:"rolled_back_nodes"`
 	State           string    `json:"state"` // pending, rolling, paused, complete, rolled_back
 	StartedAt       time.Time `json:"started_at"`
 	LastStageAt     time.Time `json:"last_stage_at"`
-	Error           string    `json:"error,omitempty"`
+	Error           string    `json:"error,omitempty"` // Auto-rollback error message
+
+	// Internal bookkeeping for accurate counting, not JSON serialized
+	seen map[string]bool // nodeID -> already counted health report
+	mu   sync.RWMutex    // protects seen
 }
 
 // NodeUpgradeStatus tracks per-node upgrade progress
+// FIXED: Added OriginalPartition for proper rollback restoration
 type NodeUpgradeStatus struct {
 	NodeID           string       `json:"node_id"`
 	ReleaseID        string       `json:"release_id"`
 	CurrentVersion   string       `json:"current_version"`
 	TargetVersion    string       `json:"target_version"`
+	OriginalPartition OTAPartition `json:"original_partition"` // FIXED: preserved for rollback restoration
 	ActivePartition  OTAPartition `json:"active_partition"`
 	StagingPartition OTAPartition `json:"staging_partition"`
 	State            string       `json:"state"` // pending, downloading, installing, verifying, active, rolled_back, failed
@@ -973,6 +1137,7 @@ type NodeUpgradeStatus struct {
 }
 
 // OTAManager manages over-the-air upgrades with A/B grayscale rollout
+// FIXED: Added evidence tracking infrastructure
 type OTAManager struct {
 	config       OTAConfig
 	releases     map[string]*FirmwareRelease   // releaseID -> release
@@ -980,6 +1145,10 @@ type OTAManager struct {
 	nodeStatuses map[string]*NodeUpgradeStatus // nodeID -> status
 	mu           sync.RWMutex
 	logger       *logrus.Logger
+
+	// Evidence tracking (Module 26) - NEW
+	evidenceRecorder *evidence.ReceiptBuilder // module-level signing key for audit trail
+	capabilityMode   capability.Mode          // modeReal via SetTransport call
 }
 
 // NewOTAManager creates a new OTA upgrade manager

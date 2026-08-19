@@ -6,15 +6,25 @@ package security
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/asn1"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/pem"
 	"fmt"
+	"math/big"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
 
@@ -127,6 +137,7 @@ type SupplyChainManager struct {
 	attestations map[string]*ProvenanceAttestation // digest → attestation
 	logger       *logrus.Logger
 	mu           sync.RWMutex
+	capOnce      sync.Once // reports the signature-verifier capability exactly once
 }
 
 // SupplyChainConfig configures the supply chain manager.
@@ -168,6 +179,141 @@ func (m *SupplyChainManager) RecordSignature(sig *ImageSignature) {
 	m.logger.WithFields(logrus.Fields{
 		"image": sig.ImageRef, "signer": sig.SignedBy,
 	}).Debug("Image signature recorded")
+}
+
+// ============================================================================
+// Signature Verification
+// ============================================================================
+
+// SignatureVerifyStatus represents the outcome of an ECDSA signature verification.
+type SignatureVerifyStatus string
+
+const (
+	SignatureVerified   SignatureVerifyStatus = "verified"     // Cryptographically valid
+	SignatureFailed     SignatureVerifyStatus = "failed"       // Valid key + sig, but crypto check failed (tampering)
+	SignatureUnverified SignatureVerifyStatus = "unverified"   // Missing public key or signature material
+)
+
+// VerifySignature performs real ECDSA-P256 cryptographic verification over the image digest.
+// Returns SignatureVerified when the signature cryptographically matches the digest.
+// Returns SignatureFailed when tampering is detected.
+// Returns SignatureUnverified when ECDSA material (public key / signature) is missing.
+func VerifySignature(sig *ImageSignature) (_ SignatureVerifyStatus, _ error) {
+	if sig.PublicKey == "" || sig.Signature == "" {
+		return SignatureUnverified, nil
+	}
+
+	// Decode base64-encoded signature.
+	sigBytes, err := base64.StdEncoding.DecodeString(sig.Signature)
+	if err != nil {
+		return SignatureFailed, fmt.Errorf("decode signature: %w", err)
+	}
+
+	// Parse PEM-encoded public key.
+	block, _ := pem.Decode([]byte(sig.PublicKey))
+	if block == nil {
+		return SignatureFailed, fmt.Errorf("missing or invalid PEM in public key")
+	}
+	pubInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return SignatureFailed, fmt.Errorf("parse public key: %w", err)
+	}
+	pub, ok := pubInterface.(*ecdsa.PublicKey)
+	if !ok {
+		return SignatureFailed, fmt.Errorf("expected ECDSA public key, got type %T", pubInterface)
+	}
+
+	// Hash the image digest as message.
+	h := sha256.Sum256([]byte(sig.Digest))
+
+	// Parse DER-encoded signature.
+	type sigStruct struct {
+		R, S *big.Int
+	}
+	var derSig sigStruct
+	_, err = asn1.Unmarshal(sigBytes, &derSig)
+	if err != nil || derSig.R == nil || derSig.S == nil {
+		return SignatureFailed, fmt.Errorf("parse DER signature: %w", err)
+	}
+
+	// Verify ECDSA signature using crypto/ecdsa.Verify with r,s components.
+	if ecdsa.Verify(pub, h[:], derSig.R, derSig.S) {
+		return SignatureVerified, nil
+	}
+	return SignatureFailed, nil
+}
+
+// verifyStatus is the error-free projection of VerifySignature used by the batch
+// path, which reports per-item status in its result slice rather than returning
+// an error for a single item.
+func verifyStatus(sig *ImageSignature) SignatureVerifyStatus {
+	status, _ := VerifySignature(sig)
+	return status
+}
+
+// BatchVerifySignatures cryptographically verifies a batch of image signatures
+// and returns a status per input (index-aligned).
+//
+// ECDSA-P256 verification is CPU-bound (one scalar multiplication per check and
+// no shared state between checks), so the batch is split into GOMAXPROCS chunks
+// verified in parallel. This amortizes a fleet of admission-time signature
+// checks across all cores: for B independent signatures the wall-clock cost
+// drops from B·t (sequential) toward (B/P)·t with P workers, while each
+// individual check remains the exact same real crypto/ecdsa.Verify call. Small
+// batches (< 2·workers) fall back to a sequential pass to avoid goroutine
+// scheduling overhead dominating the work.
+func BatchVerifySignatures(sigs []*ImageSignature) []SignatureVerifyStatus {
+	out := make([]SignatureVerifyStatus, len(sigs))
+	if len(sigs) == 0 {
+		return out
+	}
+
+	workers := runtime.GOMAXPROCS(0)
+	if workers < 1 {
+		workers = 1
+	}
+	// Sequential fast path for small batches: the parallel dispatch overhead is
+	// not worth it below ~2 items per worker.
+	if workers == 1 || len(sigs) < 2*workers {
+		for i, s := range sigs {
+			out[i] = verifyStatus(s)
+		}
+		return out
+	}
+
+	var wg sync.WaitGroup
+	chunk := (len(sigs) + workers - 1) / workers
+	for start := 0; start < len(sigs); start += chunk {
+		end := start + chunk
+		if end > len(sigs) {
+			end = len(sigs)
+		}
+		wg.Add(1)
+		go func(lo, hi int) {
+			defer wg.Done()
+			for i := lo; i < hi; i++ {
+				out[i] = verifyStatus(sigs[i])
+			}
+		}(start, end)
+	}
+	wg.Wait()
+	return out
+}
+
+// reportSignatureCapability reports the true nature of our verifier to capability registry exactly once.
+// This implements honest downgrade semantics: real crypto vs flag-trust fallback.
+func (m *SupplyChainManager) reportSignatureCapability(hadMaterial bool) {
+	m.capOnce.Do(func() {
+		mode := capability.ModeReal
+		driver := "crypto/ecdsa+P-256"
+		detail := "real cryptographic verification with ECDSA P-256 curves over SHA-256 digests"
+		if !hadMaterial {
+			mode = capability.ModeSimulated
+			driver = "no-signature-materials-found"
+			detail = "verification attempted but no signatures contained ECDSA material"
+		}
+		_ = capability.Report("security.supply_chain.signature", driver, mode, detail)
+	})
 }
 
 // VerifyImage checks if an image meets the trust policy requirements.
@@ -217,27 +363,88 @@ func (m *SupplyChainManager) VerifyImage(ctx context.Context, imageRef, digest, 
 			})
 		}
 
-		// Check signature
+		// Check signature.
+		//
+		// This path performs REAL cryptographic verification (crypto/ecdsa
+		// P-256 over the image digest, with the signer's crypto/x509 public
+		// key) rather than trusting a recorded boolean flag. Honest downgrade
+		// rule: when a candidate signature carries no ECDSA material (public
+		// key + signature), it is reported as "unverified" — never silently
+		// promoted to "pass".
 		if policy.RequireSignature {
 			signed := false
+			sawTampered := false
+			sawUnverified := false
+			hadMaterial := false
 			for _, sig := range m.signatures {
-				if sig.Digest == digest && sig.Verified {
-					// Check trusted signer
-					signerOK := len(policy.TrustedSigners) == 0
-					for _, ts := range policy.TrustedSigners {
-						if sig.SignedBy == ts {
-							signerOK = true
-							break
-						}
-					}
-					if signerOK {
-						signed = true
+				if sig.Digest != digest {
+					continue
+				}
+				// Only consider signatures from trusted signers.
+				signerOK := len(policy.TrustedSigners) == 0
+				for _, ts := range policy.TrustedSigners {
+					if sig.SignedBy == ts {
+						signerOK = true
 						break
 					}
 				}
+				if !signerOK {
+					continue
+				}
+				if sig.PublicKey != "" && sig.Signature != "" {
+					hadMaterial = true
+				}
+				status, verr := VerifySignature(sig)
+				if verr != nil {
+					m.logger.WithError(verr).WithField("image", imageRef).
+						Warn("image signature verification error")
+				}
+				switch status {
+				case SignatureVerified:
+					signed = true
+				case SignatureFailed:
+					sawTampered = true
+				case SignatureUnverified:
+					sawUnverified = true
+				}
+				if signed {
+					break
+				}
 			}
 
-			if !signed {
+			// Surface the true nature of the verifier (real crypto vs flag-trust
+			// fallback) to the capability registry, exactly once per manager.
+			m.reportSignatureCapability(hadMaterial)
+
+			switch {
+			case signed:
+				result.Checks = append(result.Checks, VerifyCheck{
+					Name: "signature", Status: "pass",
+					Detail: "ECDSA-P256 signature cryptographically verified",
+				})
+			case sawTampered:
+				result.Checks = append(result.Checks, VerifyCheck{
+					Name:   "signature",
+					Status: "fail",
+					Detail: "signature present but cryptographic verification failed (possible tampering)",
+				})
+				if policy.Enforcement == "enforce" {
+					result.Allowed = false
+					result.Reason = "image signature failed cryptographic verification"
+					return result, nil
+				}
+			case sawUnverified:
+				result.Checks = append(result.Checks, VerifyCheck{
+					Name:   "signature",
+					Status: "unverified",
+					Detail: "signature recorded without ECDSA material; cannot cryptographically verify",
+				})
+				if policy.Enforcement == "enforce" {
+					result.Allowed = false
+					result.Reason = "image signature could not be cryptographically verified"
+					return result, nil
+				}
+			default:
 				result.Checks = append(result.Checks, VerifyCheck{
 					Name:   "signature",
 					Status: "fail",
@@ -248,10 +455,6 @@ func (m *SupplyChainManager) VerifyImage(ctx context.Context, imageRef, digest, 
 					result.Reason = "image signature required but not found"
 					return result, nil
 				}
-			} else {
-				result.Checks = append(result.Checks, VerifyCheck{
-					Name: "signature", Status: "pass",
-				})
 			}
 		}
 
@@ -487,4 +690,46 @@ func containsString(slice []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// signDigestECDSA creates an ECDSA-P256 signature over a digest for testing.
+// This is provided as a utility for tests that need to generate valid signatures.
+func signDigestECDSA(digest string) (signature string, publicKey string, privateKey *ecdsa.PrivateKey, err error) {
+	// Generate a new ECDSA P-256 key pair.
+	privateKey, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("generate key: %w", err)
+	}
+
+	// Hash the digest.
+	h := sha256.Sum256([]byte(digest))
+
+	// Sign the hash.
+	r, s, err := ecdsa.Sign(rand.Reader, privateKey, h[:])
+	if err != nil {
+		return "", "", nil, fmt.Errorf("sign digest: %w", err)
+	}
+
+	// Encode signature as base64 (DER format).
+	type sigStruct struct {
+		R, S *big.Int
+	}
+	sigData, err := asn1.Marshal(sigStruct{R: r, S: s})
+	if err != nil {
+		return "", "", nil, fmt.Errorf("marshal signature: %w", err)
+	}
+	signature = base64.StdEncoding.EncodeToString(sigData)
+
+	// Export public key in PEM format (PKIX).
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("marshal public key: %w", err)
+	}
+	pemBlock := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubKeyBytes,
+	}
+	publicKey = string(pem.EncodeToMemory(pemBlock))
+
+	return signature, publicKey, privateKey, nil
 }

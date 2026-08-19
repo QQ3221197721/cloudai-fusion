@@ -6,6 +6,13 @@ import (
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode"
 )
 
+var testComponents = []string{
+	"cache","broker","messaging","scheduler.nodes","scheduler.routers",
+	"finops.reporter","redteam.executor","wasm.sandbox","mesh.peer",
+	"edge.worker","billing.invoicer","reporting.docgen","audit.store",
+	"evidence.signer","detect.hypervisor","quota.tenant",
+}
+
 func TestReport_RealNeverErrors(t *testing.T) {
 	r := NewRegistry(runmode.Production)
 	if err := r.Report("cache", "redis", ModeReal, "connected"); err != nil {
@@ -97,5 +104,38 @@ func TestDefaultRegistry(t *testing.T) {
 	Reset()
 	if len(Snapshot()) != 0 {
 		t.Error("Reset should clear the default registry")
+	}
+}
+
+// ============================================================================
+// Benchmark: Capability Registry (Report, HasSimulated, Snapshot)
+// ============================================================================
+
+var _capRegistry = func() *Registry {
+	r := NewRegistry(runmode.Simulation)
+	for _, c := range testComponents {
+		_ = r.MustReal(c, "sim", true, "test")
+	}
+	return r
+}()
+
+func BenchmarkRegistry_Report(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = _capRegistry.Report("comp", "driver", ModeReal, "detail")
+	}
+}
+
+func BenchmarkRegistry_HasSimulated(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = _capRegistry.HasSimulated()
+	}
+}
+
+func BenchmarkRegistry_Snapshot(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = _capRegistry.Snapshot()
 	}
 }

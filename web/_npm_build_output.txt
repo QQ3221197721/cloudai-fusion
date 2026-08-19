@@ -1,0 +1,27 @@
+﻿
+> cloudai-fusion-web-modules-39-44@1.0.0 build
+> tsc && vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m鉁?[39m 3651 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                       [39m[1m[2m    1.02 kB[22m[1m[22m[2m 鈹?gzip:   0.51 kB[22m
+[2mdist/[22m[35massets/index-gscVL5GB.css        [39m[1m[2m    5.97 kB[22m[1m[22m[2m 鈹?gzip:   1.85 kB[22m
+[2mdist/[22m[36massets/react-vendor-DUplxm6S.js  [39m[1m[2m  163.54 kB[22m[1m[22m[2m 鈹?gzip:  53.42 kB[22m
+[2mdist/[22m[36massets/antd-vendor-CXgFNq38.js   [39m[1m[33m  856.54 kB[39m[22m[2m 鈹?gzip: 267.36 kB[22m
+[2mdist/[22m[36massets/index-D3n8HKJf.js         [39m[1m[33m1,131.82 kB[39m[22m[2m 鈹?gzip: 380.08 kB[22m
+node.exe : [33m
+所在位置 行:1 字符: 1
++ & "D:\nodejs/node.exe" "D:\nodejs/node_modules/npm/bin/npm-cli.js" ru ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-m
+anualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m鉁?built in 13.27s[39m

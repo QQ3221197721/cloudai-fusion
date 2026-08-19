@@ -4,11 +4,11 @@ package kerberos_crypto
 
 import (
 	"crypto/md5"
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/binary"
 	"fmt"
 	"hash"
-	"math/big"
 )
 
 // ============================================================================
@@ -33,7 +33,7 @@ func NewRC4(key []byte) (*RC4State, error) {
 	// KSA (Key Scheduling Algorithm)
 	j := uint8(0)
 	for i := 0; i < 256; i++ {
-		j = (j + state.S[i] + key[i%len(key)]) % 256
+		j = j + state.S[i] + key[i%len(key)]
 		state.S[i], state.S[j] = state.S[j], state.S[i]
 	}
 	
@@ -47,15 +47,15 @@ func (rc4 *RC4State) Encrypt(data []byte) ([]byte, error) {
 	i, j := rc4.i, rc4.j
 	
 	for n := 0; n < len(data); n++ {
-		i = (i + 1) % 256
-		j = (j + state.S[i]) % 256
+		i = i + 1
+		j = j + rc4.S[i]
 		
 		// Swap
-		state.S[i], state.S[j] = state.S[j], state.S[i]
+		rc4.S[i], rc4.S[j] = rc4.S[j], rc4.S[i]
 		
 		// XOR with pseudo-random byte
-		t := (state.S[i] + state.S[j]) % 256
-		result[n] = data[n] ^ state.S[t]
+		t := rc4.S[i] + rc4.S[j]
+		result[n] = data[n] ^ rc4.S[t]
 	}
 	
 	rc4.i, rc4.j = i, j
@@ -303,11 +303,9 @@ func ZeroMemory(buf []byte) {
 
 // GenerateRandomBytes generates cryptographically secure random bytes
 func GenerateRandomBytes(count int) ([]byte, error) {
-	// Would use crypto/rand in production
 	result := make([]byte, count)
-	// Simplified for demo: use big.Int
-	bigInt := new(big.Int).Rand(rand(), big.NewInt(1<<64)-1)
-	binary.LittleEndian.PutUint64(result, bigInt.Uint64())
-	
+	if _, err := rand.Read(result); err != nil {
+		return nil, err
+	}
 	return result, nil
 }

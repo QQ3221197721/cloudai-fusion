@@ -1,10 +1,10 @@
 {
   "namespace": "redteam/engagement/DEMO-2026",
   "seal": {
-    "id": "848bc49f-84ca-4551-b596-87df56e3f316",
+    "id": "262980a5-dffa-485d-89a9-739832b6e473",
     "seq": 4,
-    "prev_hash": "13a8141dde17b9ecc9d8bd12a8ff612c217a6bd998de5bd3ecbbeffbba90d50e",
-    "timestamp": "2026-07-20T03:08:14.3391966Z",
+    "prev_hash": "eb0e131a4c0a30dabff32b89f29b87a8cb3546673f98c2707ca9bc01005ae517",
+    "timestamp": "2026-08-15T10:31:33.0851917Z",
     "actor": "redteam",
     "action": "evidence.seal",
     "subject": "redteam/engagement/DEMO-2026",
@@ -17,49 +17,49 @@
       }
     ],
     "input_hash": "3e2c2aba427b486fb6c3e2b100f1a0ff592b4884ca75f8a73be231e512fb3716",
-    "output_hash": "a87a28f6f9b9287ca2b379103b5893b364cfa394ace285d496fd5f1ab8555189",
+    "output_hash": "c75dc8bde358e7f3d523eeb6b16d25710a319c4200597979b894a55da5bab4b9",
     "payload": {
       "namespace": "redteam/engagement/DEMO-2026",
       "count": 3,
-      "subtree_root": "73ae913099158ee3d8b29c9f31b136a48ed4384e2bbcd509868da2c52be33d89",
+      "subtree_root": "c1bb8c4c54af908b5ba87d62c626d21d3e1f07401235cd7f0ef03910611d14d6",
       "member_ids": [
-        "f8510e98-1a1c-42cb-b62f-127ec8d8bb2f",
-        "55111922-c8dd-46aa-a691-fc392458b4e2",
-        "94bdfd96-beaa-4561-86c3-da8c6fe457ef"
+        "ada7c6c0-f10d-48ab-aa55-edae07fd4af6",
+        "931a7d66-a9c2-43b4-9236-4f0270392a50",
+        "5d79d52b-01f5-453a-9374-f6049467da75"
       ]
     },
-    "hash": "a5949acb2817529ceccbb8e41d1d9668362614fb9b6ff2537bb0d5711deeb165",
-    "signature": "ba3FhI3Fuhw1YrsIn02T/mMwvqeKtc+65NukrGc4lrSD8Z7K1l35JNX4ndUf3P+NGUP1tE0A2r/pITbPIBu2BA==",
+    "hash": "96162c0726624dd8cb6e6476903f26f53c7354b1b5343440f4bf11aac1b5cc56",
+    "signature": "xqFK85n6zYUwr69Fq1KbkZt68IihTTfgpgKiS6xyeEhkFk0yo3xTG4SorLVxcqYIwIPGZOIsWVpgmxUF18JmCQ==",
     "key_id": "790901b82a89fe50",
     "log_entry": {
       "backend": "simulated",
-      "integrated_at": "2026-07-20T03:08:14.3397302Z"
+      "integrated_at": "2026-08-15T10:31:33.0851917Z"
     }
   },
   "seal_inclusion": {
-    "record_id": "848bc49f-84ca-4551-b596-87df56e3f316",
+    "record_id": "262980a5-dffa-485d-89a9-739832b6e473",
     "leaf_index": 3,
     "tree_size": 4,
-    "leaf_hash": "8fe97ba7a8daad4cc682ea9f5924a0575be08aa433d8b0e25b3e1d69c101cdcc",
+    "leaf_hash": "226c5d6bbd757c29c789123b06605b8028f974a73c8e3e24f6863e52896d5cac",
     "audit_path": [
-      "51bc8a0c32d4aca21c7527a4b6b299098a5ce65eef8a3137bbef72ef3c04d79a",
-      "4b396081a877e516b21e2497e474dde76b232e27551658291d57409cb298b4c3"
+      "1c413035afeb2c779622444c66a4868304a96e3e2931309f2cfa86e59c402891",
+      "06970e4a1d22a72a46ae23330838008a173f6e0f8f9509e2fec5dd613da699ee"
     ],
     "checkpoint": {
       "origin": "cloudai-fusion/evidence",
       "tree_size": 4,
-      "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
-      "timestamp": "2026-07-20T03:08:14.3397302Z",
+      "root_hash": "2735995342bc662b6ff93956412978e7f40098072d9671c3859638431340de4f",
+      "timestamp": "2026-08-15T10:31:33.0857218Z",
       "key_id": "790901b82a89fe50",
-      "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+      "signature": "2Wn8/gcycVNMePROyZzY95ggmM3lBwCGvlyZiATe85E05WXYNEg59FOHJkhq/lqYG2mWJl2LTTQpJkfiPdFoDw=="
     }
   },
   "members": [
     {
-      "id": "f8510e98-1a1c-42cb-b62f-127ec8d8bb2f",
+      "id": "ada7c6c0-f10d-48ab-aa55-edae07fd4af6",
       "seq": 1,
       "prev_hash": "genesis",
-      "timestamp": "2026-07-20T03:08:14.3391966Z",
+      "timestamp": "2026-08-15T10:31:33.0840592Z",
       "actor": "redteam",
       "action": "redteam.finding",
       "subject": "redteam/engagement/DEMO-2026",
@@ -75,19 +75,19 @@
         "eidx": 0,
         "in_scope": true
       },
-      "hash": "d6efe6a8ea5650c4dd30eb6b630d6bd9f863e14a09bc5afb8a994ac9b3682fd9",
-      "signature": "0t4x2ywte+r1p4WWGDKWZhRGP0/FLyKNXJYYKPC2s4GC8Iyhn4SgtVU7fVjDhPHyKGkxjjlR5pcjRysFjLyPDg==",
+      "hash": "6dc1bc7e1594aca326c9fa4db0ddf0a24e008810d8d32163baaba6a915b92252",
+      "signature": "VW4PIyzQkxx4I2YTkNBaN4YH1a3vZLqge6tVW/wNDBjV6sM8RvGb1Ug/rnem7lJfnAzxtp/r6ud07mojSKTnCQ==",
       "key_id": "790901b82a89fe50",
       "log_entry": {
         "backend": "simulated",
-        "integrated_at": "2026-07-20T03:08:14.3391966Z"
+        "integrated_at": "2026-08-15T10:31:33.0840592Z"
       }
     },
     {
-      "id": "55111922-c8dd-46aa-a691-fc392458b4e2",
+      "id": "931a7d66-a9c2-43b4-9236-4f0270392a50",
       "seq": 2,
-      "prev_hash": "d6efe6a8ea5650c4dd30eb6b630d6bd9f863e14a09bc5afb8a994ac9b3682fd9",
-      "timestamp": "2026-07-20T03:08:14.3391966Z",
+      "prev_hash": "6dc1bc7e1594aca326c9fa4db0ddf0a24e008810d8d32163baaba6a915b92252",
+      "timestamp": "2026-08-15T10:31:33.0846242Z",
       "actor": "redteam",
       "action": "redteam.finding",
       "subject": "redteam/engagement/DEMO-2026",
@@ -103,19 +103,19 @@
         "eidx": 1,
         "in_scope": true
       },
-      "hash": "b82d086b3b5268ea3bf6d7fc57a742652ce64aa8c727885d8617886e50380b0f",
-      "signature": "aOhbJOA9E6Uh14nbiGYk2dZYX8OStRWQel9SRRERh9tR+8W9EoMECBTNbsWfTemrVauJhFjhSQxbmxcW6gYmCg==",
+      "hash": "07314b4e14a027a7f556e1523168c34e9666839854228d949488b8983c1054df",
+      "signature": "EYWH3+/TUtDZMsHXPfMXMdH1D/v8UuvSu2Ulepn0KzPFW0UR7e++AjzNfLpWNL+psn9NoLwIUy7UBxwYKs7PDw==",
       "key_id": "790901b82a89fe50",
       "log_entry": {
         "backend": "simulated",
-        "integrated_at": "2026-07-20T03:08:14.3391966Z"
+        "integrated_at": "2026-08-15T10:31:33.0846242Z"
       }
     },
     {
-      "id": "94bdfd96-beaa-4561-86c3-da8c6fe457ef",
+      "id": "5d79d52b-01f5-453a-9374-f6049467da75",
       "seq": 3,
-      "prev_hash": "b82d086b3b5268ea3bf6d7fc57a742652ce64aa8c727885d8617886e50380b0f",
-      "timestamp": "2026-07-20T03:08:14.3391966Z",
+      "prev_hash": "07314b4e14a027a7f556e1523168c34e9666839854228d949488b8983c1054df",
+      "timestamp": "2026-08-15T10:31:33.0846242Z",
       "actor": "redteam",
       "action": "redteam.finding",
       "subject": "redteam/engagement/DEMO-2026",
@@ -131,68 +131,68 @@
         "eidx": 2,
         "in_scope": true
       },
-      "hash": "13a8141dde17b9ecc9d8bd12a8ff612c217a6bd998de5bd3ecbbeffbba90d50e",
-      "signature": "jnP0r+06otASuH3dXQ7AX4/J6P9mqYvjcgzchkY/U+r/06IWhQuJrtiiBh7InM613PqDwhDkUiSP8Bm1sqeXDw==",
+      "hash": "eb0e131a4c0a30dabff32b89f29b87a8cb3546673f98c2707ca9bc01005ae517",
+      "signature": "l3eIvQsrnhylPwKinxI7ipls6rINS6gASY4UQtj954TDIb5MA4YuvNuCuq8ceI3rG6bJ8pl9yUwzwo+XmgteAQ==",
       "key_id": "790901b82a89fe50",
       "log_entry": {
         "backend": "simulated",
-        "integrated_at": "2026-07-20T03:08:14.3391966Z"
+        "integrated_at": "2026-08-15T10:31:33.0846242Z"
       }
     }
   ],
   "member_proofs": [
     {
-      "record_id": "f8510e98-1a1c-42cb-b62f-127ec8d8bb2f",
+      "record_id": "ada7c6c0-f10d-48ab-aa55-edae07fd4af6",
       "leaf_index": 0,
       "tree_size": 4,
-      "leaf_hash": "1ba19ecf8638ede2d74c98a5f7475510536e5f6427bb19efef5a8e28cab2c71e",
+      "leaf_hash": "3adc5d6dde0b8195d31fb8f241bdbee95cf2c1c7684479305813dd51d845fbf8",
       "audit_path": [
-        "7053841ba4f352bea78c34a9098147152dfccbf0ae36507fbaf8cb5f248553c0",
-        "0a85768d7b2e9a81e9551bce4248a34f7b3d99e17016a9bbca17361b8d939fd9"
+        "a54e45f439a0af8346f7bed989b14d8c3b4cba0369012af3e6d73a8a4d8372e4",
+        "9e4b7bba11f4e95efb7c396742f99b6b0ebe0d8064f19f7e2762fe9621e7f79b"
       ],
       "checkpoint": {
         "origin": "cloudai-fusion/evidence",
         "tree_size": 4,
-        "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
-        "timestamp": "2026-07-20T03:08:14.3397302Z",
+        "root_hash": "2735995342bc662b6ff93956412978e7f40098072d9671c3859638431340de4f",
+        "timestamp": "2026-08-15T10:31:33.0857218Z",
         "key_id": "790901b82a89fe50",
-        "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+        "signature": "2Wn8/gcycVNMePROyZzY95ggmM3lBwCGvlyZiATe85E05WXYNEg59FOHJkhq/lqYG2mWJl2LTTQpJkfiPdFoDw=="
       }
     },
     {
-      "record_id": "55111922-c8dd-46aa-a691-fc392458b4e2",
+      "record_id": "931a7d66-a9c2-43b4-9236-4f0270392a50",
       "leaf_index": 1,
       "tree_size": 4,
-      "leaf_hash": "7053841ba4f352bea78c34a9098147152dfccbf0ae36507fbaf8cb5f248553c0",
+      "leaf_hash": "a54e45f439a0af8346f7bed989b14d8c3b4cba0369012af3e6d73a8a4d8372e4",
       "audit_path": [
-        "1ba19ecf8638ede2d74c98a5f7475510536e5f6427bb19efef5a8e28cab2c71e",
-        "0a85768d7b2e9a81e9551bce4248a34f7b3d99e17016a9bbca17361b8d939fd9"
+        "3adc5d6dde0b8195d31fb8f241bdbee95cf2c1c7684479305813dd51d845fbf8",
+        "9e4b7bba11f4e95efb7c396742f99b6b0ebe0d8064f19f7e2762fe9621e7f79b"
       ],
       "checkpoint": {
         "origin": "cloudai-fusion/evidence",
         "tree_size": 4,
-        "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
-        "timestamp": "2026-07-20T03:08:14.3397302Z",
+        "root_hash": "2735995342bc662b6ff93956412978e7f40098072d9671c3859638431340de4f",
+        "timestamp": "2026-08-15T10:31:33.0857218Z",
         "key_id": "790901b82a89fe50",
-        "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+        "signature": "2Wn8/gcycVNMePROyZzY95ggmM3lBwCGvlyZiATe85E05WXYNEg59FOHJkhq/lqYG2mWJl2LTTQpJkfiPdFoDw=="
       }
     },
     {
-      "record_id": "94bdfd96-beaa-4561-86c3-da8c6fe457ef",
+      "record_id": "5d79d52b-01f5-453a-9374-f6049467da75",
       "leaf_index": 2,
       "tree_size": 4,
-      "leaf_hash": "51bc8a0c32d4aca21c7527a4b6b299098a5ce65eef8a3137bbef72ef3c04d79a",
+      "leaf_hash": "1c413035afeb2c779622444c66a4868304a96e3e2931309f2cfa86e59c402891",
       "audit_path": [
-        "8fe97ba7a8daad4cc682ea9f5924a0575be08aa433d8b0e25b3e1d69c101cdcc",
-        "4b396081a877e516b21e2497e474dde76b232e27551658291d57409cb298b4c3"
+        "226c5d6bbd757c29c789123b06605b8028f974a73c8e3e24f6863e52896d5cac",
+        "06970e4a1d22a72a46ae23330838008a173f6e0f8f9509e2fec5dd613da699ee"
       ],
       "checkpoint": {
         "origin": "cloudai-fusion/evidence",
         "tree_size": 4,
-        "root_hash": "dedca7188c522c33794e032a6b1c37234751c9904da26037d2ee36060fa7070c",
-        "timestamp": "2026-07-20T03:08:14.3397302Z",
+        "root_hash": "2735995342bc662b6ff93956412978e7f40098072d9671c3859638431340de4f",
+        "timestamp": "2026-08-15T10:31:33.0857218Z",
         "key_id": "790901b82a89fe50",
-        "signature": "vKYsgaVvbRRBkSK2/OpJUuItoNB53Cu87ikXMqKfQNpvAHGfBxF/tCQODEjcfo9ocYICmGE7EFsYgubUWKgZBA=="
+        "signature": "2Wn8/gcycVNMePROyZzY95ggmM3lBwCGvlyZiATe85E05WXYNEg59FOHJkhq/lqYG2mWJl2LTTQpJkfiPdFoDw=="
       }
     }
   ]

@@ -1,0 +1,10 @@
+{
+  "statement": "completeness-under-predicate",
+  "public_root": "1adc7f54f0876233f4cee668b310e9a3a40b24ce182ccc1ab96b4739b858e422",
+  "scope_commit": "18d1a461f7ba14e46058c8c62aa214f71c6258b74fa323fcc842a8c44d8c16f9",
+  "count": 10,
+  "predicate": "all-in-scope",
+  "proof": "lasPFvJh5WphUriz9OeUTXg0CG61HigTzlI0FrdsfleoWAv+jIIKusWWtPaIr4OZmFeLqbHNXCD9EkViyBNwXCzHIVU/FCoJnPQw2Gp+ZfyztbNTuLKgphQxtXHe8OxqzIW0d4Hx7abq/kqBsYtlSAeZ6pVL9CXtqASv2V1gOCkAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  "vk_id": "b6ec3089f4490cfa90bde0946ddcca0fd4bf3bb0b2ee05d8f29346f699ff0abf",
+  "mode": "real"
+}

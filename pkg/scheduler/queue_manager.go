@@ -411,9 +411,13 @@ func (gs *GangScheduler) RegisterGangMember(qw *QueuedWorkload) error {
 
 	gang, ok := gs.gangs[qw.GangID]
 	if !ok {
+		gangPrefix := qw.GangID
+		if len(gangPrefix) > 8 {
+			gangPrefix = gangPrefix[:8]
+		}
 		gang = &GangGroup{
 			ID:           qw.GangID,
-			Name:         fmt.Sprintf("gang-%s", qw.GangID[:8]),
+			Name:         fmt.Sprintf("gang-%s", gangPrefix),
 			TotalMembers: qw.GangSize,
 			Members:      make([]*QueuedWorkload, 0, qw.GangSize),
 			Status:       "waiting",

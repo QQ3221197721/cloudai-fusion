@@ -59,6 +59,10 @@ build-scheduler: ## Build resource scheduler
 build-agent: ## Build AI agent service
 	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/agent ./$(CMD_DIR)/agent
 
+.PHONY: build-cafctl
+build-cafctl: ## Build cafctl control-plane CLI (evidence verification, zk-demo, ...)
+	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/cafctl ./$(CMD_DIR)/cafctl
+
 # ============================================================================
 # Test Targets
 # ============================================================================
@@ -771,3 +775,16 @@ jaeger-ui: ## Open Jaeger tracing UI in browser
 	@which xdg-open >/dev/null 2>&1 && xdg-open http://localhost:16686 || \
 		which open >/dev/null 2>&1 && open http://localhost:16686 || \
 		echo "Open http://localhost:16686 in your browser"
+
+# ============================================================================
+# Zero-Knowledge Proof Demo (Groth16 + Poseidon2)
+# ============================================================================
+
+.PHONY: zk-demo
+zk-demo: build-cafctl ## Run the end-to-end ZK proof demo (generate + verify)
+	@echo "=== Running ZKP Demo End-to-End ==="
+	@mkdir -p _tmp/zkp
+	./$(BIN_DIR)/cafctl zk-demo generate --output _tmp/zkp/proof.json --vk-output _tmp/zkp/vk.bin
+	@echo "=== Verifying generated proof ==="
+	./$(BIN_DIR)/cafctl zk-demo verify _tmp/zkp/proof.json _tmp/zkp/vk.bin
+	@echo "ZKP demo complete! See _tmp/zkp/proof.json for attestation details."

@@ -10,8 +10,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"net"
 	"net/http"
+	"runtime"
 	"sync"
 	"time"
 
@@ -51,13 +53,44 @@ type Client struct {
 	closed bool
 }
 
-// Hub manages WebSocket clients and broadcasts events.
+// hubShard is a single shard holding a subset of clients behind its own lock.
+// Sharding client storage across multiple shards keyed by a fast, deterministic
+// FNV-1a hash of the client ID reduces lock contention under high concurrency:
+// registrations, disconnects and broadcasts for clients on different shards no
+// longer serialize on a single mutex.
+type hubShard struct {
+	mu      sync.RWMutex
+	clients map[*Client]bool
+}
+
+// defaultShardCount picks a shard count based on available CPUs, with a floor of
+// 4 so small machines still get meaningful parallelism.
+func defaultShardCount() int {
+	n := runtime.NumCPU()
+	if n < 4 {
+		n = 4
+	}
+	return n
+}
+
+// shardIndex maps a client ID to a shard index using FNV-1a. The modulo is done
+// on the unsigned hash so the result is always a valid non-negative index on
+// both 32-bit and 64-bit platforms.
+func shardIndex(clientID string, numShards int) int {
+	hh := fnv.New32a()
+	_, _ = hh.Write([]byte(clientID))
+	return int(hh.Sum32() % uint32(numShards))
+}
+
+// Hub manages WebSocket clients and broadcasts events. Client storage is sharded
+// internally (see hubShard) to keep lock contention low at high connection
+// counts while preserving the original public API.
 type Hub struct {
-	clients    map[string]*Client
+	clients    []*hubShard
+	numShards  int
 	register   chan *Client
 	unregister chan *Client
 	broadcast  chan *Event
-	mu         sync.RWMutex
 	logger     *logrus.Logger
 }
 
@@ -66,8 +99,14 @@ func NewHub(logger *logrus.Logger) *Hub {
 	if logger == nil {
 		logger = logrus.StandardLogger()
 	}
+	numShards := defaultShardCount()
+	shards := make([]*hubShard, numShards)
+	for i := range shards {
+		shards[i] = &hubShard{clients: make(map[*Client]bool)}
+	}
 	h := &Hub{
-		clients:    make(map[string]*Client),
+		clients:    shards,
+		numShards:  numShards,
 		register:   make(chan *Client, 64),
 		unregister: make(chan *Client, 64),
 		broadcast:  make(chan *Event, 256),
@@ -76,60 +115,79 @@ func NewHub(logger *logrus.Logger) *Hub {
 	return h
 }
 
+// shardFor returns the shard that owns the given client ID.
+func (h *Hub) shardFor(clientID string) *hubShard {
+	return h.clients[shardIndex(clientID, h.numShards)]
+}
+
 // Run starts the hub event loop. Should be called in a goroutine.
 func (h *Hub) Run(ctx context.Context) {
 	h.logger.Info("WebSocket hub started")
 	for {
 		select {
 		case <-ctx.Done():
-			h.mu.Lock()
-			for _, c := range h.clients {
-				c.close()
+			// Close all clients across shards on shutdown
+			for _, shard := range h.clients {
+				shard.mu.Lock()
+				for client := range shard.clients {
+					client.close()
+				}
+				shard.clients = make(map[*Client]bool)
+				shard.mu.Unlock()
 			}
-			h.clients = make(map[string]*Client)
-			h.mu.Unlock()
 			h.logger.Info("WebSocket hub stopped")
 			return
 
 		case client := <-h.register:
-			h.mu.Lock()
-			h.clients[client.id] = client
-			h.mu.Unlock()
+			shard := h.shardFor(client.id)
+			shard.mu.Lock()
+			shard.clients[client] = true
+			shard.mu.Unlock()
 			h.logger.WithField("client_id", client.id).Debug("WebSocket client connected")
 
 		case client := <-h.unregister:
-			h.mu.Lock()
-			if _, ok := h.clients[client.id]; ok {
-				delete(h.clients, client.id)
+			shard := h.shardFor(client.id)
+			shard.mu.Lock()
+			if _, ok := shard.clients[client]; ok {
+				delete(shard.clients, client)
 				client.close()
 			}
-			h.mu.Unlock()
+			shard.mu.Unlock()
 			h.logger.WithField("client_id", client.id).Debug("WebSocket client disconnected")
 
 		case event := <-h.broadcast:
+			// Marshal once; all clients share the same frame payload
 			data, err := json.Marshal(event)
 			if err != nil {
 				h.logger.WithError(err).Error("Failed to marshal WebSocket event")
 				continue
 			}
-			// Wrap as WebSocket text frame
 			frame := encodeTextFrame(data)
-
-			h.mu.RLock()
-			for id, client := range h.clients {
-				// Check topic subscription
-				if len(client.topics) > 0 {
-					if _, subscribed := client.topics[event.Type]; !subscribed {
-						continue
+			shardCount := h.numShards
+			var wg sync.WaitGroup
+			wg.Add(shardCount)
+			for i := range h.clients {
+				go func(shard *hubShard) {
+					defer wg.Done()
+					shard.mu.RLock()
+					for client := range shard.clients {
+						// Check topic subscription when non-empty
+						if len(client.topics) > 0 {
+							if _, sub := client.topics[event.Type]; !sub {
+								continue
+							}
+						}
+						select {
+						case client.send <- frame:
+						default:
+							// Send buffer full: drop for this slow consumer
+							h.logger.WithField("client_id", client.id).Warn("Client send buffer full, dropping message")
+						}
 					}
-				}
-				select {
-				case client.send <- frame:
-				default:
-					h.logger.WithField("client_id", id).Warn("Client send buffer full, dropping")
-				}
+					shard.mu.RUnlock()
+				}(h.clients[i])
 			}
-			h.mu.RUnlock()
+			wg.Wait()
 		}
 	}
 }
@@ -170,11 +228,17 @@ func (h *Hub) PublishWorkloadStatus(workloadID, fromStatus, toStatus string) {
 	})
 }
 
-// ClientCount returns the number of connected WebSocket clients.
+// ClientCount returns the total number of connected clients across all shards.
+// Each shard is read under its own lock, so this operation has O(numShards)
+// locking overhead rather than O(1) on a single global mutex.
 func (h *Hub) ClientCount() int {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return len(h.clients)
+	total := 0
+	for _, shard := range h.clients {
+		shard.mu.RLock()
+		total += len(shard.clients)
+		shard.mu.RUnlock()
+	}
+	return total
 }
 
 // HandleWebSocket is a Gin handler that upgrades HTTP to WebSocket.
@@ -367,6 +431,137 @@ func splitTopics(s string) []string {
 		}
 	}
 	return result
+}
+
+// HubEvent is a broadcast message payload used by ShardedHub.Run().
+// The data field holds pre-encoded WebSocket frame bytes so Broadcast can
+// forward directly to each client's send channel.
+type HubEvent struct {
+	Data []byte
+}
+
+// ShardedHub distributes clients across multiple shards to reduce lock contention
+// at high concurrency. It provides both direct methods (Register/Unregister/Broadcast)
+// and an optional Run() loop that consumes channels asynchronously.
+type ShardedHub struct {
+	shards    []*hubShard
+	numShards int
+
+	// Channels for client lifecycle
+	register   chan *Client
+	unregister chan *Client
+	broadcast  chan *HubEvent
+
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+// NewShardedHub creates a sharded hub backed by runtime.NumCPU shards (minimum 4).
+func NewShardedHub(ctx context.Context) *ShardedHub {
+	numShards := defaultShardCount()
+	if numShards < 4 {
+		numShards = 4
+	}
+	shards := make([]*hubShard, numShards)
+	for i := range shards {
+		shards[i] = &hubShard{clients: make(map[*Client]bool)}
+	}
+	sctx, cancel := context.WithCancel(ctx)
+	return &ShardedHub{
+		shards:     shards,
+		numShards:  numShards,
+		register:   make(chan *Client, 256),
+		unregister: make(chan *Client, 256),
+		broadcast:  make(chan *HubEvent, 64),
+		ctx:        sctx,
+		cancel:     cancel,
+	}
+}
+
+// getShard returns the shard for the given client ID using FNV-1a hashing.
+func (sh *ShardedHub) getShard(clientID string) *hubShard {
+	return sh.shards[shardIndex(clientID, sh.numShards)]
+}
+
+// Register adds a client to the appropriate shard (no locking of the hub itself).
+func (sh *ShardedHub) Register(client *Client) {
+	shard := sh.getShard(client.id)
+	shard.mu.Lock()
+	shard.clients[client] = true
+	shard.mu.Unlock()
+}
+
+// Unregister removes a client from its shard.
+func (sh *ShardedHub) Unregister(client *Client) {
+	shard := sh.getShard(client.id)
+	shard.mu.Lock()
+	delete(shard.clients, client)
+	shard.mu.Unlock()
+}
+
+// Broadcast forwards event.Data to all subscribed clients across all shards in parallel.
+func (sh *ShardedHub) Broadcast(event *HubEvent) {
+	var wg sync.WaitGroup
+	wg.Add(sh.numShards)
+	for _, shard := range sh.shards {
+		go func(s *hubShard) {
+			defer wg.Done()
+			s.mu.RLock()
+			defer s.mu.RUnlock()
+			for client := range s.clients {
+				select {
+				case client.send <- event.Data:
+				default:
+					// Client buffer full; skip or mark for removal
+				}
+			}
+		}(shard)
+	}
+	wg.Wait()
+}
+
+// ClientCount returns total connected clients across all shards.
+func (sh *ShardedHub) ClientCount() int {
+	total := 0
+	for _, shard := range sh.shards {
+		shard.mu.RLock()
+		total += len(shard.clients)
+		shard.mu.RUnlock()
+	}
+	return total
+}
+
+// Run starts the background loop that drains register/unregister/broadcast channels.
+// Clients registered via the channels are automatically managed on their assigned shard.
+// This mode is useful when you want an asynchronous, event-driven hub lifecycle.
+func (sh *ShardedHub) Run() {
+	defer sh.cancel()
+	for {
+		select {
+		case client := <-sh.register:
+			sh.Register(client)
+		case client := <-sh.unregister:
+			sh.Unregister(client)
+		case event := <-sh.broadcast:
+			sh.Broadcast(event)
+		case <-sh.ctx.Done():
+			// Cleanup: close all clients (simplified; real impl would do topic filtering too)
+			for _, shard := range sh.shards {
+				shard.mu.Lock()
+				for client := range shard.clients {
+					client.close()
+				}
+				shard.clients = make(map[*Client]bool)
+				shard.mu.Unlock()
+			}
+			return
+		}
+	}
+}
+
+// Stop gracefully shuts down the ShardedHub by cancelling its context.
+func (sh *ShardedHub) Stop() {
+	sh.cancel()
 }
 
 // Minimal string helpers to avoid importing strings for small ops

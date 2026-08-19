@@ -47,9 +47,7 @@ func (m *MITREATTandCK) FinalExpansion() error {
 // populateAdditionalCredentialAccess adds 8 more credential access techniques
 func (m *MITREATTandCK) populateAdditionalCredentialAccess() error {
 	newTechs := []*Technique{
-		{ID: "T1552.001", Name: "Unsecured Credentials", Subtechniques: []string{"Stored Credentials", "Process List"}}},
-		Description: "Unprotected stored credentials in various locations",
-		Tactic:      "Credential Access"},
+		{ID: "T1552.001", Name: "Unsecured Credentials", Subtechniques: []string{"Stored Credentials", "Process List"}, Description: "Unprotected stored credentials in various locations", Tactic: "Credential Access"},
 		
 		{ID: "T1003.001", Name: "LSASS Memory", Description: "Dump LSASS memory for NTLM hash extraction", Tactic: "Credential Access"},
 		{ID: "T1003.002", Name: "Security Account Manager", Description: "Extract SAM database", Tactic: "Credential Access"},

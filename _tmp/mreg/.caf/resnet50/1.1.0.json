@@ -1,0 +1,14 @@
+{
+  "name": "resnet50",
+  "version": "1.1.0",
+  "sha256": "134864149f6159e17108e19fe14acef7295185d51fbb822b56b1715f3e4d3767",
+  "size_bytes": 23,
+  "created_by": "cafctl",
+  "created_at": "2026-08-16T11:36:06.8500765Z",
+  "lineage": {
+    "dataset_ref": "ds-abc123",
+    "code_ref": "commit-789",
+    "parent_version": "1.0.0"
+  },
+  "model_card": {}
+}

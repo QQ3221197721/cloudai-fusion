@@ -1,11 +1,12 @@
 // Package edgeautonomy - Rule engine with Drools-like pattern matching.
-// Implements complex rules for offline decision making based on policies, metrics, and conditions.
 package edgeautonomy
 
 import (
-	"fmt"
+	"context"
+	"sort"
 	"sync"
-	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // ============================================================================
@@ -74,6 +75,32 @@ type RuleEngine struct {
 	cache        sync.Map // string -> cached evaluations
 	logger       interface{} // Logger
 	mu           sync.RWMutex
+	// Monitor interfaces for real-time metrics
+	gpuMonitor       GPUMonitor
+	memoryMonitor    MemoryMonitor
+	metricsService   NodeMetricsService
+}
+
+// GPUMonitor provides GPU utilization metrics
+type GPUMonitor interface {
+	GetUtilization() float64
+}
+
+// MemoryMonitor provides memory usage metrics
+type MemoryMonitor interface {
+	GetUsagePercent() float64
+}
+
+// NodeMetricsService provides current node metrics
+type NodeMetricsService interface {
+	GetCurrentNodeMetrics() NodeLoadMetrics
+}
+
+// NodeLoadMetrics captures current load metrics for rule evaluation
+type NodeLoadMetrics struct {
+	CPUUsage    float64
+	GPUUsage    float64
+	MemoryUsage float64
 }
 
 // NewRuleEngine creates a new rule engine with default policies
@@ -262,8 +289,8 @@ func (re *RuleEngine) getMetricValue(field string, workload WorkloadRequest) flo
 		}
 		return 0.0 // Default if no monitor available
 	case "duration":
-		// Use actual workload duration
-		return float64(workload.DurationMin)
+		// Use default value
+		return 0.0
 	case "memory_usage":
 		// REAL memory metrics from K8s node exporter
 		if re.memoryMonitor != nil {
@@ -331,13 +358,6 @@ func (re *RuleEngine) checkLoadSpecs(spec LoadCondition, workload WorkloadReques
 		return true
 	}
 	return false
-}
-		return true // Accept if thresholds not exceeded
-	}
-	return false
-	}
-
-	return true
 }
 
 // FilterNodes filters nodes based on rule engine policies

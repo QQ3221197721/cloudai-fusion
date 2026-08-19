@@ -515,8 +515,12 @@ func (mgr *GPUSharingManager) AllocateMemoryIsolationGroup(
 	}
 
 	// Create isolation group with soft/hard limits
+	workloadPrefix := workloadID
+	if len(workloadID) > 8 {
+		workloadPrefix = workloadID[:8]
+	}
 	group := &MemoryIsolationGroup{
-		ID:             fmt.Sprintf("mig-%s-%d", workloadID[:8], gpuIndex),
+		ID:             fmt.Sprintf("mig-%s-%d", workloadPrefix, gpuIndex),
 		GPUIndex:       gpuIndex,
 		WorkloadID:     workloadID,
 		AllocatedMiB:   requiredMiB,

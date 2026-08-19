@@ -1,0 +1,21 @@
+{
+  "id": "job-95037e08d66d3ee1",
+  "name": "test-ft",
+  "image": "pytorch:2.0",
+  "gpu_count": 1,
+  "memory_gb": 4,
+  "base_model": "vgg11:1.0.0",
+  "dataset_ref": "ds-x",
+  "command": "python",
+  "status": "queued",
+  "events": [
+    {
+      "timestamp": "2026-08-16T11:56:54.8869634Z",
+      "from": "",
+      "to": "queued",
+      "reason": "submitted"
+    }
+  ],
+  "created_at": "2026-08-16T11:56:54.8869634Z",
+  "actor": "cafctl-train"
+}

@@ -1,0 +1,46 @@
+{
+  "key_id": "cc4b0613c67e90cf",
+  "public_key_pem": "// Load with: cafctl verify --key-file \u003cpubkey\u003e",
+  "keys": [
+    {
+      "key_id": "cc4b0613c67e90cf",
+      "pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAZWnhqKe1c1xcKgTCf7fI6VlzkcoBsVS93dPNxEji0wk=\n-----END PUBLIC KEY-----\n"
+    }
+  ],
+  "run_mode": "simulation",
+  "exported_at": "2026-08-18T13:23:42.4689789Z",
+  "count": 1,
+  "checkpoint": {
+    "origin": "cloudai-fusion/evidence",
+    "tree_size": 1,
+    "root_hash": "7785c373276e4f90158109aa9b1088f3f7564bd303a54ebe8b16488eecb40b3d",
+    "timestamp": "2026-08-18T13:23:42.4689789Z",
+    "key_id": "cc4b0613c67e90cf",
+    "signature": "1AvZ2ESY9o6IOtZFnY3sutu39UMlIT8ZH2UwYZVqswuAF2BjL9fx77zy2cmhdtQKHqQJGMWu15icXQW5CpF2CQ=="
+  },
+  "records": [
+    {
+      "id": "2db6e276-8418-4d3f-ae36-e3f6a99b4962",
+      "seq": 1,
+      "prev_hash": "genesis",
+      "timestamp": "2026-08-18T13:23:42.4684375Z",
+      "actor": "cafctl init",
+      "action": "system.init",
+      "subject": ".",
+      "run_mode": "simulation",
+      "backends": null,
+      "input_hash": "9b292720815dfd2511d1dc291c6889bf093722953bc0c49f54c41a5f2d0aa275",
+      "output_hash": "bb137bc3c6c34d5c3828e67313784b4eacba04d309555d6eb4cd050f8526629c",
+      "payload": {
+        "statement": "CloudAI Fusion project initialized at 2026-08-18T13:23:42Z"
+      },
+      "hash": "3f80dde552f70c731d197f52334973205bde4190584ddc7ee85f10caef907538",
+      "signature": "q4HYNl9TPk64RR2Euslc8ga8x+heuCsYAXSO7+XiaUhr9ttyFQTGOAb+1pYdSnVy7T80c/9lBGhV38rB1wLHDQ==",
+      "key_id": "cc4b0613c67e90cf",
+      "log_entry": {
+        "backend": "simulated",
+        "integrated_at": "2026-08-18T13:23:42.4684375Z"
+      }
+    }
+  ]
+}

@@ -1,10 +1,10 @@
+
 // Package attack_graph - kill_chain_mapper implements MITRE ATT&CK to Kill Chain mapping.
 // Maps CVEs and vulnerabilities to Lockheed Martin Cyber Kill Chain phases (7 stages).
 package attack_graph
 
 import (
 	"fmt"
-	"strings"
 )
 
 // KillChainPhase represents Lockheed Martin Cyber Kill Chain phase
@@ -34,6 +34,31 @@ type ExploitPattern struct {
 	PatternName string `json:"pattern_name"`
 	Mitigation  string `json:"mitigation,omitempty"`
 	Reference   string `json:"reference,omitempty"`
+}
+
+// ImpactScore represents CVSS impact scoring data
+type ImpactScore struct {
+	ID                 string  `json:"id"`
+	Version            string  `json:"version,omitempty"`
+	VectorString       string  `json:"vector_string,omitempty"`
+	AttackVector       string  `json:"attack_vector"`
+	AttackComplexity   string  `json:"attack_complexity"`
+	PrivilegesRequired string  `json:"privileges_required"`
+	UserInteraction    string  `json:"user_interaction"`
+	Scope              string  `json:"scope"`
+	Confidentiality    string  `json:"confidentiality"`
+	Integrity          string  `json:"integrity"`
+	Availability       string  `json:"availability"`
+	BaseScore          float64 `json:"base_score"`
+	BaseSeverity       string  `json:"base_severity,omitempty"`
+}
+
+// Ref represents a CVE reference link
+type Ref struct {
+	URL     string   `json:"url"`
+	Source  string   `json:"source"`
+	Sources []string `json:"sources,omitempty"`
+	Tags    []string `json:"tags,omitempty"`
 }
 
 // KillChainMapper provides mapping logic from CVE metadata to Kill Chain
@@ -159,31 +184,31 @@ func (kcm *KillChainMapper) logMapping(vulnID string, mapping *KillChainMapping)
 
 // GenerateKillChainGraph constructs attack graph nodes/edges from mappings
 func (kcm *KillChainMapper) GenerateKillChainGraph(mappings []*KillChainMapping) map[string]interface{} {
-	graph := map[string]interface{}{
-		"nodes": []Node{},
-		"edges": []Edge{},
-	}
+	nodes := make([]Node, 0)
+	edges := make([]Edge, 0)
 	
 	for _, mapping := range mappings {
 		// Add CVE node
-		graph["nodes"] = append(graph["nodes"].(map[string]interface{}), map[string]interface{}{
-			"id":      mapping.VulnID,
-			"type":    "cve",
-			"phase":   string(mapping.AttackVector),
-			"severity": "", // Would populate from actual data
+		nodes = append(nodes, Node{
+			ID:   mapping.VulnID,
+			Type: "cve",
+			Info: map[string]interface{}{"phase": string(mapping.AttackVector)},
 		})
 		
 		// Add edges to Kill Chain phases
 		for _, phase := range mapping.DeliveryMethod {
-			graph["edges"] = append(graph["edges"].(map[string]interface{}), map[string]interface{}{
-				"source": mapping.VulnID,
-				"target": string(phase),
-				"type":   "DELIVERS_TO",
+			edges = append(edges, Edge{
+				Source: mapping.VulnID,
+				Target: string(phase),
+				Type:   "DELIVERS_TO",
 			})
 		}
 	}
 	
-	return graph
+	return map[string]interface{}{
+		"nodes": nodes,
+		"edges": edges,
+	}
 }
 
 // Node represents a node in the attack graph
