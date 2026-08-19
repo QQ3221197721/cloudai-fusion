@@ -17,6 +17,8 @@ import { ExactQuantile } from './pages/ExactQuantile'
 import { StreamingAnomaly } from './pages/StreamingAnomaly'
 import { DeltaSync } from './pages/DeltaSync'
 import { CausalAlert } from './pages/CausalAlert'
+import { ApiClientGen } from './pages/ApiClientGen'
+import { DocGen } from './pages/DocGen'
 import type { RunMode } from './types'
 
 const MOCK_RUN_MODE: RunMode = 'simulation'
@@ -44,6 +46,8 @@ export function App(): JSX.Element {
             <Route path="/anomaly" element={<StreamingAnomaly />} />
             <Route path="/deltasync" element={<DeltaSync />} />
             <Route path="/correlation" element={<CausalAlert />} />
+            <Route path="/api-client-gen" element={<ApiClientGen />} />
+            <Route path="/doc-gen" element={<DocGen />} />
           </Routes>
         </main>
       </div>
