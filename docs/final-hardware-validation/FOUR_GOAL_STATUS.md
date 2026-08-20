@@ -21,7 +21,7 @@ CloudAI Fusion 的 53 个模块中，47 个非硬件模块已完成四目标攻�
 | gpu_sharing.go（MIG 分区）| ✅ `/api/v1/gpu/mig` | ⏳ 待 A100/H100 MIG | ✅ MIG-aware 调度 | ✅ GpuMigDashboard |
 | complete_gpu_migration.go（CRIU 迁移）| ✅ `/api/v1/gpu/migrate` | ⏳ 待 2 节点 InfiniBand | ✅ CRIU+RDMA 快迁移 | ✅ GpuMigrationDashboard |
 | edgeautonomy/metrics_collector.go | ✅ | ⏳ 待 Linux+GPU | ✅ 离线自治指标 | ✅（EdgeOverview） |
-| capability/detection.go（SGX/GPU 探测）| ✅ `/api/v1/sgx/status` | ✅ **已在真实 SGX 硬件验证**（见下） | ✅ 能力门控+软件降级 | ✅ SgxEnclaveDashboard |
+| capability/detection.go（SGX/GPU 探测）| ✅ `/api/v1/sgx/status` | ✅ **已在真实 SGX 硬件实测**（ECALL ~5µs, EREPORT ~12µs on Ice Lake SGX2） | ✅ 能力门控 + 软件降级 | ✅ SgxEnclaveDashboard |
 | resources/gpu.go（GPU 资源采集）| ✅ | ⏳ 待 NVIDIA GPU | ✅ nvidia-smi 解析+优雅降级 | ✅ |
 
 ## 已完成部分（真实 CLI 佐证）
@@ -60,8 +60,14 @@ CloudAI Fusion 的 53 个模块中，47 个非硬件模块已完成四目标攻�
   - `BenchmarkEnforceFailFast` 699.5 ns/op
   - `BenchmarkEvidenceCapDetect` 30589 ns/op / `BenchmarkEvidenceCapReceiptSignVerify` 84889 ns/op
   - 共 14 个 benchmark 全部 PASS（20.939s）
-- **证据存档**：`results/m5_sgx_result.log`、`results/m5_sgx_benchmark.log`
-- **结论**：**M5 SGX 四项全达标（T1 API + T2 真实硬件 benchmark + T3 能力门控 + T4 前端页）**
+- **证据存档**：`results/m5_sgx_result.log`、`results/m5_sgx_benchmark.log`、`results/m5t2_sgx_enclave.log`
+- **SGX-enclave 专属基准（Intel SGX SDK 2.30, SGX_MODE=HW, Ice Lake SGX2 实测）**：
+  - **ECALL 往返延迟**：NOOP 5049.50 ns/op（198k calls/s）、ADD 5195.46 ns/op（192k calls/s）
+  - **EREPORT attestation 生成**：总 12373.62 ns/op（80.8k ops/s），纯 EREPORT ~7324 ns
+  - 硬件真实性证明：REPORT_MAC + MRENCLAVE hex 均为真实 CPU 执行产出（非 stub）
+  - HW 模式确认：`SGX_MODE=HW SGX_DEBUG=1`，enclave 实例化成功 global_eid=2
+  - 诚实备注：DCAP quote 生成失败（0xe019 SGX_QL_NO_PLATFORM_CERT_DATA）——需 PCCS 证书基础设施，属远程证明部署项，非代码缺陷
+- **结论**：**M5 SGX 四项全达标（T1 API + T2 真实 SGX-enclave 硬件基准 + T3 能力门控 + T4 前端页）**
 
 ### ⏳ 仍待硬件验证：M2 / M3（A100，配额审批中）
 
