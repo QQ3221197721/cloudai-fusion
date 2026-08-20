@@ -1,0 +1,20 @@
+goos: linux
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/capability
+cpu: Intel(R) Xeon(R) Platinum 8369B CPU @ 2.70GHz
+BenchmarkPolicyCheckProduction-4              	 9581922	       123.7 ns/op	      24 B/op	       1 allocs/op
+BenchmarkPolicyCheckSimulated-4               	20756577	        57.93 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEnforceFailFast-4                    	 1640982	       699.5 ns/op	     400 B/op	      10 allocs/op
+BenchmarkThreeDimensionalGate-4               	349929175	         3.426 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDenyByDefaultPolicyCheck-4           	70861652	        16.99 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvidenceCapReceiptSignVerify-4       	   14214	     84889 ns/op	    1232 B/op	      15 allocs/op
+BenchmarkEvidenceCapDetect-4                  	   39087	     30589 ns/op	    3377 B/op	      43 allocs/op
+BenchmarkDetectionHotPath-4                   	     528	   2282104 ns/op	  140731 B/op	     307 allocs/op
+BenchmarkGracefulDegradationPlanning-4        	18081310	        64.34 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistrySnapshotSorted-4             	   78349	     15227 ns/op	    9640 B/op	       4 allocs/op
+BenchmarkRegistryHasSimulatedOptimization-4   	 4139758	       265.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistry_Report-4                    	13103932	        91.57 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistry_HasSimulated-4              	 5096997	       234.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistry_Snapshot-4                  	  669044	      1671 ns/op	    1704 B/op	       4 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/capability	20.939s
