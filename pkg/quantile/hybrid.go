@@ -26,12 +26,29 @@ import (
 
 // topKMin retains the K largest values pushed to it, using a binary min-heap so
 // the smallest retained value (the eviction candidate) sits at the root.
+//
+// sortedBuf/dirty implement a lazily-maintained ascending view: a query re-sorts
+// only when new values arrived since the last sort, and always into the SAME
+// preallocated backing array. Repeated Quantile calls on a settled stream (the
+// common dashboard pattern: many p99 reads between rare Adds) therefore run with
+// ZERO allocations instead of allocating a fresh K-element slice per query.
 type topKMin struct {
-	data []float64
-	capK int
+	data      []float64
+	capK      int
+	sortedBuf []float64 // reusable ascending scratch, cap == capK
+	dirty     bool      // true when data changed since sortedBuf was last built
 }
 
-func newTopKMin(k int) *topKMin { return &topKMin{data: make([]float64, 0, k), capK: k} }
+func newTopKMin(k int) *topKMin {
+	if k < 0 {
+		k = 0
+	}
+	return &topKMin{
+		data:      make([]float64, 0, k),
+		capK:      k,
+		sortedBuf: make([]float64, 0, k),
+	}
+}
 
 func (h *topKMin) Len() int { return len(h.data) }
 
@@ -39,6 +56,7 @@ func (h *topKMin) add(x float64) {
 	if h.capK == 0 {
 		return
 	}
+	h.dirty = true
 	if len(h.data) < h.capK {
 		h.data = append(h.data, x)
 		h.up(len(h.data) - 1)
@@ -79,12 +97,23 @@ func (h *topKMin) down(i int) {
 	}
 }
 
-// sortedAsc returns a sorted ascending copy of the retained values.
+// sortedAsc returns an ascending view of the retained values backed by the
+// estimator's own reusable buffer. It re-sorts only when the heap changed since
+// the previous call, so read-heavy query workloads allocate nothing. The
+// returned slice is owned by the estimator and must be treated as read-only.
 func (h *topKMin) sortedAsc() []float64 {
-	out := make([]float64, len(h.data))
-	copy(out, h.data)
-	sort.Float64s(out)
-	return out
+	n := len(h.data)
+	if !h.dirty && len(h.sortedBuf) == n {
+		return h.sortedBuf
+	}
+	if cap(h.sortedBuf) < n {
+		h.sortedBuf = make([]float64, n)
+	}
+	h.sortedBuf = h.sortedBuf[:n]
+	copy(h.sortedBuf, h.data)
+	sort.Float64s(h.sortedBuf)
+	h.dirty = false
+	return h.sortedBuf
 }
 
 // TailExact is the bounded-memory tail-exact hybrid estimator.

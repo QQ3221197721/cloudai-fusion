@@ -25,12 +25,17 @@ type ACMatch struct {
 }
 
 // acNode is a single node in the Aho-Corasick trie.
+//
+// children is a dense 256-way byte-indexed array rather than a map[byte]*acNode:
+// the search hot loop then follows goto/fail edges with a single array index and
+// no hashing, which is the dominant cost in multi-pattern matching over long text.
 type acNode struct {
-	children map[byte]*acNode // goto function: byte -> next node
-	output   []int            // indices into patterns slice where patterns end
-	fail     *acNode          // failure link for fallback transitions
-	failOut  []int            // precomputed union of outputs from failure chain
-	depth    int              // depth from root for tie-breaking
+	children [256]*acNode // goto function: byte -> next node (dense, hash-free)
+	output   []int        // indices into patterns slice where patterns end (direct)
+	fail     *acNode      // failure link for fallback transitions
+	failOut  []int        // precomputed union of outputs from the failure chain
+	out      []int        // merged output ∪ failOut: the single list Search emits
+	depth    int          // depth from root for tie-breaking
 }
 
 // AhoCorasick implements the Aho-Corasick multi-pattern matching automaton.
@@ -46,11 +51,9 @@ type AhoCorasick struct {
 func NewAhoCorasick() *AhoCorasick {
 	return &AhoCorasick{
 		root: &acNode{
-			children: make(map[byte]*acNode),
-			output:   nil,
-			fail:     nil, // points to root after Build()
-			failOut:  nil,
-			depth:    0,
+			output: nil,
+			fail:   nil, // points to root after Build()
+			depth:  0,
 		},
 		patterns: make([]ACPattern, 0),
 		built:    false,
@@ -73,10 +76,9 @@ func (ac *AhoCorasick) AddPattern(p ACPattern) {
 		b := acLowerByte(p.Pattern[i])
 		if node.children[b] == nil {
 			node.children[b] = &acNode{
-				children: make(map[byte]*acNode),
-				output:   nil,
-				fail:     nil,
-				depth:    node.depth + 1,
+				output: nil,
+				fail:   nil,
+				depth:  node.depth + 1,
 			}
 		}
 		node = node.children[b]
@@ -112,10 +114,16 @@ func (ac *AhoCorasick) Build() {
 	root := ac.root
 	queue := make([]*acNode, 0, 64)
 
-	// Initialize depth-1 nodes: fail links point to root, initialize failOut
-	for _, node := range root.children {
+	// Initialize depth-1 nodes: fail links point to root, no fail-chain output.
+	// Their emit list is simply their own direct output.
+	for b := 0; b < 256; b++ {
+		node := root.children[b]
+		if node == nil {
+			continue
+		}
 		node.fail = root
 		node.failOut = nil // inherits nothing from root's fail chain
+		node.out = node.output
 		queue = append(queue, node)
 	}
 
@@ -125,31 +133,50 @@ func (ac *AhoCorasick) Build() {
 		cur := queue[head]
 		head++
 
-		// Process each child
-		for b, child := range cur.children {
+		// Process each present child
+		for b := 0; b < 256; b++ {
+			child := cur.children[b]
+			if child == nil {
+				continue
+			}
+			bb := byte(b)
 			// Find failure link: longest proper suffix
 			f := cur.fail
-			for f != nil && f.children[b] == nil {
+			for f != nil && f.children[bb] == nil {
 				f = f.fail
 			}
-			if f != nil && f.children[b] != nil {
-				child.fail = f.children[b]
+			if f != nil && f.children[bb] != nil {
+				child.fail = f.children[bb]
 			} else {
 				child.fail = root
 			}
 
 			// Precompute merge of output from fail chain (output links)
 			failAsOutput := child.fail
-			var merged []int
-			// Copy fail node's accumulated output
+			var failChain []int
+			// Copy fail node's accumulated fail-chain output
 			if failAsOutput != nil && failAsOutput.depth > 0 { // avoid copying from root
-				merged = append(merged, failAsOutput.failOut...)
+				failChain = append(failChain, failAsOutput.failOut...)
 			}
 			// Append direct outputs from failure node itself
 			if failAsOutput != nil && failAsOutput.output != nil {
-				merged = append(merged, failAsOutput.output...)
+				failChain = append(failChain, failAsOutput.output...)
 			}
-			child.failOut = merged
+			child.failOut = failChain
+
+			// Merge direct output + fail-chain output into one flat emit list so
+			// Search walks a single slice per position instead of two. Order
+			// (direct first, then fail chain) matches the pre-merge Search output.
+			if len(failChain) == 0 {
+				child.out = child.output
+			} else if len(child.output) == 0 {
+				child.out = failChain
+			} else {
+				merged := make([]int, 0, len(child.output)+len(failChain))
+				merged = append(merged, child.output...)
+				merged = append(merged, failChain...)
+				child.out = merged
+			}
 
 			queue = append(queue, child)
 		}
@@ -176,6 +203,7 @@ func (ac *AhoCorasick) Search(text string) []ACMatch {
 		b := acLowerByte(text[i])
 
 		// Follow fail links until we find a goto edge or reach root
+		// Hot loop now uses dense array child access for hash-free O(1) lookup.
 		for cur.children[b] == nil && cur != ac.root {
 			ac.mismatch++
 			cur = cur.fail
@@ -184,34 +212,17 @@ func (ac *AhoCorasick) Search(text string) []ACMatch {
 			cur = cur.children[b]
 		}
 
-		// Output matches at current position: direct + fail-chain via failOut
-		if len(cur.output) > 0 {
-			for _, pi := range cur.output {
-				if pi >= 0 && pi < len(ac.patterns) {
-					pat := ac.patterns[pi]
-					l := len(pat.Pattern)
-					if i+1 >= l {
-						result = append(result, ACMatch{
-							Pattern: pat,
-							From:    i + 1 - l,
-							To:      i + 1,
-						})
-					}
-				}
-			}
-		}
-		if len(cur.failOut) > 0 {
-			for _, pi := range cur.failOut {
-				if pi >= 0 && pi < len(ac.patterns) {
-					pat := ac.patterns[pi]
-					l := len(pat.Pattern)
-					if i+1 >= l {
-						result = append(result, ACMatch{
-							Pattern: pat,
-							From:    i + 1 - l,
-							To:      i + 1,
-						})
-					}
+		// Output matches from precomputed merged list in one pass (order unchanged).
+		for _, pi := range cur.out {
+			if pi >= 0 && pi < len(ac.patterns) {
+				pat := ac.patterns[pi]
+				l := len(pat.Pattern)
+				if i+1 >= l {
+					result = append(result, ACMatch{
+						Pattern: pat,
+						From:    i + 1 - l,
+						To:      i + 1,
+					})
 				}
 			}
 		}
@@ -245,33 +256,17 @@ func (ac *AhoCorasick) SearchBytes(data []byte) []ACMatch {
 			cur = cur.children[b]
 		}
 
-		if len(cur.output) > 0 {
-			for _, pi := range cur.output {
-				if pi >= 0 && pi < len(ac.patterns) {
-					pat := ac.patterns[pi]
-					l := len(pat.Pattern)
-					if i+1 >= l {
-						result = append(result, ACMatch{
-							Pattern: pat,
-							From:    i + 1 - l,
-							To:      i + 1,
-						})
-					}
-				}
-			}
-		}
-		if len(cur.failOut) > 0 {
-			for _, pi := range cur.failOut {
-				if pi >= 0 && pi < len(ac.patterns) {
-					pat := ac.patterns[pi]
-					l := len(pat.Pattern)
-					if i+1 >= l {
-						result = append(result, ACMatch{
-							Pattern: pat,
-							From:    i + 1 - l,
-							To:      i + 1,
-						})
-					}
+		// Emit matches from the merged output list
+		for _, pi := range cur.out {
+			if pi >= 0 && pi < len(ac.patterns) {
+				pat := ac.patterns[pi]
+				l := len(pat.Pattern)
+				if i+1 >= l {
+					result = append(result, ACMatch{
+						Pattern: pat,
+						From:    i + 1 - l,
+						To:      i + 1,
+					})
 				}
 			}
 		}
@@ -306,33 +301,17 @@ func (ac *AhoCorasick) SearchInto(text string, v VisitMatches) {
 			cur = cur.children[b]
 		}
 
-		if len(cur.output) > 0 {
-			for _, pi := range cur.output {
-				if pi >= 0 && pi < len(ac.patterns) {
-					pat := ac.patterns[pi]
-					l := len(pat.Pattern)
-					if i+1 >= l {
-						v(ACMatch{
-							Pattern: pat,
-							From:    i + 1 - l,
-							To:      i + 1,
-						})
-					}
-				}
-			}
-		}
-		if len(cur.failOut) > 0 {
-			for _, pi := range cur.failOut {
-				if pi >= 0 && pi < len(ac.patterns) {
-					pat := ac.patterns[pi]
-					l := len(pat.Pattern)
-					if i+1 >= l {
-						v(ACMatch{
-							Pattern: pat,
-							From:    i + 1 - l,
-							To:      i + 1,
-						})
-					}
+		// Emit matches from the merged output list
+		for _, pi := range cur.out {
+			if pi >= 0 && pi < len(ac.patterns) {
+				pat := ac.patterns[pi]
+				l := len(pat.Pattern)
+				if i+1 >= l {
+					v(ACMatch{
+						Pattern: pat,
+						From:    i + 1 - l,
+						To:      i + 1,
+					})
 				}
 			}
 		}
@@ -359,7 +338,7 @@ func (ac *AhoCorasick) MatchAny(text string) bool {
 			cur = cur.children[b]
 		}
 
-		hasOutput := len(cur.output) > 0 || len(cur.failOut) > 0
+		hasOutput := len(cur.out) > 0
 		if hasOutput {
 			// Fast exit: we know there's at least one match
 			found = true

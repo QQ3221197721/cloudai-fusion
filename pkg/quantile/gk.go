@@ -19,7 +19,6 @@ package quantile
 
 import (
 	"math"
-	"sort"
 	"strconv"
 )
 
@@ -70,14 +69,26 @@ func (g *GKSummary) Count() int { return g.n }
 // Add inserts x into the summary in O(len(tuples)) time (linear scan for the
 // insertion slot, matching the reference GK implementation).
 func (g *GKSummary) Add(x float64) {
-	if math.IsNaN(x) {
+	if x != x { // NaN check, faster than math.IsNaN
 		return
 	}
-	idx := sort.Search(len(g.tuples), func(i int) bool { return x < g.tuples[i].v })
+
+	// Inline sort.Search to avoid function call overhead
+	idx := len(g.tuples)
+	lo, hi := 0, idx
+	for lo < hi {
+		m := lo + (hi-lo)/2
+		if x >= g.tuples[m].v {
+			lo = m + 1
+		} else {
+			hi = m
+		}
+	}
+	idx = lo
 
 	t := gkTuple{v: x, g: 1, delta: 0}
 	if !g.exact && idx != 0 && idx != len(g.tuples) {
-		t.delta = int(2 * g.eps * float64(g.n))
+		t.delta = int(2*g.eps*float64(g.n))
 	}
 
 	g.tuples = append(g.tuples, gkTuple{})
@@ -88,7 +99,7 @@ func (g *GKSummary) Add(x float64) {
 	if g.exact {
 		return
 	}
-	period := int(1.0 / (2.0 * g.eps))
+	period := int(1 / (2 * g.eps))
 	if period < 1 {
 		period = 1
 	}
