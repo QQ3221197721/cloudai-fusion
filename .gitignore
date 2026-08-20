@@ -93,7 +93,8 @@ bin/
 apiserver
 scheduler
 agent
-cafctl
+/cafctl
+/cafctl.exe
 *-linux
 wasm.test
 fabric.test
