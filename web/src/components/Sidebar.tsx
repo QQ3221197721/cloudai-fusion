@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { HomeOutlined, ClusterOutlined, DashboardOutlined, SafetyCertificateOutlined, CloudOutlined, ThunderboltOutlined, SettingOutlined, RocketOutlined, AppstoreOutlined, FundOutlined, DesktopOutlined, BarChartOutlined, BugOutlined, SyncOutlined, LinkOutlined, ApiOutlined, FileTextOutlined, PartitionOutlined, SwapOutlined, LockOutlined } from '@ant-design/icons'
+import { HomeOutlined, ClusterOutlined, DashboardOutlined, SafetyCertificateOutlined, CloudOutlined, ThunderboltOutlined, SettingOutlined, RocketOutlined, AppstoreOutlined, FundOutlined, DesktopOutlined, BarChartOutlined, BugOutlined, SyncOutlined, LinkOutlined, ApiOutlined, FileTextOutlined, PartitionOutlined, SwapOutlined, LockOutlined, UserOutlined, CodeOutlined, ArrowsAltOutlined } from '@ant-design/icons'
 import './Sidebar.css'
 
 const NAV = [
@@ -26,6 +26,11 @@ const NAV = [
   { to: '/gpu-mig', label: 'GPU MIG', icon: <PartitionOutlined /> },
   { to: '/gpu-migration', label: 'GPU Migration', icon: <SwapOutlined /> },
   { to: '/sgx', label: 'SGX Enclaves', icon: <LockOutlined /> },
+  // Developer Experience (M41/M42)
+  { to: '/dev-setup', label: 'Local Dev Setup', icon: <UserOutlined /> },
+  { to: '/sandbox', label: 'WASM Sandbox', icon: <CodeOutlined /> },
+  // Auto-scaling Engine (M16)
+  { to: '/autoscale', label: 'Auto-scaling Engine', icon: <ArrowsAltOutlined /> },
 ]
 
 export function Sidebar(): JSX.Element {

@@ -22,6 +22,9 @@ import { DocGen } from './pages/DocGen'
 import { GpuMigDashboard } from './pages/GpuMigDashboard'
 import { GpuMigrationDashboard } from './pages/GpuMigrationDashboard'
 import { SgxEnclaveDashboard } from './pages/SgxEnclaveDashboard'
+import SetupWizard from './pages/developer/SetupWizard'
+import SandboxRunner from './pages/developer/SandboxRunner'
+import { AutoscaleEngine } from './pages/AutoscaleEngine'
 import type { RunMode } from './types'
 
 const MOCK_RUN_MODE: RunMode = 'simulation'
@@ -54,6 +57,11 @@ export function App(): JSX.Element {
             <Route path="/gpu-mig" element={<GpuMigDashboard />} />
             <Route path="/gpu-migration" element={<GpuMigrationDashboard />} />
             <Route path="/sgx" element={<SgxEnclaveDashboard />} />
+            {/* Developer Experience (M41/M42) */}
+            <Route path="/dev-setup" element={<SetupWizard />} />
+            <Route path="/sandbox" element={<SandboxRunner />} />
+            {/* Auto-scaling Engine (M16) */}
+            <Route path="/autoscale" element={<AutoscaleEngine />} />
           </Routes>
         </main>
       </div>
