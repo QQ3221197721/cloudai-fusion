@@ -82,8 +82,8 @@ fn main() {
       {/* Warning Banner */}
       <Alert
         type="warning"
-        message="安全提示"
-        description="此沙箱环境使用 WASM 运行时进行隔离执行。所有代码将在限制的资源环境下运行，禁止访问主机系统资源。"
+        message="安全提示 · 模拟模式"
+        description="此沙箱环境使用 WASM 运行时进行隔离执行。后端暂未暴露真实执行端点，当前演示使用模拟数据。所有代码将在限制的资源环境下运行，禁止访问主机系统资源。"
         showIcon
         style={{ marginBottom: 24 }}
       />
