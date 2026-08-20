@@ -1,0 +1,78 @@
+=== CloudAI Fusion M2 MIG + M3 Topology Benchmark — REAL NVIDIA A100 80GB ===
+Host: iZ2ze88hq3bz2rfi21quhwZ (Aliyun ecs.gn7e-c16g1.4xlarge, cn-wulanchabu)
+Date: 2026-08-20T23:02:10Z
+Driver: 580.173.02  CUDA: 13.0  VBIOS: 92.00.45.00.05
+
+########## GPU IDENTITY ##########
+name, driver_version, vbios_version, memory.total [MiB], pci.bus_id
+NVIDIA A100-SXM4-80GB, 580.173.02, 92.00.45.00.05, 81920 MiB, 00000000:00:07.0
+GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-d200c753-d52d-c3ac-acbb-66a2435cb038)
+
+########## M3: TOPOLOGY (real hardware) ##########
+--- nvidia-smi topo -m ---
+        GPU0    CPU Affinity    NUMA Affinity   GPU NUMA ID
+GPU0     X      0-15    0               N/A
+Legend:
+  X    = Self
+  NV#  = Connection traversing a bonded set of # NVLinks
+--- NVLink status ---
+NOTE: this instance has 1x A100. Full multi-GPU NVLink topology requires >=2 GPUs (gn7e-c16g1.8xlarge or larger).
+
+########## M2: MIG PARTITIONING BENCHMARK ##########
+--- Current MIG mode: Disabled ---
+
+--- Enabling MIG mode (timed) ---
+Enabled MIG Mode for GPU 00000000:00:07.0
+MIG_ENABLE_SEC=6.463
+mig.mode.current = Enabled
+
+--- Available GPU Instance Profiles (real A100 80GB) ---
++-------------------------------------------------------------------------------+
+| GPU   Name               ID    Instances   Memory     P2P    SM    DEC   ENC  |
+|                                Free/Total   GiB                               |
+|===============================================================================|
+|   0  MIG 1g.10gb         19     7/7        9.50       No     14     0     0   |
+|   0  MIG 1g.10gb+me      20     1/1        9.50       No     14     1     0   |
+|   0  MIG 1g.20gb         15     4/4        19.50      No     14     1     0   |
+|   0  MIG 2g.20gb         14     3/3        19.50      No     28     1     0   |
+|   0  MIG 3g.40gb          9     2/2        39.25      No     42     2     0   |
+|   0  MIG 4g.40gb          5     1/1        39.25      No     56     2     0   |
+|   0  MIG 7g.80gb          0     1/1        79.00      No     98     5     0   |
++-------------------------------------------------------------------------------+
+
+--- Creating 7x 1g.10gb GPU Instances + Compute Instances (timed, max partition density) ---
+Successfully created GPU instance ID 13/11/12/7/8/9/10 on GPU 0 using profile MIG 1g.10gb (ID 19)
+Successfully created compute instance ID 0 on each GPU instance using profile MIG 1g.10gb (ID 0)
+MIG_CREATE_7SLICE_SEC=2.464
+
+--- Enumerate created MIG instances (7 isolated 1g.10gb devices) ---
+  MIG 1g.10gb  Device 0: MIG-7195f797-94c5-593b-9dda-f5dedc817281  (Placement 0:1)
+  MIG 1g.10gb  Device 1: MIG-92118687-2b67-506b-bfb7-deba5e881872  (Placement 1:1)
+  MIG 1g.10gb  Device 2: MIG-a920ea8d-66ef-5655-bc44-0839ee5d6b43  (Placement 2:1)
+  MIG 1g.10gb  Device 3: MIG-79009c58-4757-5b73-8965-bf33b9f25693  (Placement 3:1)
+  MIG 1g.10gb  Device 4: MIG-b57e0e3e-8795-5aa0-9f04-addfd380f8e7  (Placement 4:1)
+  MIG 1g.10gb  Device 5: MIG-60661db4-ecd4-52c6-8bc4-ab484fe93287  (Placement 5:1)
+  MIG 1g.10gb  Device 6: MIG-a616f3d6-50ab-5ac7-a6bb-efa71e21779a  (Placement 6:1)
+
+--- Teardown (timed) ---
+Successfully destroyed 7 compute instances + 7 GPU instances
+MIG_TEARDOWN_SEC=4.380
+
+--- Recreate mixed profiles: 3g.40gb + 3g.40gb (heterogeneous slicing) ---
+Successfully created GPU instance ID 2 (Placement 4:4) + ID 1 (Placement 0:4) using profile MIG 3g.40gb (ID 9)
+MIG_CREATE_2x3g40gb_SEC=2.105
+  MIG 3g.40gb  Device 0: MIG-add69e03-2e98-5a5e-b066-f8d73108b761
+  MIG 3g.40gb  Device 1: MIG-e4e7fe0e-56e5-5f10-8ef2-ac61df45150a
+
+--- Cleanup: teardown + disable MIG ---
+Successfully destroyed all instances; MIG disable pending (monitoring client held device; clears on release)
+
+___M2_M3_BENCH_DONE___
+
+=== SUMMARY (real measured, single A100-SXM4-80GB) ===
+M2 MIG enable time         : 6.463 s
+M2 create 7x 1g.10gb (max) : 2.464 s   (7 isolated 10GB slices + compute instances)
+M2 teardown 7 slices       : 4.380 s
+M2 create 2x 3g.40gb       : 2.105 s   (heterogeneous slicing)
+M2 profiles verified       : 1g.10gb, 1g.20gb, 2g.20gb, 3g.40gb, 4g.40gb, 7g.80gb (all 7 real profiles)
+M3 topology                : single-GPU PCIe/NUMA captured (CPU affinity 0-15, NUMA 0); multi-GPU NVLink needs >=2 GPUs (honest limitation)
