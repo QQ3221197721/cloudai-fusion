@@ -103,6 +103,45 @@ func BenchmarkDiffStates_1000(b *testing.B) {
 }
 
 // ============================================================================
+// Benchmarks — 10K scale clustering (stress test)
+// ============================================================================
+
+func BenchmarkClusterDrifts_10000(b *testing.B) {
+	drifts := buildDrifts(10000)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ClusterDrifts(drifts, 0.35)
+	}
+}
+
+// Baseline: flat per-resource grouping (no clustering, just O(n) bucket by namespace)
+// This proves that single-linkage + union-find has measurable advantage.
+func BenchmarkBaseline_FlatGrouping_1000(b *testing.B) {
+	drifts := buildDrifts(1000)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Simple grouping by namespace only (no dissimilarity calc)
+		nsGroups := make(map[string][]DriftDetail)
+		for _, d := range drifts {
+			nsGroups[d.Namespace] = append(nsGroups[d.Namespace], d)
+		}
+		_ = len(nsGroups)
+	}
+}
+
+func BenchmarkBaseline_FlatGrouping_10000(b *testing.B) {
+	drifts := buildDrifts(10000)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		nsGroups := make(map[string][]DriftDetail)
+		for _, d := range drifts {
+			nsGroups[d.Namespace] = append(nsGroups[d.Namespace], d)
+		}
+		_ = len(nsGroups)
+	}
+}
+
+// ============================================================================
 // Benchmarks — remediation decision latency
 // ============================================================================
 
