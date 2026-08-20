@@ -19,6 +19,9 @@ import { DeltaSync } from './pages/DeltaSync'
 import { CausalAlert } from './pages/CausalAlert'
 import { ApiClientGen } from './pages/ApiClientGen'
 import { DocGen } from './pages/DocGen'
+import { GpuMigDashboard } from './pages/GpuMigDashboard'
+import { GpuMigrationDashboard } from './pages/GpuMigrationDashboard'
+import { SgxEnclaveDashboard } from './pages/SgxEnclaveDashboard'
 import type { RunMode } from './types'
 
 const MOCK_RUN_MODE: RunMode = 'simulation'
@@ -48,6 +51,9 @@ export function App(): JSX.Element {
             <Route path="/correlation" element={<CausalAlert />} />
             <Route path="/api-client-gen" element={<ApiClientGen />} />
             <Route path="/doc-gen" element={<DocGen />} />
+            <Route path="/gpu-mig" element={<GpuMigDashboard />} />
+            <Route path="/gpu-migration" element={<GpuMigrationDashboard />} />
+            <Route path="/sgx" element={<SgxEnclaveDashboard />} />
           </Routes>
         </main>
       </div>
