@@ -32,19 +32,33 @@ type ACMatch struct {
 type acNode struct {
 	children [256]*acNode // goto function: byte -> next node (dense, hash-free)
 	output   []int        // indices into patterns slice where patterns end (direct)
-	fail     *acNode      // failure link for fallback transitions
+	fail     *acNode      // failure link for fallback transitions during build
 	failOut  []int        // precomputed union of outputs from the failure chain
 	out      []int        // merged output ∪ failOut: the single list Search emits
 	depth    int          // depth from root for tie-breaking
+	stateID  int32        // unique state ID assigned during Build() for DFA table indexing
 }
 
 // AhoCorasick implements the Aho-Corasick multi-pattern matching automaton.
 // All searches are case-insensitive by working on lowercase inputs.
+//
+// Optimization (v2 with alphabet-reduced DFA): Uses a precomputed goto table
+// for O(1) transitions. Each node state is assigned a unique ID during Build().
+// Rather than a full 256-wide row per state (which for ~55k states is ~54 MB
+// and thrashes cache), we exploit that any byte NOT present in any pattern can
+// only ever transition back to root (state 0): such "dead" bytes share a single
+// "other" column. The row width shrinks from 256 to (liveAlphabet+1), cutting
+// the table ~4x so it stays cache-resident. The flat table maps
+// (stateID, column) -> nextStateID via index = stateID*rowWidth + alphaMap[byte].
 type AhoCorasick struct {
 	root      *acNode
 	patterns  []ACPattern
 	built     bool
-	mismatch  int // mismatch counter (for analysis only)
+	mismatch  int        // mismatch counter (for analysis only)
+	gotoTable []int32    // flattened DFA table: [numStates * rowWidth] entries
+	stateOut  [][]int    // per-state merged emit list, indexed by stateID (== node.out)
+	alphaMap  [256]int32 // byte -> column index; dead bytes map to the shared "other" column
+	rowWidth  int32      // = liveAlphabetSize + 1 (last column is the "other"/dead column)
 }
 
 // NewAhoCorasick creates an empty Aho-Corasick automaton.
@@ -76,15 +90,35 @@ func (ac *AhoCorasick) AddPattern(p ACPattern) {
 		b := acLowerByte(p.Pattern[i])
 		if node.children[b] == nil {
 			node.children[b] = &acNode{
-				output: nil,
-				fail:   nil,
-				depth:  node.depth + 1,
+				output:  nil,
+				fail:    nil,
+				depth:   node.depth + 1,
+				stateID: -1, // unassigned until Build() BFS numbers states
 			}
 		}
 		node = node.children[b]
 	}
 	// Mark pattern index at the end node (output function)
 	node.output = append(node.output, idx)
+}
+
+// collectNodesByStateID collects all nodes from the trie and assigns them to their state ID slot in outSlice.
+// The slice must be preallocated to numStates length.
+func collectNodesByStateID(node *acNode, outSlice []*acNode) {
+	if node == nil {
+		return
+	}
+	// Assign node to its precomputed state slot
+	if node.stateID >= 0 && node.stateID < int32(len(outSlice)) {
+		outSlice[node.stateID] = node
+	}
+	// DFS through all children
+	for b := 0; b < 256; b++ {
+		child := node.children[b]
+		if child != nil {
+			collectNodesByStateID(child, outSlice)
+		}
+	}
 }
 
 // acLowerByte performs ASCII lowercasing so matching is case-insensitive while
@@ -114,6 +148,10 @@ func (ac *AhoCorasick) Build() {
 	root := ac.root
 	queue := make([]*acNode, 0, 64)
 
+	// Initialize root state ID = 0, and all other nodes to -1 (unassigned)
+	ac.root.stateID = 0
+	stateCount := int32(1) // root is state 0, so start counting from 1
+
 	// Initialize depth-1 nodes: fail links point to root, no fail-chain output.
 	// Their emit list is simply their own direct output.
 	for b := 0; b < 256; b++ {
@@ -122,6 +160,8 @@ func (ac *AhoCorasick) Build() {
 			continue
 		}
 		node.fail = root
+		node.stateID = stateCount
+		stateCount++
 		node.failOut = nil // inherits nothing from root's fail chain
 		node.out = node.output
 		queue = append(queue, node)
@@ -132,6 +172,10 @@ func (ac *AhoCorasick) Build() {
 	for head < len(queue) {
 		cur := queue[head]
 		head++
+		if cur.stateID == -1 {
+			cur.stateID = stateCount
+			stateCount++
+		}
 
 		// Process each present child
 		for b := 0; b < 256; b++ {
@@ -182,10 +226,92 @@ func (ac *AhoCorasick) Build() {
 		}
 	}
 
+	// ============================================================
+	// Post-BFS: Collect all states and build the alphabet-reduced DFA goto table
+	// ============================================================
+	numStates := int(stateCount)
+
+	// First pass: collect all nodes by state ID into a slice
+	allNodes := make([]*acNode, numStates)
+	collectNodesByStateID(ac.root, allNodes)
+
+	// Compute the live alphabet: a byte is "live" iff some trie node has an edge
+	// on it (equivalently, it occurs in some pattern). Dead bytes can only ever
+	// transition back to root, so they collapse into a single shared column.
+	var liveByte [256]bool
+	for _, n := range allNodes {
+		for b := 0; b < 256; b++ {
+			if n.children[b] != nil {
+				liveByte[b] = true
+			}
+		}
+	}
+	// Assign columns: live bytes get 0..K-1 (in byte order); dead bytes all map
+	// to the last "other" column K. rowWidth = K+1.
+	var col int32
+	for b := 0; b < 256; b++ {
+		if liveByte[b] {
+			ac.alphaMap[b] = col
+			col++
+		}
+	}
+	otherCol := col // shared column for every dead byte
+	for b := 0; b < 256; b++ {
+		if !liveByte[b] {
+			ac.alphaMap[b] = otherCol
+		}
+	}
+	ac.rowWidth = otherCol + 1
+	rowWidth := int(ac.rowWidth)
+
+	ac.gotoTable = make([]int32, numStates*rowWidth)
+	ac.stateOut = make([][]int, numStates)
+
+	// Root is state 0, with no direct outputs (we never match empty patterns)
+	ac.stateOut[0] = nil
+
+	// For each state, precompute the DFA transition function over the reduced
+	// alphabet. The "other" column is left at its zero value (0 == root), which
+	// is exactly correct: a dead byte always resets the automaton to root.
+	for stID := 0; stID < numStates; stID++ {
+		stateNode := allNodes[stID]
+		base := stID * rowWidth
+
+		for b := 0; b < 256; b++ {
+			if !liveByte[b] {
+				continue // dead byte -> handled by the shared "other" column (stays 0)
+			}
+			c := int(ac.alphaMap[b])
+
+			// Hot path: dense array access for goto edge
+			targetNode := stateNode.children[b]
+			if targetNode != nil {
+				ac.gotoTable[base+c] = targetNode.stateID
+			} else {
+				// Otherwise follow fail links like classical AC
+				f := stateNode.fail
+				for f != nil && f.children[b] == nil {
+					f = f.fail
+				}
+				if f != nil && f.children[b] != nil {
+					ac.gotoTable[base+c] = f.children[b].stateID
+				} else {
+					ac.gotoTable[base+c] = 0 // fall back to root
+				}
+			}
+		}
+
+		// Populate state output list
+		if len(stateNode.out) > 0 {
+			ac.stateOut[stID] = append([]int(nil), stateNode.out...)
+		}
+	}
+
 	ac.built = true
 }
 
 // Search performs O(N + M + Z) Aho-Corasick matching over input text.
+// Uses precomputed DFA goto table for O(1) transitions.
 // Returns all matches with positions; callers get (pattern, from, to).
 func (ac *AhoCorasick) Search(text string) []ACMatch {
 	if len(ac.patterns) == 0 {
@@ -196,33 +322,32 @@ func (ac *AhoCorasick) Search(text string) []ACMatch {
 	}
 
 	result := make([]ACMatch, 0, 8)
-	cur := ac.root
+	state := int32(0) // Start at root state 0
+	rowWidth := int(ac.rowWidth)
+	gotoTable := ac.gotoTable
+	alphaMap := &ac.alphaMap
+	stateOut := ac.stateOut
 
-	// Scan text left-to-right, following goto/fail edges
+	// Scan text left-to-right using the alphabet-reduced DFA goto table
 	for i := 0; i < len(text); i++ {
 		b := acLowerByte(text[i])
 
-		// Follow fail links until we find a goto edge or reach root
-		// Hot loop now uses dense array child access for hash-free O(1) lookup.
-		for cur.children[b] == nil && cur != ac.root {
-			ac.mismatch++
-			cur = cur.fail
-		}
-		if cur.children[b] != nil {
-			cur = cur.children[b]
-		}
+		// Hot path: alphabet-mapped single array lookup for next state - O(1)!
+		state = gotoTable[int(state)*rowWidth+int(alphaMap[b])]
 
-		// Output matches from precomputed merged list in one pass (order unchanged).
-		for _, pi := range cur.out {
-			if pi >= 0 && pi < len(ac.patterns) {
-				pat := ac.patterns[pi]
-				l := len(pat.Pattern)
-				if i+1 >= l {
-					result = append(result, ACMatch{
-						Pattern: pat,
-						From:    i + 1 - l,
-						To:      i + 1,
-					})
+		// Output matches from precomputed state output list
+		if outs := stateOut[state]; len(outs) > 0 {
+			for _, pi := range outs {
+				if pi >= 0 && pi < len(ac.patterns) {
+					pat := ac.patterns[pi]
+					l := len(pat.Pattern)
+					if i+1 >= l {
+						result = append(result, ACMatch{
+							Pattern: pat,
+							From:    i + 1 - l,
+							To:      i + 1,
+						})
+					}
 				}
 			}
 		}
@@ -235,6 +360,7 @@ func (ac *AhoCorasick) Search(text string) []ACMatch {
 }
 
 // SearchBytes matches over []byte instead of string. Same semantics as Search.
+// Uses precomputed DFA goto table for O(1) transitions.
 func (ac *AhoCorasick) SearchBytes(data []byte) []ACMatch {
 	if len(ac.patterns) == 0 {
 		return nil
@@ -244,29 +370,31 @@ func (ac *AhoCorasick) SearchBytes(data []byte) []ACMatch {
 	}
 
 	result := make([]ACMatch, 0, 8)
-	cur := ac.root
+	state := int32(0) // Start at root state 0
+	rowWidth := int(ac.rowWidth)
+	gotoTable := ac.gotoTable
+	alphaMap := &ac.alphaMap
+	stateOut := ac.stateOut
 
 	for i := 0; i < len(data); i++ {
 		b := acLowerByte(data[i])
-		for cur.children[b] == nil && cur != ac.root {
-			ac.mismatch++
-			cur = cur.fail
-		}
-		if cur.children[b] != nil {
-			cur = cur.children[b]
-		}
+
+		// Hot path: alphabet-mapped single array lookup for next state - O(1)!
+		state = gotoTable[int(state)*rowWidth+int(alphaMap[b])]
 
 		// Emit matches from the merged output list
-		for _, pi := range cur.out {
-			if pi >= 0 && pi < len(ac.patterns) {
-				pat := ac.patterns[pi]
-				l := len(pat.Pattern)
-				if i+1 >= l {
-					result = append(result, ACMatch{
-						Pattern: pat,
-						From:    i + 1 - l,
-						To:      i + 1,
-					})
+		if outs := stateOut[state]; len(outs) > 0 {
+			for _, pi := range outs {
+				if pi >= 0 && pi < len(ac.patterns) {
+					pat := ac.patterns[pi]
+					l := len(pat.Pattern)
+					if i+1 >= l {
+						result = append(result, ACMatch{
+							Pattern: pat,
+							From:    i + 1 - l,
+							To:      i + 1,
+						})
+					}
 				}
 			}
 		}
@@ -283,6 +411,7 @@ type VisitMatches func(m ACMatch)
 
 // SearchInto visits matches found in text using the provided visitor, avoiding
 // allocation of the result slice when only detection/counts are needed.
+// Uses precomputed DFA goto table for O(1) transitions.
 func (ac *AhoCorasick) SearchInto(text string, v VisitMatches) {
 	if len(ac.patterns) == 0 {
 		return
@@ -291,27 +420,30 @@ func (ac *AhoCorasick) SearchInto(text string, v VisitMatches) {
 		ac.Build()
 	}
 
-	cur := ac.root
+	state := int32(0) // Start at root state 0
+	rowWidth := int(ac.rowWidth)
+	gotoTable := ac.gotoTable
+	alphaMap := &ac.alphaMap
+	stateOut := ac.stateOut
 	for i := 0; i < len(text); i++ {
 		b := acLowerByte(text[i])
-		for cur.children[b] == nil && cur != ac.root {
-			cur = cur.fail
-		}
-		if cur.children[b] != nil {
-			cur = cur.children[b]
-		}
+
+		// Hot path: alphabet-mapped single array lookup for next state - O(1)!
+		state = gotoTable[int(state)*rowWidth+int(alphaMap[b])]
 
 		// Emit matches from the merged output list
-		for _, pi := range cur.out {
-			if pi >= 0 && pi < len(ac.patterns) {
-				pat := ac.patterns[pi]
-				l := len(pat.Pattern)
-				if i+1 >= l {
-					v(ACMatch{
-						Pattern: pat,
-						From:    i + 1 - l,
-						To:      i + 1,
-					})
+		if outs := stateOut[state]; len(outs) > 0 {
+			for _, pi := range outs {
+				if pi >= 0 && pi < len(ac.patterns) {
+					pat := ac.patterns[pi]
+					l := len(pat.Pattern)
+					if i+1 >= l {
+						v(ACMatch{
+							Pattern: pat,
+							From:    i + 1 - l,
+							To:      i + 1,
+						})
+					}
 				}
 			}
 		}
@@ -319,6 +451,7 @@ func (ac *AhoCorasick) SearchInto(text string, v VisitMatches) {
 }
 
 // MatchAny returns true if any of the patterns match the input (no allocations).
+// Uses precomputed DFA goto table for O(1) transitions.
 func (ac *AhoCorasick) MatchAny(text string) bool {
 	if len(ac.patterns) == 0 {
 		return false
@@ -328,18 +461,18 @@ func (ac *AhoCorasick) MatchAny(text string) bool {
 	}
 
 	found := false
-	cur := ac.root
+	state := int32(0) // Start at root state 0
+	rowWidth := int(ac.rowWidth)
+	gotoTable := ac.gotoTable
+	alphaMap := &ac.alphaMap
+	stateOut := ac.stateOut
 	for i := 0; i < len(text); i++ {
 		b := acLowerByte(text[i])
-		for cur.children[b] == nil && cur != ac.root {
-			cur = cur.fail
-		}
-		if cur.children[b] != nil {
-			cur = cur.children[b]
-		}
 
-		hasOutput := len(cur.out) > 0
-		if hasOutput {
+		// Hot path: alphabet-mapped single array lookup for next state - O(1)!
+		state = gotoTable[int(state)*rowWidth+int(alphaMap[b])]
+
+		if len(stateOut[state]) > 0 {
 			// Fast exit: we know there's at least one match
 			found = true
 			break

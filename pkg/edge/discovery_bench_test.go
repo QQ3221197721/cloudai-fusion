@@ -419,3 +419,69 @@ func BenchmarkFullLifecycleFlow(b *testing.B) {
 		}
 	}
 }
+
+// ============================================================================
+// M24-26 Merkle Diff & Vector Clock Bandwidth Efficiency Benchmarks
+// ============================================================================
+
+func BenchmarkMerkleDiff_BandwidthSavings(b *testing.B) {
+	baseEntries := map[string][]byte{}
+	for i := 0; i < 1000; i++ {
+		key := fmt.Sprintf("resource-%d", i)
+		baseEntries[key] = []byte(fmt.Sprintf(`{"id":%d,"apiVersion":"v1"}`, i))
+	}
+	selfTree := NewMerkleTree(baseEntries)
+	modded := make(map[string][]byte, len(baseEntries))
+	for k, v := range baseEntries {
+		modded[k] = v
+	}
+	for i := 0; i < 50; i++ {
+		key := fmt.Sprintf("resource-%d", i*20)
+		modded[key] = []byte(fmt.Sprintf(`{"id":%d,"apiVersion":"v2","changedAt":"now"}`, i))
+	}
+	otherTree := NewMerkleTree(modded)
+	b.ResetTimer()
+	var totalBytesSent int64
+	for i := 0; i < b.N; i++ {
+		diff := selfTree.ComputeDiff(otherTree)
+		if diff == nil { b.Fatal("nil diff") }
+		var diffSize int64
+		for _, a := range diff.Added { diffSize += a.Size }
+		for _, m := range diff.Modified { diffSize += m.Size }
+		totalBytesSent += diffSize
+		var fullSyncSize int64
+		for _, leaf := range modded { fullSyncSize += int64(len(leaf)) }
+		_ = fullSyncSize
+	}
+	_ = totalBytesSent
+}
+
+func BenchmarkVectorClock_CausalOrdering(b *testing.B) {
+	vc := NewCausalVectorClock([]string{"node-a", "node-b", "node-c", "node-d", "node-e"}, nil)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		clockA := vc.GetTimestamp()
+		clockB := vc.GetTimestamp()
+		cmp := vc.CompareFromMaps(clockA, clockB)
+		if cmp != 0 { b.Logf("concurrent events at iteration %d", i) }
+	}
+}
+
+func (vc *CausalVectorClock) CompareFromMaps(a, b map[string]int) int {
+	hasLess, hasGreater := false, false
+	allKeys := make(map[string]bool)
+	for k := range a { allKeys[k] = true }
+	for k := range b { allKeys[k] = true }
+	for key := range allKeys {
+		aVal, bVal := a[key], b[key]
+		if aVal < bVal {
+			hasLess = true
+		} else if aVal > bVal {
+			hasGreater = true
+		}
+		if hasLess && hasGreater { return 2 }
+	}
+	if hasLess { return -1 }
+	if hasGreater { return 1 }
+	return 0
+}
