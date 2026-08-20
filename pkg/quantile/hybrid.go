@@ -56,15 +56,17 @@ func (h *topKMin) add(x float64) {
 	if h.capK == 0 {
 		return
 	}
-	h.dirty = true
-	if len(h.data) < h.capK {
-		h.data = append(h.data, x)
-		h.up(len(h.data) - 1)
-		return
-	}
-	if x > h.data[0] {
-		h.data[0] = x
-		h.down(0)
+	if h.dirty || len(h.data) < h.capK {
+		h.dirty = true
+		if len(h.data) < h.capK {
+			h.data = append(h.data, x)
+			h.up(len(h.data) - 1)
+			return
+		}
+		if x > h.data[0] {
+			h.data[0] = x
+			h.down(0)
+		}
 	}
 }
 
@@ -118,33 +120,45 @@ func (h *topKMin) sortedAsc() []float64 {
 
 // TailExact is the bounded-memory tail-exact hybrid estimator.
 type TailExact struct {
-	k       int
-	n       int
-	high    *topKMin // K largest values (exact)
-	lowNeg  *topKMin // K largest of negated values => K smallest values (exact)
-	body    *GKSummary
+	k      int
+	n      int
+	high   *topKMin // K largest values (exact)
+	lowNeg *topKMin // K largest of negated values => K smallest values (exact)
+	// Exactly one of fast/exact is non-nil, chosen at construction. Concrete
+	// typing lets Add inline the body increment with NO interface dispatch on
+	// the insertion hot path.
+	fast    *logBuckets // DDSketch-style O(1) body, used when bodyEps > 0
+	exact   *GKSummary  // GK eps->0 exact body, used when bodyEps <= 0
 	bodyEps float64
 }
 
 // NewTailExact creates a hybrid keeping the K extreme values exactly on each end
-// and summarising the body with a GK(bodyEps) summary. bodyEps ≤ 0 makes the body
-// exact too (degenerating to full retention).
+// and summarising the body with DDSketch-style log bucket counters (relative error ~bodyEps).
+// bodyEps <= 0 uses an exact GK (eps->0) fallback for full precision at O(n) memory cost.
 func NewTailExact(k int, bodyEps float64) *TailExact {
 	if k < 1 {
 		k = 1
 	}
-	return &TailExact{
+	te := &TailExact{
 		k:       k,
 		high:    newTopKMin(k),
 		lowNeg:  newTopKMin(k),
-		body:    NewGKSummary(bodyEps),
 		bodyEps: bodyEps,
 	}
+	if bodyEps <= 0 {
+		te.exact = NewGKExact()
+	} else {
+		te.fast = newLogBuckets(bodyEps)
+	}
+	return te
 }
 
 // Name implements Sketch.
 func (t *TailExact) Name() string {
-	return "TailExact(K=" + strconv.Itoa(t.k) + ",body=" + t.body.Name() + ")"
+	if t.bodyEps <= 0 {
+		return "TailExact(K=" + strconv.Itoa(t.k) + ",body=GK-eps->0)"
+	}
+	return "TailExact(K=" + strconv.Itoa(t.k) + ",body=DDSketch-Alpha=" + strconv.FormatFloat(t.bodyEps, 'f', 4, 64) + ")"
 }
 
 // Count implements Sketch.
@@ -152,13 +166,20 @@ func (t *TailExact) Count() int { return t.n }
 
 // Add ingests x into both tails and the body summary.
 func (t *TailExact) Add(x float64) {
-	if math.IsNaN(x) {
+	if x != x { // NaN check, cheaper than math.IsNaN
 		return
 	}
 	t.n++
 	t.high.add(x)
 	t.lowNeg.add(-x)
-	t.body.Add(x)
+
+	// Body hot path: a predictable branch plus a concrete, inlinable call —
+	// no interface dispatch. Almost every insert lands here (O(1), no alloc).
+	if t.fast != nil {
+		t.fast.Add(x)
+	} else {
+		t.exact.Add(x)
+	}
 }
 
 // InExactRegion reports whether the q-quantile is answered with zero error given
@@ -183,7 +204,7 @@ func (t *TailExact) rank(q float64) int {
 }
 
 // Quantile returns the q-quantile: exact if the rank lands in a retained tail,
-// otherwise the GK body estimate.
+// otherwise the log-bucket body estimate (DDSketch relative error guarantee).
 func (t *TailExact) Quantile(q float64) float64 {
 	if t.n == 0 {
 		return math.NaN()
@@ -224,13 +245,20 @@ func (t *TailExact) Quantile(q float64) float64 {
 		return -neg[idx]
 	}
 
-	// Body: fall back to the bounded GK estimate.
-	return t.body.Quantile(q)
+	// Body: fall back to the log-bucket (or exact GK) estimate.
+	if t.fast != nil {
+		return t.fast.Quantile(q)
+	}
+	return t.exact.Quantile(q)
 }
 
-// SizeBytes reports both tail heaps plus the GK body summary.
+// SizeBytes reports both tail heaps plus the body sketch.
 func (t *TailExact) SizeBytes() int {
-	return cap(t.high.data)*8 + cap(t.lowNeg.data)*8 + t.body.SizeBytes()
+	baseSize := cap(t.high.data)*8 + cap(t.lowNeg.data)*8
+	if t.fast != nil {
+		return baseSize + t.fast.SizeBytes()
+	}
+	return baseSize + t.exact.SizeBytes()
 }
 
 // ExactTailFraction returns K/n, the width of each exact tail region under the
