@@ -52,21 +52,27 @@ func newTopKMin(k int) *topKMin {
 
 func (h *topKMin) Len() int { return len(h.data) }
 
+// add inserts x assuming the caller has already gated it (see TailExact.Add):
+// x is either filling an unfilled heap or is known to exceed the current K-th
+// value. The body is deliberately tiny so it inlines at the two call sites.
+//
+// It also marks dirty so the lazily-sorted query buffer is rebuilt on the next
+// read; the previous version skipped inserts entirely once a query had cleared
+// dirty on a full heap, which silently dropped later tail candidates.
 func (h *topKMin) add(x float64) {
 	if h.capK == 0 {
 		return
 	}
-	if h.dirty || len(h.data) < h.capK {
+	if len(h.data) < h.capK {
+		h.data = append(h.data, x)
+		h.up(len(h.data) - 1)
 		h.dirty = true
-		if len(h.data) < h.capK {
-			h.data = append(h.data, x)
-			h.up(len(h.data) - 1)
-			return
-		}
-		if x > h.data[0] {
-			h.data[0] = x
-			h.down(0)
-		}
+		return
+	}
+	if x > h.data[0] {
+		h.data[0] = x
+		h.down(0)
+		h.dirty = true
 	}
 }
 
@@ -165,16 +171,35 @@ func (t *TailExact) Name() string {
 func (t *TailExact) Count() int { return t.n }
 
 // Add ingests x into both tails and the body summary.
+//
+// Gated tails (the insertion win). The overwhelming majority of a stream is
+// body, not tail: once each K-heap is full, a value can only belong to the
+// top-K if it exceeds the current K-th largest (the min-heap root), and to the
+// bottom-K if it is below the current K-th smallest. We test those two cheap
+// comparisons inline and touch a heap ONLY when the value is an actual
+// candidate, so a typical body insert costs two float compares instead of two
+// heap sifts. This is loss-free: a value that fails the gate provably cannot be
+// in the retained tail, so the exact-tail guarantee is unchanged.
 func (t *TailExact) Add(x float64) {
 	if x != x { // NaN check, cheaper than math.IsNaN
 		return
 	}
 	t.n++
-	t.high.add(x)
-	t.lowNeg.add(-x)
+
+	// High tail: candidate iff the heap is not yet full, or x beats the K-th
+	// largest currently retained (data[0] is the min of the top-K).
+	if h := t.high; len(h.data) < h.capK || x > h.data[0] {
+		h.add(x)
+	}
+	// Low tail: lowNeg holds negated values, so its root is -(K-th smallest x).
+	// x is a bottom-K candidate iff -x beats that root, i.e. x < K-th smallest.
+	if l := t.lowNeg; len(l.data) < l.capK || -x > l.data[0] {
+		l.add(-x)
+	}
 
 	// Body hot path: a predictable branch plus a concrete, inlinable call —
-	// no interface dispatch. Almost every insert lands here (O(1), no alloc).
+	// no interface dispatch. Almost every insert lands here (O(1), no alloc)
+	// and now uses the branch-free fastLog2 bucket index.
 	if t.fast != nil {
 		t.fast.Add(x)
 	} else {
