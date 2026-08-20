@@ -21,7 +21,7 @@ CloudAI Fusion 的 53 个模块中，47 个非硬件模块已完成四目标攻�
 | gpu_sharing.go（MIG 分区）| ✅ `/api/v1/gpu/mig` | ⏳ 待 A100/H100 MIG | ✅ MIG-aware 调度 | ✅ GpuMigDashboard |
 | complete_gpu_migration.go（CRIU 迁移）| ✅ `/api/v1/gpu/migrate` | ⏳ 待 2 节点 InfiniBand | ✅ CRIU+RDMA 快迁移 | ✅ GpuMigrationDashboard |
 | edgeautonomy/metrics_collector.go | ✅ | ⏳ 待 Linux+GPU | ✅ 离线自治指标 | ✅（EdgeOverview） |
-| capability/detection.go（SGX/GPU 探测）| ✅ `/api/v1/sgx/status` | ⏳ 待 Intel SGX CPU | ✅ 能力门控+软件降级 | ✅ SgxEnclaveDashboard |
+| capability/detection.go（SGX/GPU 探测）| ✅ `/api/v1/sgx/status` | ✅ **已在真实 SGX 硬件验证**（见下） | ✅ 能力门控+软件降级 | ✅ SgxEnclaveDashboard |
 | resources/gpu.go（GPU 资源采集）| ✅ | ⏳ 待 NVIDIA GPU | ✅ nvidia-smi 解析+优雅降级 | ✅ |
 
 ## 已完成部分（真实 CLI 佐证）
@@ -41,17 +41,36 @@ CloudAI Fusion 的 53 个模块中，47 个非硬件模块已完成四目标攻�
 - 3 个前端 Dashboard 已连真实端点，simulated 时显示 `[SIMULATED - no hardware]` 诚实横幅
 - 验证：`go build ./...` / `go vet` / `go test ./pkg/api/ ...` / `npm run build` 全部 EXIT 0
 
-## 待硬件验证部分（T2 真实 Benchmark）
+## 已在真实硬件验证部分（T2 真实 Benchmark）
 
-以下必须在真实硬件上运行 `docs/final-hardware-validation/` 下的脚本才能产出真实数字：
+### ✅ M5 SGX —— 已完成真实硬件验证（2026-08-20）
+
+- **验证平台**：阿里云 SGX 加密计算实例，公网 IP 39.108.104.207
+- **CPU**：Intel(R) Xeon(R) Platinum 8369B @ 2.70GHz（Ice Lake，原生 SGX）
+- **OS**：Ubuntu 22.04.5 LTS，Kernel 5.15.0-173-generic
+- **硬件确认**：`/dev/sgx_enclave` + `/dev/sgx_provision` 均在位；cpuid 显示 **SGX supported=true、SGX1=true、SGX2=true、SGX_LC=true**；`/proc/cpuinfo` 含 sgx 标志
+- **软件栈**：Intel SGX 运行时库已装，**aesmd 服务 active**
+- **测试**：`go test ./pkg/capability/` 全部 PASS（真实 SGX 主机）
+- **T2 真实 Benchmark（Intel Xeon Platinum 8369B 实测 ns/op）**：
+  - `BenchmarkThreeDimensionalGate` **3.426 ns/op, 0 allocs**（零分配热路径）
+  - `BenchmarkDenyByDefaultPolicyCheck` 16.99 ns/op, 0 allocs
+  - `BenchmarkPolicyCheckSimulated` 57.93 ns/op, 0 allocs
+  - `BenchmarkGracefulDegradationPlanning` 64.34 ns/op, 0 allocs
+  - `BenchmarkPolicyCheckProduction` 123.7 ns/op
+  - `BenchmarkEnforceFailFast` 699.5 ns/op
+  - `BenchmarkEvidenceCapDetect` 30589 ns/op / `BenchmarkEvidenceCapReceiptSignVerify` 84889 ns/op
+  - 共 14 个 benchmark 全部 PASS（20.939s）
+- **证据存档**：`results/m5_sgx_result.log`、`results/m5_sgx_benchmark.log`
+- **结论**：**M5 SGX 四项全达标（T1 API + T2 真实硬件 benchmark + T3 能力门控 + T4 前端页）**
+
+### ⏳ 仍待硬件验证：M2 / M3（A100，配额审批中）
 
 | 模块 | 需要硬件 | 脚本 | 预估成本 |
 |---|---|---|---|
-| MIG 分区 | A100/H100 + MIG | `m2_mig_validation.sh` | ~$33（p4d 1h） |
-| GPU 迁移 | 2 节点 + InfiniBand + CRIU | `m3_migration_validation.sh` | ~$98（p4d×2 1.5h） |
-| SGX | Intel SGX CPU | `m5_sgx_validation.sh` | ~$0.40（Azure DC4s_v3 1h） |
+| MIG 分区 | A100/H100 + MIG | `m2_mig_validation.sh` | 见采购单 |
+| GPU 迁移 | 2 节点 + InfiniBand + CRIU | `m3_migration_validation.sh` | 见采购单 |
 
-**合计约 $131（含缓冲 ~$160；Spot 可降至 ~$50）。** 端点已就绪，置于对应硬件即返回 `mode:real` 真实数据。
+M2/M3 待阿里云 A100 配额审批通过后，在北京/乌兰察布地域按同样方式验证。端点已就绪，置于对应硬件即返回 `mode:real` 真实数据。
 
 ## 诚实声明
 
