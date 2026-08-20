@@ -102,24 +102,26 @@ benchmark exists, we say so instead of inventing one.
 |------|------------------------------|-----------------|--------------------|
 | **Honesty-by-design control plane** | Every backend reports real vs simulated; production **refuses to boot** on any fake dependency | `capability.Enforce()` aborts prod boot; `/api/v1/capabilities` + `/readyz` surface it | `pkg/capability` |
 | **Verifiable evidence chain** | Ed25519 hash-chain + **Groth16 ZKP** receipts, offline-verifiable (Rekor has no ZKP) | ZKP verify **~1.5 ms**, prove ~264 ms; append ~37 µs | `pkg/evidence` |
-| **Aho-Corasick policy matching** | Multi-pattern automaton vs regex scan for WAF/policy rules | 10k rules **~32 µs vs regex ~45 ms ≈ 1388× faster** | `pkg/security` |
-| **Compiled RBAC** | Compile role graph to O(1) bitmap at build time | 10k rules **~160 ns, 0 alloc (~31× vs runtime eval)** | `pkg/auth` |
+| **Aho-Corasick policy matching** | Multi-pattern automaton vs regex scan for WAF/policy rules | 10k rules **~32 µs**, ≈1388× vs Go stdlib regexp linear-scan baseline (our own, not a competitor WAF) | `pkg/security` |
+| **Compiled RBAC** | Compile role graph to O(1) bitmap at build time | 10k rules **~160 ns, 0 alloc** (~31× vs our naive linear-scan baseline; real Casbin v2 head-to-head via -tags casbin) | `pkg/auth` |
 | **Zero-alloc event fabric** | Arena/sync.Pool router with radix-trie topics | **~25M events/sec, 0 alloc/op** on hot path | `pkg/eventbus` |
-| **GPU topology-aware scheduling** | dense-k-subgraph (NP-hard) approx vs topology-blind binpack | **1.86× NVLink bandwidth** vs K8s default, p<1e-6, Cohen's d≈1.96 | `pkg/scheduler` |
-| **Streaming joint-anomaly detection** | Online Welford + **Ledoit-Wolf shrinkage** + rank-1 Cholesky Mahalanobis (O(d²), single-pass) | beats sklearn IsolationForest on AUC across all scenarios; ~12.8× recall vs 3σ | `pkg/anomaly` |
-| **Incremental FinOps metrics** | **DGIM** log-bucket sliding window + content-addressed delta export | O(log W) memory; **≤100 ms incremental vs OpenCost ~60 s ETL** | `pkg/reporting` |
-| **Bounded-memory exact quantiles** | TailExact hybrid (exact tail + bounded body) | p99 error **<0.6% vs Prometheus bucket up to +36%** | `pkg/quantile` |
-| **Insertion-shift-resistant delta sync** | FastCDC content-defined chunking + Merkle diff + CRDT merge | ~28× less re-transfer on head-insert vs fixed-block | `pkg/deltasync` |
+| **GPU topology-aware scheduling** | dense-k-subgraph (NP-hard) approx vs topology-blind binpack | **1.86× NVLink bandwidth** vs simulated K8s binpack on SYNTHETIC topology data (not real GPU hardware), p<1e-6 | `pkg/scheduler` |
+| **Streaming joint-anomaly detection** | Online Welford + **Ledoit-Wolf shrinkage** + rank-1 Cholesky Mahalanobis (O(d²), single-pass) | beats sklearn IF on exported data (Python comparison run offline, not in Go test); ~12.8× vs our 3σ baseline | `pkg/anomaly` |
+| **Incremental FinOps metrics** | **DGIM** log-bucket sliding window + content-addressed delta export | O(log W) memory; **≤100 ms incremental**; OpenCost 60s cited from its documented ETL cycle, not measured head-to-head | `pkg/reporting` |
+| **Bounded-memory exact quantiles** | TailExact hybrid (exact tail + bounded body) | p99 error **<0.6%** vs our reimplementation of Prometheus histogram_quantile() bucket interpolation (same algo/data; not a running Prometheus) | `pkg/quantile` |
+| **Insertion-shift-resistant delta sync** | FastCDC content-defined chunking + Merkle diff + CRDT merge | ~28× vs our naive fixed-block baseline (not rsync or any shipping product) | `pkg/deltasync` |
 | **WASM capability security** | Pure-Go (zero-CGO) sandbox; deny-by-default FS/Net/GPU gates | **21 escape vectors defended**, gate check sub-µs (FS 146-565 ns) | `pkg/wasm` |
 | **Zero-downtime hot-swap** | State snapshot + migration + rollback with Ed25519 receipt | **0 request loss** under concurrent load, ~30 ms end-to-end | `pkg/hotswap` |
-| **Causal alert correlation** | Tarjan SCC + CausalRank root-cause vs label-equality grouping | **58% compression vs Alertmanager 25.7%, 0% mis-suppression** | `pkg/correlation` |
-| **FastTracer distributed tracing** | Zero-alloc span hot path vs OTel SDK | SpanStart **~103 ns vs OTel ~657 ns ≈ 6.4× faster** | `pkg/tracing` |
-| **Offline-verifiable learning certs** | Ed25519 + SHA-256 step hash-chain completion proof (Katacoda/Qwiklabs store only server-side) | tamper-evident, verifiable with a 32-byte public key, no network | `pkg/tutorial` |
+| **Causal alert correlation** | Tarjan SCC + CausalRank root-cause vs label-equality grouping | **58% vs our reimplemented Alertmanager group_by semantics (simplified emulation, not the real Alertmanager); 0% mis-suppression** | `pkg/correlation` |
+| **FastTracer distributed tracing** | Zero-alloc span hot path vs OTel SDK | SpanStart **~103 ns vs OTel ~657 ns ≈ 6.4× faster** (head-to-head: real OTel SDK imported) | `pkg/tracing` |
+| **Offline-verifiable learning certs** | Ed25519 + SHA-256 step hash-chain completion proof (architectural distinction cited from public docs; no perf benchmark vs Katacoda/Qwiklabs) | tamper-evident, verifiable with a 32-byte public key, no network | `pkg/tutorial` |
 
 > **Honesty note:** some subsystems (messaging drivers, adapters, standard state machines)
 > are solid engineering without a unique algorithmic moat — we label those as such rather
 > than inflating them. Hardware-bound modules (real GPU topology/MIG, CRIU migration,
 > SGX/eBPF capability probing) require physical hardware and are marked accordingly.
+>
+> Baselines labelled "vs X" compare against our reimplementation of X's documented semantics unless marked "(head-to-head)". Only FastTracer vs OpenTelemetry SDK is a true head-to-head (real third-party library imported and benchmarked in-process).
 
 ## Architecture
 
