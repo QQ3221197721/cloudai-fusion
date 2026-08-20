@@ -1,0 +1,31 @@
+=== M5 T2 FINAL benchmark run 2026-08-20T05:47:37Z ===
+Host: iZwz9bhzz1kaq8iuc7768pZ  CPU: Intel(R) Xeon(R) Platinum 8369B CPU @ 2.70GHz
+SGX device: crw-rw---- 1 root sgx 10, 125 Aug 20 10:30 /dev/sgx_enclave
+aesmd: active
+=== rebuild ===
+BUILD_OK (HW debug)
+The project has been built in debug hardware mode.
+ldd sgx libs:
+	libsgx_urts.so.2 => /lib/x86_64-linux-gnu/libsgx_urts.so.2 (0x00007efc2a214000)
+	libsgx_dcap_ql.so.1 => /lib/x86_64-linux-gnu/libsgx_dcap_ql.so.1 (0x00007efc2a20e000)
+	libsgx_enclave_common.so.1 => /lib/x86_64-linux-gnu/libsgx_enclave_common.so.1 (0x00007efc29d89000)
+	libsgx_qe3_logic.so => /lib/x86_64-linux-gnu/libsgx_qe3_logic.so (0x00007efc29d7b000)
+	libsgx_pce_logic.so.1 => /lib/x86_64-linux-gnu/libsgx_pce_logic.so.1 (0x00007efc29d70000)
+
+=== RUN (real SGX HW) ===
+HWMODE_ENCLAVE_CREATED global_eid=2
+RESULT ECALL_NOOP calls=1000000 total_ns=5049499395 avg_ns=5049.50 throughput_per_s=198039
+RESULT ECALL_ADD calls=1000000 total_ns=5195456960 avg_ns=5195.46 throughput_per_s=192476 acc=500000500000
+--- EREPORT (SGX local attestation report generation) ---
+RESULT EREPORT calls=100000 total_ns=1237361727 avg_ns=12373.62 throughput_per_s=80817 rr=0x0
+RESULT EREPORT_PURE_DELTA_ns=7324.12 (EREPORT avg minus ECALL_NOOP avg)
+REPORT_MAC_HEX=1dfe6790a6a7d2f35774fddba93e0517
+REPORT_MRENCLAVE_HEX=1820abcefad6dcd1c8f25163e1c72351cd1005d7eaf26bc24d26da9df8c2e773
+--- DCAP QUOTE ATTEMPT ---
+[get_platform_quote_cert_data qe_logic.cpp:357] Error returned from the p_sgx_get_quote_config API. 0xe019
+RESULT QE_GET_TARGET_INFO ret=0xe019 time_ms=60302.996
+QE_TARGET_INFO_UNAVAILABLE ret=0xe019 -> DCAP quote needs PCK/PCCS provisioning (honest).
+DONE_M5T2_BENCH
+
+End: 2026-08-20T05:48:50Z
+___M5T2_FINAL_DONE___
