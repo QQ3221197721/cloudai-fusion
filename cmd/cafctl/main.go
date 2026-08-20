@@ -152,6 +152,10 @@ func init() {
 	// Hot-swap Component Versioning (M52): hotswap status
 	rootCmd.AddCommand(newHotswapCmd())
 	
+	// RL Training Sidecar + Interactive Tutorial Engine (M10/M44)
+	rootCmd.AddCommand(newRlCmd())
+	rootCmd.AddCommand(newTutorialCmd())
+	
 	// Global flags
 	rootCmd.PersistentFlags().StringP("config", "c", "", "Config file path")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
