@@ -133,6 +133,14 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 	// AISecOps well-readiness transparency (no auth): honest per-well maturity,
 	// wiring, and fabric-connectivity — the well-layer counterpart of capabilities.
 	router.GET("/api/v1/wells", handleWells)
+	// Hardware capability transparency (no auth): honest real-vs-simulated GPU
+	// MIG partitions, GPU live-migration status, and SGX enclave status. When
+	// the host lacks the hardware (no nvidia-smi / no CRIU / no /dev/sgx_enclave)
+	// these return simulated=true with an empty payload and a reason — they
+	// never fabricate real MIG/migration/enclave numbers.
+	router.GET("/api/v1/gpu/mig", handleGPUMig)
+	router.GET("/api/v1/gpu/migrate", handleGPUMigrate)
+	router.GET("/api/v1/sgx/status", handleSGXStatus)
 	// Evidence public key (no auth): publishing the verifying key is how third
 	// parties establish trust to verify exported chains offline.
 	if cfg.EvidenceLedger != nil {

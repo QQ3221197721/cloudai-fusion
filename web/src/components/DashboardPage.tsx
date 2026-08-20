@@ -56,6 +56,9 @@ export function DashboardPage<T>({
   }, [load])
 
   const isMock = env?.source === 'mock'
+  // A backend that WAS reached but honestly reports no real hardware present
+  // (mode='simulated'). Distinct from isMock (backend unreachable).
+  const isSimulated = env?.source === 'api' && !!env.simulated
 
   return (
     <div className="dashboard-page">
@@ -68,10 +71,10 @@ export function DashboardPage<T>({
         <Space wrap align="center">
           {env && (
             <Tag
-              color={env.source === 'api' ? 'green' : 'orange'}
-              icon={env.source === 'api' ? <ApiOutlined /> : <WarningOutlined />}
+              color={isMock ? 'orange' : isSimulated ? 'gold' : 'green'}
+              icon={isMock || isSimulated ? <WarningOutlined /> : <ApiOutlined />}
             >
-              {env.source === 'api' ? '[API LIVE]' : '[MOCK DATA]'}
+              {isMock ? '[MOCK DATA]' : isSimulated ? '[SIMULATED - no hardware]' : '[API LIVE]'}
             </Tag>
           )}
           <ReloadOutlined
@@ -90,6 +93,17 @@ export function DashboardPage<T>({
           showIcon
           banner
           message="This view is showing MOCK data — no live backend response."
+          description={env.reason}
+        />
+      )}
+
+      {isSimulated && env && (
+        <Alert
+          className="dashboard-mock-banner"
+          type="warning"
+          showIcon
+          banner
+          message="[SIMULATED - no hardware] — the backend was reached but reports no real hardware on this host."
           description={env.reason}
         />
       )}

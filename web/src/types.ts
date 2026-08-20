@@ -40,7 +40,17 @@ export interface DataEnvelope<T> {
   data: T
   /** 'api' = live backend, 'mock' = local fallback (backend unreachable). */
   source: 'api' | 'mock'
-  /** Human-readable reason recorded when we fell back to mock. */
+  /**
+   * Backend honesty markers for hardware-capability endpoints (gpu/mig,
+   * gpu/migrate, sgx/status). When source === 'api' and the host lacks the
+   * hardware, the backend answers with mode='simulated' + simulated=true +
+   * a reason (empty payload). This is DISTINCT from source==='mock' (backend
+   * unreachable): here the backend WAS reached and honestly reported that no
+   * real hardware is present. Undefined for endpoints without a hardware mode.
+   */
+  mode?: 'real' | 'simulated'
+  simulated?: boolean
+  /** Human-readable reason recorded for mock fallback or backend simulation. */
   reason?: string
   fetchedAt: string
 }

@@ -76,6 +76,7 @@ func (cgm *CompleteGPUChillerManager) verifyCRIUInstallation() error {
 	}
 	
 	cgm.logger.WithField("version", versionStr).Info("CRIU verified successfully")
+	cgm.criuVersion = strings.TrimSpace(versionStr)
 	
 	// Check required dependencies
 	dependencies := []string{
@@ -187,3 +188,11 @@ func (cgm *CompleteGPUChillerManager) transferCheckpoint(ctx context.Context, ch
 	cgm.logger.WithField("target", targetHost).Info("Checkpoint transferred")
 	return nil
 }
+
+// CRIUVersion returns the verified CRIU version string discovered during
+// construction (empty until verifyCRIUInstallation has run successfully).
+func (cgm *CompleteGPUChillerManager) CRIUVersion() string { return cgm.criuVersion }
+
+// RDMABandwidthGbps returns the measured RDMA fabric bandwidth in Gbps (or the
+// fallback value when the RDMA probe was unavailable).
+func (cgm *CompleteGPUChillerManager) RDMABandwidthGbps() float64 { return cgm.rdmaBandwidth }
