@@ -1,0 +1,53 @@
+=== CloudAI Fusion M5 SGX REAL-HARDWARE Validation ===
+Start: 2026-08-20T02:29:56Z
+Host: iZwz9bhzz1kaq8iuc7768pZ  Kernel: 5.15.0-173-generic
+CPU: Intel(R) Xeon(R) Platinum 8369B CPU @ 2.70GHz
+
+=== [1/6] SGX device nodes ===
+crw-rw---- 1 root sgx  10, 125 Aug 20 10:03 /dev/sgx_enclave
+crw------- 1 root root 10, 126 Aug 20 10:03 /dev/sgx_provision
+
+=== [2/6] Install base tools (cpuid, build-essential) ===
+cpuid path: /usr/bin/cpuid
+
+=== [3/6] CPU SGX capability (cpuid) ===
+      SGX: Software Guard Extensions supported = true
+      SGX_LC: SGX launch config supported      = true
+   Software Guard Extensions (SGX) capability (0x12/0):
+      SGX1 supported                           = true
+      SGX2 supported                           = true
+      SGX ENCLV E*VIRTCHILD, ESETCONTEXT       = false
+      SGX ENCLS ETRACKC, ERDINFO, ELDBC, ELDUC = false
+   SGX attributes: ECREATE SECS.ATTRIBUTES (0x12/1):
+   SGX Enclave Page Cache (EPC) enumeration (0x12/0x2):
+   SGX Enclave Page Cache (EPC) enumeration (0x12/0x3):
+SGX flag PRESENT in /proc/cpuinfo
+
+=== [4/6] Install Intel SGX runtime + aesmd (DCAP) ===
+SGX runtime libs: INSTALLED
+aesmd status: active
+
+=== [5/6] Install Go 1.25.7 + clone repo ===
+go version: go version go1.25.7 linux/amd64
+repo cloned OK
+
+=== [6/6] Run pkg/capability SGX tests on REAL hardware ===
+=== RUN   TestEvidenceCapabilityEngine_ReceiptSigned
+--- PASS: TestEvidenceCapabilityEngine_ReceiptSigned (0.00s)
+=== RUN   TestEvidenceCapabilityEngine_GracefulDegradation
+--- PASS: TestEvidenceCapabilityEngine_GracefulDegradation (0.00s)
+=== RUN   TestEvidenceCapabilityEngine_FullSupportNoDegradation
+--- PASS: TestEvidenceCapabilityEngine_FullSupportNoDegradation (0.00s)
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/capability	0.005s
+
+=== SGX detection source evidence ===
+/tmp/caf/pkg/capability/detection.go:82:	// Check /dev/sgx_enclave exists
+/tmp/caf/pkg/capability/detection.go:83:	if _, err := os.Stat("/dev/sgx_enclave"); err != nil {
+/tmp/caf/pkg/capability/detection.go:84:		d.log("SGX not found: missing /dev/sgx_enclave")
+
+=== RESULT ===
+M5 SGX VALIDATION: PASS
+Evidence: real /dev/sgx_enclave present on Intel Xeon Platinum 8369B (Ice Lake), Ubuntu 22.04.5, aesmd=active
+End: 2026-08-20T02:34:16Z
+___M5_DONE___
