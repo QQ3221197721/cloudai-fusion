@@ -87,7 +87,7 @@ func runGPUList(cmd *cobra.Command, args []string) error {
 	fmt.Println(Separator('━', 80))
 	
 	// Try to get nvidia-smi output
-	output, err := exec.Command("nvidia-smi", "--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,driver_version", "-o", "csv,noheader,nounits").Output()
+	output, err := exec.Command("nvidia-smi", "--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,driver_version", "--format=csv,noheader,nounits").Output()
 	if err != nil {
 		yellow.Println(WARN() + " nvidia-smi not found or no NVIDIA GPUs detected")
 		yellow.Println("  To install: sudo apt-get install nvidia-utils-xxx (or equivalent)")
@@ -135,7 +135,7 @@ func runGPUListJSON(cmd *cobra.Command, args []string) error {
 	
 	var gpus []GPUInfo
 	
-	output, err := exec.Command("nvidia-smi", "--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,driver_version", "-o", "csv,noheader,nounits").Output()
+	output, err := exec.Command("nvidia-smi", "--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,driver_version", "--format=csv,noheader,nounits").Output()
 	if err == nil {
 		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 		for _, line := range lines {
@@ -169,7 +169,10 @@ func runGPUTopology(cmd *cobra.Command, args []string) error {
 	cyanBold.Println("GPU Topology")
 	fmt.Println(Separator('━', 80))
 	
-	output, err := exec.Command("nvidia-smi", "topology", "-g", "all", "-t", "GPU", "-m", "-T").Output()
+	// Use the canonical `nvidia-smi topo -m` matrix form: it prints the GPU-GPU
+	// connection matrix plus CPU/NUMA affinity and works across driver versions
+	// (the older `topology -g all -t GPU -m -T` invocation rejects -T with -m).
+	output, err := exec.Command("nvidia-smi", "topo", "-m").Output()
 	if err != nil {
 		yellow.Println(WARN() + " Cannot display topology: nvidia-smi not available or unsupported")
 		return nil
@@ -177,11 +180,11 @@ func runGPUTopology(cmd *cobra.Command, args []string) error {
 	
 	fmt.Print(string(output))
 	
-	// Count GPUs from output
+	// Count GPU rows in the matrix (lines beginning with the GPU<n> label).
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 	count := 0
 	for _, line := range lines {
-		if strings.Contains(line, "==") {
+		if strings.HasPrefix(strings.TrimSpace(line), "GPU") {
 			count++
 		}
 	}
