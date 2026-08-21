@@ -1,0 +1,20 @@
+=== CLEAN MIG ISOLATION EXPERIMENT (warm GPU) ===
+Time: Fri Aug 21 15:14:49 CST 2026
+MIG0 = MIG-bb2240d9-af23-57c7-892e-6b68191bfd77 (placement 0:4)
+MIG1 = MIG-53c0338f-a83d-59ac-9fe3-9632c449f74e (placement 4:4)
+
+--- warming up GPU clocks (discarded) ---
+=== A: slice0 ALONE (warm baseline) ===
+[slice0-ALONE-warm] GPU: NVIDIA A100-SXM4-80GB MIG 3g.40gb CC=8.0 Mem=42.1 GB
+[slice0-ALONE-warm] n=8 mean=94.01 TFLOPS cv=4.45% (QoS isolation metric)
+=== A2: slice1 ALONE (warm baseline) ===
+[slice1-ALONE-warm] GPU: NVIDIA A100-SXM4-80GB MIG 3g.40gb CC=8.0 Mem=42.1 GB
+[slice1-ALONE-warm] n=8 mean=93.41 TFLOPS cv=4.43% (QoS isolation metric)
+
+=== B: BOTH slices CONCURRENT (isolation test) ===
+[slice0-CONCURRENT] GPU: NVIDIA A100-SXM4-80GB MIG 3g.40gb CC=8.0 Mem=42.1 GB
+[slice0-CONCURRENT] n=8 mean=94.01 TFLOPS cv=4.46% (QoS isolation metric)
+[slice1-CONCURRENT] GPU: NVIDIA A100-SXM4-80GB MIG 3g.40gb CC=8.0 Mem=42.1 GB
+[slice1-CONCURRENT] n=8 mean=93.55 TFLOPS cv=4.39% (QoS isolation metric)
+
+=== CLEAN QOS DONE ===

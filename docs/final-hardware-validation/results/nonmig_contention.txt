@@ -1,0 +1,26 @@
+=== TEARDOWN MIG FOR NON-MIG CONTENTION COMPARISON ===
+Successfully destroyed compute instance ID  0 from GPU  0 GPU instance ID  1
+Successfully destroyed compute instance ID  0 from GPU  0 GPU instance ID  2
+Successfully destroyed GPU instance ID  1 from GPU  0
+Successfully destroyed GPU instance ID  2 from GPU  0
+Disabled MIG Mode for GPU 00000000:00:07.0
+
+Warning: persistence mode is disabled on device 00000000:00:07.0. See the Known Issues section of the nvidia-smi(1) man page for more information. Run with [--help | -h] switch to get more information on how to enable persistence mode.
+All done.
+MIG mode now:
+Disabled
+
+=== FULL CARD (no MIG) ===
+GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-d4f8358e-f172-883e-4a3c-276d913c8115)
+
+=== C: FULL CARD SINGLE WORKLOAD (baseline, warm) ===
+[fullcard-ALONE] GPU: NVIDIA A100-SXM4-80GB CC=8.0 Mem=85.1 GB
+[fullcard-ALONE] n=8 mean=163.58 TFLOPS cv=4.19% (QoS isolation metric)
+
+=== D: FULL CARD 2 CONCURRENT WORKLOADS (contention, no HW isolation) ===
+[fullcard-CONTEND-A] GPU: NVIDIA A100-SXM4-80GB CC=8.0 Mem=85.1 GB
+[fullcard-CONTEND-A] n=8 mean=80.73 TFLOPS cv=6.88% (QoS isolation metric)
+[fullcard-CONTEND-B] GPU: NVIDIA A100-SXM4-80GB CC=8.0 Mem=85.1 GB
+[fullcard-CONTEND-B] n=8 mean=87.77 TFLOPS cv=25.18% (QoS isolation metric)
+
+=== NON-MIG CONTENTION DONE ===
