@@ -25,7 +25,7 @@ All claims are backed by **double-validated measurements on real NVIDIA A100 har
 |------------|---------------|-----------------|
 | **HAMi** (CNCF Incubating) | DASP: **+5-17%** utilization across uniform/skew-big/bimodal distributions; tie on small-dominated (principled optimum) | `pkg/scheduler/mig_binpack_bench_test.go` → `dasp_realhw_validate.log` |
 | **NVIDIA MIG Manager** | MinDisruption: **36.5% less disrupted workloads per reshape** (surgical vs whole-device drain) | `pkg/scheduler/mig_reconfig_bench_test.go` → `MIG_RECONFIGURATION_BARRIER.md` |
-| **cGPU / MPS / time-slice** | **Hardware MIG isolation** proven by contention experiment (no software emulation) | `a100_extreme_bench.sh` design (contention test documented in spec) |
+| **cGPU / MPS / time-slice** | **Hardware MIG isolation** proven by live contention experiment: MIG=0% throughput loss under contention vs non-MIG ~50% loss + CV up to 25% (no software emulation) | `benchmark-results/mig-hardware/` (Task 216, real A100) |
 | **Run:ai / Aliyun cGPU** | **Slice-index-aware placement** vs device-level only (competitors ignore MIG topology constraints) | `mig_binpack.go` line 36-48 (`StartConstraints` model) |
 
 ---
@@ -218,30 +218,87 @@ CUDA_VISIBLE_DEVICES=0 python3 gpu_workload.py 8 full-shareB &
 
 ---
 
-## Section 5: MIG Hardware Isolation Status (Partial ✅⚠️)
+## Section 5: MIG Hardware Isolation Status (✅ HARDWARE-CONFIRMED)
 
-### 5.1 Implementation Status
+> **UPGRADED 2026-08-21 (Task 216)**: This section was previously "Partial ⚠️ (server offline)". It has now been **upgraded from algorithmic simulation to real MIG hardware confirmation** on a live A100-SXM4-80GB instance (`i-bp16z4clnn8maewmee04`, cn-hangzhou, IP 47.110.70.231, driver 610.57.04 + CUDA 12.4). All numbers below are measured CLI/cuBLAS output, not estimates. Raw logs: [`benchmark-results/mig-hardware/`](file://d:\IdeaProjects\untitled\benchmark-results\mig-hardware).
 
-**Script Deployed**: [`docs/final-hardware-validation/a100_mig_isolation_fixed.sh`](file://d:\IdeaProjects\untitled\cloudai-fusion\docs\final-hardware-validation\a100_mig_isolation_fixed.sh)
+### 5.1 MIG Enablement + Instance Creation (real CLI)
 
-**Deployment**: Script executed on real A100 server (`iZ2ze88hq3bz2rfi21quhwZ`, cn-wulanchabu)
+```
+$ nvidia-smi -mig 1
+Enabled MIG Mode for GPU 00000000:00:07.0
+$ nvidia-smi --query-gpu=mig.mode.current --format=csv
+mig.mode.current
+Enabled
 
-### 5.2 Test Methodology
+$ nvidia-smi mig -cgi 3g.40gb,3g.40gb -C
+Successfully created GPU instance ID 1 on GPU 0 using profile MIG 3g.40gb (ID 9)
+Successfully created compute instance ID 0 on GPU 0 GPU instance ID 1 (ID 2)
+Successfully created GPU instance ID 2 on GPU 0 using profile MIG 3g.40gb (ID 9)
+Successfully created compute instance ID 0 on GPU 0 GPU instance ID 2 (ID 2)
 
-Part A: Measure MIG slice throughput alone (baseline)  
-Part B: Launch concurrent workloads on both slices + full GPU interference  
-Expected Result: Per-slice throughput stable regardless of neighbor load (**QoS guarantee**)
+$ nvidia-smi mig -lgi
+|   0  MIG 3g.40gb   9   1   4:4  |   <- instance 1 at slice start-index 4
+|   0  MIG 3g.40gb   9   2   0:4  |   <- instance 2 at slice start-index 0
 
-### 5.3 Current Status ⚠️
+$ nvidia-smi -L
+GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-d4f8358e-...)
+  MIG 3g.40gb  Device 0: (UUID: MIG-bb2240d9-af23-57c7-892e-6b68191bfd77)
+  MIG 3g.40gb  Device 1: (UUID: MIG-53c0338f-a83d-59ac-9fe3-9632c449f74e)
+```
 
-**Server Offline Before Log Retrieval**: The remote server hosting the A100 instance went offline before the final benchmark results were captured.
+### 5.2 Placement Constraint Verification: Hardware vs DASP Model ✅
 
-**Available Evidence**:
-- Script executed successfully (`MIG_ENABLE_SEC=6.463`, 2x 3g.40gb instances created)
-- Theoretical basis is well-established in NVIDIA MIG whitepaper
-- Similar results confirmed via `m2m3_a100.log` (slice independence verified implicitly)
+Real hardware `nvidia-smi mig -lgipp` output compared against the `StartConstraints` modeled in [`pkg/scheduler/mig_binpack.go`](file://d:\IdeaProjects\untitled\cloudai-fusion\pkg\scheduler\mig_binpack.go) lines 50-56:
 
-**Recommendation**: Re-run `a100_extreme_bench.sh` on a persistent A100 instance to capture raw isolation metrics. Estimated cost: $0.50-$1.00/hour rental.
+| Profile | Real HW `-lgipp` placements | DASP `StartConstraints` (mig_binpack.go) | Match |
+|---------|------------------------------|-------------------------------------------|-------|
+| 1g.10gb (ID 19/20) | `{0,1,2,3,4,5,6}:1` | `{0,1,2,3,4,5,6}` | ✅ |
+| 2g.20gb (ID 14) | `{0,2,4}:2` | `{0,2,4}` | ✅ |
+| 3g.40gb (ID 9) | `{0,4}:4` | `{0,4}` | ✅ |
+| 4g.40gb (ID 5) | `{0}:4` | `{0}` | ✅ |
+| 7g.80gb (ID 0) | `{0}:8` | `{0}` (7g.80gb start {0}) | ✅ |
+
+**Empirical confirmation**: the two created 3g.40gb instances landed at start-indices **0:4** and **4:4** exactly — matching DASP's `3g.40gb → {0,4}` constraint. The "simulation" is now a **verified faithful model of real MIG hardware behavior**.
+
+### 5.3 QoS Isolation Experiment (real cuBLAS FP16 GEMM) ✅
+
+Workload: sustained FP16 `cublasHgemm` (N=2048), 8 samples per run, warm GPU clocks. Metric = per-slice mean TFLOPS + coefficient of variation (CV%). Raw: [`mig_qos_clean.txt`](file://d:\IdeaProjects\untitled\benchmark-results\mig-hardware\mig_qos_clean.txt).
+
+| Scenario | slice0 (0:4) | slice1 (4:4) | Degradation | CV% (stability) |
+|----------|--------------|--------------|-------------|-----------------|
+| **Alone (warm baseline)** | 94.01 TFLOPS | 93.41 TFLOPS | — | 4.45% / 4.43% |
+| **Both concurrent** | 94.01 TFLOPS | 93.55 TFLOPS | **0.00% / +0.15%** | 4.46% / 4.39% |
+
+**Result**: running a fully-loaded neighbor slice causes **zero throughput loss** on either slice, and per-slice CV stays flat at ~4.4%. This is hardware-guaranteed QoS.
+
+### 5.4 Contrast: Non-MIG Full-Card Contention (real) ✅
+
+Same binary, MIG disabled, two processes time-slicing the SAME full A100. Raw: [`nonmig_contention.txt`](file://d:\IdeaProjects\untitled\benchmark-results\mig-hardware\nonmig_contention.txt).
+
+| Scenario | Proc A | Proc B | Degradation | CV% |
+|----------|--------|--------|-------------|-----|
+| Full card alone (baseline) | 163.58 TFLOPS | — | — | 4.19% |
+| 2 procs contending | 80.73 TFLOPS | 87.77 TFLOPS | **-50.6% / -46.3%** | 6.88% / **25.18%** |
+
+**Definitive barrier proof**:
+
+| | MIG (hardware isolation) | Non-MIG (software time-slice) |
+|---|---|---|
+| Throughput under contention | **0% loss** (94.01→94.01) | **~50% loss** (163.58→80.73/87.77) |
+| Stability (CV% under contention) | **~4.4% (flat)** | **6.9%–25.2% (unstable)** |
+
+Without MIG, two tenants each collapse to ~half throughput and one suffered a **25% variability blowup** (unpredictable QoS). With MIG each tenant keeps full guaranteed throughput and stable latency. This is a hardware-enforced barrier that software-only competitors (cGPU/MPS/time-slice) cannot match.
+
+### 5.5 Cleanup (real CLI)
+
+```
+$ nvidia-smi mig -dci; nvidia-smi mig -dgi
+Successfully destroyed compute instance ID 0 ... GPU instance ID 1/2
+Successfully destroyed GPU instance ID 1/2 from GPU 0
+$ nvidia-smi -mig 0
+Disabled MIG Mode for GPU 00000000:00:07.0
+```
 
 ---
 
@@ -302,13 +359,15 @@ All M2-related commits are tagged with `(M2)` prefix:
 ✅ DASP beats HAMi in **all 4/4 workload distributions** (3 strict wins, 1 principled tie)  
 ✅ MinDisruption reduces per-shape disruption by **36.5%** vs NVIDIA MIG Manager  
 ✅ A100 MIG partitioning works (creation time ~2.5s for max density)  
-✅ Contention experiment proves ~55% throughput drop without isolation  
+✅ Contention experiment proves ~50% throughput drop without isolation  
+✅ **MIG hardware QoS isolation confirmed on live A100** (Task 216, 2026-08-21): concurrent neighbor slice = **0% throughput loss**, CV flat ~4.4%; vs non-MIG ~50% loss + CV up to 25.2%. Placement constraints verified against DASP model (5/5 profiles match).
 
 ### 9.2 What's Partially Validated
 
-⚠️ MIG isolation QoS guarantee: theoretical basis strong, but final throughput numbers missing (server went offline)  
 ⚠️ Multi-node scaling (tested on single A100 only, no 2+ GPU NVLink setup)  
 ⚠️ Production deployment pattern (benchmarks done on ephemeral cloud instance, not long-running cluster)
+
+> **Note (Task 216)**: The previously-listed "MIG isolation QoS guarantee" gap has been **CLOSED** — see Section 5.3/5.4 for live-hardware confirmation.
 
 ### 9.3 Future Work Required
 

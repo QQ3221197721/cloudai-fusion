@@ -1,0 +1,22 @@
+=== MIG QoS ISOLATION EXPERIMENT ===
+Time: Fri Aug 21 15:13:52 CST 2026
+
+=== MIG DEVICES ===
+GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-d4f8358e-f172-883e-4a3c-276d913c8115)
+  MIG 3g.40gb     Device  0: (UUID: MIG-bb2240d9-af23-57c7-892e-6b68191bfd77)
+  MIG 3g.40gb     Device  1: (UUID: MIG-53c0338f-a83d-59ac-9fe3-9632c449f74e)
+
+MIG0 = MIG-bb2240d9-af23-57c7-892e-6b68191bfd77
+MIG1 = MIG-53c0338f-a83d-59ac-9fe3-9632c449f74e
+
+=== EXPERIMENT A: SINGLE SLICE BASELINE (slice0 alone, 8s) ===
+[slice0-ALONE] GPU: NVIDIA A100-SXM4-80GB MIG 3g.40gb CC=8.0 Mem=42.1 GB
+[slice0-ALONE] n=8 mean=77.30 TFLOPS cv=4.42% (QoS isolation metric)
+
+=== EXPERIMENT B: TWO SLICES CONCURRENT (isolation test, 10s each) ===
+[slice0-CONCURRENT] GPU: NVIDIA A100-SXM4-80GB MIG 3g.40gb CC=8.0 Mem=42.1 GB
+[slice0-CONCURRENT] n=8 mean=94.00 TFLOPS cv=4.46% (QoS isolation metric)
+[slice1-CONCURRENT] GPU: NVIDIA A100-SXM4-80GB MIG 3g.40gb CC=8.0 Mem=42.1 GB
+[slice1-CONCURRENT] n=8 mean=93.52 TFLOPS cv=4.37% (QoS isolation metric)
+
+=== QOS TEST DONE ===

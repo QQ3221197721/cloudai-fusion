@@ -1,0 +1,7 @@
+GPU  0 Profile ID 19 Placements: {0,1,2,3,4,5,6}:1
+GPU  0 Profile ID 20 Placements: {0,1,2,3,4,5,6}:1
+GPU  0 Profile ID 15 Placements: {0,2,4,6}:2
+GPU  0 Profile ID 14 Placements: {0,2,4}:2
+GPU  0 Profile ID  9 Placements: {0,4}:4
+GPU  0 Profile ID  5 Placement : {0}:4
+GPU  0 Profile ID  0 Placement : {0}:8
