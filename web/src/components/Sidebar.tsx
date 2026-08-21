@@ -26,6 +26,8 @@ const NAV = [
   { to: '/gpu-mig', label: 'GPU MIG', icon: <PartitionOutlined /> },
   { to: '/gpu-migration', label: 'GPU Migration', icon: <SwapOutlined /> },
   { to: '/sgx', label: 'SGX Enclaves', icon: <LockOutlined /> },
+  // GPU Topology Scheduling (M3 T4)
+  { to: '/gpu-topology-scheduler', label: 'Topology Scheduler', icon: <DesktopOutlined /> },
   // Developer Experience (M41/M42)
   { to: '/dev-setup', label: 'Local Dev Setup', icon: <UserOutlined /> },
   { to: '/sandbox', label: 'WASM Sandbox', icon: <CodeOutlined /> },

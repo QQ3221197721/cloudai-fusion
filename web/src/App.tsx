@@ -25,6 +25,7 @@ import { SgxEnclaveDashboard } from './pages/SgxEnclaveDashboard'
 import SetupWizard from './pages/developer/SetupWizard'
 import SandboxRunner from './pages/developer/SandboxRunner'
 import { AutoscaleEngine } from './pages/AutoscaleEngine'
+import { TopologyScheduler } from './pages/TopologyScheduler'
 import type { RunMode } from './types'
 
 const MOCK_RUN_MODE: RunMode = 'simulation'
@@ -62,6 +63,8 @@ export function App(): JSX.Element {
             <Route path="/sandbox" element={<SandboxRunner />} />
             {/* Auto-scaling Engine (M16) */}
             <Route path="/autoscale" element={<AutoscaleEngine />} />
+            {/* GPU Topology Scheduler (M3 T4) */}
+            <Route path="/gpu-topology-scheduler" element={<TopologyScheduler />} />
           </Routes>
         </main>
       </div>
