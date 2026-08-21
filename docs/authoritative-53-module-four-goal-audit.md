@@ -39,9 +39,10 @@
 | M21 | Edge Node Manager | 需边缘设备 |
 | M22 | Offline-first Decision Engine | 需断网环境 |
 | M23 | Delta Sync Protocol | 需分布式边缘节点 |
-| M53 | GPU WASI Extensions | 需 GPU + WASM 运行时 |
 
-**硬件模块数 = 6，非硬件模块数 = 47**
+**M53 GPU WASI Extensions 已移至 SOFT（Phase-3 T3 攻坚完成），不再需要物理 GPU 即可运行。**
+
+**硬件模块数 = 5，非硬件模块数 = 48**
 
 ---
 
@@ -134,6 +135,7 @@
 | M50 | WASM Execution Engine | `pkg/wasm` | ⚠️ 无专属 CLI | ✅ 57 bench | ✅ 冷启 225µs + 池化 3µs | ⚠️ 无专属页 | T1+T4 缺 |
 | M51 | Capability Security Mgr | `pkg/wasm` (cap) | ⚠️ 无专属 CLI | ✅ (含在 wasm) | ✅ FS/Net/GPU 能力门控 | ⚠️ 无专属页 | T1+T4 缺 |
 | M52 | Hot-swap State Migration | `pkg/hotswap` | ⚠️ 无专属 CLI | ⚠️ 无 bench 行 | ✅ 零请求丢失迁移 | ⚠️ 无专属页 | T1+T2+T4 缺 |
+| M53 | GPU WASI Extensions | `pkg/wasm` | ✅ host functions registered | ✅ **8 key bench** | ✅ **Zero-copy + ShardedAllocator + TokenBucket** | ⚠️ 无专属页 | **Phase-3 T3 攻坚完成（见 perf_results_m53.txt）** |
 
 ---
 
