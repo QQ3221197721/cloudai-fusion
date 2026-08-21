@@ -466,22 +466,3 @@ func BenchmarkVectorClock_CausalOrdering(b *testing.B) {
 		if cmp != 0 { b.Logf("concurrent events at iteration %d", i) }
 	}
 }
-
-func (vc *CausalVectorClock) CompareFromMaps(a, b map[string]int) int {
-	hasLess, hasGreater := false, false
-	allKeys := make(map[string]bool)
-	for k := range a { allKeys[k] = true }
-	for k := range b { allKeys[k] = true }
-	for key := range allKeys {
-		aVal, bVal := a[key], b[key]
-		if aVal < bVal {
-			hasLess = true
-		} else if aVal > bVal {
-			hasGreater = true
-		}
-		if hasLess && hasGreater { return 2 }
-	}
-	if hasLess { return -1 }
-	if hasGreater { return 1 }
-	return 0
-}
