@@ -167,3 +167,28 @@ func (vc *CausalVectorClock) extractVersionFromEvent(event *Event) map[string]in
 	versionMap[event.ProcessID] = event.Version
 	return versionMap
 }
+
+// CompareFromMaps compares two vector clock maps and returns their causal relationship.
+// Returns:
+//   -1 if a happens-before b (a has smaller value for some key and not greater for any)
+//    0 if a equals b (all values identical)
+//   +1 if a happens-after b (a has greater value for some key and not smaller for any)
+//   +2 if concurrent (neither dominates - typical in distributed systems)
+func (vc *CausalVectorClock) CompareFromMaps(a, b map[string]int) int {
+	hasLess, hasGreater := false, false
+	allKeys := make(map[string]bool)
+	for k := range a { allKeys[k] = true }
+	for k := range b { allKeys[k] = true }
+	for key := range allKeys {
+		aVal, bVal := a[key], b[key]
+		if aVal < bVal {
+			hasLess = true
+		} else if aVal > bVal {
+			hasGreater = true
+		}
+		if hasLess && hasGreater { return 2 } // Concurrent
+	}
+	if hasLess { return -1 }
+	if hasGreater { return 1 }
+	return 0
+}
