@@ -46,6 +46,7 @@ func newHuntCmd() *cobra.Command {
 		Short: "Threat Hunting (L2) — behavioral analytics (offline)",
 	}
 	cmd.AddCommand(newHuntRunCmd())
+	cmd.AddCommand(newHuntStatusCmd())
 	return cmd
 }
 
@@ -116,6 +117,7 @@ func newDetectCmd() *cobra.Command {
 		Short: "Detection (L3) — Sigma rule evaluation (offline)",
 	}
 	cmd.AddCommand(newDetectSigmaCmd())
+	cmd.AddCommand(newDetectStatusCmd())
 	return cmd
 }
 
@@ -173,6 +175,7 @@ func newSoarCmd() *cobra.Command {
 		Short: "SOAR (L8) — response orchestration (offline)",
 	}
 	cmd.AddCommand(newSoarTriggerCmd())
+	cmd.AddCommand(newSoarPlaybookCmd())
 	return cmd
 }
 

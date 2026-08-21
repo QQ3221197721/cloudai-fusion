@@ -16,6 +16,7 @@ func newAnomalyCmd() *cobra.Command {
 		Short: "Anomaly — scan metrics for statistical outliers (offline)",
 	}
 	cmd.AddCommand(newAnomalyScanCmd())
+	cmd.AddCommand(newAnomalyReportCmd())
 	return cmd
 }
 

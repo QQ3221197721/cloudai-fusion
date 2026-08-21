@@ -152,6 +152,9 @@ func init() {
 	// Hot-swap Component Versioning (M52): hotswap status
 	rootCmd.AddCommand(newHotswapCmd())
 	
+	// Supply Chain Security (M34): scan sbom/sarif
+	rootCmd.AddCommand(newScanCmd())
+	
 	// RL Training Sidecar + Interactive Tutorial Engine (M10/M44)
 	rootCmd.AddCommand(newRlCmd())
 	rootCmd.AddCommand(newTutorialCmd())
