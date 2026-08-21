@@ -259,7 +259,23 @@ func parseMIGInstances(gpuIndex int, output string) []MIGInstance {
 		// Example line: "  GPU  0 Profile  19 : 1g.5gb  Instances: 1/7"
 		if strings.Contains(line, "Profile") && strings.Contains(line, "g.") {
 			parts := strings.Fields(line)
+			// Safety check: ensure parts has content before iterating
+			if len(parts) == 0 {
+				logrus.WithFields(logrus.Fields{
+					"gpu": gpuIndex,
+				}).Info("unexpected nvidia-smi output format (empty parts)")
+				continue
+			}
 			for i, p := range parts {
+				// Bounds check to avoid accessing parts[i] when out of bounds
+				if len(parts) <= i {
+					logrus.WithFields(logrus.Fields{
+						"gpu":    gpuIndex,
+						"index":  i,
+						"length": len(parts),
+					}).Info("unexpected nvidia-smi output format (index out of bounds)")
+					break
+				}
 				if strings.Contains(p, "g.") && strings.Contains(p, "gb") {
 					inst := MIGInstance{
 						ID:       common.NewUUID(),
@@ -503,6 +519,12 @@ func (mgr *GPUSharingManager) AllocateMemoryIsolationGroup(
 	state, ok := mgr.memoryStates[gpuIndex]
 	if !ok {
 		return nil, fmt.Errorf("GPU %d memory state not initialized", gpuIndex)
+	}
+
+	// Safety check: physical memory of zero cannot be allocated and would cause
+	// a division by zero when computing the oversell ratio below.
+	if state.PhysicalTotalMiB <= 0 {
+		return nil, fmt.Errorf("cannot allocate memory on GPU %d: physical memory is zero (PhysicalTotalMiB=%d)", gpuIndex, state.PhysicalTotalMiB)
 	}
 
 	// Calculate virtual capacity with overselling
