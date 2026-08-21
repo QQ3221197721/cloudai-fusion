@@ -1,0 +1,19 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/wasm
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkHostFunctionDispatch                        	159308094	        14.60 ns/op	       0 B/op	       0 allocs/op
+BenchmarkZeroCopyVsMemcpy_1MB                        	55081876	        44.81 ns/op	      24 B/op	       1 allocs/op
+BenchmarkShardedAllocator_GlobalMutex_Comparison/sharded-no-contention         	56745771	        50.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkShardedAllocator_GlobalMutex_Comparison/global-mutex-baseline         	40079811	        64.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkShardedAllocator_ConcurrencyScaling                                   	  901387	      2366 ns/op	     416 B/op	       6 allocs/op
+BenchmarkTenantAccounting_SingleTenant_vs_100Tenants/single-tenant             	58830606	        35.56 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTenantAccounting_SingleTenant_vs_100Tenants/100tenants-concurrent-burst         	  284896	     10375 ns/op	    1520 B/op	     100 allocs/op
+BenchmarkOptimalPlacement_VaryingScale/8-gpus                                            	  397930	      6496 ns/op	    1912 B/op	      24 allocs/op
+BenchmarkOptimalPlacement_VaryingScale/16-gpus                                           	   72543	     39235 ns/op	    6024 B/op	      51 allocs/op
+BenchmarkOptimalPlacement_VaryingScale/32-gpus                                           	    6668	    397422 ns/op	   12616 B/op	      88 allocs/op
+BenchmarkOptimalPlacement_VaryingScale/64-gpus                                           	     589	   3578722 ns/op	   25608 B/op	     157 allocs/op
+BenchmarkEndToEndGPUWASI_FullLifecycle                                                   	 1341358	      1846 ns/op	    1656 B/op	      20 allocs/op
+BenchmarkGlobalMutex_AllocationOverhead                                                  	48213295	        51.66 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/wasm	45.144s
