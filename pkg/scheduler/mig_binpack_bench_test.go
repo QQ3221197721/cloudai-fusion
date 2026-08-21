@@ -156,145 +156,186 @@ func runComparativeRun(clusterSize int, dist string, nRequests int, seed int64, 
 // Main Benchmarks
 // ============================================================================
 
-// TestMIGAlgorithmComparisons is a full honesty benchmark with real numbers and no false claims.
-func TestMIGAlgorithmComparisons(t *testing.T) {
-	t.Log("========== MIG-AWARE BINPACKING BENCHMARK (HONEST COMPARISON) ==========")
+// avgRequestSize computes the mean slice-size of a generated workload (for capacity estimation).
+func avgRequestSize(jobs []MIGSliceProfile) float64 {
+	if len(jobs) == 0 {
+		return 1
+	}
+	total := 0
+	for _, j := range jobs {
+		total += j.Size
+	}
+	return float64(total) / float64(len(jobs))
+}
 
-	clusters := []int{10, 50, 100}
+// distributionWeights returns the per-profile probability weights that match the workload
+// generator for a named distribution. This is the demand estimate a real scheduler would learn
+// from its request stream (used by DASP for zoning and by MFI for its fragmentation metric).
+func distributionWeights(distribution string) map[string]float64 {
+	switch distribution {
+	case DistUniform:
+		return map[string]float64{"1g.10gb": 0.20, "2g.20gb": 0.20, "3g.40gb": 0.20, "4g.40gb": 0.20, "7g.80gb": 0.20}
+	case DistSkewSmall:
+		return map[string]float64{"1g.10gb": 0.80, "2g.20gb": 0.10, "3g.40gb": 0.05, "4g.40gb": 0.03, "7g.80gb": 0.02}
+	case DistSkewBig:
+		return map[string]float64{"1g.10gb": 0.02, "2g.20gb": 0.03, "3g.40gb": 0.05, "4g.40gb": 0.10, "7g.80gb": 0.80}
+	case DistBimodal:
+		return map[string]float64{"1g.10gb": 0.50, "2g.20gb": 0.00, "3g.40gb": 0.00, "4g.40gb": 0.00, "7g.80gb": 0.50}
+	default:
+		return defaultDistribution()
+	}
+}
+
+// TestMIGAlgorithmComparisons is a full honesty benchmark using LOAD SCANNING (not saturation).
+// For a fixed 100-GPU cluster, each distribution is swept across load levels from 0.3x to 1.5x
+// of the theoretical capacity, and the acceptance rate of all 5 algorithms is compared.
+func TestMIGAlgorithmComparisons(t *testing.T) {
+	t.Log("========== MIG-AWARE BINPACKING BENCHMARK (LOAD-SCAN, HONEST) ==========")
+
+	const clusterSize = 100
 	distros := []string{DistUniform, DistSkewSmall, DistSkewBig, DistBimodal}
-	requestCounts := []int{10000}
+	loadLevels := []float64{0.3, 0.5, 0.7, 1.0, 1.2, 1.5}
+	const seed = int64(20260821)
 
 	algoList := []PlacementStrategy{
-		FirstFit{}, BestFit{}, HAMiBinpack{}, MinFragmentationIncrement{},
+		FirstFit{}, BestFit{}, HAMiBinpack{}, MinFragmentationIncrement{}, DemandAwareSegregationPlacement{},
 	}
+	algoOrder := []string{"DASP", "HAMiBinpack", "MFI", "BestFit", "FirstFit"}
 
-	allResults := make(map[string]map[string]runMetrics)
+	// results[distro][load][algoName] = acceptRate
+	type cell struct {
+		acceptRate float64
+		fragMetric float64
+		nReq       int
+	}
+	results := make(map[string]map[float64]map[string]cell)
 
-	for _, csize := range clusters {
-		for _, d := range distros {
-			for _, nreq := range requestCounts {
-				key := fmt.Sprintf("c%d-d%s-r%d", csize, d, nreq)
-				t.Logf("[%s] Starting comparative run...", key)
-				res := runComparativeRun(csize, d, nreq, int64(csize*1000+nreq), algoList)
-				allResults[key] = res
+	totalCapacitySlices := clusterSize * totalSlices // 100 * 8 = 800 slices
+
+	for _, d := range distros {
+		results[d] = make(map[float64]map[string]cell)
+		// Estimate capacity in *requests* using the distribution's average request size.
+		// Use a large probe workload for a stable average.
+		probe := generateWorkloadWithDist(5000, d, seed)
+		avgSize := avgRequestSize(probe)
+		capacityRequests := float64(totalCapacitySlices) / avgSize
+
+		for _, load := range loadLevels {
+			nReq := int(capacityRequests * load)
+			if nReq < 1 {
+				nReq = 1
+			}
+			results[d][load] = make(map[string]cell)
+
+			gpus := NewGPUTopology(clusterSize)
+			jobs := generateWorkloadWithDist(nReq, d, seed)
+			dist := distributionWeights(d)
+
+			for _, alg := range algoList {
+				independentGPUs := deepCopyCluster(gpus)
+				m := runSingleSimulation(independentGPUs, jobs, alg, dist)
+				ar := float64(m.acceptCount) / float64(nReq)
+				results[d][load][alg.Name()] = cell{acceptRate: ar, fragMetric: m.fragMetric, nReq: nReq}
 			}
 		}
 	}
 
-	// Print tables per configuration
-	fmt.Println("\n========== COMPARATIVE RESULTS TABLES ==========")
-	for _, csize := range clusters {
-		for _, d := range distros {
-			for _, nrq := range requestCounts {
-				key := fmt.Sprintf("c%d-d%s-r%d", csize, d, nrq)
-				results := allResults[key]
-
-				fmt.Printf("\n--- Cluster=%d | Distribution=%s | Requests=%d ---\n", csize, d, nrq)
-				fmt.Printf("%-18s %-14s %-12s %-12s\n", "Algorithm", "Distribution", "AcceptRate", "FragMetric")
-				fmt.Println(strings.Repeat("-", 70))
-
-				for name := range results {
-					m := results[name]
-					ar := 0.0
-					if nrq > 0 {
-						ar = float64(m.acceptCount) / float64(nrq)
-					}
-					fmt.Printf("%-18s %-14s %-12.4f %-12.4f\n", name, d, ar, m.fragMetric)
-				}
+	// ------------------------------------------------------------------
+	// Print full load-scan tables per distribution
+	// ------------------------------------------------------------------
+	fmt.Println("\n========== LOAD-SCAN COMPARATIVE TABLES (CLUSTER=100) ==========")
+	for _, d := range distros {
+		fmt.Printf("\n### Distribution=%s ###\n", d)
+		fmt.Printf("%-8s %-8s", "Load", "nReq")
+		for _, name := range algoOrder {
+			fmt.Printf(" %-12s", name)
+		}
+		fmt.Println()
+		fmt.Println(strings.Repeat("-", 8+8+len(algoOrder)*13))
+		for _, load := range loadLevels {
+			row := results[d][load]
+			nReq := 0
+			if c, ok := row["DASP"]; ok {
+				nReq = c.nReq
 			}
+			fmt.Printf("%-7.1fx %-8d", load, nReq)
+			for _, name := range algoOrder {
+				fmt.Printf(" %-12.4f", row[name].acceptRate)
+			}
+			fmt.Println()
 		}
 	}
 
-	// Summary: pick the most revealing scenario—bimodal where MFI should shine over spreading baselines
-	fmt.Println("\n========== SUMMARY: BESTFIT/HAMI/MFI ON BIMODAL WORKLOAD (CLUSTER=100) ==========")
-	sumKey := "c100-dbimodal-r10000"
-	if sumRes, ok := allResults[sumKey]; ok {
-		fmt.Printf("%-18s %-14s %-12s %-12s\n", "Algorithm", "Distribution", "AcceptRate", "FragMetric")
-		fmt.Println(strings.Repeat("-", 70))
-		for _, name := range []string{"MFI", "HAMiBinpack", "BestFit"} {
-			if m, ok := sumRes[name]; ok {
-				ar := 0.0
-				if 10000 > 0 {
-					ar = float64(m.acceptCount) / float64(10000)
-				}
-				fmt.Printf("%-18s %-14s %-12.4f %-12.4f\n", name, "bimodal", ar, m.fragMetric)
+	// ------------------------------------------------------------------
+	// DASP vs HAMi load-scan curve with winner per point
+	// ------------------------------------------------------------------
+	fmt.Println("\n========== DASP VS HAMI: LOAD SCAN CURVE (CLUSTER=100) ==========")
+	for _, d := range distros {
+		fmt.Printf("\n--- Distribution=%s ---\n", d)
+		fmt.Printf("%-8s %-12s %-12s %-12s %-8s\n", "Load", "DASP", "HAMi", "Diff(%)", "Winner")
+		fmt.Println(strings.Repeat("-", 56))
+		for _, load := range loadLevels {
+			row := results[d][load]
+			daspAR := row["DASP"].acceptRate
+			hamiAR := row["HAMiBinpack"].acceptRate
+			diff := 0.0
+			if hamiAR > 0 {
+				diff = (daspAR - hamiAR) / hamiAR * 100
 			}
+			winner := "TIE"
+			if daspAR > hamiAR+1e-9 {
+				winner = "DASP"
+			} else if hamiAR > daspAR+1e-9 {
+				winner = "HAMi"
+			}
+			fmt.Printf("%-7.1fx %-12.4f %-12.4f %-12.2f %-8s\n", load, daspAR, hamiAR, diff, winner)
 		}
 	}
 
-	// Honest verification with soft assertions via t.Logf (no fail unless truly broken)
-	fmt.Println("\n========== VERIFICATION (REAL NUMBERS, HONEST ASSERTIONS) ==========")
+	// ------------------------------------------------------------------
+	// Verification: aggregate over MEDIUM-load band (0.6-1.0x) where MIG constraints bite
+	// ------------------------------------------------------------------
+	fmt.Println("\n========== VERIFICATION (MEDIUM-LOAD BAND 0.7x-1.0x) ==========")
+	mediumLoads := []float64{0.7, 1.0}
+	var daspWins, hamiWins, bestfitFails int
+	for _, d := range distros {
+		// Average DASP and HAMi acceptance over the medium band.
+		var daspSum, hamiSum, bestSum float64
+		for _, load := range mediumLoads {
+			row := results[d][load]
+			daspSum += row["DASP"].acceptRate
+			hamiSum += row["HAMiBinpack"].acceptRate
+			bestSum += row["BestFit"].acceptRate
+		}
+		n := float64(len(mediumLoads))
+		daspAvg := daspSum / n
+		hamiAvg := hamiSum / n
+		bestAvg := bestSum / n
 
-	// Scenario 1: uniform — MFI vs BestFit in acceptance rate
-	uniformKey := "c100-duniform-r10000"
-	if umRes, ok := allResults[uniformKey]; ok {
-		mfiAR := func() float64 {
-			if v, ok := umRes["MFI"]; ok && 10000 > 0 {
-				return float64(v.acceptCount) / float64(10000)
-			}
-			return 0
-		}()
-		bestAR := func() float64 {
-			if v, ok := umRes["BestFit"]; ok && 10000 > 0 {
-				return float64(v.acceptCount) / float64(10000)
-			}
-			return 0
-		}()
-		t.Logf("[uniform] MFI AcceptRate=%.4f | BestFit AcceptRate=%.4f", mfiAR, bestAR)
-		if bestAR > 0 && mfiAR <= bestAR {
-			t.Logf("[uniform] Note: MFI acceptance not exceeding BestFit; this can occur when workloads are easy or cluster is overprovisioned.")
-		} else if bestAR > 0 {
-			gain := (mfiAR - bestAR) / bestAR * 100
-			t.Logf("[uniform] MFI beats BestFit by %.2f%% acceptance.", gain)
+		t.Logf("[%s] DASP=%.4f | HAMi=%.4f | BestFit=%.4f (avg over 0.7x,1.0x)", d, daspAvg, hamiAvg, bestAvg)
+
+		if daspAvg > hamiAvg+1e-6 {
+			daspWins++
+			t.Logf("[%s] ✓ DASP beats HAMi by %.2f%%", d, (daspAvg-hamiAvg)/hamiAvg*100)
+		} else if hamiAvg > daspAvg+1e-6 {
+			hamiWins++
+			t.Logf("[%s] HAMi beats DASP by %.2f%%", d, (hamiAvg-daspAvg)/daspAvg*100)
+		}
+		if daspAvg < bestAvg-1e-6 {
+			bestfitFails++
+			t.Logf("[%s] WARN: DASP below BestFit by %.2f%%", d, (bestAvg-daspAvg)/bestAvg*100)
 		}
 	}
 
-	// Scenario 2: bimodal — MFI vs HAMiBinpack fragmentation (core strength)
-	bimodalKey := "c100-dbimodal-r10000"
-	if biRes, ok := allResults[bimodalKey]; ok {
-		mfiFrag := func() float64 {
-			if v, ok := biRes["MFI"]; ok {
-				return v.fragMetric
-			}
-			return 0
-		}()
-		hamiFrag := func() float64 {
-			if v, ok := biRes["HAMiBinpack"]; ok {
-				return v.fragMetric
-			}
-			return 0
-		}()
-		t.Logf("[bimodal] MFI Fragmentation=%.4f | HAMiBinpack Fragmentation=%.4f", mfiFrag, hamiFrag)
-		if hamiFrag > 0 && mfiFrag >= hamiFrag {
-			t.Logf("[bimodal] Note: MFI frag not less than HAMi; verify FragmentationMetric behavior vs slicing constraints.")
-		} else if hamiFrag > 0 {
-			reduction := (hamiFrag - mfiFrag) / hamiFrag * 100
-			t.Logf("[bimodal] MFI reduces fragmentation by %.2f%% vs HAMi (slice-index awareness advantage).", reduction)
-		}
+	t.Logf("\n=== RESULT: DASP beats HAMi in %d/4 distros (medium band); HAMi wins %d; DASP<BestFit in %d ===",
+		daspWins, hamiWins, bestfitFails)
+	if daspWins >= 3 && bestfitFails == 0 {
+		t.Log("✓ PASS: DASP acceptance > HAMi in ≥3/4 distributions AND ≥ BestFit in all")
+	} else {
+		t.Logf("⚠ DASP wins %d/4 vs HAMi, %d BestFit shortfalls; iterate algorithm.", daspWins, bestfitFails)
 	}
 
-	// Scenario 3: skew-small — acceptance rates
-	skewSmallKey := "c100-dskew-small-r10000"
-	if skRes, ok := allResults[skewSmallKey]; ok {
-		mfiSR := func() float64 {
-			if v, ok := skRes["MFI"]; ok && 10000 > 0 {
-				return float64(v.acceptCount) / float64(10000)
-			}
-			return 0
-		}()
-		hmiSR := func() float64 {
-			if v, ok := skRes["HAMiBinpack"]; ok && 10000 > 0 {
-				return float64(v.acceptCount) / float64(10000)
-			}
-			return 0
-		}()
-		t.Logf("[skew-small] MFI AcceptRate=%.4f | HAMiBinpack AcceptRate=%.4f", mfiSR, hmiSR)
-		if hmiSR > 0 && mfiSR <= hmiSR {
-			t.Logf("[skew-small] Note: small-profile dominated workload often has similar packing across algorithms.")
-		}
-	}
-
-	t.Logf("Benchmark complete. Review t.Logf outputs for algorithmic performance deltas.")
+	t.Logf("Benchmark complete.")
 }
 
 // ============================================================================
@@ -352,6 +393,64 @@ func Test_NoOverlap(t *testing.T) {
 		}
 	}
 	t.Log("✓ No overlap violation found")
+}
+
+// Test_DASP_ValidPlacements runs DASP over a large mixed workload on a multi-GPU cluster and
+// verifies every accepted placement respects MIG start-index constraints and that no two
+// allocations on the same GPU share a slice.
+func Test_DASP_ValidPlacements(t *testing.T) {
+	t.Log("Testing DASP placement validity (constraints + non-overlap)...")
+	const clusterSize = 20
+	gpus := NewGPUTopology(clusterSize)
+	sched := NewMIGScheduler(gpus, distributionWeights(DistUniform))
+	strategy := DemandAwareSegregationPlacement{}
+
+	jobs := generateWorkloadWithDist(400, DistUniform, 42)
+	accepted := 0
+	for i, job := range jobs {
+		res, err := sched.Schedule(fmt.Sprintf("w-%d", i), job.Name, strategy)
+		if err != nil {
+			continue // rejection is legitimate once the cluster fills
+		}
+		accepted++
+		// Verify the returned start index is a valid constraint for the profile.
+		p, _ := profileByName(job.Name)
+		validStart := false
+		for _, s := range p.StartConstraints {
+			if s == res.StartSlice {
+				validStart = true
+				break
+			}
+		}
+		if !validStart {
+			t.Errorf("DASP placed %s at invalid start %d (allowed: %v)", job.Name, res.StartSlice, p.StartConstraints)
+		}
+	}
+	if accepted == 0 {
+		t.Fatal("DASP accepted zero requests; scheduling is broken")
+	}
+
+	// Verify no slice is double-counted vs the occupancy bitmap on every GPU.
+	for gi := range gpus {
+		state := gpus[gi].State
+		covered := make([]string, totalSlices)
+		for start := range state.Allocations {
+			a := state.Allocations[start]
+			for j := a.StartSlice; j < a.EndSlice; j++ {
+				if covered[j] != "" {
+					t.Errorf("GPU %d slice %d claimed by both %s and %s", gi, j, covered[j], a.WorkloadID)
+				}
+				covered[j] = a.WorkloadID
+			}
+		}
+		// Occupancy bitmap must agree with allocation coverage.
+		for j := 0; j < totalSlices; j++ {
+			if (covered[j] != "") != state.Slices[j] {
+				t.Errorf("GPU %d slice %d: bitmap=%v but coverage=%q (mismatch)", gi, j, state.Slices[j], covered[j])
+			}
+		}
+	}
+	t.Logf("✓ DASP produced %d valid, non-overlapping placements across %d GPUs", accepted, clusterSize)
 }
 
 // Test_A100TopologyConsistency checks canonical topologies constructible on an A100.
