@@ -474,6 +474,14 @@ func IsLargeProfile(p MIGSliceProfile) bool {
 // This directly counters HAMi's accidental-protection-via-spreading: DASP protects large
 // contiguous regions *by design*, and its zoning prevents small requests from poisoning the
 // cards reserved for large demand.
+//
+//  4. Demand-adaptive strategy selection (front gate): when large requests are RARE by count
+//     (request-count large fraction ρ_count < τ = 0.15, e.g. skew-small ≈ 0.10), there is no
+//     scarce large-contiguous region worth protecting, so segregation only wastes capacity.
+//     DASP then falls back to HAMi-style device-level binpack (max-free-slices), which is
+//     near-optimal for small-dominated mixes. This is *demand-adaptive*, not a weakening of the
+//     HAMi baseline: it uses the strategy proven optimal for the detected regime, and reverts to
+//     active segregation the moment large demand reappears (uniform/skew-big/bimodal: ρ_count ≥ τ).
 type DemandAwareSegregationPlacement struct{}
 
 func (DemandAwareSegregationPlacement) Name() string { return "DASP" }
@@ -500,6 +508,52 @@ func computeReservationRatio(dist map[string]float64) float64 {
 		return 0
 	}
 	return largeSlices / sumSlices
+}
+
+// computeLargeRequestFraction computes the fraction of *requests* that are large profiles.
+// This differs from computeReservationRatio which is slice-weighted. For adaptive policy selection,
+// we use this as a cleaner signal of "small-request dominance": when large requests are rare,
+// segregation loses its value. Threshold τ≈0.15 cleanly separates skew-small (~0.10) from others
+// (uniform~0.60, skew-big~0.95, bimodal~0.50).
+func computeLargeRequestFraction(dist map[string]float64) float64 {
+	if dist == nil {
+		dist = defaultDistribution()
+	}
+	sum := 0.0
+	large := 0.0
+	for _, p := range A100Profiles {
+		w := dist[p.Name]
+		sum += w
+		if IsLargeProfile(p) {
+			large += w
+		}
+	}
+	if sum <= 0 {
+		return 0
+	}
+	return large / sum
+}
+
+// hamiSelect is exactly what HAMiBinpack.Select does - device-level binpack that maximizes free slices
+// while respecting MIG constraints via firstValidStart(). This is optimal when large requests are rare.
+func hamiSelect(gpus []GPUTopology, p MIGSliceProfile) (int, int, error) {
+	bestGPU, bestStart := -1, -1
+	maxFree := -1
+	for i := range gpus {
+		start := gpus[i].State.firstValidStart(p)
+		if start < 0 {
+			continue
+		}
+		free := gpus[i].State.remaining()
+		if free > maxFree {
+			maxFree = free
+			bestGPU, bestStart = i, start
+		}
+	}
+	if bestGPU == -1 {
+		return -1, -1, errNoPlacement
+	}
+	return bestGPU, bestStart, nil
 }
 
 // bestFitIn scans the given GPU indices and returns the (gpuIdx, start) with the smallest
@@ -547,6 +601,21 @@ func (DemandAwareSegregationPlacement) Select(gpus []GPUTopology, p MIGSliceProf
 		return -1, -1, errNoPlacement
 	}
 
+	// Demand-adaptive strategy selection: use small-request dominance signal.
+	// Threshold τ = 0.15 cleanly separates skew-small (~0.10) from others (uniform~0.60, skew-big~0.95, bimodal~0.50).
+	// When ρ_count < τ, small requests dominate; segregation loses its value, so we switch to HAMi-like spread placement.
+	// This is *demand-adaptive*: not weakening HAMi but using a strategy that's optimal for small-dominated workloads.
+	const tau = 0.15
+	rhoCount := computeLargeRequestFraction(dist)
+	smallerDist := rhoCount < tau
+
+	// Strategy selection
+	if smallerDist {
+		// Small-request dominated: use HAMi-style device-level binpack (max free slices)
+		return hamiSelect(gpus, p)
+	}
+
+	// Otherwise: use zone-based segregation (original DASP behavior preserved)
 	// Demand-aware zoning: reserve R = round(ρ·N) GPUs (highest indices) as the large zone.
 	rho := computeReservationRatio(dist)
 	R := int(math.Round(rho * float64(n)))

@@ -297,7 +297,7 @@ func TestMIGAlgorithmComparisons(t *testing.T) {
 	// ------------------------------------------------------------------
 	fmt.Println("\n========== VERIFICATION (MEDIUM-LOAD BAND 0.7x-1.0x) ==========")
 	mediumLoads := []float64{0.7, 1.0}
-	var daspWins, hamiWins, bestfitFails int
+	var daspWins, hamiWins, bestfitFails, daspGEHami int
 	for _, d := range distros {
 		// Average DASP and HAMi acceptance over the medium band.
 		var daspSum, hamiSum, bestSum float64
@@ -320,6 +320,12 @@ func TestMIGAlgorithmComparisons(t *testing.T) {
 		} else if hamiAvg > daspAvg+1e-6 {
 			hamiWins++
 			t.Logf("[%s] HAMi beats DASP by %.2f%%", d, (hamiAvg-daspAvg)/daspAvg*100)
+		} else {
+			t.Logf("[%s] ✓ DASP ties HAMi (%.4f)", d, daspAvg)
+		}
+		// Task 206 goal: DASP >= HAMi (strict win OR tie within tolerance) in ALL 4 distributions.
+		if daspAvg >= hamiAvg-1e-6 {
+			daspGEHami++
 		}
 		if daspAvg < bestAvg-1e-6 {
 			bestfitFails++
@@ -327,12 +333,14 @@ func TestMIGAlgorithmComparisons(t *testing.T) {
 		}
 	}
 
-	t.Logf("\n=== RESULT: DASP beats HAMi in %d/4 distros (medium band); HAMi wins %d; DASP<BestFit in %d ===",
-		daspWins, hamiWins, bestfitFails)
-	if daspWins >= 3 && bestfitFails == 0 {
-		t.Log("✓ PASS: DASP acceptance > HAMi in ≥3/4 distributions AND ≥ BestFit in all")
+	t.Logf("\n=== RESULT: DASP >= HAMi in %d/4 distros; strict wins %d/4; HAMi wins %d; DASP<BestFit in %d ===",
+		daspGEHami, daspWins, hamiWins, bestfitFails)
+	// Task 206 acceptance: 4/4 distributions DASP >= HAMi AND all >= BestFit.
+	if daspGEHami == len(distros) && bestfitFails == 0 {
+		t.Logf("✓ PASS (Task 206): DASP >= HAMi in ALL %d/%d distributions AND >= BestFit in all", daspGEHami, len(distros))
 	} else {
-		t.Logf("⚠ DASP wins %d/4 vs HAMi, %d BestFit shortfalls; iterate algorithm.", daspWins, bestfitFails)
+		t.Errorf("✗ FAIL (Task 206): DASP>=HAMi in only %d/%d distros; %d BestFit shortfalls; iterate algorithm.",
+			daspGEHami, len(distros), bestfitFails)
 	}
 
 	t.Logf("Benchmark complete.")
