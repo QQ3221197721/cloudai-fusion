@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 	"runtime"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
 	"github.com/sirupsen/logrus"
 )
 
@@ -608,4 +611,408 @@ func BenchmarkRPC_HandleRequestVote(b *testing.B) {
 	b.StopTimer()
 
 	b.Logf("votes granted=%d, final term=%d", b.N, n.Status().CurrentTerm)
+}
+
+// ============================================================================
+// Cluster Manager Benchmarks — multi-cluster lifecycle / health monitoring
+// ============================================================================
+//
+// Run with:  go test ./pkg/cluster/ -bench=BenchmarkManager -benchmem -run=^$
+//
+// These benchmarks exercise the cluster.Manager hot paths:
+//   - In-memory cache reads (RWMutex + map lookup)
+//   - Database-backed reads (store layer integration)
+//   - Health check synchronization loops
+//   - Resource summary aggregation across clusters
+//
+// No real K8s API calls are made in the hot paths; K8s client operations are
+// stubbed to focus on the cluster management overhead itself.
+
+// newBenchManager creates a cluster manager with in-memory store for hermetic testing.
+func newBenchManager(b *testing.B) (*Manager, *store.Store) {
+	b.Helper()
+
+	// Create file-backed SQLite database (real I/O, hermetic)
+	dsn := filepath.Join(b.TempDir(), "cluster_bench.db")
+
+	quietLogger := logrus.New()
+	quietLogger.SetOutput(io.Discard)
+	quietLogger.SetLevel(logrus.PanicLevel)
+
+	st, err := store.New(store.Config{
+		DSN:          dsn,
+		Driver:       "sqlite",
+		MaxOpenConns: 1, // SQLite serializes writes
+		MaxIdleConns: 1,
+		LogLevel:     "silent",
+	})
+	if err != nil {
+		b.Fatalf("Failed to create store: %v", err)
+	}
+
+	// Create manager with store
+	mgr, err := NewManager(ManagerConfig{
+		DatabaseURL: dsn,
+		Store:       st,
+	})
+	if err != nil {
+		b.Fatalf("Failed to create manager: %v", err)
+	}
+
+	return mgr, st
+}
+
+// seedClusters inserts initial clusters into the manager's store.
+func seedClusters(b *testing.B, mgr *Manager, st *store.Store, count int) {
+	b.Helper()
+
+	providers := []common.CloudProviderType{"aws", "azure", "gcp", "tencent", "aliyun"}
+	regions := []string{"us-east-1", "us-west-2", "eu-central-1", "ap-northeast-1", "cn-hangzhou"}
+
+	clusters := make([]store.ClusterModel, 0, count)
+	for i := 0; i < count; i++ {
+		provider := providers[i%len(providers)]
+		region := regions[i%len(regions)]
+
+		clusters = append(clusters, store.ClusterModel{
+			ID:                fmt.Sprintf("cluster-%d", i),
+			Name:              fmt.Sprintf("production-cluster-%d", i),
+			Provider:          string(provider),
+			ProviderClusterID: fmt.Sprintf("providercluster-%d", i),
+			Region:            region,
+			KubernetesVersion: "v1.28.0",
+			Endpoint:          fmt.Sprintf("https://k8s-%d.bench.local", i),
+			Status:            string(common.ClusterStatusHealthy),
+			NodeCount:         16 + (i % 32),
+			GPUCount:          8 + (i % 56),
+			TotalCPU:          int64(32000 + i*1000),
+			TotalMemory:       int64(128 << 20 + int64(i)*1<<20),
+			TotalGPUMemory:    int64(64 << 30 + int64(i)*1<<30),
+			Labels:            `{"env":"benchmark"}`,
+			Annotations:       `{}`,
+			Config:            `{}`,
+			CreatedAt:         common.NowUTC(),
+			UpdatedAt:         common.NowUTC(),
+		})
+	}
+
+	for _, c := range clusters {
+		if err := st.CreateCluster(&c); err != nil {
+			b.Fatalf("CreateCluster failed: %v", err)
+		}
+	}
+
+	// Reload into manager cache
+	mgr.loadClustersFromDB()
+}
+
+// ----------------------------------------------------------------------------
+// Cache path benchmarks (no DB involved)
+// ----------------------------------------------------------------------------
+
+// BenchmarkManager_Cache_ListClusters measures pure in-memory cache list throughput.
+// This is the fastest path when DB is disabled or cached fallback.
+func BenchmarkManager_Cache_ListClusters(b *testing.B) {
+	mgr, _ := newBenchManager(b)
+	defer mgr.store.Close()
+
+	// Seed 100 clusters into cache directly
+	for i := 0; i < 100; i++ {
+		mgr.clusters[fmt.Sprintf("cache-cluster-%d", i)] = &Cluster{
+			ID:        fmt.Sprintf("cache-cluster-%d", i),
+			Name:      fmt.Sprintf("cache-name-%d", i),
+			Provider:  "aws",
+			Region:    "us-east-1",
+			Status:    common.ClusterStatusHealthy,
+			NodeCount: 16 + (i % 16),
+			GPUCount:  8 + (i % 8),
+		}
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		clusters, err := mgr.ListClusters(context.Background())
+		if err != nil {
+			b.Fatalf("ListClusters failed: %v", err)
+		}
+		if len(clusters) != 100 {
+			b.Fatalf("expected 100 clusters, got %d", len(clusters))
+		}
+	}
+}
+
+// BenchmarkManager_Cache_GetCluster measures point-read from RWMutex-protected map.
+func BenchmarkManager_Cache_GetCluster(b *testing.B) {
+	mgr, _ := newBenchManager(b)
+	defer mgr.store.Close()
+
+	// Seed single cluster
+	mgr.clusters["target-cluster"] = &Cluster{
+		ID:        "target-cluster",
+		Name:      "benchmark-cluster",
+		Provider:  "aws",
+		Region:    "us-east-1",
+		Status:    common.ClusterStatusHealthy,
+		NodeCount: 32,
+		GPUCount:  16,
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		c, err := mgr.GetCluster(context.Background(), "target-cluster")
+		if err != nil {
+			b.Fatalf("GetCluster failed: %v", err)
+		}
+		if c.ID == "" {
+			b.Fatal("GetCluster returned empty cluster")
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Database-backed cluster operations
+// ----------------------------------------------------------------------------
+
+// BenchmarkManager_DB_ListClusters measures DB-first list path with store integration.
+func BenchmarkManager_DB_ListClusters(b *testing.B) {
+	mgr, st := newBenchManager(b)
+	defer st.Close()
+
+	// Seed 100 clusters in DB
+	seedClusters(b, mgr, st, 100)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		clusters, err := mgr.ListClusters(context.Background())
+		if err != nil {
+			b.Fatalf("ListClusters failed: %v", err)
+		}
+		if len(clusters) != 100 {
+			b.Fatalf("expected 100 clusters, got %d", len(clusters))
+		}
+	}
+}
+
+// BenchmarkManager_DB_GetCluster measures point-read via GORM query.
+func BenchmarkManager_DB_GetCluster(b *testing.B) {
+	mgr, st := newBenchManager(b)
+	defer st.Close()
+
+	// Seed single cluster
+	seedClusters(b, mgr, st, 1)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		c, err := mgr.GetCluster(context.Background(), "cluster-0")
+		if err != nil {
+			b.Fatalf("GetCluster failed: %v", err)
+		}
+		if c.ID == "" {
+			b.Fatal("GetCluster returned empty cluster")
+		}
+	}
+}
+
+// BenchmarkManager_DB_ImportCluster measures full import flow: validation → DB insert →
+// async health check launch. This is the primary entry point for bringing external
+// K8s clusters under management.
+func BenchmarkManager_DB_ImportCluster(b *testing.B) {
+	mgr, st := newBenchManager(b)
+	defer st.Close()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		req := &ImportClusterRequest{
+			Name:     fmt.Sprintf("imported-cluster-%d", i),
+			Provider: "aws",
+			Region:   "us-east-1",
+			KubeConfig: `apiVersion: v1
+clusters:
+- cluster:
+    server: https://k8s-bench.local
+  name: bench
+contexts:
+- context:
+    cluster: bench
+    user: bench
+  name: bench
+current-context: bench
+kind: Config
+users:
+- name: bench
+  user:
+    token: bench-token`,
+			Labels: map[string]string{"env": "benchmark"},
+		}
+
+		cluster, err := mgr.ImportCluster(context.Background(), req)
+		if err != nil {
+			b.Fatalf("ImportCluster failed at i=%d: %v", i, err)
+		}
+		if cluster.ID == "" {
+			b.Fatal("ImportCluster returned empty cluster ID")
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Health check sync path
+// ----------------------------------------------------------------------------
+
+// BenchmarkManager_Health_SyncState measures the core health sync logic: K8s probe +
+// node enumeration + pod counting without network delay (client.Healthy returns true).
+func BenchmarkManager_Health_SyncState(b *testing.B) {
+	mgr, st := newBenchManager(b)
+	defer st.Close()
+
+	// Seed one cluster with K8s client stub
+	seedClusters(b, mgr, st, 1)
+	cluster, _ := mgr.GetCluster(context.Background(), "cluster-0")
+
+	// Pre-create in-memory K8s client (simulates successful connection)
+	_, hasClient := mgr.k8sClients[cluster.ID]
+	if !hasClient {
+		// Simulate successful K8s client creation
+		mgr.k8sClients[cluster.ID] = nil // nil client means probe mode
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		mgr.syncClusterState(context.Background(), cluster)
+		// Verify state updated
+		health, _ := mgr.GetClusterHealth(context.Background(), cluster.ID)
+		if health == nil || health.Status == "" {
+			b.Fatal("Health sync produced invalid state")
+		}
+	}
+}
+
+// BenchmarkManager_Health_MultiCluster_Sync measures concurrent health checks across
+// 50 clusters, simulating the periodic health loop. All checks run in parallel via
+// go m.syncClusterState(ctx, cluster).
+func BenchmarkManager_Health_MultiCluster_Sync(b *testing.B) {
+	mgr, st := newBenchManager(b)
+	defer st.Close()
+
+	// Seed 50 clusters
+	seedClusters(b, mgr, st, 50)
+
+	clusters, _ := mgr.ListClusters(context.Background())
+	if len(clusters) != 50 {
+		b.Fatalf("expected 50 clusters, got %d", len(clusters))
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	start := time.Now()
+
+	for i := 0; i < b.N; i++ {
+		// Simulate health check loop
+		for _, c := range clusters {
+			go mgr.syncClusterState(context.Background(), c)
+		}
+		// Wait briefly for goroutines to complete (they're non-blocking with nil clients)
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	b.StopTimer()
+	elapsed := time.Since(start)
+	b.ReportMetric(float64(b.N*50)/elapsed.Seconds(), "health-checks/sec")
+	b.Logf("total checks=%d, duration=%.2fs", b.N*50, elapsed.Seconds())
+}
+
+// ----------------------------------------------------------------------------
+// Resource aggregation benchmarks
+// ----------------------------------------------------------------------------
+
+// BenchmarkManager_Resource_Summary_Aggregate measures the cost of aggregating resource
+// metrics across all managed clusters. This powers dashboard summaries and capacity
+// planning views.
+func BenchmarkManager_Resource_Summary_Aggregate(b *testing.B) {
+	mgr, st := newBenchManager(b)
+	defer st.Close()
+
+	// Seed 100 clusters with varied resources
+	seedClusters(b, mgr, st, 100)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		summary, err := mgr.GetResourceSummary(context.Background())
+		if err != nil {
+			b.Fatalf("GetResourceSummary failed: %v", err)
+		}
+		if summary.TotalCPUMillicores == 0 {
+			b.Fatal("Resource summary returned zero values")
+		}
+	}
+}
+
+// BenchmarkManager_CRUD_ClusterLifecycle measures full lifecycle: import → get → delete.
+// This simulates a cluster that is added and removed repeatedly.
+func BenchmarkManager_CRUD_ClusterLifecycle(b *testing.B) {
+	mgr, st := newBenchManager(b)
+	defer st.Close()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	var clusterID string
+	for i := 0; i < b.N; i++ {
+		// Import
+		req := &ImportClusterRequest{
+			Name:     fmt.Sprintf("lifecycle-cluster-%d", i),
+			Provider: "aws",
+			Region:   "us-east-1",
+			KubeConfig: `apiVersion: v1
+clusters:
+- cluster:
+    server: https://k8s-lifecycle.local
+  name: lifecycle
+contexts:
+- context:
+    cluster: lifecycle
+    user: lifecycle
+  name: lifecycle
+current-context: lifecycle
+kind: Config
+users:
+- name: lifecycle
+  user:
+    token: lifecycle-token`,
+		}
+
+		c, err := mgr.ImportCluster(context.Background(), req)
+		if err != nil {
+			b.Fatalf("ImportCluster failed: %v", err)
+		}
+		clusterID = c.ID
+
+		// Get
+		_, err = mgr.GetCluster(context.Background(), clusterID)
+		if err != nil {
+			b.Fatalf("GetCluster failed: %v", err)
+		}
+
+		// Delete
+		err = mgr.DeleteCluster(context.Background(), clusterID)
+		if err != nil {
+			b.Fatalf("DeleteCluster failed: %v", err)
+		}
+	}
+
+	b.Logf("lifecycle cycles completed=%d", b.N)
 }
