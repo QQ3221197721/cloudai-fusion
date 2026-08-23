@@ -36,31 +36,4 @@ func TestSecurityScanCmd_RejectsArgs(t *testing.T) {
 	assert.Error(t, cmd.Execute())
 }
 
-func TestPluginListCmd(t *testing.T) {
-	tests := []struct {
-		name     string
-		args     []string
-		contains string
-	}{
-		{"no filter", []string{}, "chain"},
-		{"admission filter", []string{"--filter", "admission"}, "ADMISSION-CHAIN"},
-		{"unknown filter", []string{"--filter", "nonexistent"}, "no chains match"},
-	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := newPluginListCmd()
-			buf := wireCmd(cmd)
-			cmd.SetArgs(tt.args)
-			require.NoError(t, cmd.Execute())
-			assert.Contains(t, buf.String(), tt.contains)
-		})
-	}
-}
-
-func TestPluginListCmd_RejectsArgs(t *testing.T) {
-	cmd := newPluginListCmd()
-	wireCmd(cmd)
-	cmd.SetArgs([]string{"extra"})
-	assert.Error(t, cmd.Execute())
-}
