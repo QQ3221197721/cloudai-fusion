@@ -1,0 +1,127 @@
+﻿
+{"Time":"2026-08-27T07:28:46.7391903+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/trai
+ning","Test":"BenchmarkM14_Checkpoint_Sync_P10"}
+{"Time":"2026-08-27T07:28:46.7391903+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P10","Output":"=== RUN   BenchmarkM14_Checkpoint_Sync_P10\n"}
+{"Time":"2026-08-27T07:28:46.7391903+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P10","Output":"BenchmarkM14_Checkpoint_Sync_P10\n"}
+{"Time":"2026-08-27T07:28:48.6958289+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P10","Output":"BenchmarkM14_Checkpoint_Sync_P10-24      \t"}
+{"Time":"2026-08-27T07:28:48.6958289+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P10","Output":"27084912\t        39.79 ns/op\t257351.75 MB/s\t       0 B/
+op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:28:49.9358108+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P10-24      \t"}
+{"Time":"2026-08-27T07:28:49.9358108+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"30137955\t        39.65 ns/op\t258249.23 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:28:51.220719+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tr
+aining","Output":"BenchmarkM14_Checkpoint_Sync_P10-24      \t"}
+{"Time":"2026-08-27T07:28:51.220719+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tr
+aining","Output":"31563912\t        39.35 ns/op\t260242.80 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:28:52.5893909+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P10-24      \t"}
+{"Time":"2026-08-27T07:28:52.5893909+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"32171235\t        41.23 ns/op\t248337.38 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:28:53.7309061+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P10-24      \t"}
+{"Time":"2026-08-27T07:28:53.7314105+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"26194296\t        41.61 ns/op\t246101.25 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:28:55.1900327+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P10-24      \t"}
+{"Time":"2026-08-27T07:28:55.1904768+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"29657455\t        47.68 ns/op\t214763.74 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:28:55.1904768+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/trai
+ning","Test":"BenchmarkM14_Checkpoint_Sync_P100"}
+{"Time":"2026-08-27T07:28:55.1904768+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P100","Output":"=== RUN   BenchmarkM14_Checkpoint_Sync_P100\n"}
+{"Time":"2026-08-27T07:28:55.1904768+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P100","Output":"BenchmarkM14_Checkpoint_Sync_P100\n"}
+{"Time":"2026-08-27T07:28:56.9500148+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P100","Output":"BenchmarkM14_Checkpoint_Sync_P100-24     \t"}
+{"Time":"2026-08-27T07:28:56.9500148+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Sync_P100","Output":" 1828860\t       598.2 ns/op\t171189.06 MB/s\t       0 B/
+op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:28:58.7173916+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P100-24     \t"}
+{"Time":"2026-08-27T07:28:58.7180859+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 2446837\t       518.7 ns/op\t197413.78 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:00.7852268+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P100-24     \t"}
+{"Time":"2026-08-27T07:29:00.7852268+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 2304990\t       667.4 ns/op\t153423.77 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:02.6829036+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P100-24     \t"}
+{"Time":"2026-08-27T07:29:02.6833391+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 1646114\t       703.1 ns/op\t145646.96 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:04.48939+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tra
+ining","Output":"BenchmarkM14_Checkpoint_Sync_P100-24     \t"}
+{"Time":"2026-08-27T07:29:04.48939+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tra
+ining","Output":" 1718299\t       639.9 ns/op\t160023.49 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:06.4935246+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Sync_P100-24     \t"}
+{"Time":"2026-08-27T07:29:06.4935246+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 1776402\t       742.5 ns/op\t137916.85 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:06.4943319+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/trai
+ning","Test":"BenchmarkM14_Checkpoint_Async_P10"}
+{"Time":"2026-08-27T07:29:06.4943319+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P10","Output":"=== RUN   BenchmarkM14_Checkpoint_Async_P10\n"}
+{"Time":"2026-08-27T07:29:06.4943319+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P10","Output":"BenchmarkM14_Checkpoint_Async_P10\n"}
+{"Time":"2026-08-27T07:29:07.9968699+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P10","Output":"BenchmarkM14_Checkpoint_Async_P10-24     \t"}
+{"Time":"2026-08-27T07:29:07.9978723+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P10","Output":" 3488475\t       329.4 ns/op\t31085.97 MB/s\t       0 B/o
+p\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:09.5839469+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P10-24     \t"}
+{"Time":"2026-08-27T07:29:09.5839469+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 3980946\t       320.9 ns/op\t31912.97 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:11.1312098+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P10-24     \t"}
+{"Time":"2026-08-27T07:29:11.1316196+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 3544923\t       338.6 ns/op\t30239.85 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:12.6809671+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P10-24     \t"}
+{"Time":"2026-08-27T07:29:12.6809671+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 3665737\t       331.3 ns/op\t30904.00 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:14.2743783+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P10-24     \t"}
+{"Time":"2026-08-27T07:29:14.2743783+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 3828085\t       332.6 ns/op\t30788.98 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:15.8018555+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P10-24     \t"}
+{"Time":"2026-08-27T07:29:15.8026427+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 3570966\t       331.6 ns/op\t30877.75 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:15.8026427+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/trai
+ning","Test":"BenchmarkM14_Checkpoint_Async_P100"}
+{"Time":"2026-08-27T07:29:15.8026427+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P100","Output":"=== RUN   BenchmarkM14_Checkpoint_Async_P100\n"}
+{"Time":"2026-08-27T07:29:15.8026427+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P100","Output":"BenchmarkM14_Checkpoint_Async_P100\n"}
+{"Time":"2026-08-27T07:29:17.3902657+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P100","Output":"BenchmarkM14_Checkpoint_Async_P100-24    \t"}
+{"Time":"2026-08-27T07:29:17.3902657+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Test":"BenchmarkM14_Checkpoint_Async_P100","Output":" 2576798\t       431.8 ns/op\t237170.91 MB/s\t       0 B
+/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:19.0792807+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P100-24    \t"}
+{"Time":"2026-08-27T07:29:19.0801044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 2775265\t       450.2 ns/op\t227449.84 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:20.7064609+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P100-24    \t"}
+{"Time":"2026-08-27T07:29:20.7064609+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 2866202\t       418.6 ns/op\t244653.93 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:22.3112827+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P100-24    \t"}
+{"Time":"2026-08-27T07:29:22.3112827+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 2822868\t       415.2 ns/op\t246612.12 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:23.9558339+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P100-24    \t"}
+{"Time":"2026-08-27T07:29:23.9558339+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 2773126\t       434.4 ns/op\t235701.42 MB/s\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-27T07:29:25.5883527+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":"BenchmarkM14_Checkpoint_Async_P100-24    \t"}
+{"Time":"2026-08-27T07:29:25.5890636+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/t
+raining","Output":" 2893333\t       418.1 ns/op\t244925.06 MB/s\t       0 B/op\t       0 allocs/op\n"}
+
+

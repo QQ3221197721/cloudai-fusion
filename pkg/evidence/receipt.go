@@ -22,8 +22,8 @@ import (
 // competitors can only produce logs, we produce proofs.
 
 // Receipt is a cryptographically signed proof that an operation occurred.
-// Every module in CloudAI Fusion returns Receipts for its core operations.
-// This creates an unforgeable audit trail — competitors only have logs, we have proofs.
+// Every module in CloudAI Fusion returns Receipts for its core operations,
+// creating an unforgeable audit trail — competitors only have logs, we have proofs.
 type Receipt struct {
 	// ID is a unique identifier for this receipt.
 	ID string `json:"id"`

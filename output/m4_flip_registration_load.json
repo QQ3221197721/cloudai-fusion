@@ -1,0 +1,102 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/plugin
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkRegistration_M4-24              	 2569744	       901.2 ns/op	     816 B/op	      18 allocs/op
+BenchmarkRegistration_M4-24              	 2677864	       860.1 ns/op	     816 B/op	      18 allocs/op
+BenchmarkRegistration_M4-24              	 2652664	       839.2 ns/op	     816 B/op	      18 allocs/op
+BenchmarkRegistration_M4-24              	 3090380	       916.8 ns/op	     816 B/op	      18 allocs/op
+BenchmarkRegistration_M4-24              	 2751306	       916.9 ns/op	     816 B/op	      18 allocs/op
+BenchmarkRegistration_M4-24              	 2659194	       893.8 ns/op	     816 B/op	      18 allocs/op
+BenchmarkRegistration_goPluginStub-24    	390792536	         6.523 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistration_goPluginStub-24    	393318229	         7.065 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistration_goPluginStub-24    	404107754	         5.864 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistration_goPluginStub-24    	495295824	         6.579 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistration_goPluginStub-24    	429256935	         6.998 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistration_goPluginStub-24    	412587549	         6.871 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLoadTime_M4-24                  	16288214	       144.8 ns/op	     128 B/op	       1 allocs/op
+BenchmarkLoadTime_M4-24                  	14941206	       142.7 ns/op	     128 B/op	       1 allocs/op
+BenchmarkLoadTime_M4-24                  	16118080	       155.4 ns/op	     128 B/op	       1 allocs/op
+BenchmarkLoadTime_M4-24                  	18887539	       138.0 ns/op	     128 B/op	       1 allocs/op
+BenchmarkLoadTime_M4-24                  	17375275	       152.8 ns/op	     128 B/op	       1 allocs/op
+BenchmarkLoadTime_M4-24                  	15511029	       140.6 ns/op	     128 B/op	       1 allocs/op
+BenchmarkOverallComparisonSummary-24     	1000000000	         0.0000069 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkOverallComparisonSummary-24
+    m4_vs_goplugin_bench_test.go:352: === Iteration 1/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+    m4_vs_goplugin_bench_test.go:357:   go-plugin subprocess spawn (avg): ~25ms per plugin group (OS-dependent)
+    m4_vs_goplugin_bench_test.go:358:   go-plugin handshake+connect: ~15ms (loopback TCP)
+    m4_vs_goplugin_bench_test.go:359:   go-plugin gRPC overhead: ~5-15 碌s per call (conservative estimate)
+    m4_vs_goplugin_bench_test.go:360: 
+    m4_vs_goplugin_bench_test.go:352: === Iteration 2/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+	... [output truncated]
+BenchmarkOverallComparisonSummary-24     	1000000000	         0.0000139 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkOverallComparisonSummary-24
+    m4_vs_goplugin_bench_test.go:352: === Iteration 1/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+    m4_vs_goplugin_bench_test.go:357:   go-plugin subprocess spawn (avg): ~25ms per plugin group (OS-dependent)
+    m4_vs_goplugin_bench_test.go:358:   go-plugin handshake+connect: ~15ms (loopback TCP)
+    m4_vs_goplugin_bench_test.go:359:   go-plugin gRPC overhead: ~5-15 碌s per call (conservative estimate)
+    m4_vs_goplugin_bench_test.go:360: 
+    m4_vs_goplugin_bench_test.go:352: === Iteration 2/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+	... [output truncated]
+BenchmarkOverallComparisonSummary-24     	1000000000	         0.0000129 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkOverallComparisonSummary-24
+    m4_vs_goplugin_bench_test.go:352: === Iteration 1/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+    m4_vs_goplugin_bench_test.go:357:   go-plugin subprocess spawn (avg): ~25ms per plugin group (OS-dependent)
+    m4_vs_goplugin_bench_test.go:358:   go-plugin handshake+connect: ~15ms (loopback TCP)
+    m4_vs_goplugin_bench_test.go:359:   go-plugin gRPC overhead: ~5-15 碌s per call (conservative estimate)
+    m4_vs_goplugin_bench_test.go:360: 
+    m4_vs_goplugin_bench_test.go:352: === Iteration 2/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+	... [output truncated]
+BenchmarkOverallComparisonSummary-24     	1000000000	         0.0000136 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkOverallComparisonSummary-24
+    m4_vs_goplugin_bench_test.go:352: === Iteration 1/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+    m4_vs_goplugin_bench_test.go:357:   go-plugin subprocess spawn (avg): ~25ms per plugin group (OS-dependent)
+    m4_vs_goplugin_bench_test.go:358:   go-plugin handshake+connect: ~15ms (loopback TCP)
+    m4_vs_goplugin_bench_test.go:359:   go-plugin gRPC overhead: ~5-15 碌s per call (conservative estimate)
+    m4_vs_goplugin_bench_test.go:360: 
+    m4_vs_goplugin_bench_test.go:352: === Iteration 2/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+	... [output truncated]
+BenchmarkOverallComparisonSummary-24     	1000000000	         0.0000131 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkOverallComparisonSummary-24
+    m4_vs_goplugin_bench_test.go:352: === Iteration 1/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+    m4_vs_goplugin_bench_test.go:357:   go-plugin subprocess spawn (avg): ~25ms per plugin group (OS-dependent)
+    m4_vs_goplugin_bench_test.go:358:   go-plugin handshake+connect: ~15ms (loopback TCP)
+    m4_vs_goplugin_bench_test.go:359:   go-plugin gRPC overhead: ~5-15 碌s per call (conservative estimate)
+    m4_vs_goplugin_bench_test.go:360: 
+    m4_vs_goplugin_bench_test.go:352: === Iteration 2/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+	... [output truncated]
+BenchmarkOverallComparisonSummary-24     	1000000000	         0.0000216 ns/op	       0 B/op	       0 allocs/op
+--- BENCH: BenchmarkOverallComparisonSummary-24
+    m4_vs_goplugin_bench_test.go:352: === Iteration 1/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+    m4_vs_goplugin_bench_test.go:357:   go-plugin subprocess spawn (avg): ~25ms per plugin group (OS-dependent)
+    m4_vs_goplugin_bench_test.go:358:   go-plugin handshake+connect: ~15ms (loopback TCP)
+    m4_vs_goplugin_bench_test.go:359:   go-plugin gRPC overhead: ~5-15 碌s per call (conservative estimate)
+    m4_vs_goplugin_bench_test.go:360: 
+    m4_vs_goplugin_bench_test.go:352: === Iteration 2/6 ===
+    m4_vs_goplugin_bench_test.go:353:   M4 registration+build total: 0s (0 ns/op)
+    m4_vs_goplugin_bench_test.go:354:   M4 6400 calls total: 0s (0 ns/call)
+	... [output truncated]
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin	61.672s

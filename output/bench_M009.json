@@ -1,0 +1,13 @@
+{"Time":"2026-08-24T06:46:11.8342698+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler"}
+{"Time":"2026-08-24T06:46:11.9038702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Output":"goos: windows\n"}
+{"Time":"2026-08-24T06:46:11.9038702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T06:46:11.9038702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler\n"}
+{"Time":"2026-08-24T06:46:11.9038702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T06:46:11.9038702+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Test":"BenchmarkConstraintScheduler_Schedule32GPU"}
+{"Time":"2026-08-24T06:46:11.9038702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Test":"BenchmarkConstraintScheduler_Schedule32GPU","Output":"=== RUN   BenchmarkConstraintScheduler_Schedule32GPU\n"}
+{"Time":"2026-08-24T06:46:11.9038702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Test":"BenchmarkConstraintScheduler_Schedule32GPU","Output":"BenchmarkConstraintScheduler_Schedule32GPU\n"}
+{"Time":"2026-08-24T06:46:11.9081671+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Test":"BenchmarkConstraintScheduler_Schedule32GPU","Output":"BenchmarkConstraintScheduler_Schedule32GPU-24    \t"}
+{"Time":"2026-08-24T06:46:11.9081671+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Test":"BenchmarkConstraintScheduler_Schedule32GPU","Output":"      10\t    128320 ns/op\n"}
+{"Time":"2026-08-24T06:46:11.9081671+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Output":"PASS\n"}
+{"Time":"2026-08-24T06:46:11.9133457+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/scheduler\t0.079s\n"}
+{"Time":"2026-08-24T06:46:11.9133457+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler","Elapsed":0.079}

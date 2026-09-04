@@ -1,0 +1,57 @@
+{
+  "experiment": "M7 Distributed Consensus T2 Head-to-Head",
+  "date": "2026-08-25T11:41:00+08:00",
+  "platform": {
+    "os": "Windows 25H2",
+    "cpu": "Intel(R) Core(TM) Ultra 9 275HX @ 24 cores"
+  },
+  "competitor": "github.com/hashicorp/raft v1.6.1",
+  "test_params": {
+    "work_unit": "Apply(cmd, timeout) → commit AND applied by FSM",
+    "cluster_size": 1,
+    "transport": "in-memory",
+    "benchtime": "5s",
+    "count": 6
+  },
+  "results": {
+    "raw_hashi": {
+      "runs": [
+        {"run": 1, "latency_ns": 5617, "throughput_entries_sec": 178035},
+        {"run": 2, "latency_ns": 5381, "throughput_entries_sec": 185902},
+        {"run": 3, "latency_ns": 5431, "throughput_entries_sec": 184128},
+        {"run": 4, "latency_ns": 5486, "throughput_entries_sec": 182314},
+        {"run": 5, "latency_ns": 5346, "throughput_entries_sec": 187088},
+        {"run": 6, "latency_ns": 5629, "throughput_entries_sec": 177680}
+      ],
+      "median_latency_ns": 5458,
+      "median_throughput_entries_sec": 184716,
+      "memory_per_op_bytes": 1603,
+      "allocs_per_op": 24
+    },
+    "realraft_node": {
+      "runs": [
+        {"run": 1, "latency_ns": 26075, "throughput_entries_sec": 38353},
+        {"run": 2, "latency_ns": 25665, "throughput_entries_sec": 38971},
+        {"run": 3, "latency_ns": 25422, "throughput_entries_sec": 39338},
+        {"run": 4, "latency_ns": 25182, "throughput_entries_sec": 39716},
+        {"run": 5, "latency_ns": 25463, "throughput_entries_sec": 39274},
+        {"run": 6, "latency_ns": 26440, "throughput_entries_sec": 37821}
+      ],
+      "median_latency_ns": 25543,
+      "median_throughput_entries_sec": 39246,
+      "memory_per_op_bytes": 5326,
+      "allocs_per_op": 65
+    }
+  },
+  "verdict": {
+    "winner_on_raw_speed": "raw_hashi",
+    "speed_ratio_real_to_raw": 4.68,
+    "overhead_reason": "tamper-evident evidence layer (Ed25519 sign + hash chain)",
+    "defensible_claim": "RealRaftNode trades ~4.7x raw commit throughput for verifiable consensus proofs"
+  },
+  "build_status": {
+    "go_vet": "clean",
+    "go_build": "clean",
+    "hashicorp_raft_present": true
+  }
+}

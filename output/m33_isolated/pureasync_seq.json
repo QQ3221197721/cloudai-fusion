@@ -1,0 +1,7 @@
+﻿{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam [github.com/cloudai-fusion/cloudai-fusion/pkg/redteam.test]","Action":"build-output","Output":"# github.com/cloudai-fusion/cloudai-fusion/pkg/redteam [github.com/cloudai-fusion/cloudai-fusion/pkg/redteam.test]\n"}
+{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam [github.com/cloudai-fusion/cloudai-fusion/pkg/redteam.test]","Action":"build-output","Output":"pkg\\redteam\\M33_redteam_T2_trivy_bench_v2_test.go:6:2: \"runtime\" imported and not used\n"}
+{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam [github.com/cloudai-fusion/cloudai-fusion/pkg/redteam.test]","Action":"build-output","Output":"pkg\\redteam\\M33_redteam_T2_trivy_bench_v2_test.go:7:2: \"sync\" imported and not used\n"}
+{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam [github.com/cloudai-fusion/cloudai-fusion/pkg/redteam.test]","Action":"build-fail"}
+{"Time":"2026-08-26T07:09:43.3025334+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam"}
+{"Time":"2026-08-26T07:09:43.3025334+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Output":"FAIL\tgithub.com/cloudai-fusion/cloudai-fusion/pkg/redteam [build failed]\n"}
+{"Time":"2026-08-26T07:09:43.3025334+08:00","Action":"fail","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Elapsed":0,"FailedBuild":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam [github.com/cloudai-fusion/cloudai-fusion/pkg/redteam.test]"}

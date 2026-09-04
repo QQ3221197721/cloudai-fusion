@@ -1,0 +1,8 @@
+﻿dai-fusion/pkg/mesh","Test":"BenchmarkCOWLookup_100","Output":"300321831\t         8.319 ns/op\t       0 B/op\t       0
+dai-fusion/pkg/mesh","Test":"BenchmarkCOWLookup_1k","Output":"252780026\t         8.778 ns/op\t       0 B/op\t       0 
+udai-fusion/pkg/mesh","Test":"BenchmarkCOWLookup_10k","Output":"258883226\t         9.301 ns/op\t       0 B/op\t       
+udai-fusion/pkg/mesh","Test":"BenchmarkMutexLookup_100","Output":"160040414\t        14.86 ns/op\t       0 B/op\t      
+udai-fusion/pkg/mesh","Test":"BenchmarkMutexLookup_1k","Output":"100000000\t        20.00 ns/op\t       0 B/op\t       
+dai-fusion/pkg/mesh","Test":"BenchmarkMutexLookup_10k","Output":"126479160\t        41.94 ns/op\t       0 B/op\t       
+udai-fusion/pkg/mesh","Test":"BenchmarkCOWLookupParallel_1k","Output":"1000000000\t         0.4769 ns/op\t       0 B/op
+udai-fusion/pkg/mesh","Test":"BenchmarkMutexLookupParallel_1k","Output":"35311513\t        64.58 ns/op\t       0 B/op\t

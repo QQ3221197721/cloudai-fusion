@@ -1,0 +1,116 @@
+﻿{"Time":"2026-08-26T17:23:50.6920997+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm"}
+{"Time":"2026-08-26T17:23:50.7513608+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"goos: windows\n"}
+{"Time":"2026-08-26T17:23:50.7513608+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"goarch: amd64\n"}
+{"Time":"2026-08-26T17:23:50.7513608+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/wasm\n"}
+{"Time":"2026-08-26T17:23:50.7513608+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-26T17:23:50.7513608+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10"}
+{"Time":"2026-08-26T17:23:50.7513608+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10","Output":"=== RUN   BenchmarkM42_FaaS_E2E_Ours_Cache_N10\n"}
+{"Time":"2026-08-26T17:23:50.7513608+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10\n"}
+{"Time":"2026-08-26T17:23:52.0566373+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10-24             \t"}
+{"Time":"2026-08-26T17:23:52.0571422+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10","Output":"    4946\t    257892 ns/op\t  220438 B/op\t     680 allocs/op\n"}
+{"Time":"2026-08-26T17:23:53.7954721+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10-24             \t"}
+{"Time":"2026-08-26T17:23:53.7954721+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    6607\t    259715 ns/op\t  220395 B/op\t     680 allocs/op\n"}
+{"Time":"2026-08-26T17:23:55.1628585+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10-24             \t"}
+{"Time":"2026-08-26T17:23:55.1638545+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    5148\t    260228 ns/op\t  220391 B/op\t     680 allocs/op\n"}
+{"Time":"2026-08-26T17:23:56.5384527+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10-24             \t"}
+{"Time":"2026-08-26T17:23:56.5384527+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    4980\t    270494 ns/op\t  220391 B/op\t     680 allocs/op\n"}
+{"Time":"2026-08-26T17:23:57.6092099+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10-24             \t"}
+{"Time":"2026-08-26T17:23:57.6092099+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    4051\t    255808 ns/op\t  220393 B/op\t     680 allocs/op\n"}
+{"Time":"2026-08-26T17:23:59.2662801+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N10-24             \t"}
+{"Time":"2026-08-26T17:23:59.2670146+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    6088\t    267533 ns/op\t  220393 B/op\t     680 allocs/op\n"}
+{"Time":"2026-08-26T17:23:59.2670146+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10"}
+{"Time":"2026-08-26T17:23:59.2670146+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10","Output":"=== RUN   BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10\n"}
+{"Time":"2026-08-26T17:23:59.2670146+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10\n"}
+{"Time":"2026-08-26T17:24:00.5389377+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10-24    \t"}
+{"Time":"2026-08-26T17:24:00.5389377+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10","Output":"    5360\t    230692 ns/op\t  194514 B/op\t     320 allocs/op\n"}
+{"Time":"2026-08-26T17:24:01.5863468+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10-24    \t"}
+{"Time":"2026-08-26T17:24:01.5869066+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    4329\t    234591 ns/op\t  194508 B/op\t     320 allocs/op\n"}
+{"Time":"2026-08-26T17:24:03.3808994+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10-24    \t"}
+{"Time":"2026-08-26T17:24:03.3808994+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    7014\t    252823 ns/op\t  194514 B/op\t     320 allocs/op\n"}
+{"Time":"2026-08-26T17:24:04.4626042+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10-24    \t"}
+{"Time":"2026-08-26T17:24:04.4633393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    4400\t    237375 ns/op\t  194514 B/op\t     320 allocs/op\n"}
+{"Time":"2026-08-26T17:24:05.9738542+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10-24    \t"}
+{"Time":"2026-08-26T17:24:05.9742329+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    7123\t    208963 ns/op\t  194514 B/op\t     320 allocs/op\n"}
+{"Time":"2026-08-26T17:24:07.4306323+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N10-24    \t"}
+{"Time":"2026-08-26T17:24:07.4313859+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    6717\t    213619 ns/op\t  194514 B/op\t     320 allocs/op\n"}
+{"Time":"2026-08-26T17:24:07.4313859+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50"}
+{"Time":"2026-08-26T17:24:07.4313859+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50","Output":"=== RUN   BenchmarkM42_FaaS_E2E_Ours_Cache_N50\n"}
+{"Time":"2026-08-26T17:24:07.4313859+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50\n"}
+{"Time":"2026-08-26T17:24:09.7567807+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50-24             \t"}
+{"Time":"2026-08-26T17:24:09.7573083+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50","Output":"    1036\t   1131225 ns/op\t 1101920 B/op\t    3402 allocs/op\n"}
+{"Time":"2026-08-26T17:24:11.1248235+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50-24             \t"}
+{"Time":"2026-08-26T17:24:11.1257769+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1026\t   1215682 ns/op\t 1101964 B/op\t    3403 allocs/op\n"}
+{"Time":"2026-08-26T17:24:12.4570434+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50-24             \t"}
+{"Time":"2026-08-26T17:24:12.4570434+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1012\t   1194258 ns/op\t 1101947 B/op\t    3403 allocs/op\n"}
+{"Time":"2026-08-26T17:24:13.9951244+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50-24             \t"}
+{"Time":"2026-08-26T17:24:13.9959687+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1202\t   1192516 ns/op\t 1101948 B/op\t    3402 allocs/op\n"}
+{"Time":"2026-08-26T17:24:15.4379153+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50-24             \t"}
+{"Time":"2026-08-26T17:24:15.4379153+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1126\t   1182254 ns/op\t 1101918 B/op\t    3402 allocs/op\n"}
+{"Time":"2026-08-26T17:24:16.8591886+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Ours_Cache_N50-24             \t"}
+{"Time":"2026-08-26T17:24:16.8599436+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1088\t   1189328 ns/op\t 1101905 B/op\t    3402 allocs/op\n"}
+{"Time":"2026-08-26T17:24:16.8599436+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50"}
+{"Time":"2026-08-26T17:24:16.8599436+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50","Output":"=== RUN   BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50\n"}
+{"Time":"2026-08-26T17:24:16.8599436+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50\n"}
+{"Time":"2026-08-26T17:24:18.1299878+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50-24    \t"}
+{"Time":"2026-08-26T17:24:18.1299878+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50","Output":"    1232\t    949045 ns/op\t  972530 B/op\t    1602 allocs/op\n"}
+{"Time":"2026-08-26T17:24:19.4865789+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50-24    \t"}
+{"Time":"2026-08-26T17:24:19.4875818+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1183\t   1051507 ns/op\t  972541 B/op\t    1602 allocs/op\n"}
+{"Time":"2026-08-26T17:24:20.652375+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50-24    \t"}
+{"Time":"2026-08-26T17:24:20.652375+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1040\t    991065 ns/op\t  972535 B/op\t    1602 allocs/op\n"}
+{"Time":"2026-08-26T17:24:22.0069366+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50-24    \t"}
+{"Time":"2026-08-26T17:24:22.007414+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1222\t   1024160 ns/op\t  972525 B/op\t    1602 allocs/op\n"}
+{"Time":"2026-08-26T17:24:23.1648564+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50-24    \t"}
+{"Time":"2026-08-26T17:24:23.1652296+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1051\t    989025 ns/op\t  972534 B/op\t    1602 allocs/op\n"}
+{"Time":"2026-08-26T17:24:24.6732086+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_E2E_Wazero_Direct_Cache_N50-24    \t"}
+{"Time":"2026-08-26T17:24:24.6732086+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"    1443\t    980333 ns/op\t  972530 B/op\t    1602 allocs/op\n"}
+{"Time":"2026-08-26T17:24:24.6732086+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Ours_Warm"}
+{"Time":"2026-08-26T17:24:24.6732086+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Ours_Warm","Output":"=== RUN   BenchmarkM42_FaaS_PureExec_Ours_Warm\n"}
+{"Time":"2026-08-26T17:24:24.6732086+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Ours_Warm","Output":"BenchmarkM42_FaaS_PureExec_Ours_Warm\n"}
+{"Time":"2026-08-26T17:24:26.7080845+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Ours_Warm","Output":"BenchmarkM42_FaaS_PureExec_Ours_Warm-24             \t"}
+{"Time":"2026-08-26T17:24:26.7088342+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Ours_Warm","Output":"  326206\t      3311 ns/op\t   11984 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-26T17:24:28.0046973+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Ours_Warm-24             \t"}
+{"Time":"2026-08-26T17:24:28.0046973+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"  381632\t      3237 ns/op\t   11984 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-26T17:24:29.4905326+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Ours_Warm-24             \t"}
+{"Time":"2026-08-26T17:24:29.4905326+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"  448708\t      3241 ns/op\t   11985 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-26T17:24:30.9463878+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Ours_Warm-24             \t"}
+{"Time":"2026-08-26T17:24:30.9463878+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"  455341\t      3104 ns/op\t   11984 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-26T17:24:32.2288767+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Ours_Warm-24             \t"}
+{"Time":"2026-08-26T17:24:32.2288767+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"  442810\t      2812 ns/op\t   11984 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-26T17:24:33.4967044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Ours_Warm-24             \t"}
+{"Time":"2026-08-26T17:24:33.4967044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"  429440\t      2873 ns/op\t   11984 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-26T17:24:33.4967044+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Wazero_Warm"}
+{"Time":"2026-08-26T17:24:33.4967044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Wazero_Warm","Output":"=== RUN   BenchmarkM42_FaaS_PureExec_Wazero_Warm\n"}
+{"Time":"2026-08-26T17:24:33.4967044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Wazero_Warm","Output":"BenchmarkM42_FaaS_PureExec_Wazero_Warm\n"}
+{"Time":"2026-08-26T17:24:35.036938+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Wazero_Warm","Output":"BenchmarkM42_FaaS_PureExec_Wazero_Warm-24           \t"}
+{"Time":"2026-08-26T17:24:35.036938+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_PureExec_Wazero_Warm","Output":"19777371\t        74.42 ns/op\t      48 B/op\t       3 allocs/op\n"}
+{"Time":"2026-08-26T17:24:36.2815228+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Wazero_Warm-24           \t"}
+{"Time":"2026-08-26T17:24:36.2824417+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"13231917\t        86.58 ns/op\t      48 B/op\t       3 allocs/op\n"}
+{"Time":"2026-08-26T17:24:37.4138477+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Wazero_Warm-24           \t"}
+{"Time":"2026-08-26T17:24:37.4138477+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"12964801\t        78.86 ns/op\t      48 B/op\t       3 allocs/op\n"}
+{"Time":"2026-08-26T17:24:38.6235741+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Wazero_Warm-24           \t"}
+{"Time":"2026-08-26T17:24:38.6235741+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"16375903\t        68.30 ns/op\t      48 B/op\t       3 allocs/op\n"}
+{"Time":"2026-08-26T17:24:40.0258174+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Wazero_Warm-24           \t"}
+{"Time":"2026-08-26T17:24:40.0258174+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"15082766\t        87.02 ns/op\t      48 B/op\t       3 allocs/op\n"}
+{"Time":"2026-08-26T17:24:41.1602534+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_PureExec_Wazero_Warm-24           \t"}
+{"Time":"2026-08-26T17:24:41.1612496+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"11905198\t        85.04 ns/op\t      48 B/op\t       3 allocs/op\n"}
+{"Time":"2026-08-26T17:24:41.1612496+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary"}
+{"Time":"2026-08-26T17:24:41.1612496+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary","Output":"=== RUN   BenchmarkM42_FaaS_Summary\n"}
+{"Time":"2026-08-26T17:24:41.1612496+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary","Output":"BenchmarkM42_FaaS_Summary\n"}
+{"Time":"2026-08-26T17:24:41.1622784+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary/NoOp"}
+{"Time":"2026-08-26T17:24:41.1622784+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary/NoOp","Output":"=== RUN   BenchmarkM42_FaaS_Summary/NoOp\n"}
+{"Time":"2026-08-26T17:24:41.1622784+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary/NoOp","Output":"BenchmarkM42_FaaS_Summary/NoOp\n"}
+{"Time":"2026-08-26T17:24:42.6888181+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary/NoOp","Output":"BenchmarkM42_FaaS_Summary/NoOp-24                   \t"}
+{"Time":"2026-08-26T17:24:42.6888181+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Test":"BenchmarkM42_FaaS_Summary/NoOp","Output":"     567\t   2311070 ns/op\n"}
+{"Time":"2026-08-26T17:24:45.2599371+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_Summary/NoOp-24                   \t"}
+{"Time":"2026-08-26T17:24:45.2606781+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"     712\t   2071646 ns/op\n"}
+{"Time":"2026-08-26T17:24:46.7467952+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_Summary/NoOp-24                   \t"}
+{"Time":"2026-08-26T17:24:46.7476467+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"     574\t   2218299 ns/op\n"}
+{"Time":"2026-08-26T17:24:48.9917669+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_Summary/NoOp-24                   \t"}
+{"Time":"2026-08-26T17:24:48.9917669+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"     603\t   1834425 ns/op\n"}
+{"Time":"2026-08-26T17:24:50.366256+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_Summary/NoOp-24                   \t"}
+{"Time":"2026-08-26T17:24:50.366256+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"     558\t   2064508 ns/op\n"}
+{"Time":"2026-08-26T17:24:51.7153338+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"BenchmarkM42_FaaS_Summary/NoOp-24                   \t"}
+{"Time":"2026-08-26T17:24:51.7153338+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"     520\t   2122105 ns/op\n"}
+{"Time":"2026-08-26T17:24:51.7153338+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"PASS\n"}
+{"Time":"2026-08-26T17:24:51.7206397+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/wasm\t61.028s\n"}
+{"Time":"2026-08-26T17:24:51.7206397+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm","Elapsed":61.029}

@@ -1,0 +1,39 @@
+﻿
+BenchmarkM50_Sharded_C1-24        	41982409	        61.80 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C1-24        	42973632	        71.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C1-24        	39075855	        56.74 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C1-24        	39516904	        59.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C1-24        	45534661	        56.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C1-24        	45303362	        58.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C1-24     	210270228	        11.74 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C1-24     	208488300	        11.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C1-24     	185433445	        12.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C1-24     	211987879	        12.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C1-24     	212701599	        14.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C1-24     	183725319	        14.02 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C8-24        	19068105	       121.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C8-24        	18934447	       127.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C8-24        	19046575	       167.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C8-24        	17083321	       126.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C8-24        	17191520	       144.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C8-24        	13156249	       172.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C8-24     	45313027	        62.97 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C8-24     	44912448	        57.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C8-24     	44583313	        63.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C8-24     	41439253	        63.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C8-24     	37726357	        56.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C8-24     	38193571	        57.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C64-24       	21478143	       154.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C64-24       	18309652	       113.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C64-24       	27054355	        89.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C64-24       	27406489	       130.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C64-24       	18378748	       113.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_Sharded_C64-24       	26663140	        90.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C64-24    	42545571	        50.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C64-24    	46572795	        56.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C64-24    	42657262	        51.08 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C64-24    	48791694	        50.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C64-24    	41491551	        50.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM50_StdlibPool_C64-24    	41458509	        50.54 ns/op	       0 B/op	       0 allocs/op
+
+

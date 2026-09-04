@@ -1,0 +1,13 @@
+{"Time":"2026-08-24T06:45:57.9170679+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus"}
+{"Time":"2026-08-24T06:45:57.9503019+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Output":"goos: windows\n"}
+{"Time":"2026-08-24T06:45:57.9508251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T06:45:57.9508251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus\n"}
+{"Time":"2026-08-24T06:45:57.9508251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T06:45:57.9508251+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Test":"BenchmarkFabric_Forward"}
+{"Time":"2026-08-24T06:45:57.9508251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Test":"BenchmarkFabric_Forward","Output":"=== RUN   BenchmarkFabric_Forward\n"}
+{"Time":"2026-08-24T06:45:57.9508251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Test":"BenchmarkFabric_Forward","Output":"BenchmarkFabric_Forward\n"}
+{"Time":"2026-08-24T06:45:57.9529971+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Test":"BenchmarkFabric_Forward","Output":"BenchmarkFabric_Forward-24    \t"}
+{"Time":"2026-08-24T06:45:57.9529971+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Test":"BenchmarkFabric_Forward","Output":"      10\t      1260 ns/op\t    793651 events/sec\t     544 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-24T06:45:57.9529971+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Output":"PASS\n"}
+{"Time":"2026-08-24T06:45:57.9559042+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/eventbus\t0.038s\n"}
+{"Time":"2026-08-24T06:45:57.9559042+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus","Elapsed":0.039}

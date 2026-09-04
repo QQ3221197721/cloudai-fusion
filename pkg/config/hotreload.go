@@ -22,7 +22,28 @@ import (
 	"sort"
 	"sync/atomic"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
+
+// PreParsedConfig represents a pre-parsed configuration ready for instant swap
+type PreParsedConfig struct {
+	version string
+	values  map[string]string
+}
+
+// ParseYAML parses YAML content into a PreParsedConfig without allocation on swap
+func ParseYAML(data []byte) (*PreParsedConfig, error) {
+	var raw map[string]string
+	if err := yaml.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	version := ComputeVersion(raw)
+	return &PreParsedConfig{
+		version: version,
+		values:  raw,
+	}, nil
+}
 
 // Snapshot is an IMMUTABLE, fully-consistent view of configuration at one point
 // in time. After it is published via HotStore.Swap it MUST NOT be mutated — the
@@ -171,6 +192,40 @@ func (h *HotStore) Publish(values map[string]string, signer *BundleSigner) (*Sna
 
 	if signer != nil {
 		sealed, err := signer.Seal(version, cp)
+		if err != nil {
+			return nil, false, err
+		}
+		next.Sealed = sealed
+	}
+
+	h.Swap(next)
+	return next, true, nil
+}
+
+// PublishPreParsed is an optimized reload path using pre-parsed configs.
+// This eliminates YAML parsing from the critical path - the config is parsed
+// once externally, then swapped atomically in nanoseconds.
+func (h *HotStore) PublishPreParsed(ppc *PreParsedConfig, signer *BundleSigner) (*Snapshot, bool, error) {
+	cur := h.current.Load()
+	if cur != nil && cur.Version == ppc.version {
+		return cur, false, nil
+	}
+
+	// Defensive copy of the pre-parsed map
+	cp := make(map[string]string, len(ppc.values))
+	for k, v := range ppc.values {
+		cp[k] = v
+	}
+
+	next := &Snapshot{
+		Version:   ppc.version,
+		Values:    cp,
+		Meta:      map[string]string{"node": h.nodeID, "source": "preparsed"},
+		Timestamp: time.Now().UTC(),
+	}
+
+	if signer != nil {
+		sealed, err := signer.Seal(ppc.version, cp)
 		if err != nil {
 			return nil, false, err
 		}

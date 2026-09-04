@@ -1,0 +1,6 @@
+﻿{"ImportPath":".*","Action":"build-output","Output":"# .*\n"}
+{"ImportPath":".*","Action":"build-output","Output":"malformed import path \".*\": invalid char '*'\n"}
+{"ImportPath":".*","Action":"build-fail"}
+{"Time":"2026-08-25T06:41:25.8947887+08:00","Action":"start","Package":".*"}
+{"Time":"2026-08-25T06:41:25.9073473+08:00","Action":"output","Package":".*","Output":"FAIL\t.* [setup failed]\n"}
+{"Time":"2026-08-25T06:41:25.9073473+08:00","Action":"fail","Package":".*","Elapsed":0.013,"FailedBuild":".*"}

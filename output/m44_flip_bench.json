@@ -1,0 +1,68 @@
+﻿{"Time":"2026-08-27T08:17:36.3224671+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial"}
+{"Time":"2026-08-27T08:17:36.344413+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"goos: windows\n"}
+{"Time":"2026-08-27T08:17:36.344413+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"goarch: amd64\n"}
+{"Time":"2026-08-27T08:17:36.344413+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial\n"}
+{"Time":"2026-08-27T08:17:36.344413+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-27T08:17:36.344413+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTutorialLoad"}
+{"Time":"2026-08-27T08:17:36.344413+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTutorialLoad","Output":"=== RUN   BenchmarkTutorialLoad\n"}
+{"Time":"2026-08-27T08:17:36.344413+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTutorialLoad","Output":"BenchmarkTutorialLoad\n"}
+{"Time":"2026-08-27T08:17:37.7910495+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTutorialLoad","Output":"BenchmarkTutorialLoad-24         \t"}
+{"Time":"2026-08-27T08:17:37.7913957+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTutorialLoad","Output":"   96032\t     13721 ns/op\t    6560 B/op\t     100 allocs/op\n"}
+{"Time":"2026-08-27T08:17:38.9873213+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTutorialLoad-24         \t"}
+{"Time":"2026-08-27T08:17:38.9881583+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   79647\t     13085 ns/op\t    6560 B/op\t     100 allocs/op\n"}
+{"Time":"2026-08-27T08:17:40.4826763+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTutorialLoad-24         \t"}
+{"Time":"2026-08-27T08:17:40.4836754+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   89011\t     15241 ns/op\t    6560 B/op\t     100 allocs/op\n"}
+{"Time":"2026-08-27T08:17:41.7784557+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTutorialLoad-24         \t"}
+{"Time":"2026-08-27T08:17:41.7784557+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   75250\t     15043 ns/op\t    6560 B/op\t     100 allocs/op\n"}
+{"Time":"2026-08-27T08:17:43.0337458+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTutorialLoad-24         \t"}
+{"Time":"2026-08-27T08:17:43.0340836+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   82191\t     13451 ns/op\t    6560 B/op\t     100 allocs/op\n"}
+{"Time":"2026-08-27T08:17:44.4712698+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTutorialLoad-24         \t"}
+{"Time":"2026-08-27T08:17:44.4712698+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"  102202\t     12890 ns/op\t    6560 B/op\t     100 allocs/op\n"}
+{"Time":"2026-08-27T08:17:44.4712698+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateIssue"}
+{"Time":"2026-08-27T08:17:44.4712698+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateIssue","Output":"=== RUN   BenchmarkCertificateIssue\n"}
+{"Time":"2026-08-27T08:17:44.4712698+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateIssue","Output":"BenchmarkCertificateIssue\n"}
+{"Time":"2026-08-27T08:17:45.7273967+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateIssue","Output":"BenchmarkCertificateIssue-24     \t"}
+{"Time":"2026-08-27T08:17:45.7273967+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateIssue","Output":"   42156\t     24407 ns/op\t    5175 B/op\t      74 allocs/op\n"}
+{"Time":"2026-08-27T08:17:47.1443187+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateIssue-24     \t"}
+{"Time":"2026-08-27T08:17:47.1443187+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   48994\t     23859 ns/op\t    5175 B/op\t      74 allocs/op\n"}
+{"Time":"2026-08-27T08:17:48.7311907+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateIssue-24     \t"}
+{"Time":"2026-08-27T08:17:48.7311907+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   54922\t     24764 ns/op\t    5175 B/op\t      74 allocs/op\n"}
+{"Time":"2026-08-27T08:17:51.0544013+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateIssue-24     \t"}
+{"Time":"2026-08-27T08:17:51.0544013+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   43957\t     22882 ns/op\t    5175 B/op\t      74 allocs/op\n"}
+{"Time":"2026-08-27T08:17:52.5790749+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateIssue-24     \t"}
+{"Time":"2026-08-27T08:17:52.5790749+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   52164\t     24747 ns/op\t    5176 B/op\t      74 allocs/op\n"}
+{"Time":"2026-08-27T08:17:53.9302234+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateIssue-24     \t"}
+{"Time":"2026-08-27T08:17:53.9302234+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   44473\t     24224 ns/op\t    5176 B/op\t      74 allocs/op\n"}
+{"Time":"2026-08-27T08:17:53.9302234+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateVerify"}
+{"Time":"2026-08-27T08:17:53.9302234+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateVerify","Output":"=== RUN   BenchmarkCertificateVerify\n"}
+{"Time":"2026-08-27T08:17:53.9302234+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateVerify","Output":"BenchmarkCertificateVerify\n"}
+{"Time":"2026-08-27T08:17:55.5057691+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateVerify","Output":"BenchmarkCertificateVerify-24    \t"}
+{"Time":"2026-08-27T08:17:55.5057691+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkCertificateVerify","Output":"   30216\t     38817 ns/op\t    1331 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-27T08:17:57.1843367+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateVerify-24    \t"}
+{"Time":"2026-08-27T08:17:57.1843367+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   32527\t     39770 ns/op\t    1332 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-27T08:17:58.814407+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateVerify-24    \t"}
+{"Time":"2026-08-27T08:17:58.814407+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   27362\t     43249 ns/op\t    1332 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-27T08:18:00.4460928+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateVerify-24    \t"}
+{"Time":"2026-08-27T08:18:00.4460928+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   26420\t     44074 ns/op\t    1332 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-27T08:18:02.2417905+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateVerify-24    \t"}
+{"Time":"2026-08-27T08:18:02.2417905+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   30668\t     45541 ns/op\t    1332 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-27T08:18:03.8051977+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkCertificateVerify-24    \t"}
+{"Time":"2026-08-27T08:18:03.8051977+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"   27682\t     40532 ns/op\t    1332 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-27T08:18:03.8051977+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTopologicalSort"}
+{"Time":"2026-08-27T08:18:03.8051977+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTopologicalSort","Output":"=== RUN   BenchmarkTopologicalSort\n"}
+{"Time":"2026-08-27T08:18:03.8051977+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTopologicalSort","Output":"BenchmarkTopologicalSort\n"}
+{"Time":"2026-08-27T08:18:05.0924748+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTopologicalSort","Output":"BenchmarkTopologicalSort-24      \t"}
+{"Time":"2026-08-27T08:18:05.0924748+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Test":"BenchmarkTopologicalSort","Output":"  560749\t      2251 ns/op\t    1632 B/op\t      24 allocs/op\n"}
+{"Time":"2026-08-27T08:18:06.3679605+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTopologicalSort-24      \t"}
+{"Time":"2026-08-27T08:18:06.3679605+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"  633181\t      1957 ns/op\t    1632 B/op\t      24 allocs/op\n"}
+{"Time":"2026-08-27T08:18:07.6975288+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTopologicalSort-24      \t"}
+{"Time":"2026-08-27T08:18:07.6975288+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"  593031\t      2203 ns/op\t    1632 B/op\t      24 allocs/op\n"}
+{"Time":"2026-08-27T08:18:09.0038675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTopologicalSort-24      \t"}
+{"Time":"2026-08-27T08:18:09.0048107+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"  597213\t      2151 ns/op\t    1632 B/op\t      24 allocs/op\n"}
+{"Time":"2026-08-27T08:18:10.8239635+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTopologicalSort-24      \t"}
+{"Time":"2026-08-27T08:18:10.8245481+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"  886878\t      2034 ns/op\t    1632 B/op\t      24 allocs/op\n"}
+{"Time":"2026-08-27T08:18:11.9164748+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"BenchmarkTopologicalSort-24      \t"}
+{"Time":"2026-08-27T08:18:11.9171764+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"  526172\t      2028 ns/op\t    1632 B/op\t      24 allocs/op\n"}
+{"Time":"2026-08-27T08:18:11.9171764+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"PASS\n"}
+{"Time":"2026-08-27T08:18:11.920234+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/tutorial\t35.597s\n"}
+{"Time":"2026-08-27T08:18:11.920234+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial","Elapsed":35.598}

@@ -346,10 +346,16 @@ func (p *QuantumResistantPredictor) computeConfidenceInterval(prob float64, reco
 	// Confidence interval based on lattice security parameter (sigma)
 	delta := p.latticeParams.NoiseStandard * 2.0
 	
-	return [2]float64{
-		max(0.0, prob-delta),
-		min(1.0, prob+delta),
+	lower := prob - delta
+	if lower < 0.0 {
+		lower = 0.0
 	}
+	upper := prob + delta
+	if upper > 1.0 {
+		upper = 1.0
+	}
+	
+	return [2]float64{lower, upper}
 }
 
 // computeVulnCommitment generates lattice commitment to vulnerability

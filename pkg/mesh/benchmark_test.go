@@ -2,8 +2,11 @@ package mesh
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
+
+	"google.golang.org/grpc/resolver"
 )
 
 // ============================================================================
@@ -415,4 +418,254 @@ func BenchmarkMTLS_Handshake_Estimated(b *testing.B) {
 		_ = expectedLatencyNs
 	}
 	b.ReportAllocs()
+}
+
+// ============================================================================
+// Competitor comparison: go-micro in-memory service discovery vs CloudAI Fusion
+// ============================================================================
+
+// InMemoryRegistry implements go-micro's in-memory service discovery pattern
+type InMemoryRegistry struct {
+	mu    sync.RWMutex
+	services map[string]map[string]*Endpoint
+}
+
+func NewInMemoryRegistry() *InMemoryRegistry {
+	return &InMemoryRegistry{
+		services: make(map[string]map[string]*Endpoint),
+	}
+}
+
+func (r *InMemoryRegistry) Register(service string, ep *Endpoint) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.services[service] == nil {
+		r.services[service] = make(map[string]*Endpoint)
+	}
+	r.services[service][ep.ID] = ep
+}
+
+func (r *InMemoryRegistry) Lookup(service string) []*Endpoint {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	es := r.services[service]
+	if len(es) == 0 {
+		return nil
+	}
+	result := make([]*Endpoint, 0, len(es))
+	for _, ep := range es {
+		result = append(result, ep)
+	}
+	return result
+}
+
+// GRPCResolverRegistry emulates the grpc-go client-side resolver cache:
+// a resolver pushes resolver.State (addresses) into a ClientConn, and the
+// picker reads the latest resolved address list. We model the read path
+// (latest resolved State per target) which is what a gRPC picker consults.
+type GRPCResolverRegistry struct {
+	mu    sync.RWMutex
+	state map[string]resolver.State
+}
+
+func NewGRPCResolverRegistry() *GRPCResolverRegistry {
+	return &GRPCResolverRegistry{state: make(map[string]resolver.State)}
+}
+
+func (r *GRPCResolverRegistry) Register(service string, eps ...*Endpoint) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	// This mirrors resolver.ClientConn.UpdateState(resolver.State{...})
+	r.state[service] = resolver.State{Addresses: toGRPCAddresses(eps)}
+}
+
+func (r *GRPCResolverRegistry) Lookup(service string) []resolver.Address {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.state[service].Addresses
+}
+
+func toGRPCAddresses(eps []*Endpoint) []resolver.Address {
+	addrs := make([]resolver.Address, 0, len(eps))
+	for _, ep := range eps {
+		addrs = append(addrs, resolver.Address{Addr: ep.Address})
+	}
+	return addrs
+}
+
+var (
+	testMicroRegistry      *InMemoryRegistry
+	testGRPCRegistry       *GRPCResolverRegistry
+	testCloudAIRegistry    *Registry
+	testEndpointsForScale  []*Endpoint
+)
+
+func initCompetitors() {
+	// Build large-scale test data (10k endpoints across services)
+	microReg := NewInMemoryRegistry()
+	grpcReg := NewGRPCResolverRegistry()
+	cloudAIReg := NewRegistry()
+	testEndpointsForScale = make([]*Endpoint, 10000)
+
+	// 100 services × 100 endpoints each = 10k total
+	svcCount := 100
+	epPerSvc := 100
+	for svcIdx := 0; svcIdx < svcCount; svcIdx++ {
+		svcName := fmt.Sprintf("comp-svc-%d", svcIdx)
+		eps := make([]*Endpoint, epPerSvc)
+		for i := 0; i < epPerSvc; i++ {
+			ep := NewEndpoint(
+				fmt.Sprintf("ep-%d-%d", svcIdx, i),
+				fmt.Sprintf("10.%d.%d.%d:8080", svcIdx/256, svcIdx%256, i),
+				1,
+			)
+			eps[i] = ep
+			testEndpointsForScale[svcIdx*epPerSvc+i] = ep
+			microReg.Register(svcName, ep)
+		}
+		grpcReg.Register(svcName, eps...)
+		cloudAIReg.Register(svcName, NewEndpointSet(eps...))
+	}
+
+	testMicroRegistry = microReg
+	testGRPCRegistry = grpcReg
+	testCloudAIRegistry = cloudAIReg
+}
+
+func init() {
+	initCompetitors()
+}
+
+// ============================================================================
+// Service discovery throughput benchmarks (10k endpoints across 100 services)
+// ============================================================================
+
+func BenchmarkCloudAI_Lookup_10kEndpoints(b *testing.B) {
+	b.ReportAllocs()
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = testCloudAIRegistry.Lookup(svc)
+	}
+}
+
+func BenchmarkGoMicro_Lookup_10kEndpoints(b *testing.B) {
+	b.ReportAllocs()
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = testMicroRegistry.Lookup(svc)
+	}
+}
+
+func BenchmarkGRPC_Resolution_10kEndpoints(b *testing.B) {
+	b.ReportAllocs()
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = testGRPCRegistry.Lookup(svc)
+	}
+}
+
+// ============================================================================
+// Concurrent lookup benchmarks (parallel readers with occasional writes)
+// ============================================================================
+
+func BenchmarkCloudAI_Lookup_Parallel_10kEndpoints(b *testing.B) {
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		i := uint64(0)
+		for pb.Next() {
+			_ = testCloudAIRegistry.Lookup(svc)
+			i++
+		}
+	})
+}
+
+func BenchmarkGoMicro_Lookup_Parallel_10kEndpoints(b *testing.B) {
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		i := uint64(0)
+		for pb.Next() {
+			_ = testMicroRegistry.Lookup(svc)
+			i++
+		}
+	})
+}
+
+func BenchmarkGRPC_Resolution_Parallel_10kEndpoints(b *testing.B) {
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		i := uint64(0)
+		for pb.Next() {
+			_ = testGRPCRegistry.Lookup(svc)
+			i++
+		}
+	})
+}
+
+// ============================================================================
+// Write scalability (register new endpoints under load)
+// ============================================================================
+
+func BenchmarkCloudAI_Register_Endpoint(b *testing.B) {
+	svc := "comp-svc-new"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ep := NewEndpoint(fmt.Sprintf("new-%d", i), fmt.Sprintf("10.255.%d:8080", i), 1)
+		testCloudAIRegistry.Register(svc, NewEndpointSet(ep))
+	}
+}
+
+func BenchmarkGoMicro_Register_Endpoint(b *testing.B) {
+	svc := "comp-svc-new"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ep := NewEndpoint(fmt.Sprintf("new-%d", i), fmt.Sprintf("10.255.%d:8080", i), 1)
+		testMicroRegistry.Register(svc, ep)
+	}
+}
+
+func BenchmarkGRPC_Register_Endpoint(b *testing.B) {
+	svc := "comp-svc-new"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ep := NewEndpoint(fmt.Sprintf("new-%d", i), fmt.Sprintf("10.255.%d:8080", i), 1)
+		testGRPCRegistry.Register(svc, ep)
+	}
+}
+
+// ============================================================================
+// Memory allocation analysis (zero-copy vs copy-on-write patterns)
+// ============================================================================
+
+func BenchmarkCloudAI_Snapshot_AllocAnalysis(b *testing.B) {
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		set := testCloudAIRegistry.Lookup(svc)
+		_ = set.Snapshot()
+	}
+}
+
+func BenchmarkGoMicro_Lookup_AllocAnalysis(b *testing.B) {
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = testMicroRegistry.Lookup(svc)
+	}
+}
+
+func BenchmarkGRPC_Resolution_AllocAnalysis(b *testing.B) {
+	svc := "comp-svc-42"
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = testGRPCRegistry.Lookup(svc)
+	}
 }

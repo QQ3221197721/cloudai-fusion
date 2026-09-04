@@ -1,0 +1,53 @@
+﻿{"Time":"2026-08-27T06:44:28.4121998+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry"}
+{"Time":"2026-08-27T06:44:28.4587933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"goos: windows\n"}
+{"Time":"2026-08-27T06:44:28.4587933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"goarch: amd64\n"}
+{"Time":"2026-08-27T06:44:28.4587933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry\n"}
+{"Time":"2026-08-27T06:44:28.4587933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-27T06:44:28.4587933+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkRegisterModel"}
+{"Time":"2026-08-27T06:44:28.4587933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkRegisterModel","Output":"=== RUN   BenchmarkRegisterModel\n"}
+{"Time":"2026-08-27T06:44:28.4587933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkRegisterModel","Output":"BenchmarkRegisterModel\n"}
+{"Time":"2026-08-27T06:44:29.9782887+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkRegisterModel","Output":"BenchmarkRegisterModel-24    \t"}
+{"Time":"2026-08-27T06:44:29.9782887+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkRegisterModel","Output":"     507\t   2218794 ns/op\n"}
+{"Time":"2026-08-27T06:44:31.5886969+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkRegisterModel-24    \t"}
+{"Time":"2026-08-27T06:44:31.5886969+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"     584\t   2134363 ns/op\n"}
+{"Time":"2026-08-27T06:44:34.2998315+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkRegisterModel-24    \t"}
+{"Time":"2026-08-27T06:44:34.2998315+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"     700\t   1856261 ns/op\n"}
+{"Time":"2026-08-27T06:44:36.6347102+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkRegisterModel-24    \t"}
+{"Time":"2026-08-27T06:44:36.6347102+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"     656\t   1809493 ns/op\n"}
+{"Time":"2026-08-27T06:44:38.1933922+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkRegisterModel-24    \t"}
+{"Time":"2026-08-27T06:44:38.1933922+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"     740\t   1679616 ns/op\n"}
+{"Time":"2026-08-27T06:44:39.6252405+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkRegisterModel-24    \t"}
+{"Time":"2026-08-27T06:44:39.6252405+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"     631\t   1739330 ns/op\n"}
+{"Time":"2026-08-27T06:44:39.6252405+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkGetModel"}
+{"Time":"2026-08-27T06:44:39.6252405+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkGetModel","Output":"=== RUN   BenchmarkGetModel\n"}
+{"Time":"2026-08-27T06:44:39.6257874+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkGetModel","Output":"BenchmarkGetModel\n"}
+{"Time":"2026-08-27T06:44:41.5702617+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkGetModel","Output":"BenchmarkGetModel-24         \t"}
+{"Time":"2026-08-27T06:44:41.5702617+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkGetModel","Output":"   17168\t     67912 ns/op\n"}
+{"Time":"2026-08-27T06:44:43.5415251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkGetModel-24         \t"}
+{"Time":"2026-08-27T06:44:43.5415251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"   17308\t     69586 ns/op\n"}
+{"Time":"2026-08-27T06:44:45.5317527+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkGetModel-24         \t"}
+{"Time":"2026-08-27T06:44:45.5323164+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"   15432\t     71944 ns/op\n"}
+{"Time":"2026-08-27T06:44:47.3531278+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkGetModel-24         \t"}
+{"Time":"2026-08-27T06:44:47.3531278+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"   18229\t     66303 ns/op\n"}
+{"Time":"2026-08-27T06:44:49.0696556+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkGetModel-24         \t"}
+{"Time":"2026-08-27T06:44:49.0696556+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"   17098\t     59538 ns/op\n"}
+{"Time":"2026-08-27T06:44:50.8317418+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkGetModel-24         \t"}
+{"Time":"2026-08-27T06:44:50.8317418+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"   21438\t     54027 ns/op\n"}
+{"Time":"2026-08-27T06:44:50.8317418+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkVerifyLineage"}
+{"Time":"2026-08-27T06:44:50.8317418+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkVerifyLineage","Output":"=== RUN   BenchmarkVerifyLineage\n"}
+{"Time":"2026-08-27T06:44:50.8317418+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkVerifyLineage","Output":"BenchmarkVerifyLineage\n"}
+{"Time":"2026-08-27T06:44:52.4314145+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkVerifyLineage","Output":"BenchmarkVerifyLineage-24    \t"}
+{"Time":"2026-08-27T06:44:52.4314145+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Test":"BenchmarkVerifyLineage","Output":"    1155\t    936001 ns/op\n"}
+{"Time":"2026-08-27T06:44:55.3943181+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkVerifyLineage-24    \t"}
+{"Time":"2026-08-27T06:44:55.3950667+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"    1783\t    926173 ns/op\n"}
+{"Time":"2026-08-27T06:44:58.7035684+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkVerifyLineage-24    \t"}
+{"Time":"2026-08-27T06:44:58.704103+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"    1680\t    830162 ns/op\n"}
+{"Time":"2026-08-27T06:45:01.3812587+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkVerifyLineage-24    \t"}
+{"Time":"2026-08-27T06:45:01.3812587+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"    1833\t    628871 ns/op\n"}
+{"Time":"2026-08-27T06:45:02.9614926+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkVerifyLineage-24    \t"}
+{"Time":"2026-08-27T06:45:02.9614926+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"    1124\t    933442 ns/op\n"}
+{"Time":"2026-08-27T06:45:05.8078114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"BenchmarkVerifyLineage-24    \t"}
+{"Time":"2026-08-27T06:45:05.8078114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"    1336\t    925167 ns/op\n"}
+{"Time":"2026-08-27T06:45:05.8078114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"PASS\n"}
+{"Time":"2026-08-27T06:45:05.8125442+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry\t37.400s\n"}
+{"Time":"2026-08-27T06:45:05.8125442+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry","Elapsed":37.4}

@@ -1,0 +1,10 @@
+{"Time":"2026-08-24T19:44:15.8986228+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion"}
+{"Time":"2026-08-24T19:44:15.9168952+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-08-24T19:44:15.9168952+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion","Output":"PASS\n"}
+{"Time":"2026-08-24T19:44:15.9184731+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion\t0.020s [no tests to run]\n"}
+{"Time":"2026-08-24T19:44:15.9184731+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion","Elapsed":0.02}
+{"Time":"2026-08-24T19:44:16.1135171+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/devenv"}
+{"Time":"2026-08-24T19:44:16.1325547+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/devenv","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-08-24T19:44:16.1325547+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/devenv","Output":"PASS\n"}
+{"Time":"2026-08-24T19:44:16.1341432+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/devenv","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/devenv\t0.021s [no tests to run]\n"}
+{"Time":"2026-08-24T19:44:16.1341432+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/devenv","Elapsed":0.021}

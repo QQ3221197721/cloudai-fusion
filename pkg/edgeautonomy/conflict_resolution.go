@@ -84,10 +84,12 @@ func (cr *ConflictResolver) ResolveConflicts(ctx context.Context, localDecisions
 	var resolved []ResolvedDecision
 	var conflicts []ConflictRecord
 	
-	cr.logger.WithFields(logrus.Fields{
-		"local_count": len(localDecisions),
-		"cloud_count": len(cloudDecisions),
-	}).Info("Starting conflict resolution")
+	if cr.logger != nil {
+		cr.logger.WithFields(logrus.Fields{
+			"local_count": len(localDecisions),
+			"cloud_count": len(cloudDecisions),
+		}).Info("Starting conflict resolution")
+	}
 	
 	// Index cloud decisions by ID
 	cloudIndex := make(map[string]DecisionRecord)
@@ -141,10 +143,12 @@ func (cr *ConflictResolver) ResolveConflicts(ctx context.Context, localDecisions
 	}
 	
 	cr.metrics.RecordResolution(int64(len(resolved)), int64(len(conflicts)))
-	cr.logger.WithFields(logrus.Fields{
-		"resolved": len(resolved),
-		"conflicts": len(conflicts),
-	}).Info("Conflict resolution completed")
+	if cr.logger != nil {
+		cr.logger.WithFields(logrus.Fields{
+			"resolved": len(resolved),
+			"conflicts": len(conflicts),
+		}).Info("Conflict resolution completed")
+	}
 	
 	return resolved, conflicts
 }

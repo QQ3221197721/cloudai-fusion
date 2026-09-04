@@ -1,0 +1,133 @@
+{
+  "kubeflow": {
+    "scheduler_type": "KubeflowPipelines",
+    "description": "Kubernetes-native workflow engine with separate Pod controllers",
+    "complexity_class": "O(P · (V + E))",
+    "details": [
+      {
+        "operation": "DAG Resolution",
+        "cost": "O(V + E)",
+        "reason": "topological sort per step launch"
+      },
+      {
+        "operation": "API Server Write",
+        "cost": "O(log(etcd_size))",
+        "reason": "etcd consensus write"
+      },
+      {
+        "operation": "Reconcile Loop",
+        "cost": "O(150ms × P)",
+        "reason": "controller loop per replica"
+      },
+      {
+        "operation": "Watch Propagation",
+        "cost": "O(P · log(N))",
+        "reason": "distributed watches to workers"
+      }
+    ],
+    "latency_model": {
+      "gangCreationLatency": "150ms × P",
+      "perReplicaOverhead": "150ms",
+      "perStepCoordination": "150ms"
+    },
+    "weaknesses": [
+      "No native gang semantics—relies on Volcano extension",
+      "Each replica scheduled independently unless using podgroups",
+      "API server becomes bottleneck at scale (\u003e100 concurrent jobs)",
+      "Distributed watch propagation adds tail latency"
+    ],
+    "concrete_numbers": {
+      "kubeflow_coord_ops": 400,
+      "kubeflow_estimated_ms": 1200,
+      "scenario": "50 nodes, 8-replica gang, 20-step DAG"
+    }
+  },
+  "ray": {
+    "scheduler_type": "RayPlacementGroups",
+    "description": "Distributed actor-based runtime with GCS coordination",
+    "complexity_class": "O(P · log(N))",
+    "details": [
+      {
+        "operation": "GCS Lookup",
+        "cost": "O(log(N))",
+        "reason": "distributed hash table lookup"
+      },
+      {
+        "operation": "Bundle Allocation",
+        "cost": "O(k · log(N))",
+        "reason": "2-phase commit for placement"
+      },
+      {
+        "operation": "Actor Launch",
+        "cost": "O(P · log(N))",
+        "reason": "per-actor resource negotiation"
+      },
+      {
+        "operation": "Barrier Wait",
+        "cost": "O(P)",
+        "reason": "collective rendezvous via broadcast"
+      }
+    ],
+    "latency_model": {
+      "bundleCommitMs": 5,
+      "gangCreationLatency": "5ms × P + 5ms × log(N)",
+      "gcsLookupMs": 1,
+      "perActorLaunchMs": 5
+    },
+    "weaknesses": [
+      "GCS central point of failure under high load",
+      "2-phase commit adds latency even when resources abundant",
+      "Per-actor placement decisions don't exploit gang atomicity"
+    ],
+    "concrete_numbers": {
+      "ray_bundles": 20,
+      "ray_estimated_ms": 65,
+      "ray_gcs_lookups": 8,
+      "scenario": "50 nodes, 8-replica gang, 20-step DAG"
+    }
+  },
+  "local": {
+    "scheduler_type": "CloudAI_Fusion_LocalCoordinator",
+    "description": "Single-authority capacity ledger with atomic gang admission",
+    "complexity_class": "O(1)",
+    "details": [
+      {
+        "operation": "Capacity Check",
+        "cost": "O(1)",
+        "reason": "3 arithmetic comparisons (GPU/CPU/mem)"
+      },
+      {
+        "operation": "Reservation",
+        "cost": "O(1)",
+        "reason": "single atomic add to allocated counters"
+      },
+      {
+        "operation": "Barrier Release",
+        "cost": "O(1)",
+        "reason": "flag set + notification"
+      },
+      {
+        "operation": "Ledger Write",
+        "cost": "O(1)",
+        "reason": "in-memory append to job events slice"
+      }
+    ],
+    "latency_model": {
+      "capacityCheckMs": 0.001,
+      "gangCreationLatency": "\u003c0.01ms",
+      "reservationMs": 0.002
+    },
+    "advantages": [
+      "O(1) admission decision—no scaling with cluster size",
+      "All-or-nothing semantic guaranteed at scheduler level",
+      "No distributed coordination required",
+      "Crystalline determinism: same input always yields same output"
+    ],
+    "concrete_numbers": {
+      "local_estimated_ms": 0.01,
+      "local_ops": 1,
+      "scenario": "50 nodes, 8-replica gang, 20-step DAG"
+    }
+  },
+  "concrete_numbers": null
+}

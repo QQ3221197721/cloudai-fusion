@@ -1,0 +1,24 @@
+﻿time="2026-08-25T06:10:32+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:32+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:10:32+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:32+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:32+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:10:32+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:32+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:32+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:10:32+08:00" level=info msg="eBPF network policy created" policy=test-policy
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/mesh
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkCloudAI_Lookup_Parallel_10kEndpoints-24     	1000000000	         0.4104 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCloudAI_Lookup_Parallel_10kEndpoints-24     	1000000000	         0.3498 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCloudAI_Lookup_Parallel_10kEndpoints-24     	1000000000	         0.3770 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGoMicro_Lookup_Parallel_10kEndpoints-24     	 8593888	       329.4 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGoMicro_Lookup_Parallel_10kEndpoints-24     	 5842838	       388.0 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGoMicro_Lookup_Parallel_10kEndpoints-24     	 7686067	       351.6 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGRPC_Resolution_Parallel_10kEndpoints-24    	32217345	        73.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGRPC_Resolution_Parallel_10kEndpoints-24    	32756410	        73.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGRPC_Resolution_Parallel_10kEndpoints-24    	32781152	        74.38 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/mesh	23.022s

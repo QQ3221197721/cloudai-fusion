@@ -614,3 +614,152 @@ func TestRecordStat_WriteFailureNoTornLine(t *testing.T) {
 	require.Len(t, all, 1, "only the original record should remain")
 	assert.Equal(t, int64(10), all[0].Requests)
 }
+
+// TestZeroCopyMessage_PoolRecycling verifies that ZeroCopyMessage instances are
+// properly recycled through sync.Pool without heap allocations.
+func TestZeroCopyMessage_PoolRecycling(t *testing.T) {
+	// First allocation creates a new instance from pool
+	msg1 := NewZeroCopyMessage("req-1", "svc-1", "v1", []byte{1, 2, 3})
+	require.NotNil(t, msg1)
+	assert.Equal(t, 3, len(msg1.Payload))
+
+	// Snapshot payload info before release (after release the message may be reused)
+	msg1PayloadSize := msg1.GetPayloadSize()
+	assert.Equal(t, 3, msg1PayloadSize)
+
+	// Release returns it to pool
+	msg1.Release()
+
+	// Second allocation should reuse the pooled instance (same metadata map)
+	msg2 := NewZeroCopyMessage("req-2", "svc-2", "v2", []byte{4, 5, 6})
+	require.NotNil(t, msg2)
+	assert.Equal(t, 3, msg2.GetPayloadSize(), "msg2 should have 3 bytes payload")
+	assert.Equal(t, "req-2", msg2.RequestID, "msg2 should have new request ID")
+	assert.Equal(t, "svc-2", msg2.TargetServiceID, "msg2 should have new target service ID")
+}
+
+// TestForward_ZeroCopy validates zero-copy forwarding behavior with no payload copies.
+func TestForward_ZeroCopy(t *testing.T) {
+	tmp := t.TempDir()
+	store := evidence.NewMemoryStore()
+	signer, err := evidence.GenerateEphemeralSigner()
+	require.NoError(t, err)
+
+	_, err = evidence.NewLedger(evidence.LedgerConfig{
+		Store:    store,
+		Signer:   signer,
+		Anchorer: evidence.NewSimulatedAnchorer(),
+	})
+	require.NoError(t, err, "build ledger")
+
+	mesh, err := NewFSMInferenceMesh(tmp, nil) // nil ledger for faster tests
+	require.NoError(t, err, "create test mesh")
+
+	ctx := context.Background()
+
+	// Deploy target service with multiple replicas
+	targetSvc, err := mesh.Deploy(ctx, DeployInput{
+		Name:     "forward-target",
+		ModelRef: "model@v1",
+		Replicas: 4,
+	})
+	require.NoError(t, err)
+
+	// Create zero-copy message with immutable payload
+	payload := []byte("request-data-payload")
+	msg := NewZeroCopyMessage("req-forward-1", targetSvc.ID, "v1", payload)
+	defer msg.Release() // ensure cleanup even on failure
+
+	// Forward should succeed without copying payload
+	svc, err := mesh.Forward(context.Background(), msg)
+	require.NoError(t, err)
+	assert.Equal(t, targetSvc.ID, svc.ID)
+
+	// Verify payload was NOT copied (same underlying array)
+	assert.Equal(t, len(payload), len(msg.Payload), "payload length should match")
+	assert.Equal(t, &payload[0], &msg.Payload[0], "payload should be referenced, not copied")
+
+	// Message remains active after forward (refCount > 0)
+	assert.False(t, msg.IsReleased(), "message should still be held")
+
+	// After Release(), message is available for pool recycling
+	msg.Release()
+	assert.True(t, msg.IsReleased(), "message should be released")
+}
+
+// TestForward_ImmutabilityContract enforces zero-copy safety: payloads must not be mutated.
+func TestForward_ImmutabilityContract(t *testing.T) {
+	tmp := t.TempDir()
+	mesh, err := NewFSMInferenceMesh(tmp, nil)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	targetSvc, err := mesh.Deploy(ctx, DeployInput{
+		Name:     "immutable-target",
+		ModelRef: "model@v1",
+		Replicas: 2,
+	})
+	require.NoError(t, err)
+
+	// Payload before forward
+	payloadBefore := []byte("immutable-test")
+	originalHash := make([]byte, len(payloadBefore))
+	copy(originalHash, payloadBefore)
+
+	msg := NewZeroCopyMessage("req-immutable", targetSvc.ID, "v1", payloadBefore)
+	defer msg.Release()
+
+	// Forward while payload is "owned" by consumer
+	svc, err := mesh.Forward(context.Background(), msg)
+	require.NoError(t, err)
+	assert.NotNil(t, svc)
+
+	// Verify hash unchanged during forward
+	currentHash := make([]byte, len(payloadBefore))
+	copy(currentHash, msg.Payload)
+	assert.Equal(t, originalHash, currentHash, "payload should not be modified during forward")
+}
+
+// TestForward_StoppedService rejects forwarding to stopped services.
+func TestForward_StoppedService(t *testing.T) {
+	tmp := t.TempDir()
+	mesh, err := NewFSMInferenceMesh(tmp, nil)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	svc, err := mesh.Deploy(ctx, DeployInput{
+		Name:     "stopped-forbidden",
+		ModelRef: "model@v1",
+		Replicas: 1,
+	})
+	require.NoError(t, err)
+
+	// Stop the service first
+	require.NoError(t, mesh.Stop(ctx, svc.ID))
+
+	// Try to forward - should fail
+	payload := []byte("should-not-forward")
+	msg := NewZeroCopyMessage("req-stopped", svc.ID, "v1", payload)
+	defer msg.Release()
+
+	_, err = mesh.Forward(context.Background(), msg)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "stopped service")
+}
+
+// TestForward_UnknownService rejects forwarding to non-existent services.
+func TestForward_UnknownService(t *testing.T) {
+	tmp := t.TempDir()
+	mesh, err := NewFSMInferenceMesh(tmp, nil)
+	require.NoError(t, err)
+
+	payload := []byte("unknown-service")
+	msg := NewZeroCopyMessage("req-unknown", "inf-nonexistent123", "v1", payload)
+	defer msg.Release()
+
+	_, err = mesh.Forward(context.Background(), msg)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrNotFound)
+}

@@ -1,0 +1,13 @@
+﻿=== RUN   TestAccuracy_OurExactPercentile
+    competitor_prometheus_bench_test.go:188: OUR EXACT: p95=1.76965977 (truth=1.76965977, abs_err=0.000e+00) p99=1.99174503 (truth=1.99174503, abs_err=0.000e+00)
+--- PASS: TestAccuracy_OurExactPercentile (0.03s)
+=== RUN   TestAccuracy_PrometheusHistogramBucketApprox
+    competitor_prometheus_bench_test.go:221: PROM HISTOGRAM APPROX: p95=2.16292135 (truth=1.76965977, rel_err=22.22%) p99=2.43258427 (truth=1.99174503, rel_err=22.13%)
+    competitor_prometheus_bench_test.go:223: Histogram bucket quantization error is inherent to fixed-bucket design (documented T2 tradeoff, not a failure)
+--- PASS: TestAccuracy_PrometheusHistogramBucketApprox (0.00s)
+=== RUN   TestAccuracy_PrometheusSummaryObjective
+    competitor_prometheus_bench_test.go:250: PROM SUMMARY OBJECTIVE: p95=1.79117509 (truth=1.76965977, rel_err=1.22%) p99=1.98995539 (truth=1.99174503, rel_err=0.09%)
+    competitor_prometheus_bench_test.go:252: Summary objectives guarantee only a bounded rank error (alpha); estimation error is inherent (documented T2 tradeoff)
+--- PASS: TestAccuracy_PrometheusSummaryObjective (0.01s)
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/metrics	(cached)

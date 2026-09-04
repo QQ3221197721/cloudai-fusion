@@ -1,0 +1,53 @@
+﻿{"Time":"2026-08-26T22:18:33.4387108+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk"}
+{"Time":"2026-08-26T22:18:33.4671507+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"goos: windows\n"}
+{"Time":"2026-08-26T22:18:33.4671507+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"goarch: amd64\n"}
+{"Time":"2026-08-26T22:18:33.4671507+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/sdk\n"}
+{"Time":"2026-08-26T22:18:33.4671507+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-26T22:18:33.4671507+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkLangChain_Invoke50"}
+{"Time":"2026-08-26T22:18:33.4671507+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkLangChain_Invoke50","Output":"=== RUN   BenchmarkLangChain_Invoke50\n"}
+{"Time":"2026-08-26T22:18:33.4671507+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkLangChain_Invoke50","Output":"BenchmarkLangChain_Invoke50\n"}
+{"Time":"2026-08-26T22:18:34.6535534+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkLangChain_Invoke50","Output":"BenchmarkLangChain_Invoke50-24       \t"}
+{"Time":"2026-08-26T22:18:34.6535534+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkLangChain_Invoke50","Output":"   11422\t    103627 ns/op\t   13018 B/op\t     154 allocs/op\n"}
+{"Time":"2026-08-26T22:18:35.6858423+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkLangChain_Invoke50-24       \t"}
+{"Time":"2026-08-26T22:18:35.6858423+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"   10000\t    103110 ns/op\t   12941 B/op\t     154 allocs/op\n"}
+{"Time":"2026-08-26T22:18:36.8650909+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkLangChain_Invoke50-24       \t"}
+{"Time":"2026-08-26T22:18:36.8650909+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"   10000\t    117735 ns/op\t   12899 B/op\t     154 allocs/op\n"}
+{"Time":"2026-08-26T22:18:38.060305+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkLangChain_Invoke50-24       \t"}
+{"Time":"2026-08-26T22:18:38.060305+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    7378\t    160150 ns/op\t   13006 B/op\t     154 allocs/op\n"}
+{"Time":"2026-08-26T22:18:39.3087683+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkLangChain_Invoke50-24       \t"}
+{"Time":"2026-08-26T22:18:39.3087683+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    8804\t    141516 ns/op\t   13031 B/op\t     154 allocs/op\n"}
+{"Time":"2026-08-26T22:18:40.7458614+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkLangChain_Invoke50-24       \t"}
+{"Time":"2026-08-26T22:18:40.7458614+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    8779\t    163518 ns/op\t   12911 B/op\t     154 allocs/op\n"}
+{"Time":"2026-08-26T22:18:40.7458614+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkBedrock_Invoke50"}
+{"Time":"2026-08-26T22:18:40.7458614+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkBedrock_Invoke50","Output":"=== RUN   BenchmarkBedrock_Invoke50\n"}
+{"Time":"2026-08-26T22:18:40.7458614+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkBedrock_Invoke50","Output":"BenchmarkBedrock_Invoke50\n"}
+{"Time":"2026-08-26T22:18:41.9178332+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkBedrock_Invoke50","Output":"BenchmarkBedrock_Invoke50-24         \t"}
+{"Time":"2026-08-26T22:18:41.9178332+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkBedrock_Invoke50","Output":"    7078\t    165322 ns/op\t   11926 B/op\t     136 allocs/op\n"}
+{"Time":"2026-08-26T22:18:43.1426777+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkBedrock_Invoke50-24         \t"}
+{"Time":"2026-08-26T22:18:43.1426777+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    8170\t    149699 ns/op\t   11973 B/op\t     136 allocs/op\n"}
+{"Time":"2026-08-26T22:18:44.279832+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkBedrock_Invoke50-24         \t"}
+{"Time":"2026-08-26T22:18:44.279832+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    7238\t    156957 ns/op\t   11901 B/op\t     136 allocs/op\n"}
+{"Time":"2026-08-26T22:18:45.7954382+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkBedrock_Invoke50-24         \t"}
+{"Time":"2026-08-26T22:18:45.7954382+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    8554\t    176923 ns/op\t   11825 B/op\t     136 allocs/op\n"}
+{"Time":"2026-08-26T22:18:46.9821515+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkBedrock_Invoke50-24         \t"}
+{"Time":"2026-08-26T22:18:46.9825629+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    8523\t    139076 ns/op\t   11778 B/op\t     136 allocs/op\n"}
+{"Time":"2026-08-26T22:18:48.3776222+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkBedrock_Invoke50-24         \t"}
+{"Time":"2026-08-26T22:18:48.378161+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    9328\t    149423 ns/op\t   11818 B/op\t     136 allocs/op\n"}
+{"Time":"2026-08-26T22:18:48.378161+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkOptimizedSDK_Invoke50"}
+{"Time":"2026-08-26T22:18:48.378161+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkOptimizedSDK_Invoke50","Output":"=== RUN   BenchmarkOptimizedSDK_Invoke50\n"}
+{"Time":"2026-08-26T22:18:48.378161+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkOptimizedSDK_Invoke50","Output":"BenchmarkOptimizedSDK_Invoke50\n"}
+{"Time":"2026-08-26T22:18:49.6670257+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkOptimizedSDK_Invoke50","Output":"BenchmarkOptimizedSDK_Invoke50-24    \t"}
+{"Time":"2026-08-26T22:18:49.6670257+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Test":"BenchmarkOptimizedSDK_Invoke50","Output":"    6862\t    187630 ns/op\t   11840 B/op\t     135 allocs/op\n"}
+{"Time":"2026-08-26T22:18:50.7067077+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkOptimizedSDK_Invoke50-24    \t"}
+{"Time":"2026-08-26T22:18:50.7067077+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    8043\t    128328 ns/op\t   11733 B/op\t     135 allocs/op\n"}
+{"Time":"2026-08-26T22:18:51.914847+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkOptimizedSDK_Invoke50-24    \t"}
+{"Time":"2026-08-26T22:18:51.914847+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    9943\t    121222 ns/op\t   11797 B/op\t     135 allocs/op\n"}
+{"Time":"2026-08-26T22:18:53.289298+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkOptimizedSDK_Invoke50-24    \t"}
+{"Time":"2026-08-26T22:18:53.289298+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"   10000\t    137244 ns/op\t   11759 B/op\t     135 allocs/op\n"}
+{"Time":"2026-08-26T22:18:54.9140955+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkOptimizedSDK_Invoke50-24    \t"}
+{"Time":"2026-08-26T22:18:54.9140955+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    8323\t    194947 ns/op\t   11770 B/op\t     135 allocs/op\n"}
+{"Time":"2026-08-26T22:18:55.9383487+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"BenchmarkOptimizedSDK_Invoke50-24    \t"}
+{"Time":"2026-08-26T22:18:55.9386532+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"    5392\t    189368 ns/op\t   11887 B/op\t     135 allocs/op\n"}
+{"Time":"2026-08-26T22:18:55.9386532+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"PASS\n"}
+{"Time":"2026-08-26T22:18:55.9432703+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/sdk\t22.505s\n"}
+{"Time":"2026-08-26T22:18:55.9436399+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/sdk","Elapsed":22.505}

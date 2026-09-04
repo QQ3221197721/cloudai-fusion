@@ -1,0 +1,13 @@
+{"Time":"2026-08-24T07:32:01.3532816+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store"}
+{"Time":"2026-08-24T07:32:01.3845184+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:32:01.3845184+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:32:01.3845184+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/store\n"}
+{"Time":"2026-08-24T07:32:01.3845184+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:32:01.3845184+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Test":"BenchmarkWAL_InMemory_Baseline"}
+{"Time":"2026-08-24T07:32:01.3845184+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Test":"BenchmarkWAL_InMemory_Baseline","Output":"=== RUN   BenchmarkWAL_InMemory_Baseline\n"}
+{"Time":"2026-08-24T07:32:01.3845184+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Test":"BenchmarkWAL_InMemory_Baseline","Output":"BenchmarkWAL_InMemory_Baseline\n"}
+{"Time":"2026-08-24T07:32:01.386126+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Test":"BenchmarkWAL_InMemory_Baseline","Output":"BenchmarkWAL_InMemory_Baseline-24    \t"}
+{"Time":"2026-08-24T07:32:01.386126+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Test":"BenchmarkWAL_InMemory_Baseline","Output":"      10\t       300.0 ns/op\t 853.33 MB/s\n"}
+{"Time":"2026-08-24T07:32:01.386126+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Output":"PASS\n"}
+{"Time":"2026-08-24T07:32:01.3893802+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/store\t0.036s\n"}
+{"Time":"2026-08-24T07:32:01.3893802+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/store","Elapsed":0.036}

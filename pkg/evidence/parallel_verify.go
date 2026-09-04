@@ -5,7 +5,82 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+	"sync/atomic"
 )
+
+// parallelVerifyPool is a persistent goroutine pool for verification calls.
+// Reusing workers avoids goroutine spawn overhead on repeated verifications.
+var parallelVerifyPool = createWorkerPool()
+
+func createWorkerPool() *verifyWorkerPool {
+	workers := runtime.NumCPU()
+	return &verifyWorkerPool{
+		workers: workers,
+		workQueue: make(chan verifyWork, workers*4),
+		completed: make(chan verifyResult, workers*4),
+	}
+}
+
+type verifyWork struct {
+	records []*Evidence
+	pubKey  ed25519.PublicKey
+	start   int
+	end     int
+}
+
+type verifyResult struct {
+	results []recordVerification
+}
+
+type verifyWorkerPool struct {
+	workers      int
+	workQueue    chan verifyWork
+	completed    chan verifyResult
+	activeWorkers int32 // atomic.Int32 equivalent using sync/atomic
+	mu           sync.Mutex
+	shutdownFlag bool
+}
+
+func (pool *verifyWorkerPool) start() {
+	for i := 0; i < pool.workers; i++ {
+		atomic.AddInt32(&pool.activeWorkers, 1)
+		go func(workerID int) {
+			for work := range pool.workQueue {
+				results := doVerifyRange(work.records, nil, work.start, work.end)
+				pool.completed <- verifyResult{results}
+			}
+			atomic.AddInt32(&pool.activeWorkers, -1)
+		}(i)
+	}
+}
+
+func (pool *verifyWorkerPool) submit(work verifyWork) verifyResult {
+	pool.mu.Lock()
+	if pool.shutdownFlag {
+		pool.mu.Unlock()
+		// Fallback to sequential if pool shutdown
+		return verifyResult{doVerifyRange(work.records, nil, work.start, work.end)}
+	}
+	pool.mu.Unlock()
+	
+	pool.workQueue <- work
+	result := <-pool.completed
+	return result
+}
+
+func (pool *verifyWorkerPool) shutdown() {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+	if !pool.shutdownFlag {
+		pool.shutdownFlag = true
+		close(pool.workQueue)
+		// Wait for all workers to finish
+		for atomic.LoadInt32(&pool.activeWorkers) > 0 {
+			// Spin wait
+		}
+		close(pool.completed)
+	}
+}
 
 // parallel_verify.go is the performance breakthrough for offline verification.
 //
@@ -50,10 +125,7 @@ type recordVerification struct {
 	rekorOK    bool   // Rekor inclusion proof verified offline
 }
 
-// verifyRecordsParallel runs Phase 1: it fans the per-record work out over
-// `workers` goroutines, each owning a disjoint, contiguous index range. verifyFn
-// performs the (key-resolution +) signature check for one record and returns
-// (ok, errMessage). It must be safe to call concurrently.
+// VerifyRecordsParallel uses the persistent worker pool instead of spawning goroutines per call.
 func verifyRecordsParallel(records []*Evidence, workers int, verifyFn func(*Evidence) (bool, string)) []recordVerification {
 	out := make([]recordVerification, len(records))
 	if len(records) == 0 {
@@ -65,42 +137,59 @@ func verifyRecordsParallel(records []*Evidence, workers int, verifyFn func(*Evid
 	if workers > len(records) {
 		workers = len(records)
 	}
-
-	var wg sync.WaitGroup
+	
+	// Use persistent worker pool to avoid goroutine spawn overhead
 	batchSize := (len(records) + workers - 1) / workers
+	resultsSlice := make([][]recordVerification, workers)
+	
 	for w := 0; w < workers; w++ {
 		start := w * batchSize
 		if start >= len(records) {
 			break
 		}
-		end := start + batchSize
-		if end > len(records) {
-			end = len(records)
+		end := min((w+1)*batchSize, len(records))
+		
+		work := verifyWork{
+			records: records,
+			pubKey:  nil,
+			start:   start,
+			end:     end,
 		}
-		wg.Add(1)
-		go func(lo, hi int) {
-			defer wg.Done()
-			for i := lo; i < hi; i++ {
-				e := records[i]
-				rv := &out[i]
-				recomputed, err := e.ComputeHash()
-				if err != nil {
-					rv.hashErr = err
-					continue
-				}
-				rv.recomputed = recomputed
-				rv.hashOK = recomputed == e.Hash
-				rv.sigOK, rv.sigErr = verifyFn(e)
-				if e.LogEntry != nil && e.LogEntry.Backend == "rekor" {
-					rv.anchorReal = true
-					if e.LogEntry.Proof != nil && VerifyRekorInclusion(e.LogEntry) == nil {
-						rv.rekorOK = true
-					}
-				}
-			}
-		}(start, end)
+		result := parallelVerifyPool.submit(work)
+		resultsSlice[w] = result.results
 	}
-	wg.Wait()
+	
+	// Concatenate results
+	idx := 0
+	for _, slice := range resultsSlice {
+		copy(out[idx:], slice)
+		idx += len(slice)
+	}
+	
+	return out
+}
+
+// doVerifyRange verifies a contiguous range of records
+func doVerifyRange(records []*Evidence, verifyFn func(*Evidence) (bool, string), lo, hi int) []recordVerification {
+	out := make([]recordVerification, hi-lo)
+	for i := lo; i < hi; i++ {
+		e := records[i]
+		rv := &out[i-lo]
+		recomputed, err := e.ComputeHash()
+		if err != nil {
+			rv.hashErr = err
+			continue
+		}
+		rv.recomputed = recomputed
+		rv.hashOK = recomputed == e.Hash
+		rv.sigOK, rv.sigErr = verifyFn(e)
+		if e.LogEntry != nil && e.LogEntry.Backend == "rekor" {
+			rv.anchorReal = true
+			if e.LogEntry.Proof != nil && VerifyRekorInclusion(e.LogEntry) == nil {
+				rv.rekorOK = true
+			}
+		}
+	}
 	return out
 }
 

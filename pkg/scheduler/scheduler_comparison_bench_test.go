@@ -388,7 +388,8 @@ func (s *DRLScheduler) TrainDRL(jobs []SimulatedJob) {
 				State: st, Action: action, Reward: reward, NextState: nextSt,
 				Done: false, Timestamp: time.Now(),
 			})
-			_ = s.opt.Train(ctx)
+				// Train with multi-objective reward (Defect #5 fix)
+				_ = s.opt.Train(ctx, reward)
 		}
 	}
 	s.trained = true

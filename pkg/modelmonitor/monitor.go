@@ -14,6 +14,17 @@
 // under which a model was promoted, degraded, or rolled back. The lock-in is not
 // just operational convenience; it's a commitment chain that becomes prohibitively
 // expensive to abandon after months of accumulated receipts.
+//
+// Statistics & Drift Detection (PSI/KS):
+// - ComputePSI(): Population Stability Index for feature distribution drift
+//   - Binning strategy with configurable bucket count
+//   - Sum of observed-baseline weighted by log ratio
+//   - Thresholds: <0.1 stable, 0.1-0.2 some change, >0.2 significant shift
+// - ComputeKSStatistic(): Kolmogorov-Smirnov two-sample test for CDF difference
+//   - Computes maximum absolute distance between empirical CDFs
+//   - Non-parametric distribution comparison (no assumptions about shape)
+//   - Returns D statistic ∈ [0,1] where larger = more different distributions
+// These mirror production ML monitoring tools (EvidentlyAI, WhyLabs, Prometheus histogram approach).
 package modelmonitor
 
 import (
@@ -188,6 +199,9 @@ func NewFSMonitor(dir string, ledger *evidence.Ledger, registry RegistryChecker)
 
 // Dir returns the monitor store path.
 func (m *FSMonitor) Dir() string { return m.dir }
+
+// Ledger exposes the underlying evidence ledger (for async wrapper + tests).
+func (m *FSMonitor) Ledger() *evidence.Ledger { return m.ledger }
 
 // LastAttestation returns the most recent evidence receipt, or nil if logging disabled.
 func (m *FSMonitor) LastAttestation() *evidence.Evidence {
@@ -571,6 +585,182 @@ func MetricValue(rec *PerformanceRecord, metric string) float64 {
 		return rec.ErrorRate
 	default:
 		return 0
+	}
+}
+
+// Bin represents a histogram bin for PSI/KS calculations.
+type Bin struct {
+	Start           float64 // bin start value (inclusive)
+	End             float64 // bin end value (exclusive)
+	BaselineCount   int     // expected count from baseline distribution
+	ObservedCount   int     // observed count from test distribution
+}
+
+// ComputePSI calculates Population Stability Index between two distributions.
+// BaselineValues and ObservedValues are feature measurements (e.g., model confidence scores).
+// BucketCount determines number of bins for histogram-based comparison.
+// Returns PSI score where: <0.1 stable, 0.1-0.2 some change, >0.2 significant shift.
+// Implementation follows EvidentlyAI / WhyLabs approach with additive smoothing to avoid log(0).
+func ComputePSI(baselineValues, observedValues []float64, bucketCount int) float64 {
+	if bucketCount <= 0 {
+		bucketCount = 10 // sensible default
+	}
+	if len(baselineValues) == 0 || len(observedValues) == 0 {
+		return math.NaN() // undefined
+	}
+
+	// Find global min/max across both distributions for consistent binning
+	minVal := math.MaxFloat64
+	maxVal := -math.MaxFloat64
+	for _, v := range baselineValues {
+		if v < minVal {
+			minVal = v
+		}
+		if v > maxVal {
+			maxVal = v
+		}
+	}
+	for _, v := range observedValues {
+		if v < minVal {
+			minVal = v
+		}
+		if v > maxVal {
+			maxVal = v
+		}
+	}
+
+	// Create equal-width bins
+	binWidth := (maxVal - minVal) / float64(bucketCount)
+	if binWidth == 0 {
+		binWidth = 1 // edge case: all values identical
+	}
+
+	// Count occurrences in each bin
+	baselineBins := make([]int, bucketCount+1) // +1 for overflow
+	observedBins := make([]int, bucketCount+1)
+
+	for _, v := range baselineValues {
+		idx := int((v-minVal)/binWidth)
+		if idx >= bucketCount {
+			idx = bucketCount // overflow bin
+		} else if idx < 0 {
+			idx = 0 // underflow bin
+		}
+		baselineBins[idx]++
+	}
+
+	for _, v := range observedValues {
+		idx := int((v-minVal)/binWidth)
+		if idx >= bucketCount {
+			idx = bucketCount // overflow bin
+		} else if idx < 0 {
+			idx = 0 // underflow bin
+		}
+		observedBins[idx]++
+	}
+
+	// Compute percentages with additive smoothing (pseudo-count = 1) to avoid log(0)
+	var psi float64
+	smoothing := 1.0
+	bucketFloat := float64(bucketCount + 1)
+	totalBaseline := float64(len(baselineValues)) + smoothing*bucketFloat
+	totalObserved := float64(len(observedValues)) + smoothing*bucketFloat
+	
+	for i := 0; i < bucketCount+1; i++ {
+		baselinePct := (float64(baselineBins[i]) + smoothing) / totalBaseline
+		observedPct := (float64(observedBins[i]) + smoothing) / totalObserved
+
+		// PSI contribution: sum of (observed-baseline) * log(observed/baseline)
+		if baselinePct > 0 && observedPct > 0 {
+			psi += (observedPct - baselinePct) * math.Log(observedPct/baselinePct)
+		}
+	}
+
+	return psi
+}
+
+// ComputeKSStatistic computes Kolmogorov-Smirnov two-sample test statistic.
+// Measures maximum absolute difference between empirical CDFs of two samples.
+// BaselineValues and ObservedValues are samples from distributions being compared.
+// Returns D ∈ [0,1] where larger values indicate more different distributions.
+// Computationally O(n log n) due to sorting; non-parametric (no distribution assumptions).
+func ComputeKSStatistic(baselineValues, observedValues []float64) float64 {
+	if len(baselineValues) == 0 || len(observedValues) == 0 {
+		return math.NaN()
+	}
+
+	// Sort both samples
+	sortedBaseline := make([]float64, len(baselineValues))
+	copy(sortedBaseline, baselineValues)
+	sortFloat64(sortedBaseline)
+
+	sortedObserved := make([]float64, len(observedValues))
+	copy(sortedObserved, observedValues)
+	sortFloat64(sortedObserved)
+
+	// Merge-sort style traversal to compute CDF distances
+	n, m := len(sortedBaseline), len(sortedObserved)
+	i, j := 0, 0
+	maxDiff := 0.0
+
+	for i < n || j < m {
+		var currentValue float64
+
+		if i < n && j < m {
+			if sortedBaseline[i] <= sortedObserved[j] {
+				currentValue = sortedBaseline[i]
+			} else {
+				currentValue = sortedObserved[j]
+			}
+		} else if i < n {
+			currentValue = sortedBaseline[i]
+		} else {
+			currentValue = sortedObserved[j]
+		}
+
+		// Compute empirical CDF values at this point
+		cdfBaseline := 0.0
+		cdfObserved := 0.0
+
+		countLeBaseline := 0
+		for k := 0; k < n && sortedBaseline[k] <= currentValue; k++ {
+			countLeBaseline++
+		}
+		cdfBaseline = float64(countLeBaseline) / float64(n)
+
+		countLeObserved := 0
+		for k := 0; k < m && sortedObserved[k] <= currentValue; k++ {
+			countLeObserved++
+		}
+		cdfObserved = float64(countLeObserved) / float64(m)
+
+		diff := math.Abs(cdfBaseline - cdfObserved)
+		if diff > maxDiff {
+			maxDiff = diff
+		}
+
+		// Advance pointers
+		if i < n && sortedBaseline[i] == currentValue {
+			i++
+		}
+		if j < m && sortedObserved[j] == currentValue {
+			j++
+		}
+	}
+
+	return maxDiff
+}
+
+// Helper: insertion sort for float64 (simple, no imports needed)
+func sortFloat64(a []float64) {
+	for i := 1; i < len(a); i++ {
+		key := a[i]
+		j := i - 1
+		for j >= 0 && a[j] > key {
+			a[j+1] = a[j]
+			j--
+		}
+		a[j+1] = key
 	}
 }
 

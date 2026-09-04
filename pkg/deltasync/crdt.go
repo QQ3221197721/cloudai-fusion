@@ -196,8 +196,8 @@ func (m *LWWMap) Equal(other *LWWMap) bool { return m.Digest() == other.Digest()
 // ships its ENTIRE state map. RetransBytes reports the serialized full-state size
 // (versus deltasync which only transmits changed registers).
 func NaiveCRDTFullState(m *LWWMap) int64 {
-	// Each register serialized as: idx(8) + version(8) + replica(4) + flag(1) + cid(32) = 53 bytes.
-	const bytesPerRegister = 8 + 8 + 4 + 1 + 32
+	const bytesPerRegister = 8 + 8 + 4 + 1 + 32 // idx(8) + version(8) + replica(4) + flag(1) + cid(32)
 	return int64(len(m.data) * bytesPerRegister)
 }
+
 

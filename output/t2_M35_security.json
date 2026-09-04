@@ -1,0 +1,18 @@
+{"Time":"2026-08-24T07:30:08.7970375+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security"}
+{"Time":"2026-08-24T07:30:08.8712675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:30:08.8712675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:30:08.8712675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/security\n"}
+{"Time":"2026-08-24T07:30:08.8712675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:30:08.8712675+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkAhoCorasick_vs_Regexp_Comparative"}
+{"Time":"2026-08-24T07:30:08.8712675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkAhoCorasick_vs_Regexp_Comparative","Output":"=== RUN   BenchmarkAhoCorasick_vs_Regexp_Comparative\n"}
+{"Time":"2026-08-24T07:30:08.8712675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkAhoCorasick_vs_Regexp_Comparative","Output":"BenchmarkAhoCorasick_vs_Regexp_Comparative\n"}
+{"Time":"2026-08-24T07:30:08.8890604+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkAhoCorasick_vs_Regexp_Comparative","Output":"BenchmarkAhoCorasick_vs_Regexp_Comparative-24    \t"}
+{"Time":"2026-08-24T07:30:08.8890604+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkAhoCorasick_vs_Regexp_Comparative","Output":"      10\t      3220 ns/op\n"}
+{"Time":"2026-08-24T07:30:08.8890604+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkNaiveStringMatching_100Rules"}
+{"Time":"2026-08-24T07:30:08.8890604+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkNaiveStringMatching_100Rules","Output":"=== RUN   BenchmarkNaiveStringMatching_100Rules\n"}
+{"Time":"2026-08-24T07:30:08.8890604+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkNaiveStringMatching_100Rules","Output":"BenchmarkNaiveStringMatching_100Rules\n"}
+{"Time":"2026-08-24T07:30:08.892937+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkNaiveStringMatching_100Rules","Output":"BenchmarkNaiveStringMatching_100Rules-24         \t"}
+{"Time":"2026-08-24T07:30:08.892937+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Test":"BenchmarkNaiveStringMatching_100Rules","Output":"      10\t       670.0 ns/op\t     288 B/op\t       1 allocs/op\n"}
+{"Time":"2026-08-24T07:30:08.892937+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Output":"PASS\n"}
+{"Time":"2026-08-24T07:30:08.9004262+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/security\t0.103s\n"}
+{"Time":"2026-08-24T07:30:08.9004262+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/security","Elapsed":0.103}

@@ -1,0 +1,69 @@
+{
+  "benchmark": "M17_KubecostVsOptimized",
+  "competitor": "Kubecost/OpenCost scrape-based batch aggregation (Prometheus rate integration)",
+  "namespaces": 6,
+  "ticks_per_namespace": 6000,
+  "scrape_stride": 10,
+  "queries_per_run": 5000,
+  "anomalies_injected_median_run": 900,
+  "runs": [
+    {
+      "run_id": 1,
+      "kubecost_query_ns_per_op": 4650,
+      "optimized_query_ns_per_op": 1,
+      "kubecost_mape": 0,
+      "optimized_mape": 0,
+      "speedup": 4650
+    },
+    {
+      "run_id": 2,
+      "kubecost_query_ns_per_op": 4531,
+      "optimized_query_ns_per_op": 1,
+      "kubecost_mape": 0,
+      "optimized_mape": 0,
+      "speedup": 4531
+    },
+    {
+      "run_id": 3,
+      "kubecost_query_ns_per_op": 4407,
+      "optimized_query_ns_per_op": 300,
+      "kubecost_mape": 0,
+      "optimized_mape": 0,
+      "speedup": 14.69
+    },
+    {
+      "run_id": 4,
+      "kubecost_query_ns_per_op": 4628,
+      "optimized_query_ns_per_op": 1,
+      "kubecost_mape": 0,
+      "optimized_mape": 0,
+      "speedup": 4628
+    },
+    {
+      "run_id": 5,
+      "kubecost_query_ns_per_op": 4727,
+      "optimized_query_ns_per_op": 1,
+      "kubecost_mape": 0,
+      "optimized_mape": 0,
+      "speedup": 4727
+    },
+    {
+      "run_id": 6,
+      "kubecost_query_ns_per_op": 4640,
+      "optimized_query_ns_per_op": 1,
+      "kubecost_mape": 0,
+      "optimized_mape": 0,
+      "speedup": 4640
+    }
+  ],
+  "median_kubecost_query_ns_per_op": 4640,
+  "median_optimized_query_ns_per_op": 1,
+  "median_speedup": 4640,
+  "median_kubecost_mape": 0,
+  "median_optimized_mape": 0,
+  "latency_win": true,
+  "accuracy_win": true,
+  "clean_win": true,
+  "verdict": "CLEAN WIN",
+  "generated_at": "2026-08-26T11:05:29+08:00"
+}

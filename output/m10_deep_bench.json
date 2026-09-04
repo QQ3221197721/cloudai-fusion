@@ -1,0 +1,6 @@
+﻿{
+benchmark_results:[{distribution:uniform,algorithm:DASP,accept_rate:[34,36,46,46,52,52],median:46,latency_ns:[25306,32170,32454,34609,34653,39821],median_latency_ns:33556},{distribution:uniform,algorithm:HAMi-Proxy,accept_rate:[46,50,52,54,54,60],median:53,latency_ns:[31465,32170,32615,34653,35562,39474],median_latency_ns:33614}],verdict:{winner:HAMi-Proxy,margin:-7
+pts
+median
+accept
+rate,classification:no_universal_clean_win}};

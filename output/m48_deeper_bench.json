@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-08-26T15:35:02+08:00",
+  "go_version": "go1.26.5",
+  "cpu_count": 24,
+  "benchmarks": [
+    {
+      "name": "cascade-52",
+      "alert_count": 49,
+      "baseline_alertmanager": {
+        "method": "AlertmanagerLabelBucketing",
+        "median_latency_ns": 101551,
+        "f1_score": 0,
+        "precision": 0,
+        "recall": 0
+      },
+      "monolithic_single_linkage": {
+        "method": "SingleLinkageJaccard",
+        "median_latency_ns": 3092860,
+        "f1_score": 0,
+        "precision": 0,
+        "recall": 0
+      },
+      "hybrid_async": {
+        "method": "HybridAsync",
+        "median_latency_ns": 121040,
+        "f1_score": 0,
+        "precision": 0,
+        "recall": 0
+      }
+    },
+    {
+      "name": "storm-208",
+      "alert_count": 200,
+      "baseline_alertmanager": {
+        "method": "AlertmanagerLabelBucketing",
+        "median_latency_ns": 315953,
+        "f1_score": 0,
+        "precision": 0,
+        "recall": 0
+      },
+      "monolithic_single_linkage": {
+        "method": "SingleLinkageJaccard",
+        "median_latency_ns": 188125040,
+        "f1_score": 0,
+        "precision": 0,
+        "recall": 0
+      },
+      "hybrid_async": {
+        "method": "HybridAsync",
+        "median_latency_ns": 316540,
+        "f1_score": 0,
+        "precision": 0,
+        "recall": 0
+      }
+    }
+  ],
+  "recommendation": "SingleLinkageJaccard recommended for maximum accuracy (slower)"
+}

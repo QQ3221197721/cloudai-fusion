@@ -1,0 +1,12 @@
+﻿time="2026-08-25T11:38:02+08:00" level=warning msg="Failed to create K8s client from kubeconfig, using probe mode" error="no server found in kubeconfig"
+time="2026-08-25T11:38:02+08:00" level=warning msg="Failed to create K8s client from kubeconfig, using probe mode" error="no server found in kubeconfig"
+time="2026-08-25T11:38:02+08:00" level=warning msg="Failed to create K8s client from kubeconfig, using probe mode" error="no server found in kubeconfig"
+time="2026-08-25T11:38:02+08:00" level=warning msg="Failed to create K8s client from kubeconfig, using probe mode" error="no server found in kubeconfig"
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/cluster
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkT2_Consensus_CommitLatency_RawHashi-24    	  206956	      5811 ns/op	    172214 entries/sec
+BenchmarkT2_Consensus_CommitLatency_RealRaft-24    	   42502	     29542 ns/op	     33856 entries/sec
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cluster	5.774s

@@ -99,6 +99,9 @@ func init() {
 	// Multi-Cloud Unified Interface (Module 2): provider-list/cluster-list/ping/plan/estimate-cost/operations
 	rootCmd.AddCommand(newCloudCmd())
 	
+	// Tenant Migration Tool: migrate-tenants to add tenant_id to evidence records
+	rootCmd.AddCommand(newMigrateTenantsCmd())
+	
 	// Environment self-check with actionable fixes (Task 93: T1 developer experience)
 	rootCmd.AddCommand(newDoctorCmd())
 	

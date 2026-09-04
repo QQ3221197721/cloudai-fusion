@@ -1,0 +1,10 @@
+﻿time="2026-08-25T06:09:48+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:09:48+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:09:48+08:00" level=info msg="eBPF network policy created" policy=test-policy
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/mesh
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkCloudAI_Lookup_10kEndpoints-24    	305833662	         7.696 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/mesh	6.329s

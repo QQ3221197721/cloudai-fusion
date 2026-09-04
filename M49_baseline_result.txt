@@ -1,0 +1,57 @@
+﻿
+BenchmarkM49_HeadToHead-24    	   12958	    191976 ns/op	  140497 B/op	    2127 allocs/op
+--- BENCH: BenchmarkM49_HeadToHead-24
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+BenchmarkM49_HeadToHead-24    	   10000	    202360 ns/op	  140494 B/op	    2127 allocs/op
+--- BENCH: BenchmarkM49_HeadToHead-24
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+BenchmarkM49_HeadToHead-24    	   12340	    194004 ns/op	  140497 B/op	    2127 allocs/op
+--- BENCH: BenchmarkM49_HeadToHead-24
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+BenchmarkM49_HeadToHead-24    	   10000	    202550 ns/op	  140489 B/op	    2127 allocs/op
+--- BENCH: BenchmarkM49_HeadToHead-24
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+BenchmarkM49_HeadToHead-24    	   10000	    236243 ns/op	  140468 B/op	    2127 allocs/op
+--- BENCH: BenchmarkM49_HeadToHead-24
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+BenchmarkM49_HeadToHead-24    	   10000	    200133 ns/op	  140486 B/op	    2127 allocs/op
+--- BENCH: BenchmarkM49_HeadToHead-24
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:277: NaiveReconcileLoop median: 0s  (+Inf events/sec)
+    M49_self_heal_controller_bench_test.go:288: VERDICT: TIE on latency; capability boundary differs
+    M49_self_heal_controller_bench_test.go:276: SelfHealingEngine median: 0s  (+Inf events/sec)
+
+

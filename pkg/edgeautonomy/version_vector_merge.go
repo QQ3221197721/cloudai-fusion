@@ -105,25 +105,25 @@ func (vv *VersionVector) Increment(nodeID string) int {
 	return current
 }
 
-// flushLazyUpdates processes all pending lazy updates in priority order
+// flushLazyUpdates processes all pending lazy updates in priority order.
+// PRECONDITION: caller MUST already hold vv.mu.Lock() (all callers — Increment,
+// BatchIncrement, PriorityBatchIncrement — invoke this while holding the write
+// lock). Acquiring the lock here would self-deadlock.
 func (vv *VersionVector) flushLazyUpdates() {
 	if len(vv.lazyUpdates) == 0 {
 		return
 	}
-	
-	vv.mu.Lock()
-	defer vv.mu.Unlock()
-	
+
 	// Sort by priority (higher priority first) then timestamp
 	sortByPriorityAndTimestamp(vv.lazyUpdates)
-	
+
 	// Apply updates to main vector
 	for _, lu := range vv.lazyUpdates {
 		if lu.counter > vv.vectors[lu.nodeID] {
 			vv.vectors[lu.nodeID] = lu.counter
 		}
 	}
-	
+
 	// Clear lazy updates buffer
 	vv.lazyUpdates = vv.lazyUpdates[:0]
 }
@@ -190,9 +190,10 @@ func (vv *VersionVector) Merge(other *VersionVector) error {
 	// This preserves causality information WITHOUT creating artificial merges!
 	mergedCount := 0
 	
+	// Access other's vectors directly under its RLock (avoiding GetClock call)
 	for _, nodeID := range vv.nodeIDs {
 		currentCount := vv.vectors[nodeID]
-		otherCount := other.vectors[nodeID]
+		otherCount := other.vectors[nodeID] // Direct access, other.mu.RLock already held
 		
 		// Element-wise maximum - THIS IS THE KEY DIFFERENCE!
 		if otherCount > currentCount {
@@ -202,10 +203,12 @@ func (vv *VersionVector) Merge(other *VersionVector) error {
 	}
 	
 	vv.lastUpdateTime = time.Now()
-	vv.logger.WithFields(logrus.Fields{
-		"nodes_merged": mergedCount,
-		"total_nodes": len(vv.nodeIDs),
-	}).Debug("Version vector merge completed")
+	if vv.logger != nil {
+		vv.logger.WithFields(logrus.Fields{
+			"nodes_merged": mergedCount,
+			"total_nodes": len(vv.nodeIDs),
+		}).Debug("Version vector merge completed")
+	}
 	
 	return nil
 }

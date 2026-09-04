@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-08-26T08:14:40Z",
+  "pure_detection_ns_per_op": 309,
+  "pure_workqueue_reconcile_ns_per_op": 37161,
+  "hybrid_async_ns_per_op": 7,
+  "detection_to_workqueue_ratio": 0.008315169128925486,
+  "async_to_detection_ratio": 0.022653721682847898,
+  "speedup_workqueue_over_detection": 120.2621359223301,
+  "faults_detected_per_iteration": 40,
+  "samples_count": 6,
+  "workload_objects": 100,
+  "fault_rate_percentage": 40,
+  "verdict": "REAL SPEEDUP: Pure Detection is 120.26x faster than Workqueue Reconcile (lock-free category-bucket correlation payoff confirmed)",
+  "raw_bench_output": "goos: windows\ngoarch: amd64\npkg: github.com/cloudai-fusion/cloudai-fusion/pkg/aiops\ncpu: Intel(R) Core(TM) Ultra 9 275HX\nBenchmarkM49_PureDetection-24             \t     100\t       206.0 ns/op\t      64 B/op\t       1 allocs/op\nBenchmarkM49_PureDetection-24             \t     100\t       271.0 ns/op\t      64 B/op\t       1 allocs/op\nBenchmarkM49_PureDetection-24             \t     100\t       307.0 ns/op\t      64 B/op\t       1 allocs/op\nBenchmarkM49_PureDetection-24             \t     100\t       311.0 ns/op\t      64 B/op\t       1 allocs/op\nBenchmarkM49_PureDetection-24             \t     100\t       312.0 ns/op\t      64 B/op\t       1 allocs/op\nBenchmarkM49_PureDetection-24             \t     100\t       414.0 ns/op\t      64 B/op\t       1 allocs/op\nBenchmarkM49_PureWorkqueueReconcile-24    \t     100\t     39186 ns/op\t   10595 B/op\t     300 allocs/op\nBenchmarkM49_PureWorkqueueReconcile-24    \t     100\t     37183 ns/op\t   10597 B/op\t     300 allocs/op\nBenchmarkM49_PureWorkqueueReconcile-24    \t     100\t     36646 ns/op\t   10596 B/op\t     300 allocs/op\nBenchmarkM49_PureWorkqueueReconcile-24    \t     100\t     37140 ns/op\t   10596 B/op\t     300 allocs/op\nBenchmarkM49_PureWorkqueueReconcile-24    \t     100\t     36528 ns/op\t   10596 B/op\t     300 allocs/op\nBenchmarkM49_PureWorkqueueReconcile-24    \t     100\t     40058 ns/op\t   10599 B/op\t     300 allocs/op\nBenchmarkM49_HybridAsync-24               \t     100\t         7.000 ns/op\t       0 B/op\t       0 allocs/op\nBenchmarkM49_HybridAsync-24               \t     100\t         7.000 ns/op\t       0 B/op\t       0 allocs/op\nBenchmarkM49_HybridAsync-24               \t     100\t         6.000 ns/op\t       0 B/op\t       0 allocs/op\nBenchmarkM49_HybridAsync-24               \t     100\t         7.000 ns/op\t       0 B/op\t       0 allocs/op\nBenchmarkM49_HybridAsync-24               \t     100\t         7.000 ns/op\t       0 B/op\t       0 allocs/op\nBenchmarkM49_HybridAsync-24               \t     100\t         8.000 ns/op\t       0 B/op\t       0 allocs/op\nPASS\nok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/aiops\t0.206s\n"
+}

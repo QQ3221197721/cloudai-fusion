@@ -1,0 +1,71 @@
+{
+  "per_concurrency": {
+    "C1": {
+      "sharded_ns": 15892,
+      "wazero_ns": 21178,
+      "sharded_ops_sec": 62925,
+      "wazero_ops_sec": 47219,
+      "sharded_rej_pct": 0.0,
+      "wazero_rej_pct": 0.0,
+      "sharded_bop": 19216,
+      "wazero_bop": 44616,
+      "sharded_allocs": 28,
+      "wazero_allocs": 29,
+      "latency_speedup_x": 1.333,
+      "throughput_gain_x": 1.333,
+      "bop_reduction_x": 2.32,
+      "latency_winner": "SHARDED"
+    },
+    "C8": {
+      "sharded_ns": 5366,
+      "wazero_ns": 6607,
+      "sharded_ops_sec": 186359,
+      "wazero_ops_sec": 151355,
+      "sharded_rej_pct": 0.0,
+      "wazero_rej_pct": 0.0,
+      "sharded_bop": 19212,
+      "wazero_bop": 44605,
+      "sharded_allocs": 28,
+      "wazero_allocs": 29,
+      "latency_speedup_x": 1.231,
+      "throughput_gain_x": 1.231,
+      "bop_reduction_x": 2.32,
+      "latency_winner": "SHARDED"
+    },
+    "C64": {
+      "sharded_ns": 4876,
+      "wazero_ns": 8581,
+      "sharded_ops_sec": 205086,
+      "wazero_ops_sec": 116537,
+      "sharded_rej_pct": 0.0,
+      "wazero_rej_pct": 0.0,
+      "sharded_bop": 19207,
+      "wazero_bop": 44614,
+      "sharded_allocs": 28,
+      "wazero_allocs": 29,
+      "latency_speedup_x": 1.76,
+      "throughput_gain_x": 1.76,
+      "bop_reduction_x": 2.32,
+      "latency_winner": "SHARDED"
+    },
+    "C256": {
+      "sharded_ns": 4840,
+      "wazero_ns": 8074,
+      "sharded_ops_sec": 206612,
+      "wazero_ops_sec": 123854,
+      "sharded_rej_pct": 0.0,
+      "wazero_rej_pct": 0.0,
+      "sharded_bop": 19206,
+      "wazero_bop": 44608,
+      "sharded_allocs": 28,
+      "wazero_allocs": 29,
+      "latency_speedup_x": 1.668,
+      "throughput_gain_x": 1.668,
+      "bop_reduction_x": 2.32,
+      "latency_winner": "SHARDED"
+    }
+  },
+  "sharded_latency_wins": 4,
+  "levels": 4,
+  "verdict": "CLEAN WIN - Size-class isolation + lock-free allocator beats wazero's native Go-slice backing across ALL concurrency levels."
+}

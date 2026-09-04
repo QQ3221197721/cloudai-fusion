@@ -1,0 +1,18 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/plugin
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkCallOverhead_M4-24                	    8253	    366253 ns/op	  21842815 calls/s	        45.78 ns/call	  384003 B/op	    8000 allocs/op
+BenchmarkCallOverhead_M4-24                	    8798	    366607 ns/op	  21821716 calls/s	        45.83 ns/call	  384001 B/op	    8000 allocs/op
+BenchmarkCallOverhead_M4-24                	   10000	    338804 ns/op	  23612453 calls/s	        42.35 ns/call	  384001 B/op	    8000 allocs/op
+BenchmarkCallOverhead_M4-24                	   10000	    361110 ns/op	  22153924 calls/s	        45.14 ns/call	  384001 B/op	    8000 allocs/op
+BenchmarkCallOverhead_M4-24                	    9712	    351829 ns/op	  22738340 calls/s	        43.98 ns/call	  384001 B/op	    8000 allocs/op
+BenchmarkCallOverhead_M4-24                	   10000	    372903 ns/op	  21453313 calls/s	        46.61 ns/call	  384001 B/op	    8000 allocs/op
+BenchmarkCallOverhead_goPluginDirect-24    	       3	1618563933 ns/op	      4943 calls/s	    202320 ns/call	76186008 B/op	 1290164 allocs/op
+BenchmarkCallOverhead_goPluginDirect-24    	       3	1467907967 ns/op	      5450 calls/s	    183488 ns/call	75844576 B/op	 1290412 allocs/op
+BenchmarkCallOverhead_goPluginDirect-24    	       2	1993465750 ns/op	      4013 calls/s	    249183 ns/call	76427048 B/op	 1290176 allocs/op
+BenchmarkCallOverhead_goPluginDirect-24    	       2	1797865700 ns/op	      4450 calls/s	    224733 ns/call	75834032 B/op	 1290609 allocs/op
+BenchmarkCallOverhead_goPluginDirect-24    	       2	1629555550 ns/op	      4909 calls/s	    203694 ns/call	75865432 B/op	 1290216 allocs/op
+BenchmarkCallOverhead_goPluginDirect-24    	       2	1712586500 ns/op	      4671 calls/s	    214073 ns/call	75796616 B/op	 1290554 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin	59.790s

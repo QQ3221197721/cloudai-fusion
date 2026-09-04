@@ -9,6 +9,7 @@
 package pipeline
 
 import (
+	"container/heap"
 	"math"
 	"sort"
 )
@@ -84,6 +85,7 @@ func NewDAG(tasks []DAGTask, deps [][2]string) *DAG {
 }
 
 // TopologicalSort returns nodes in dependency order. Returns (order, valid=true).
+// Optimized using min-heap for lexicographic ordering of ready tasks.
 func (g *DAG) TopologicalSort() ([]string, bool) {
 	inDegree := make(map[string]int, len(g.nodes))
 	for id := range g.children {
@@ -95,34 +97,81 @@ func (g *DAG) TopologicalSort() ([]string, bool) {
 		}
 	}
 
-	queue := make([]string, 0)
+	// Min-heap of strings for lexicographic-order extraction
+	h := &lexStringHeap{}
 	for id, deg := range inDegree {
 		if deg == 0 {
-			queue = append(queue, id)
+			h.Push(id)
 		}
 	}
 
-	sort.Strings(queue)
-
 	count := 0
 	result := make([]string, 0, len(g.nodes))
-	for len(queue) > 0 {
-		id := queue[0]
-		queue = queue[1:]
+	for h.Len() > 0 {
+		pop := heap.Pop(h).(string)
+		id := pop
 		result = append(result, id)
 		count++
 
 		for _, ch := range g.children[id] {
 			inDegree[ch]--
 			if inDegree[ch] == 0 {
-				queue = append(queue, ch)
+				h.Push(ch)
 			}
 		}
-		sort.Strings(queue)
 	}
 
 	valid := count == len(g.tasks)
 	return result, valid
+}
+
+// lexStringHeap implements heap.Interface for strings with min ordering
+// (smallest string first → lexicographic output matching original behavior)
+type lexStringHeap struct {
+	items []string
+}
+
+var _ heap.Interface = (*lexStringHeap)(nil)
+
+func (h *lexStringHeap) Len() int           { return len(h.items) }
+func (h *lexStringHeap) Less(i, j int) bool { return h.items[i] < h.items[j] }
+func (h *lexStringHeap) Swap(i, j int)      { h.items[i], h.items[j] = h.items[j], h.items[i] }
+
+func (h *lexStringHeap) Push(x interface{}) {
+	h.items = append(h.items, x.(string))
+}
+
+func (h *lexStringHeap) Pop() interface{} {
+	n := len(h.items)
+	out := h.items[n-1]
+	h.items = h.items[:n-1]
+	return out
+}
+
+// CriticalPathLengths computes longest-path distance from any source node to each node
+// in a single O(V+E) pass after topological sort. Returns earliestFinish per node.
+func (g *DAG) CriticalPathLengths() map[string]float64 {
+	order, ok := g.TopologicalSort()
+	if !ok || len(order) == 0 {
+		return nil
+	}
+
+	earliestFinish := make(map[string]float64, len(g.tasks))
+	for _, id := range order {
+		task := g.tasks[id]
+		if task == nil {
+			continue
+		}
+		ep := 0.0
+		for _, p := range g.parents[id] {
+			pEf := earliestFinish[p]
+			if pEf > ep {
+				ep = pEf
+			}
+		}
+		earliestFinish[id] = ep + task.Duration
+	}
+	return earliestFinish
 }
 
 // ============================================================================
@@ -209,6 +258,93 @@ func (g *DAG) FindCriticalPath() ([]string, float64, map[string]float64, map[str
 }
 
 const epsilon = 1e-9
+
+// PlanWithCriticalPath computes both the full plan (topo order + critical path lengths)
+// in one O((V+E)logV) call. This is the production implementation that replaces
+// repeated separate calls to TopologicalSort() + FindCriticalPath().
+type DAGPlan struct {
+	Order           []string                  // topological order
+	EarliestFinish  map[string]float64        // longest path length to each node
+	MaxMakespan     float64                   // max over all EarliestFinish
+	CriticalNodes   []string                  // nodes with slack ~ 0
+	LateStart       map[string]float64        // late start times
+	HasValidTopology bool                     // false if graph has cycle
+}
+
+// PlanWithCriticalPath performs the unified planning step.
+func (g *DAG) PlanWithCriticalPath() DAGPlan {
+	order, ok := g.TopologicalSort()
+	if !ok || len(order) == 0 {
+		return DAGPlan{HasValidTopology: false}
+	}
+
+	earliestFinish := make(map[string]float64, len(g.tasks))
+	var maxEF float64
+	for _, id := range order {
+		task := g.tasks[id]
+		if task == nil {
+			continue
+		}
+		ep := 0.0
+		for _, p := range g.parents[id] {
+			pEf := earliestFinish[p]
+			if pEf > ep {
+				ep = pEf
+			}
+		}
+		earliestFinish[id] = ep + task.Duration
+		if ep+task.Duration > maxEF {
+			maxEF = ep + task.Duration
+		}
+	}
+
+	lateStart := make(map[string]float64, len(g.tasks))
+	reverseOrder := make([]string, len(order))
+	copy(reverseOrder, order)
+	for i, j := 0, len(reverseOrder)-1; i < j; i, j = i+1, j-1 {
+		reverseOrder[i], reverseOrder[j] = reverseOrder[j], reverseOrder[i]
+	}
+
+	for _, id := range reverseOrder {
+		task := g.tasks[id]
+		if task == nil {
+			continue
+		}
+		if len(g.children[id]) == 0 {
+			lateStart[id] = maxEF - task.Duration
+		} else {
+			ls := math.MaxFloat64
+			for _, ch := range g.children[id] {
+				lch := lateStart[ch]
+				val := lch - task.Duration
+				if val < ls {
+					ls = val
+				}
+			}
+			lateStart[id] = ls
+		}
+	}
+
+	criticalNodes := make([]string, 0)
+	for id := range g.tasks {
+		task := g.tasks[id]
+		if task == nil {
+			continue
+		}
+		ef := earliestFinish[id]
+		ls := lateStart[id]
+		slack := (ls + task.Duration) - ef
+		if slack > -epsilon && slack < epsilon {
+			criticalNodes = append(criticalNodes, id)
+		}
+	}
+	sort.Strings(criticalNodes)
+
+	return DAGPlan{
+		Order: order, EarliestFinish: earliestFinish, MaxMakespan: maxEF,
+		CriticalNodes: criticalNodes, LateStart: lateStart, HasValidTopology: true,
+	}
+}
 
 // ============================================================================
 // Pipeline Partitioning API

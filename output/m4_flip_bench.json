@@ -1,0 +1,24 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/plugin
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkScore_InProcess-24               	61650063	        41.07 ns/op	  24348816 ops/s	      48 B/op	       1 allocs/op
+BenchmarkScore_InProcess-24               	55625989	        40.07 ns/op	  24958914 ops/s	      48 B/op	       1 allocs/op
+BenchmarkScore_InProcess-24               	61274196	        40.13 ns/op	  24918121 ops/s	      48 B/op	       1 allocs/op
+BenchmarkScore_InProcess-24               	57392925	        38.86 ns/op	  25732421 ops/s	      48 B/op	       1 allocs/op
+BenchmarkScore_InProcess-24               	61550298	        40.63 ns/op	  24611290 ops/s	      48 B/op	       1 allocs/op
+BenchmarkScore_InProcess-24               	61289530	        38.49 ns/op	  25983484 ops/s	      48 B/op	       1 allocs/op
+BenchmarkScore_InProcessViaRegistry-24    	26590470	        94.41 ns/op	  10591854 ops/s	      64 B/op	       2 allocs/op
+BenchmarkScore_InProcessViaRegistry-24    	26554076	        94.99 ns/op	  10527781 ops/s	      64 B/op	       2 allocs/op
+BenchmarkScore_InProcessViaRegistry-24    	31556774	        79.39 ns/op	  12595731 ops/s	      64 B/op	       2 allocs/op
+BenchmarkScore_InProcessViaRegistry-24    	26711065	        86.24 ns/op	  11595183 ops/s	      64 B/op	       2 allocs/op
+BenchmarkScore_InProcessViaRegistry-24    	27719899	        91.63 ns/op	  10912999 ops/s	      64 B/op	       2 allocs/op
+BenchmarkScore_InProcessViaRegistry-24    	24218132	        85.83 ns/op	  11651615 ops/s	      64 B/op	       2 allocs/op
+BenchmarkScore_GRPCLoopback-24            	   14732	    184936 ns/op	      5407 ops/s	    9509 B/op	     161 allocs/op
+BenchmarkScore_GRPCLoopback-24            	   10000	    201860 ns/op	      4954 ops/s	    9591 B/op	     161 allocs/op
+BenchmarkScore_GRPCLoopback-24            	   14086	    185100 ns/op	      5402 ops/s	    9571 B/op	     161 allocs/op
+BenchmarkScore_GRPCLoopback-24            	   13688	    177657 ns/op	      5629 ops/s	    9502 B/op	     161 allocs/op
+BenchmarkScore_GRPCLoopback-24            	   13680	    176397 ns/op	      5669 ops/s	    9508 B/op	     161 allocs/op
+BenchmarkScore_GRPCLoopback-24            	   12662	    175798 ns/op	      5688 ops/s	    9443 B/op	     161 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin	52.659s

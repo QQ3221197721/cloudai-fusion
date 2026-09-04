@@ -134,7 +134,7 @@ func DefaultSLOs() []SLODefinition {
 }
 
 // ============================================================================
-// SLO Tracker — in-process sliding window SLO calculator
+// SLO Tracker 鈥?in-process sliding window SLO calculator
 // ============================================================================
 
 // SLOTracker tracks SLI data and computes SLO compliance in real-time.
@@ -155,6 +155,13 @@ type slidingWindow struct {
 	latencyFull     bool
 	windowSize      int
 	burnRateWindows map[string]*burnRateWindow // "1h", "6h", "24h"
+	
+	// Tree-based index for O(log n) exact quantile queries (added in T3 M46)
+	// When treeEnabled is true, quantileTree is maintained synchronously with the
+	// ring buffer and used for O(log n) percentile queries. quantileTree is nil
+	// when the window is empty, so a separate flag is required to select the path.
+	treeEnabled  bool
+	quantileTree *avlNode // AVL order-statistics tree; nil when empty
 }
 
 type burnRateWindow struct {
@@ -199,8 +206,9 @@ func NewSLOTracker(cfg SLOTrackerConfig) *SLOTracker {
 
 func newSlidingWindow(size int) *slidingWindow {
 	return &slidingWindow{
-		latencies:  make([]float64, size),
-		windowSize: size,
+		latencies:   make([]float64, size),
+		windowSize:  size,
+		treeEnabled: true, // T3 M46: enable O(log n) tree-based quantile queries
 		burnRateWindows: map[string]*burnRateWindow{
 			"1h":  {},
 			"6h":  {},
@@ -224,19 +232,33 @@ func (t *SLOTracker) RecordRequest(service string, latency time.Duration, isErro
 		w.errorRequests++
 	}
 
-	// Record latency in ring buffer
-	w.latencies[w.latencyIdx] = latency.Seconds()
-	w.latencyIdx = (w.latencyIdx + 1) % w.windowSize
-	if w.latencyIdx == 0 {
-		w.latencyFull = true
-	}
-
 	// Update burn rate windows
 	for _, bw := range w.burnRateWindows {
 		bw.total++
 		if isError {
 			bw.errors++
 		}
+	}
+
+	// Record latency in ring buffer AND maintain tree for O(log n) query (T3 M46)
+	idx := w.latencyIdx
+	oldLatency := w.latencies[idx]
+
+	// If window is full, delete old value from tree before overwriting
+	if w.latencyFull && w.treeEnabled {
+		w.quantileTree, _ = w.quantileTree.deleteValue(oldLatency)
+	}
+
+	// Update ring buffer
+	w.latencies[idx] = latency.Seconds()
+	w.latencyIdx = (idx + 1) % w.windowSize
+	if w.latencyIdx == 0 {
+		w.latencyFull = true
+	}
+
+	// Add new value to tree if enabled
+	if w.treeEnabled {
+		w.quantileTree, _ = w.quantileTree.insertValue(latency.Seconds())
 	}
 
 	// Update Prometheus SLI counters
@@ -318,8 +340,16 @@ func (t *SLOTracker) evaluate() {
 			latencyCount = w.latencyIdx
 		}
 		if latencyCount > 0 {
-			p99 := percentile(w.latencies[:latencyCount], 0.99)
-			p95 := percentile(w.latencies[:latencyCount], 0.95)
+			var p99, p95 float64
+			if w.treeEnabled {
+				// O(log n) tree-based exact query (T3 M46 architectural fix)
+				p99 = percentileWithTree(w.quantileTree, 0.99)
+				p95 = percentileWithTree(w.quantileTree, 0.95)
+			} else {
+				// Fallback: original O(n log n) sort-based path (unchanged semantics)
+				p99 = percentile(w.latencies[:latencyCount], 0.99)
+				p95 = percentile(w.latencies[:latencyCount], 0.95)
+			}
 
 			if def.LatencyP99Target > 0 {
 				met := 0.0
@@ -387,7 +417,7 @@ func (s SLOStatus) String() string {
 }
 
 // ============================================================================
-// Utility — percentile calculation (for in-process estimation)
+// Utility 鈥?percentile calculation (for in-process estimation)
 // ============================================================================
 
 func percentile(data []float64, p float64) float64 {
@@ -410,7 +440,7 @@ func percentile(data []float64, p float64) float64 {
 }
 
 func sortFloat64s(a []float64) {
-	// Simple insertion sort — fine for the ring buffer sizes we use
+	// Simple insertion sort 鈥?fine for the ring buffer sizes we use
 	for i := 1; i < len(a); i++ {
 		key := a[i]
 		j := i - 1

@@ -1,0 +1,18 @@
+{"Time":"2026-08-24T07:31:43.4502141+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops"}
+{"Time":"2026-08-24T07:31:43.4885678+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:31:43.4885678+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:31:43.4885678+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/gitops\n"}
+{"Time":"2026-08-24T07:31:43.4885678+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:31:43.4885678+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_1000"}
+{"Time":"2026-08-24T07:31:43.4885678+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_1000","Output":"=== RUN   BenchmarkBaseline_FlatGrouping_1000\n"}
+{"Time":"2026-08-24T07:31:43.4885678+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_1000","Output":"BenchmarkBaseline_FlatGrouping_1000\n"}
+{"Time":"2026-08-24T07:31:43.4939203+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_1000","Output":"BenchmarkBaseline_FlatGrouping_1000-24     \t"}
+{"Time":"2026-08-24T07:31:43.4939203+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_1000","Output":"      10\t    255090 ns/op\n"}
+{"Time":"2026-08-24T07:31:43.4939203+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_10000"}
+{"Time":"2026-08-24T07:31:43.4939203+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_10000","Output":"=== RUN   BenchmarkBaseline_FlatGrouping_10000\n"}
+{"Time":"2026-08-24T07:31:43.4939203+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_10000","Output":"BenchmarkBaseline_FlatGrouping_10000\n"}
+{"Time":"2026-08-24T07:31:43.5175569+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_10000","Output":"BenchmarkBaseline_FlatGrouping_10000-24    \t"}
+{"Time":"2026-08-24T07:31:43.5175569+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Test":"BenchmarkBaseline_FlatGrouping_10000","Output":"      10\t   1655390 ns/op\n"}
+{"Time":"2026-08-24T07:31:43.5175569+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Output":"PASS\n"}
+{"Time":"2026-08-24T07:31:43.5215455+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/gitops\t0.071s\n"}
+{"Time":"2026-08-24T07:31:43.5215455+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/gitops","Elapsed":0.071}

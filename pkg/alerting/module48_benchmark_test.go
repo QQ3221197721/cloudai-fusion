@@ -11,6 +11,9 @@ package alerting
 //
 // No new production behaviour is introduced here; these are measurement and
 // correctness harnesses over Paul's delivery.
+//
+// The head-to-head comparison against the real prometheus/alertmanager
+// grouping path lives in module48_alertmanager_compare_test.go.
 
 import (
 	"context"

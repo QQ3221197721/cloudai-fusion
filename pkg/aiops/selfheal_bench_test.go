@@ -95,7 +95,7 @@ func BenchmarkGateCheck(b *testing.B) {
 
 // BenchmarkGateCheck_WithFaults is a reference: full detection over triggering
 // metrics, including FaultEvent creation (fmt.Sprintf) and correlation. This is
-// NOT the <1µs gate target — it measures the complete fault-detection path.
+// NOT the <1µs gate target - it measures the complete fault-detection path.
 func BenchmarkGateCheck_WithFaults(b *testing.B) {
 	ctx := context.Background()
 
@@ -114,7 +114,7 @@ func BenchmarkGateCheck_WithFaults(b *testing.B) {
 // BenchmarkNonDestructivePath measures the non-destructive (dry-run) remediation
 // path. The playbook's rate-limit gates (MaxExecutions / Cooldown) are disabled so
 // EVERY iteration executes the full step loop rather than early-returning on the
-// rate-limit gate — this measures the real remediation work, not the gate.
+// rate-limit gate - this measures the real remediation work, not the gate.
 func BenchmarkNonDestructivePath(b *testing.B) {
 	cfg := DefaultSelfHealConfig()
 	cfg.EnableAutoRemediate = true

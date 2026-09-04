@@ -1,0 +1,13 @@
+{"Time":"2026-08-24T07:31:01.8187708+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync"}
+{"Time":"2026-08-24T07:31:01.8416587+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:31:01.8416587+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:31:01.8416587+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync\n"}
+{"Time":"2026-08-24T07:31:01.8416587+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:31:01.8416587+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkNaiveFixedBlock1MB"}
+{"Time":"2026-08-24T07:31:01.8416587+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkNaiveFixedBlock1MB","Output":"=== RUN   BenchmarkNaiveFixedBlock1MB\n"}
+{"Time":"2026-08-24T07:31:01.8421885+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkNaiveFixedBlock1MB","Output":"BenchmarkNaiveFixedBlock1MB\n"}
+{"Time":"2026-08-24T07:31:01.8486019+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkNaiveFixedBlock1MB","Output":"BenchmarkNaiveFixedBlock1MB-24    \t"}
+{"Time":"2026-08-24T07:31:01.8486019+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkNaiveFixedBlock1MB","Output":"      10\t    377080 ns/op\n"}
+{"Time":"2026-08-24T07:31:01.8486019+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"PASS\n"}
+{"Time":"2026-08-24T07:31:01.8506664+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/deltasync\t0.032s\n"}
+{"Time":"2026-08-24T07:31:01.8506664+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Elapsed":0.032}

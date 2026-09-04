@@ -1,0 +1,18 @@
+{"Time":"2026-08-24T07:32:36.5633652+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam"}
+{"Time":"2026-08-24T07:32:36.6021414+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:32:36.6026642+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:32:36.6026642+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/redteam\n"}
+{"Time":"2026-08-24T07:32:36.6026642+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:32:36.6026642+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_100Records"}
+{"Time":"2026-08-24T07:32:36.6026642+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_100Records","Output":"=== RUN   BenchmarkNaiveRecompute_Chain_100Records\n"}
+{"Time":"2026-08-24T07:32:36.6026642+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_100Records","Output":"BenchmarkNaiveRecompute_Chain_100Records\n"}
+{"Time":"2026-08-24T07:32:36.605315+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_100Records","Output":"BenchmarkNaiveRecompute_Chain_100Records-24     \t"}
+{"Time":"2026-08-24T07:32:36.605315+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_100Records","Output":"      10\t     44390 ns/op\t    8947 B/op\t     203 allocs/op\n"}
+{"Time":"2026-08-24T07:32:36.605315+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_1000Records"}
+{"Time":"2026-08-24T07:32:36.605315+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_1000Records","Output":"=== RUN   BenchmarkNaiveRecompute_Chain_1000Records\n"}
+{"Time":"2026-08-24T07:32:36.605315+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_1000Records","Output":"BenchmarkNaiveRecompute_Chain_1000Records\n"}
+{"Time":"2026-08-24T07:32:36.6128048+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_1000Records","Output":"BenchmarkNaiveRecompute_Chain_1000Records-24    \t"}
+{"Time":"2026-08-24T07:32:36.6128048+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Test":"BenchmarkNaiveRecompute_Chain_1000Records","Output":"      10\t    326380 ns/op\t   88145 B/op\t    2003 allocs/op\n"}
+{"Time":"2026-08-24T07:32:36.6128048+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Output":"PASS\n"}
+{"Time":"2026-08-24T07:32:36.6164117+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/redteam\t0.053s\n"}
+{"Time":"2026-08-24T07:32:36.6164117+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam","Elapsed":0.053}

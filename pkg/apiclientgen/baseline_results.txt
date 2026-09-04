@@ -1,0 +1,18 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/apiclientgen
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkM40Generation-24          	    3182	    389436 ns/op	  103337 B/op	    2464 allocs/op
+BenchmarkM40Generation-24          	    2919	    373856 ns/op	  103340 B/op	    2464 allocs/op
+BenchmarkM40Generation-24          	    3864	    376147 ns/op	  103272 B/op	    2464 allocs/op
+BenchmarkM40Generation-24          	    3574	    472945 ns/op	  103114 B/op	    2464 allocs/op
+BenchmarkM40Generation-24          	    3091	    437827 ns/op	  103213 B/op	    2464 allocs/op
+BenchmarkM40Generation-24          	    3044	    453001 ns/op	  103159 B/op	    2464 allocs/op
+BenchmarkOpenAPIGeneratorCLI-24    	      21	  54131486 ns/op	 4803108 B/op	   70957 allocs/op
+BenchmarkOpenAPIGeneratorCLI-24    	      20	  59119990 ns/op	 4792479 B/op	   70957 allocs/op
+BenchmarkOpenAPIGeneratorCLI-24    	      24	  53600400 ns/op	 4786677 B/op	   70954 allocs/op
+BenchmarkOpenAPIGeneratorCLI-24    	      24	  55923021 ns/op	 4791589 B/op	   70957 allocs/op
+BenchmarkOpenAPIGeneratorCLI-24    	      21	  52981419 ns/op	 4803373 B/op	   70961 allocs/op
+BenchmarkOpenAPIGeneratorCLI-24    	      24	  63324562 ns/op	 4789189 B/op	   70957 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/apiclientgen	20.472s

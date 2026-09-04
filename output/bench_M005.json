@@ -1,0 +1,17 @@
+{"Time":"2026-08-24T06:45:44.5972147+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"}
+{"Time":"2026-08-24T06:45:44.6423156+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Output":"goos: windows\n"}
+{"Time":"2026-08-24T06:45:44.6423156+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T06:45:44.6423156+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/evidence\n"}
+{"Time":"2026-08-24T06:45:44.6423156+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T06:45:44.6423156+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Test":"BenchmarkReceiptBuild"}
+{"Time":"2026-08-24T06:45:44.6423156+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Test":"BenchmarkReceiptBuild","Output":"=== RUN   BenchmarkReceiptBuild\n"}
+{"Time":"2026-08-24T06:45:44.6423156+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Test":"BenchmarkReceiptBuild","Output":"BenchmarkReceiptBuild\n"}
+{"Time":"2026-08-24T06:45:44.6443998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Test":"BenchmarkReceiptBuild","Output":"BenchmarkReceiptBuild-24    \t"}
+{"Time":"2026-08-24T06:45:44.6443998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Test":"BenchmarkReceiptBuild","Output":"      10\t     18550 ns/op\n"}
+{"Time":"2026-08-24T06:45:44.6443998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Output":"PASS\n"}
+{"Time":"2026-08-24T06:45:44.6479675+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/evidence\t0.051s\n"}
+{"Time":"2026-08-24T06:45:44.6479675+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence","Elapsed":0.051}
+{"Time":"2026-08-24T06:45:44.6526856+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk"}
+{"Time":"2026-08-24T06:45:44.6865171+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk","Output":"PASS\n"}
+{"Time":"2026-08-24T06:45:44.6890962+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk\t0.036s\n"}
+{"Time":"2026-08-24T06:45:44.6890962+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk","Elapsed":0.036}

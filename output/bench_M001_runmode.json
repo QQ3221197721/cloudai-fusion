@@ -1,0 +1,13 @@
+{"Time":"2026-08-24T06:42:41.8661037+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode"}
+{"Time":"2026-08-24T06:42:41.8885949+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Output":"goos: windows\n"}
+{"Time":"2026-08-24T06:42:41.8885949+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T06:42:41.8885949+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/runmode\n"}
+{"Time":"2026-08-24T06:42:41.8885949+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T06:42:41.8885949+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Test":"BenchmarkParse"}
+{"Time":"2026-08-24T06:42:41.8885949+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Test":"BenchmarkParse","Output":"=== RUN   BenchmarkParse\n"}
+{"Time":"2026-08-24T06:42:41.8885949+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Test":"BenchmarkParse","Output":"BenchmarkParse\n"}
+{"Time":"2026-08-24T06:42:41.8897162+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Test":"BenchmarkParse","Output":"BenchmarkParse-24    \t"}
+{"Time":"2026-08-24T06:42:41.8897162+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Test":"BenchmarkParse","Output":"      10\t        80.00 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-24T06:42:41.8897162+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Output":"PASS\n"}
+{"Time":"2026-08-24T06:42:41.8913522+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/runmode\t0.025s\n"}
+{"Time":"2026-08-24T06:42:41.8913522+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode","Elapsed":0.025}

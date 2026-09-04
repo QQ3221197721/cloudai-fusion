@@ -1,0 +1,21 @@
+﻿time="2026-08-25T06:10:07+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:07+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:10:07+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:07+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:07+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:10:07+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:07+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:10:07+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:10:07+08:00" level=info msg="eBPF network policy created" policy=test-policy
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/mesh
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkCloudAI_Lookup_Parallel_10kEndpoints-24    	1000000000	         0.4927 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCloudAI_Lookup_Parallel_10kEndpoints-24    	1000000000	         0.4671 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCloudAI_Lookup_Parallel_10kEndpoints-24    	1000000000	         0.4459 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGoMicro_Lookup_Parallel_10kEndpoints-24    	 9549696	       294.5 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGoMicro_Lookup_Parallel_10kEndpoints-24    	 7949328	       313.6 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGoMicro_Lookup_Parallel_10kEndpoints-24    	 7979032	       328.3 ns/op	     896 B/op	       1 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/mesh	13.802s

@@ -1,0 +1,13 @@
+{"Time":"2026-08-24T07:29:51.2530302+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing"}
+{"Time":"2026-08-24T07:29:51.2829567+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:29:51.2829567+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:29:51.2829567+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/tracing\n"}
+{"Time":"2026-08-24T07:29:51.2829567+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:29:51.2829567+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkOpenTelemetrySDKComparison_SpanStart"}
+{"Time":"2026-08-24T07:29:51.2829567+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkOpenTelemetrySDKComparison_SpanStart","Output":"=== RUN   BenchmarkOpenTelemetrySDKComparison_SpanStart\n"}
+{"Time":"2026-08-24T07:29:51.2829567+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkOpenTelemetrySDKComparison_SpanStart","Output":"BenchmarkOpenTelemetrySDKComparison_SpanStart\n"}
+{"Time":"2026-08-24T07:29:51.285663+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkOpenTelemetrySDKComparison_SpanStart","Output":"BenchmarkOpenTelemetrySDKComparison_SpanStart-24    \t"}
+{"Time":"2026-08-24T07:29:51.285663+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkOpenTelemetrySDKComparison_SpanStart","Output":"      10\t      6040 ns/op\t     472 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T07:29:51.285663+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"PASS\n"}
+{"Time":"2026-08-24T07:29:51.2898603+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/tracing\t0.037s\n"}
+{"Time":"2026-08-24T07:29:51.2898603+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Elapsed":0.037}

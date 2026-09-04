@@ -1,0 +1,18 @@
+{"Time":"2026-08-24T07:37:28.1847095+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth"}
+{"Time":"2026-08-24T07:37:28.2177484+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:37:28.2177484+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:37:28.2177484+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/auth\n"}
+{"Time":"2026-08-24T07:37:28.2177484+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:37:28.2177484+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCompiledRBAC_Allow"}
+{"Time":"2026-08-24T07:37:28.2177484+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCompiledRBAC_Allow","Output":"=== RUN   BenchmarkCompiledRBAC_Allow\n"}
+{"Time":"2026-08-24T07:37:28.2177484+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCompiledRBAC_Allow","Output":"BenchmarkCompiledRBAC_Allow\n"}
+{"Time":"2026-08-24T07:37:28.2194296+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCompiledRBAC_Allow","Output":"BenchmarkCompiledRBAC_Allow-24    \t"}
+{"Time":"2026-08-24T07:37:28.2194296+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCompiledRBAC_Allow","Output":"      10\t       140.0 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-24T07:37:28.2194296+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCasbin_Allow"}
+{"Time":"2026-08-24T07:37:28.2194296+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCasbin_Allow","Output":"=== RUN   BenchmarkCasbin_Allow\n"}
+{"Time":"2026-08-24T07:37:28.2194296+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCasbin_Allow","Output":"BenchmarkCasbin_Allow\n"}
+{"Time":"2026-08-24T07:37:28.2210468+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCasbin_Allow","Output":"BenchmarkCasbin_Allow-24          \t"}
+{"Time":"2026-08-24T07:37:28.2210468+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Test":"BenchmarkCasbin_Allow","Output":"      10\t      2870 ns/op\t    2106 B/op\t      30 allocs/op\n"}
+{"Time":"2026-08-24T07:37:28.2210468+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Output":"PASS\n"}
+{"Time":"2026-08-24T07:37:28.2246757+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/auth\t0.039s\n"}
+{"Time":"2026-08-24T07:37:28.2246757+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/auth","Elapsed":0.04}

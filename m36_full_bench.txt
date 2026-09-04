@@ -1,0 +1,36 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/compliance
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkCloudAIFusion_PerControl_Latency-24       	  830412	      2823 ns/op	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_PerControl_Latency-24       	 1000000	      2591 ns/op	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_PerControl_Latency-24       	  826750	      2645 ns/op	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_PerControl_Latency-24       	  963216	      2710 ns/op	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_PerControl_Latency-24       	  974998	      2458 ns/op	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_PerControl_Latency-24       	  900710	      2632 ns/op	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_Throughput_CtrlPerSec-24    	 1000000	      2622 ns/op	   1907360 controls-per-sec	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_Throughput_CtrlPerSec-24    	  866152	      2462 ns/op	   2030533 controls-per-sec	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_Throughput_CtrlPerSec-24    	  976844	      2627 ns/op	   1903249 controls-per-sec	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_Throughput_CtrlPerSec-24    	  955771	      2524 ns/op	   1980749 controls-per-sec	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_Throughput_CtrlPerSec-24    	  991743	      2452 ns/op	   2038996 controls-per-sec	    2707 B/op	      42 allocs/op
+BenchmarkCloudAIFusion_Throughput_CtrlPerSec-24    	 1000000	      2398 ns/op	   2084751 controls-per-sec	    2707 B/op	      42 allocs/op
+BenchmarkOPARego_PerControl_Latency-24             	    4732	    452773 ns/op	  300203 B/op	    6336 allocs/op
+BenchmarkOPARego_PerControl_Latency-24             	    5728	    439177 ns/op	  300198 B/op	    6336 allocs/op
+BenchmarkOPARego_PerControl_Latency-24             	    6246	    442001 ns/op	  300231 B/op	    6336 allocs/op
+BenchmarkOPARego_PerControl_Latency-24             	    5604	    433570 ns/op	  300168 B/op	    6336 allocs/op
+BenchmarkOPARego_PerControl_Latency-24             	    6141	    423100 ns/op	  300222 B/op	    6336 allocs/op
+BenchmarkOPARego_PerControl_Latency-24             	    5619	    446995 ns/op	  300186 B/op	    6336 allocs/op
+BenchmarkOPARego_Throughput_CtrlPerSec-24          	    5817	    446484 ns/op	     11196 controls-per-sec	  300125 B/op	    6336 allocs/op
+BenchmarkOPARego_Throughput_CtrlPerSec-24          	    5173	    431525 ns/op	     11587 controls-per-sec	  300199 B/op	    6336 allocs/op
+BenchmarkOPARego_Throughput_CtrlPerSec-24          	    6150	    454479 ns/op	     11001 controls-per-sec	  300275 B/op	    6336 allocs/op
+BenchmarkOPARego_Throughput_CtrlPerSec-24          	    4330	    483446 ns/op	     10343 controls-per-sec	  300240 B/op	    6336 allocs/op
+BenchmarkOPARego_Throughput_CtrlPerSec-24          	    4386	    470509 ns/op	     10627 controls-per-sec	  300298 B/op	    6336 allocs/op
+BenchmarkOPARego_Throughput_CtrlPerSec-24          	    5440	    461375 ns/op	     10834 controls-per-sec	  300261 B/op	    6336 allocs/op
+BenchmarkCorrectness_NativeVsOPA-24                	    5078	    501567 ns/op	  303037 B/op	    6379 allocs/op
+BenchmarkCorrectness_NativeVsOPA-24                	    4942	    499990 ns/op	  303019 B/op	    6379 allocs/op
+BenchmarkCorrectness_NativeVsOPA-24                	    5246	    496573 ns/op	  302995 B/op	    6379 allocs/op
+BenchmarkCorrectness_NativeVsOPA-24                	    4198	    521391 ns/op	  303141 B/op	    6379 allocs/op
+BenchmarkCorrectness_NativeVsOPA-24                	    5660	    427042 ns/op	  302839 B/op	    6378 allocs/op
+BenchmarkCorrectness_NativeVsOPA-24                	    5047	    437463 ns/op	  302899 B/op	    6378 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/compliance	75.707s

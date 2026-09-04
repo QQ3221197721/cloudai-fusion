@@ -48,6 +48,7 @@ type Ledger struct {
 	keyHistory []PublicKeyEntry
 	anchorer   Anchorer
 	cap        CapabilitySource
+	asyncWG    sync.WaitGroup  // tracks pending batch operations for Flush()
 }
 
 // LedgerConfig configures a Ledger. Store and Signer are required; Anchorer
@@ -173,6 +174,12 @@ func (l *Ledger) RotateSigner(ctx context.Context, newSigner Signer, reason stri
 
 // Anchorer exposes the configured anchorer (for capability reporting).
 func (l *Ledger) Anchorer() Anchorer { return l.anchorer }
+
+// Flush waits for all queued async batch operations to complete processing.
+// Call this before VerifyChain to ensure all records have been appended to store.
+func (l *Ledger) Flush() {
+	l.asyncWG.Wait()
+}
 
 // NopRecorder is a Recorder that records nothing. Used when evidence is disabled
 // so emitters can call Record unconditionally.

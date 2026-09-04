@@ -1,0 +1,24 @@
+﻿time="2026-08-25T06:11:16+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:11:16+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:11:16+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:11:16+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:11:16+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:11:16+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:11:16+08:00" level=info msg="eBPF network policy created" policy=test-policy
+time="2026-08-25T06:11:16+08:00" level=info msg="mTLS enabled across service mesh" mode=strict
+time="2026-08-25T06:11:16+08:00" level=info msg="eBPF network policy created" policy=test-policy
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/mesh
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkCloudAI_Snapshot_AllocAnalysis-24    	292477657	         7.915 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCloudAI_Snapshot_AllocAnalysis-24    	295438575	         8.051 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCloudAI_Snapshot_AllocAnalysis-24    	270502176	         8.276 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGoMicro_Lookup_AllocAnalysis-24      	 2090415	      1117 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGoMicro_Lookup_AllocAnalysis-24      	 2135678	      1107 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGoMicro_Lookup_AllocAnalysis-24      	 2059276	      1151 ns/op	     896 B/op	       1 allocs/op
+BenchmarkGRPC_Resolution_AllocAnalysis-24     	100000000	        20.89 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGRPC_Resolution_AllocAnalysis-24     	118084803	        20.41 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGRPC_Resolution_AllocAnalysis-24     	146279169	        20.75 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/mesh	34.871s

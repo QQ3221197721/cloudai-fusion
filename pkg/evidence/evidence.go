@@ -62,6 +62,7 @@ type Evidence struct {
 	Hash       string           `json:"hash"`      // sha256(content) — the signed leaf
 	Signature  string           `json:"signature"` // base64 Ed25519 over Hash bytes
 	KeyID      string           `json:"key_id"`    // identifies the signing public key
+	TenantID   string           `json:"tenant_id,omitempty"` // optional tenant identifier for multi-tenancy
 	LogEntry   *TransparencyRef `json:"log_entry,omitempty"`
 }
 

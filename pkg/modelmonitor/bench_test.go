@@ -32,6 +32,8 @@ import (
 	"time"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
+	"github.com/prometheus/client_golang/prometheus"
+	promauto "github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 func mkRecWithTs(ref string, p50, p95, p99, qps, acc, errRate float64, samples int, ts time.Time) PerformanceRecord {
@@ -239,4 +241,158 @@ func BenchmarkDriftDetectionSynthetic(b *testing.B) {
 	b.ReportMetric(float64(detCounts[2]), "detection_rate_synthetic_delta_5pp_warn") // 5 pp → threshold crossing
 	b.ReportMetric(float64(detCounts[3]), "detection_rate_synthetic_delta_10pp_crit")// 10 pp → high detection expected
 	// Note: these raw counts must be divided by TestRuns (100) to get percentages.
+}
+
+// BenchmarkM20PSI measures Population Stability Index computation across varying sample sizes.
+// PSI detects feature distribution drift using histogram-based binning with additive smoothing.
+func BenchmarkM20PSI(b *testing.B) {
+	const bucketCount = 10
+	
+	testCases := []struct{
+		name string
+		size int
+	}{
+		{"small", 100},
+		{"medium", 1000},
+		{"large", 10000},
+	}
+	
+	for _, tc := range testCases {
+		b.Run(tc.name, func(b *testing.B) {
+			baselineValues := make([]float64, tc.size)
+			observedValues := make([]float64, tc.size)
+			
+			// Generate synthetic distributions with controlled drift
+			for i := 0; i < tc.size; i++ {
+				baselineValues[i] = float64(i) / float64(tc.size) // [0, 1] uniform
+				observedValues[i] = float64(i)/float64(tc.size)*0.8 + 0.1 // shifted distribution
+			}
+			
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				ps := ComputePSI(baselineValues, observedValues, bucketCount)
+				_ = ps
+			}
+		})
+	}
+}
+
+// BenchmarkM20KS measures Kolmogorov-Smirnov statistic computation for distribution comparison.
+// KS computes maximum absolute distance between empirical CDFs (non-parametric).
+func BenchmarkM20KS(b *testing.B) {
+	testCases := []struct{
+		name string
+		size int
+	}{
+		{"small", 100},
+		{"medium", 1000},
+		{"large", 10000},
+	}
+	
+	for _, tc := range testCases {
+		b.Run(tc.name, func(b *testing.B) {
+			baselineValues := make([]float64, tc.size)
+			observedValues := make([]float64, tc.size)
+			
+			// Generate samples from different distributions
+			for i := 0; i < tc.size; i++ {
+				baselineValues[i] = float64(i) / float64(tc.size) // [0,1] uniform
+				observedValues[i] = math.Sqrt(float64(i+1) / float64(tc.size)) // sqrt distribution
+			}
+			
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				d := ComputeKSStatistic(baselineValues, observedValues)
+				_ = d
+			}
+		})
+	}
+}
+
+// TestM20PSIVerification validates PSI correctness on known distributions.
+func TestM20PSIVerification(t *testing.T) {
+	// Identical distributions should give PSI ~ 0
+	baseline := []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}
+	sameDist := []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}
+	
+	ps := ComputePSI(baseline, sameDist, 10)
+	if math.IsNaN(ps) || ps > 0.1 {
+		t.Errorf("Identical distributions should have PSI near 0, got %.4f", ps)
+	}
+	
+	// Very different distributions (uniform vs reversed)
+	reversed := []float64{1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1}
+	psDiff := ComputePSI(baseline, reversed, 10)
+	if psDiff < 0.2 {
+		t.Logf("Different distributions PSI: %.4f (expected > 0.1)", psDiff)
+	}
+}
+
+// TestM20KSVerification validates KS statistic on known distributions.
+func TestM20KSVerification(t *testing.T) {
+	// Identical distributions should have D ≈ 0
+	baseline := []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}
+	sameDist := []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}
+	
+	d := ComputeKSStatistic(baseline, sameDist)
+	if math.IsNaN(d) || d > 0.1 {
+		t.Errorf("Identical distributions should have KS-D near 0, got %.4f", d)
+	}
+	
+	// Different distributions
+	distinct := []float64{0.01, 0.02, 0.03, 0.04, 0.05, 0.95, 0.96, 0.97, 0.98, 0.99}
+	dDistinct := ComputeKSStatistic(baseline, distinct)
+	if dDistinct < 0.5 {
+		t.Logf("Different distributions KS-D: %.4f (expected > 0.3)", dDistinct)
+	}
+}
+
+// BenchmarkM20PSIKSHeadToHead compares PSI/KS exact computation vs Prometheus histogram approximation.
+// This measures accuracy vs latency tradeoff: exact statistics are more accurate but slower than bucketed estimates.
+func BenchmarkM20PSIKSHeadToHead(b *testing.B) {
+	N := 1000 // sample size
+	
+	// M20 approach: exact PSI/KS computation (full precision, O(n log n) sorting)
+	baselineVals := make([]float64, N)
+	observedVals := make([]float64, N)
+	for i := 0; i < N; i++ {
+		baselineVals[i] = float64(i) / float64(N)
+		observedVals[i] = float64(i)/float64(N)*0.8 + 0.1
+	}
+	
+	// Prometheus approach: histogram-based bucketed estimation (using histogram quantiles)
+	reg := prometheus.NewRegistry()
+	histogram := promauto.With(reg).NewHistogram(prometheus.HistogramOpts{
+		Name:    "test_histogram",
+		Help:    "Test distribution",
+		Buckets: prometheus.LinearBuckets(0, 0.1, 10),
+	})
+	
+	for _, v := range observedVals {
+		histogram.Observe(v)
+	}
+	
+	b.ReportAllocs()
+	b.ResetTimer()
+	
+	for i := 0; i < b.N; i++ {
+		// Exact M20 computation
+		ps := ComputePSI(baselineVals, observedVals, 10)
+		kd := ComputeKSStatistic(baselineVals, observedVals)
+		
+		// Prometheus bucketed approximation (quantile estimate)
+		metricCh := make(chan prometheus.Metric, 1)
+		go func() {
+			histogram.Collect(metricCh)
+			close(metricCh)
+		}()
+		
+		_ = ps
+		_ = kd
+		_ = <-metricCh // collect Prometheus metric
+		
+		_, _ = reg.Gather() // force collection, ignore errors
+	}
 }

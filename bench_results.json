@@ -1,0 +1,98 @@
+﻿{"Time":"2026-08-25T10:55:32.2384453+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel"}
+{"Time":"2026-08-25T10:55:32.3077867+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"goos: windows\n"}
+{"Time":"2026-08-25T10:55:32.3083114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"goarch: amd64\n"}
+{"Time":"2026-08-25T10:55:32.3083114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/intel\n"}
+{"Time":"2026-08-25T10:55:32.3083114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-25T10:55:32.3083114+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_Insert"}
+{"Time":"2026-08-25T10:55:32.3083114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_Insert","Output":"=== RUN   BenchmarkM28Hybrid_Insert\n"}
+{"Time":"2026-08-25T10:55:32.3083114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_Insert","Output":"BenchmarkM28Hybrid_Insert\n"}
+{"Time":"2026-08-25T10:55:36.3142232+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_Insert","Output":"BenchmarkM28Hybrid_Insert-24        \t"}
+{"Time":"2026-08-25T10:55:36.3142232+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_Insert","Output":"     146\t  16046216 ns/op\n"}
+{"Time":"2026-08-25T10:55:40.3575939+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_Insert-24        \t"}
+{"Time":"2026-08-25T10:55:40.3575939+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     152\t  16147946 ns/op\n"}
+{"Time":"2026-08-25T10:55:44.3459877+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_Insert-24        \t"}
+{"Time":"2026-08-25T10:55:44.3466608+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     152\t  15771414 ns/op\n"}
+{"Time":"2026-08-25T10:55:48.4460412+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_Insert-24        \t"}
+{"Time":"2026-08-25T10:55:48.4460412+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     141\t  17007655 ns/op\n"}
+{"Time":"2026-08-25T10:55:52.548777+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_Insert-24        \t"}
+{"Time":"2026-08-25T10:55:52.5496801+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     147\t  16762866 ns/op\n"}
+{"Time":"2026-08-25T10:55:56.6754599+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_Insert-24        \t"}
+{"Time":"2026-08-25T10:55:56.6760007+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     144\t  17023539 ns/op\n"}
+{"Time":"2026-08-25T10:55:56.6760007+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryKnown"}
+{"Time":"2026-08-25T10:55:56.6760007+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryKnown","Output":"=== RUN   BenchmarkM28Hybrid_QueryKnown\n"}
+{"Time":"2026-08-25T10:55:56.6760007+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryKnown","Output":"BenchmarkM28Hybrid_QueryKnown\n"}
+{"Time":"2026-08-25T10:55:59.6556185+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryKnown","Output":"BenchmarkM28Hybrid_QueryKnown-24    \t"}
+{"Time":"2026-08-25T10:55:59.6556185+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryKnown","Output":"    1054\t   2564539 ns/op\n"}
+{"Time":"2026-08-25T10:56:02.4488418+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryKnown-24    \t"}
+{"Time":"2026-08-25T10:56:02.4494535+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    1005\t   2487716 ns/op\n"}
+{"Time":"2026-08-25T10:56:05.0775127+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryKnown-24    \t"}
+{"Time":"2026-08-25T10:56:05.0775127+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     906\t   2548285 ns/op\n"}
+{"Time":"2026-08-25T10:56:07.7173739+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryKnown-24    \t"}
+{"Time":"2026-08-25T10:56:07.7173739+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     925\t   2513623 ns/op\n"}
+{"Time":"2026-08-25T10:56:10.370369+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryKnown-24    \t"}
+{"Time":"2026-08-25T10:56:10.370875+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     948\t   2478628 ns/op\n"}
+{"Time":"2026-08-25T10:56:12.9742832+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryKnown-24    \t"}
+{"Time":"2026-08-25T10:56:12.9742832+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     902\t   2533918 ns/op\n"}
+{"Time":"2026-08-25T10:56:12.9747412+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryNew"}
+{"Time":"2026-08-25T10:56:12.9747412+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryNew","Output":"=== RUN   BenchmarkM28Hybrid_QueryNew\n"}
+{"Time":"2026-08-25T10:56:12.9747412+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryNew","Output":"BenchmarkM28Hybrid_QueryNew\n"}
+{"Time":"2026-08-25T10:56:15.8339297+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryNew","Output":"BenchmarkM28Hybrid_QueryNew-24      \t"}
+{"Time":"2026-08-25T10:56:15.8349236+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkM28Hybrid_QueryNew","Output":"     916\t   2772165 ns/op\n"}
+{"Time":"2026-08-25T10:56:18.5510589+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryNew-24      \t"}
+{"Time":"2026-08-25T10:56:18.5510589+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     919\t   2611657 ns/op\n"}
+{"Time":"2026-08-25T10:56:21.3056813+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryNew-24      \t"}
+{"Time":"2026-08-25T10:56:21.3056813+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     906\t   2691816 ns/op\n"}
+{"Time":"2026-08-25T10:56:23.8147957+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryNew-24      \t"}
+{"Time":"2026-08-25T10:56:23.8147957+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     852\t   2544882 ns/op\n"}
+{"Time":"2026-08-25T10:56:26.547104+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryNew-24      \t"}
+{"Time":"2026-08-25T10:56:26.5477073+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     928\t   2602666 ns/op\n"}
+{"Time":"2026-08-25T10:56:29.3433732+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkM28Hybrid_QueryNew-24      \t"}
+{"Time":"2026-08-25T10:56:29.3433732+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     940\t   2643014 ns/op\n"}
+{"Time":"2026-08-25T10:56:29.3433732+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_Insert"}
+{"Time":"2026-08-25T10:56:29.3433732+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_Insert","Output":"=== RUN   BenchmarkBloomV3_Insert\n"}
+{"Time":"2026-08-25T10:56:29.3433732+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_Insert","Output":"BenchmarkBloomV3_Insert\n"}
+{"Time":"2026-08-25T10:56:32.1296104+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_Insert","Output":"BenchmarkBloomV3_Insert-24          \t"}
+{"Time":"2026-08-25T10:56:32.1296104+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_Insert","Output":"     565\t   4165399 ns/op\n"}
+{"Time":"2026-08-25T10:56:35.0025283+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_Insert-24          \t"}
+{"Time":"2026-08-25T10:56:35.0025283+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     601\t   4083027 ns/op\n"}
+{"Time":"2026-08-25T10:56:37.9827082+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_Insert-24          \t"}
+{"Time":"2026-08-25T10:56:37.9832457+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     601\t   4284214 ns/op\n"}
+{"Time":"2026-08-25T10:56:40.875652+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_Insert-24          \t"}
+{"Time":"2026-08-25T10:56:40.875652+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     584\t   4237110 ns/op\n"}
+{"Time":"2026-08-25T10:56:43.4458841+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_Insert-24          \t"}
+{"Time":"2026-08-25T10:56:43.4458841+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     517\t   4065065 ns/op\n"}
+{"Time":"2026-08-25T10:56:46.232652+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_Insert-24          \t"}
+{"Time":"2026-08-25T10:56:46.232652+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"     579\t   4083449 ns/op\n"}
+{"Time":"2026-08-25T10:56:46.232652+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryKnown"}
+{"Time":"2026-08-25T10:56:46.232652+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryKnown","Output":"=== RUN   BenchmarkBloomV3_QueryKnown\n"}
+{"Time":"2026-08-25T10:56:46.232652+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryKnown","Output":"BenchmarkBloomV3_QueryKnown\n"}
+{"Time":"2026-08-25T10:56:48.6555827+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryKnown","Output":"BenchmarkBloomV3_QueryKnown-24      \t"}
+{"Time":"2026-08-25T10:56:48.6555827+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryKnown","Output":"    5145\t    457836 ns/op\n"}
+{"Time":"2026-08-25T10:56:51.0735+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryKnown-24      \t"}
+{"Time":"2026-08-25T10:56:51.0735+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    5151\t    456553 ns/op\n"}
+{"Time":"2026-08-25T10:56:53.3095605+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryKnown-24      \t"}
+{"Time":"2026-08-25T10:56:53.3095605+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    4658\t    465718 ns/op\n"}
+{"Time":"2026-08-25T10:56:55.9268403+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryKnown-24      \t"}
+{"Time":"2026-08-25T10:56:55.9276641+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    5521\t    463463 ns/op\n"}
+{"Time":"2026-08-25T10:56:58.1085166+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryKnown-24      \t"}
+{"Time":"2026-08-25T10:56:58.1085166+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    4630\t    458095 ns/op\n"}
+{"Time":"2026-08-25T10:57:00.4404934+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryKnown-24      \t"}
+{"Time":"2026-08-25T10:57:00.4404934+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    4872\t    465707 ns/op\n"}
+{"Time":"2026-08-25T10:57:00.4404934+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryNew"}
+{"Time":"2026-08-25T10:57:00.4404934+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryNew","Output":"=== RUN   BenchmarkBloomV3_QueryNew\n"}
+{"Time":"2026-08-25T10:57:00.4404934+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryNew","Output":"BenchmarkBloomV3_QueryNew\n"}
+{"Time":"2026-08-25T10:57:02.7473061+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryNew","Output":"BenchmarkBloomV3_QueryNew-24        \t"}
+{"Time":"2026-08-25T10:57:02.7473061+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Test":"BenchmarkBloomV3_QueryNew","Output":"    4580\t    489081 ns/op\n"}
+{"Time":"2026-08-25T10:57:05.4652429+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryNew-24        \t"}
+{"Time":"2026-08-25T10:57:05.4657886+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    5617\t    474091 ns/op\n"}
+{"Time":"2026-08-25T10:57:08.3368307+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryNew-24        \t"}
+{"Time":"2026-08-25T10:57:08.3368307+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    6214\t    453843 ns/op\n"}
+{"Time":"2026-08-25T10:57:10.7450761+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryNew-24        \t"}
+{"Time":"2026-08-25T10:57:10.7450761+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    4963\t    472834 ns/op\n"}
+{"Time":"2026-08-25T10:57:12.846165+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryNew-24        \t"}
+{"Time":"2026-08-25T10:57:12.846165+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    4200\t    483932 ns/op\n"}
+{"Time":"2026-08-25T10:57:17.1491843+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"BenchmarkBloomV3_QueryNew-24        \t"}
+{"Time":"2026-08-25T10:57:17.1491843+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"    5288\t    447682 ns/op\n"}
+{"Time":"2026-08-25T10:57:17.1491843+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"PASS\n"}
+{"Time":"2026-08-25T10:57:17.1527737+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/intel\t104.914s\n"}
+{"Time":"2026-08-25T10:57:17.1527737+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/intel","Elapsed":104.914}

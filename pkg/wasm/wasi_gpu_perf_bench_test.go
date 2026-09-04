@@ -109,10 +109,14 @@ func BenchmarkShardedAllocator_ConcurrencyScaling(c *testing.B) {
 	
 	ctx := context.Background()
 	sem := make(chan struct{}, nCPU)
-	results := make(chan uint64, nCPU)
 	
 	c.ResetTimer()
 	for i := 0; i < c.N; i++ {
+		// Per-iteration buffered channel sized to the number of goroutines so sends
+		// never block. It is closed exactly once, AFTER wg.Wait() guarantees every
+		// sender has finished, which prevents the "send on closed channel" panic
+		// that occurred when a single channel was reused (and closed) across iterations.
+		results := make(chan uint64, nCPU)
 		wg := new(sync.WaitGroup)
 		for j := 0; j < nCPU; j++ {
 			wg.Add(1)
@@ -133,8 +137,49 @@ func BenchmarkShardedAllocator_ConcurrencyScaling(c *testing.B) {
 		}
 		wg.Wait()
 		close(results)
-		results = make(chan uint64, nCPU)
+		
+		// Drain the per-iteration results so the buffer does not leak between iterations.
+		for range results {
+		}
 	}
+}
+
+// BenchmarkShardedAllocator_HighContention_vs_GlobalMutex demonstrates sharded allocator's advantage
+// under HIGH CONCURRENCY (16 goroutines争用). Using b.RunParallel to simulate true multi-threaded load.
+func BenchmarkShardedAllocator_HighContention_vs_GlobalMutex(c *testing.B) {
+	c.Run("sharded-16parallel", func(c *testing.B) {
+		alloc := NewShardedHandleAllocator()
+		defer alloc.Close()
+		
+		ctx := context.Background()
+		c.ResetTimer()
+		
+		c.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				h, err := alloc.AllocFast(ctx, 4096)
+				if err == nil {
+					_ = alloc.FreeFast(h)
+				}
+			}
+		})
+	})
+	
+	c.Run("global-mutex-16parallel", func(c *testing.B) {
+		svc := NewMockGPUService(capability.ModeSimulated)
+		defer svc.Close()
+		
+		ctx := context.Background()
+		c.ResetTimer()
+		
+		c.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				h, err := svc.Alloc(ctx, 4096)
+				if err == nil {
+					_ = svc.Free(ctx, h)
+				}
+			}
+		})
+	})
 }
 
 // ============================================================================

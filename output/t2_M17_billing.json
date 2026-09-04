@@ -1,0 +1,13 @@
+{"Time":"2026-08-24T07:31:28.7830418+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing"}
+{"Time":"2026-08-24T07:31:28.823498+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Output":"goos: windows\n"}
+{"Time":"2026-08-24T07:31:28.823498+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T07:31:28.823498+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/billing\n"}
+{"Time":"2026-08-24T07:31:28.823498+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T07:31:28.823498+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Test":"BenchmarkIngest_UsageCollector_Baseline"}
+{"Time":"2026-08-24T07:31:28.823498+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Test":"BenchmarkIngest_UsageCollector_Baseline","Output":"=== RUN   BenchmarkIngest_UsageCollector_Baseline\n"}
+{"Time":"2026-08-24T07:31:28.823498+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Test":"BenchmarkIngest_UsageCollector_Baseline","Output":"BenchmarkIngest_UsageCollector_Baseline\n"}
+{"Time":"2026-08-24T07:31:28.8425446+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Test":"BenchmarkIngest_UsageCollector_Baseline","Output":"BenchmarkIngest_UsageCollector_Baseline-24    \t"}
+{"Time":"2026-08-24T07:31:28.8425446+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Test":"BenchmarkIngest_UsageCollector_Baseline","Output":"      10\t      1250 ns/op\t     868 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T07:31:28.8425446+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Output":"PASS\n"}
+{"Time":"2026-08-24T07:31:28.8460696+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/billing\t0.062s\n"}
+{"Time":"2026-08-24T07:31:28.8460696+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/billing","Elapsed":0.063}

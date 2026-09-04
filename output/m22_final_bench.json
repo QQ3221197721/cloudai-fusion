@@ -1,0 +1,18 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/edgeautonomy
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkEdgeAutonomy_RuleEngine_Evaluate-24    	   69397	     15817 ns/op	    9200 B/op	     100 allocs/op
+BenchmarkEdgeAutonomy_RuleEngine_Evaluate-24    	   66242	     17907 ns/op	    9200 B/op	     100 allocs/op
+BenchmarkEdgeAutonomy_RuleEngine_Evaluate-24    	   79758	     16508 ns/op	    9200 B/op	     100 allocs/op
+BenchmarkEdgeAutonomy_RuleEngine_Evaluate-24    	   75176	     16016 ns/op	    9200 B/op	     100 allocs/op
+BenchmarkEdgeAutonomy_RuleEngine_Evaluate-24    	   60195	     18619 ns/op	    9200 B/op	     100 allocs/op
+BenchmarkEdgeAutonomy_RuleEngine_Evaluate-24    	   78039	     16700 ns/op	    9200 B/op	     100 allocs/op
+BenchmarkM22_NaiveRuleEngine_Evaluate-24        	  123688	     20674 ns/op	   26446 B/op	     350 allocs/op
+BenchmarkM22_NaiveRuleEngine_Evaluate-24        	  122200	     10257 ns/op	   15200 B/op	     200 allocs/op
+BenchmarkM22_NaiveRuleEngine_Evaluate-24        	  104094	     10976 ns/op	   15200 B/op	     200 allocs/op
+BenchmarkM22_NaiveRuleEngine_Evaluate-24        	   59216	     21094 ns/op	   26446 B/op	     350 allocs/op
+BenchmarkM22_NaiveRuleEngine_Evaluate-24        	  106225	     22470 ns/op	   26445 B/op	     350 allocs/op
+BenchmarkM22_NaiveRuleEngine_Evaluate-24        	  100540	     11777 ns/op	   15200 B/op	     200 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/edgeautonomy	21.308s

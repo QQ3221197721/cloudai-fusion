@@ -244,6 +244,14 @@ func (s *FastSpan) SetBool(key string, val bool) *FastSpan { return s.SetAttr(Bo
 // SetFloat is a convenience zero-alloc setter for a float64 attribute.
 func (s *FastSpan) SetFloat(key string, val float64) *FastSpan { return s.SetAttr(FloatAttr(key, val)) }
 
+// SetAttrs sets multiple attributes at once (convenience for benchmarks).
+func (s *FastSpan) SetAttrs(attrs ...FastAttr) *FastSpan {
+	for _, a := range attrs {
+		s.SetAttr(a)
+	}
+	return s
+}
+
 // SetError marks the span as errored and records the message.
 func (s *FastSpan) SetError(err error) *FastSpan {
 	if err != nil {

@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-08-26T15:45:45+08:00",
+  "go_version": "go1.26.5",
+  "cpu_count": 24,
+  "benchmarks": [
+    {
+      "name": "cascade-52",
+      "alert_count": 49,
+      "baseline_alertmanager": {
+        "method": "AlertmanagerLabelBucketing",
+        "median_latency_ns": 91399,
+        "f1_score": 1,
+        "precision": 1,
+        "recall": 1
+      },
+      "monolithic_single_linkage": {
+        "method": "SingleLinkageJaccard",
+        "median_latency_ns": 2612640,
+        "f1_score": 1,
+        "precision": 1,
+        "recall": 1
+      },
+      "hybrid_async": {
+        "method": "HybridAsync",
+        "median_latency_ns": 109060,
+        "f1_score": 1,
+        "precision": 1,
+        "recall": 1
+      }
+    },
+    {
+      "name": "storm-208",
+      "alert_count": 200,
+      "baseline_alertmanager": {
+        "method": "AlertmanagerLabelBucketing",
+        "median_latency_ns": 387186,
+        "f1_score": 1,
+        "precision": 1,
+        "recall": 1
+      },
+      "monolithic_single_linkage": {
+        "method": "SingleLinkageJaccard",
+        "median_latency_ns": 215970780,
+        "f1_score": 1,
+        "precision": 1,
+        "recall": 1
+      },
+      "hybrid_async": {
+        "method": "HybridAsync",
+        "median_latency_ns": 342514,
+        "f1_score": 1,
+        "precision": 1,
+        "recall": 1
+      }
+    }
+  ],
+  "recommendation": "HybridAsync (fast label-bucketing + async correlation) achieves F1≥0.85 with low latency"
+}

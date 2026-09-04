@@ -1,0 +1,21 @@
+{"Time":"2026-08-24T06:45:33.0732876+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud"}
+{"Time":"2026-08-24T06:45:33.1152946+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Output":"goos: windows\n"}
+{"Time":"2026-08-24T06:45:33.1158308+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T06:45:33.1158308+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/cloud\n"}
+{"Time":"2026-08-24T06:45:33.1158308+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T06:45:33.1158308+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Test":"BenchmarkMultiCloudAPI_Latency"}
+{"Time":"2026-08-24T06:45:33.1158308+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Test":"BenchmarkMultiCloudAPI_Latency","Output":"=== RUN   BenchmarkMultiCloudAPI_Latency\n"}
+{"Time":"2026-08-24T06:45:33.1158308+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Test":"BenchmarkMultiCloudAPI_Latency","Output":"BenchmarkMultiCloudAPI_Latency\n"}
+{"Time":"2026-08-24T06:45:33.1179661+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Test":"BenchmarkMultiCloudAPI_Latency","Output":"BenchmarkMultiCloudAPI_Latency-24    \t"}
+{"Time":"2026-08-24T06:45:33.1179661+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Test":"BenchmarkMultiCloudAPI_Latency","Output":"      10\t      1990 ns/op\t    1444 B/op\t      24 allocs/op\n"}
+{"Time":"2026-08-24T06:45:33.1179661+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Output":"PASS\n"}
+{"Time":"2026-08-24T06:45:33.1211167+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/cloud\t0.048s\n"}
+{"Time":"2026-08-24T06:45:33.1215412+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud","Elapsed":0.048}
+{"Time":"2026-08-24T06:45:33.1253993+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/auth"}
+{"Time":"2026-08-24T06:45:33.1426535+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/auth","Output":"PASS\n"}
+{"Time":"2026-08-24T06:45:33.144848+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/auth","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/cloud/auth\t0.019s\n"}
+{"Time":"2026-08-24T06:45:33.144848+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/auth","Elapsed":0.019}
+{"Time":"2026-08-24T06:45:33.146482+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/providers"}
+{"Time":"2026-08-24T06:45:33.167213+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/providers","Output":"PASS\n"}
+{"Time":"2026-08-24T06:45:33.169975+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/providers","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/cloud/providers\t0.023s\n"}
+{"Time":"2026-08-24T06:45:33.169975+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/providers","Elapsed":0.023}

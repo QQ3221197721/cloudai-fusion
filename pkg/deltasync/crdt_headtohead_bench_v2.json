@@ -1,0 +1,38 @@
+﻿{"Time":"2026-08-25T06:45:28.8500537+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync"}
+{"Time":"2026-08-25T06:45:28.8683393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"goos: windows\n"}
+{"Time":"2026-08-25T06:45:28.8683393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"goarch: amd64\n"}
+{"Time":"2026-08-25T06:45:28.8683393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync\n"}
+{"Time":"2026-08-25T06:45:28.8683393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-25T06:45:28.8683393+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_LWWMapJoin"}
+{"Time":"2026-08-25T06:45:28.8683393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_LWWMapJoin","Output":"=== RUN   BenchmarkHeadToHead_LWWMapJoin\n"}
+{"Time":"2026-08-25T06:45:28.8683393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_LWWMapJoin","Output":"BenchmarkHeadToHead_LWWMapJoin\n"}
+{"Time":"2026-08-25T06:45:31.3217621+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_LWWMapJoin","Output":"BenchmarkHeadToHead_LWWMapJoin-24      \t"}
+{"Time":"2026-08-25T06:45:31.3217621+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_LWWMapJoin","Output":"  104613\t     21223 ns/op\t   35856 B/op\t      18 allocs/op\n"}
+{"Time":"2026-08-25T06:45:34.0964622+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_LWWMapJoin-24      \t"}
+{"Time":"2026-08-25T06:45:34.0964622+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"  120465\t     21349 ns/op\t   35856 B/op\t      18 allocs/op\n"}
+{"Time":"2026-08-25T06:45:36.4070627+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_LWWMapJoin-24      \t"}
+{"Time":"2026-08-25T06:45:36.4070627+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"   96393\t     21337 ns/op\t   35856 B/op\t      18 allocs/op\n"}
+{"Time":"2026-08-25T06:45:38.9097237+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_LWWMapJoin-24      \t"}
+{"Time":"2026-08-25T06:45:38.9106164+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"  104066\t     21772 ns/op\t   35856 B/op\t      18 allocs/op\n"}
+{"Time":"2026-08-25T06:45:41.42237+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_LWWMapJoin-24      \t"}
+{"Time":"2026-08-25T06:45:41.42237+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"  114163\t     20135 ns/op\t   35856 B/op\t      18 allocs/op\n"}
+{"Time":"2026-08-25T06:45:44.341095+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_LWWMapJoin-24      \t"}
+{"Time":"2026-08-25T06:45:44.341095+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"  119115\t     22784 ns/op\t   35856 B/op\t      18 allocs/op\n"}
+{"Time":"2026-08-25T06:45:44.341095+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_OpBasedMerge"}
+{"Time":"2026-08-25T06:45:44.341095+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_OpBasedMerge","Output":"=== RUN   BenchmarkHeadToHead_OpBasedMerge\n"}
+{"Time":"2026-08-25T06:45:44.341095+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_OpBasedMerge","Output":"BenchmarkHeadToHead_OpBasedMerge\n"}
+{"Time":"2026-08-25T06:45:47.9746788+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_OpBasedMerge","Output":"BenchmarkHeadToHead_OpBasedMerge-24    \t"}
+{"Time":"2026-08-25T06:45:47.9746788+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Test":"BenchmarkHeadToHead_OpBasedMerge","Output":"  135984\t     25390 ns/op\t   21712 B/op\t     218 allocs/op\n"}
+{"Time":"2026-08-25T06:45:50.8709142+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_OpBasedMerge-24    \t"}
+{"Time":"2026-08-25T06:45:50.8709142+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"   84019\t     31012 ns/op\t   21712 B/op\t     218 allocs/op\n"}
+{"Time":"2026-08-25T06:45:55.542946+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_OpBasedMerge-24    \t"}
+{"Time":"2026-08-25T06:45:55.542946+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"   75613\t     54401 ns/op\t   21712 B/op\t     218 allocs/op\n"}
+{"Time":"2026-08-25T06:46:00.1097101+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_OpBasedMerge-24    \t"}
+{"Time":"2026-08-25T06:46:00.1097101+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"   10000\t    349237 ns/op\t   21712 B/op\t     218 allocs/op\n"}
+{"Time":"2026-08-25T06:46:04.5946328+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_OpBasedMerge-24    \t"}
+{"Time":"2026-08-25T06:46:04.595517+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"   88045\t     27364 ns/op\t   21712 B/op\t     218 allocs/op\n"}
+{"Time":"2026-08-25T06:46:07.1595443+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"BenchmarkHeadToHead_OpBasedMerge-24    \t"}
+{"Time":"2026-08-25T06:46:07.1595443+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"   91575\t     25090 ns/op\t   21712 B/op\t     218 allocs/op\n"}
+{"Time":"2026-08-25T06:46:07.1595443+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"PASS\n"}
+{"Time":"2026-08-25T06:46:07.1636432+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/deltasync\t38.314s\n"}
+{"Time":"2026-08-25T06:46:07.1636432+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync","Elapsed":38.314}

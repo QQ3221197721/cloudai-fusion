@@ -39,6 +39,28 @@ type RealRaftConfig struct {
 	Transport        hraft.LoopbackTransport
 	Address          hraft.ServerAddress
 	BootstrapServers []hraft.Server
+
+	// Performance tuning (benchmark use)
+	BatchSize     int       // evidence batching size (0 = single record)
+	CommitTimeout time.Duration
+
+	// AsyncSealing enables high-performance async evidence recording.
+	// When true: Apply() returns immediately after raft commit; Ed25519 signing+
+	// hash-chain happens in background goroutine via RecordQueue. Call Flush() or
+	// GetFlushedRecorder() to wait for all pending records before verification.
+	// Default: false (synchronous, preserves current behavior).
+	AsyncSealing bool
+}
+
+// BatchRecordConfig holds async queue parameters for RealRaftConfig.AsyncSealing.
+type BatchRecordConfig struct {
+	// QueueSize is the buffered channel capacity for pending evidence records.
+	// Larger queues reduce Apply() contention but increase latency to durability.
+	// Recommended: 100-1000 for typical workloads.
+	QueueSize int
+	// MinFlusSize triggers flush when >= N records accumulated.
+	// Set to 1 for per-record async, higher values amortize signing cost.
+	MinFlushSize int
 }
 
 // RealRaftNode wraps a hashicorp/raft node backed by an in-memory transport.
@@ -52,6 +74,11 @@ type RealRaftNode struct {
 	logger    *logrus.Logger
 	stopCh    chan struct{}
 	stopOnce  sync.Once
+	
+	// AsyncSealing infrastructure
+	recordQ    chan *evidence.RecordInput   // buffered channel for async recording
+	flushCh    chan chan struct{}           // unbuffered channel for Flush() waits
+	flushOnce  sync.Once                    // ensure single goroutine runs
 }
 
 // NewRealRaftNode builds and bootstraps a single-node real Raft cluster. Additional
@@ -125,6 +152,20 @@ func NewRealRaftNode(cfg RealRaftConfig) (*RealRaftNode, error) {
 		stopCh:    make(chan struct{}),
 	}
 
+	// Initialize async sealing if enabled
+	if cfg.AsyncSealing {
+		queueSize := 256 // default buffer size
+		if cfg.BatchSize > 0 {
+			queueSize = cfg.BatchSize
+		}
+		node.recordQ = make(chan *evidence.RecordInput, queueSize)
+		node.flushCh = make(chan chan struct{})
+		go node.asyncFlusher()
+		// CRITICAL: Do NOT pass recorder to fsm when using async sealing.
+		// asyncApply() creates record inputs and queues them; fsm should not block.
+		fsm.recorder = nil
+	}
+
 	// This is REAL consensus (not simulated RPCs); report it honestly so a
 	// production boot is satisfied rather than blocked on consensus.raft.
 	_ = capability.Report("consensus.raft", "hashicorp-raft", capability.ModeReal,
@@ -137,8 +178,51 @@ func NewRealRaftNode(cfg RealRaftConfig) (*RealRaftNode, error) {
 // Apply proposes a command through Raft; it returns once the command is committed
 // and applied by the FSM (or the timeout elapses). Only the leader may apply.
 func (n *RealRaftNode) Apply(cmd []byte, timeout time.Duration) error {
+	if n.AsyncSealing() {
+		return n.asyncApply(cmd, timeout)
+	}
 	f := n.raft.Apply(cmd, timeout)
 	return f.Error()
+}
+
+// asyncApply performs Apply with async evidence recording.
+// Returns immediately after raft commit; evidence sealing happens in background.
+func (n *RealRaftNode) asyncApply(cmd []byte, timeout time.Duration) error {
+	// Commit hot path: pure raft commit without evidence overhead
+	rStart := time.Now()
+	f := n.raft.Apply(cmd, timeout)
+	err := f.Error()
+	if err != nil {
+		return err
+	}
+	raftCommitTime := time.Since(rStart)
+	
+	// Create record input but don't block on signing
+	recordInput := &evidence.RecordInput{
+		Actor:   "raft",
+		Action:  "raft.commit",
+		Subject: fmt.Sprintf("index-%d", len(n.fsm.applied)),
+		Input:   map[string]any{"bytes": len(cmd)},
+		Output:  map[string]any{"committed": true},
+		Backends: []evidence.BackendFact{
+			{Component: "consensus.raft", Mode: "real", Driver: "hashicorp-raft"},
+		},
+	}
+	
+	// Non-blocking enqueue - if queue is full, drop record rather than block
+	qStart := time.Now()
+	select {
+	case n.recordQ <- recordInput:
+		// Success: queued for async processing
+	default:
+		// Queue full: log warning but don't block critical path
+		n.logger.Warn("async evidence queue full, dropping record")
+	}
+	queueTime := time.Since(qStart)
+	_ = raftCommitTime
+	_ = queueTime
+	
+	return nil
 }
 
 // IsLeader reports whether this node is the current Raft leader.
@@ -178,6 +262,80 @@ func (n *RealRaftNode) Stop() error {
 	return n.raft.Shutdown().Error()
 }
 
+// AsyncSealing returns whether this node uses async evidence recording.
+func (n *RealRaftNode) AsyncSealing() bool {
+	return n.recordQ != nil
+}
+
+// GetFlushedRecorder returns a recorder that blocks until all queued records are sealed.
+// Use this when you need to wait for async evidence before verification.
+func (n *RealRaftNode) GetFlushedRecorder() evidence.Recorder {
+	if !n.AsyncSealing() {
+		return n.recorder
+	}
+	return &asyncFlushableRecorder{
+		node:      n,
+		recorder:  n.recorder,
+	}
+}
+
+// Flush waits for all pending evidence records to be sealed.
+// Call this before VerifyChain to ensure chain completeness.
+func (n *RealRaftNode) Flush() {
+	if !n.AsyncSealing() {
+		return
+	}
+	done := make(chan struct{})
+	select {
+	case n.flushCh <- done:
+		<-done
+	case <-n.stopCh:
+		// Node shutting down, return immediately
+	}
+}
+
+// asyncFlusher processes evidence records from queue in background.
+// Called once per node via go routine.
+func (n *RealRaftNode) asyncFlusher() {
+	for {
+		select {
+		case <-n.stopCh:
+			// Drain remaining records before exit
+			for {
+				select {
+				case rec := <-n.recordQ:
+					_, _ = n.asyncProcessRecord(rec)
+			default:
+					return
+				}
+			}
+		case done := <-n.flushCh:
+			// Wait mode: drain queue completely
+			for {
+				select {
+				case rec := <-n.recordQ:
+					_, _ = n.asyncProcessRecord(rec)
+				default:
+					close(done)
+					return
+				}
+			}
+		case rec := <-n.recordQ:
+			// Process one record and return to select loop
+			_, _ = n.asyncProcessRecord(rec)
+		}
+	}
+}
+
+// asyncProcessRecord performs Ed25519 signing + hash-chain in background goroutine.
+func (n *RealRaftNode) asyncProcessRecord(rec *evidence.RecordInput) (*evidence.Evidence, error) {
+	if n.recorder == nil {
+		return nil, nil
+	}
+	// Run synchronous Record() call (this is the expensive part, but off hot path)
+	return n.recorder.Record(context.Background(), *rec)
+}
+
 // watchLeadership emits a verifiable receipt whenever this node gains or loses
 // leadership — so "who was the leader, and when" is provable, not just logged.
 func (n *RealRaftNode) watchLeadership() {
@@ -190,14 +348,18 @@ func (n *RealRaftNode) watchLeadership() {
 			if !ok {
 				return
 			}
-			if n.recorder == nil {
+			recorder := n.recorder
+			if n.AsyncSealing() {
+				recorder = n.GetFlushedRecorder()
+			}
+			if recorder == nil {
 				continue
 			}
 			action := "raft.leader.lost"
 			if isLeader {
 				action = "raft.leader.acquired"
 			}
-			_, _ = n.recorder.Record(context.Background(), evidence.RecordInput{
+			_, _ = recorder.Record(context.Background(), evidence.RecordInput{
 				Actor:   "raft",
 				Action:  action,
 				Subject: string(n.nodeID),
@@ -220,6 +382,7 @@ type raftFSM struct {
 	apply    func(cmd []byte) error
 	recorder evidence.Recorder
 	logger   *logrus.Logger
+	batchCnt int // batch counter for deterministic flushing
 }
 
 // Apply is invoked by raft for every COMMITTED log entry (majority-replicated).
@@ -233,6 +396,8 @@ func (f *raftFSM) Apply(l *hraft.Log) interface{} {
 			return err
 		}
 	}
+	
+	// Synchronous evidence recording (used when AsyncSealing disabled on node)
 	if f.recorder != nil {
 		_, _ = f.recorder.Record(context.Background(), evidence.RecordInput{
 			Actor:   "raft",
@@ -290,3 +455,23 @@ func (s *raftSnapshot) Persist(sink hraft.SnapshotSink) error {
 }
 
 func (s *raftSnapshot) Release() {}
+
+// ============================================================================
+// AsyncSealing Support Types
+// ============================================================================
+
+// asyncFlushableRecorder wraps a recorder and blocks on Record() if Flush pending.
+type asyncFlushableRecorder struct {
+	node     *RealRaftNode
+	recorder evidence.Recorder
+}
+
+func (r *asyncFlushableRecorder) Record(ctx context.Context, in evidence.RecordInput) (*evidence.Evidence, error) {
+	if r.node.AsyncSealing() {
+		r.node.Flush()
+	}
+	if r.recorder == nil {
+		return nil, nil
+	}
+	return r.recorder.Record(ctx, in)
+}

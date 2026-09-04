@@ -338,6 +338,7 @@ type GangScheduler struct {
 	capacity  ClusterCapacity
 	allocated ClusterCapacity
 	jobs      map[string]*GangJob
+	barriers  map[string]*GangBarrier // job.ID -> active barrier for worker synchronization
 	signer    *ReceiptSigner
 	seq       uint64
 	now       func() time.Time // injectable clock; defaults to time.Now().UTC()
@@ -355,6 +356,7 @@ func NewGangScheduler(capacity ClusterCapacity, signer *ReceiptSigner) (*GangSch
 	return &GangScheduler{
 		capacity: capacity,
 		jobs:     make(map[string]*GangJob),
+		barriers: make(map[string]*GangBarrier), // initialize barrier map for active gangs
 		signer:   signer,
 		now:      func() time.Time { return time.Now().UTC() },
 	}, nil
@@ -495,6 +497,9 @@ func (s *GangScheduler) Admit(jobID string) (AdmissionResult, error) {
 func (s *GangScheduler) Start(jobID string) error {
 	return s.mutate(jobID, GangRunning, "all replicas launched", func(job *GangJob, now time.Time) {
 		job.StartedAt = &now
+		// Create gang-aware barrier for O(1) coordinated worker synchronization.
+		// Barrier uses atomic counter per GANG_ID + channel close release (not polling).
+		s.barriers[job.ID] = NewGangBarrier(job.ID, job.Spec.Replicas)
 	})
 }
 
@@ -592,6 +597,13 @@ func (s *GangScheduler) transitionLocked(job *GangJob, to GangState, reason stri
 
 // releaseLocked returns a gang's reserved resources to the pool exactly once. Caller must hold s.mu.
 func (s *GangScheduler) releaseLocked(job *GangJob) {
+	// Clean up gang barrier if one exists (created during Start).
+	// This ensures all waiting workers are released with failure reason if gang terminates.
+	if barrier, ok := s.barriers[job.ID]; ok {
+		barrier.Fail("gang terminated")
+		delete(s.barriers, job.ID)
+	}
+	
 	if !job.Reserved {
 		return
 	}

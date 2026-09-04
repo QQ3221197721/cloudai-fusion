@@ -244,7 +244,7 @@ func BenchmarkAdaptiveSamplerShouldSample(b *testing.B) {
 // BenchmarkBatchSpanProcessorShutdown measures batch processor flush cost.
 func BenchmarkBatchSpanProcessorShutdown(b *testing.B) {
 	exportCount := 0
-	exporter := &mockExporter{
+	exporter := &MockExporter{
 		ExportSpansFunc: func(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
 			exportCount += len(spans)
 			return nil
@@ -474,7 +474,7 @@ func BenchmarkSpanEndSequential(b *testing.B) {
 // BenchmarkOpenTelemetrySDKComparison_SpanStart measures our OTel integration
 // against official OTEL Go SDK expectations.
 func BenchmarkOpenTelemetrySDKComparison_SpanStart(b *testing.B) {
-	exporter := &mockExporter{}
+	exporter := &MockExporter{}
 	
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
@@ -600,19 +600,21 @@ func BenchmarkFastSpanEndLatency(b *testing.B) {
 
 // ============================================================================
 // Mock Exporter for Testing
+// This mock is exported (capitalized) so both benchmark files can share it.
 // ============================================================================
 
-type mockExporter struct {
+// MockExporter provides a no-op implementation of sdktrace.SpanExporter.
+type MockExporter struct {
 	ExportSpansFunc func(ctx context.Context, spans []sdktrace.ReadOnlySpan) error
 }
 
-func (m *mockExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
+func (m *MockExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
 	if m.ExportSpansFunc != nil {
 		return m.ExportSpansFunc(ctx, spans)
 	}
 	return nil
 }
 
-func (m *mockExporter) Shutdown(ctx context.Context) error {
+func (m *MockExporter) Shutdown(ctx context.Context) error {
 	return nil
 }

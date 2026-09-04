@@ -1,16 +1,11 @@
-// Package wasm — Sharded No-Lock Handle Allocator (Module 53 Performance Moat)
-// This file implements the core algorithm for high-concurrency allocation with
-// <15ns latency under no contention, replacing the global mutex + map pattern.
+// Package wasm — Intrusive Index-Based Handle Allocator (Module 50 Zero-Alloc Performance)
+// FLIP M50 Deep Optimization V2: TRUE zero-allocation Free via lock-free tagged-pointer freelist.
 //
-// Performance Moat Rationale:
-//   • Current mockGPUService: global handleMutex.Lock() on every alloc/free
-//     Benchmark result: ~44ns/alloc-free cycle (single goroutine)
-//     Degradation: ~120ns at 8-goroutine concurrency (contention)
-//   • Our solution: N-shard locking where N = runtime.NumCPU()
-//     Result: <15ns no contention; <25ns at 8-gpu concurrency
-//
-// The key innovation is handle encoding: [16-bit shard][48-bit seq] allows
-// O(1) routing to correct shard without atomic operations or spinlocks.
+// Design Principles:
+//   1. ELIMINATE PERFORMANCE KILLER: v1 allocates &freeNode{key} (~16B) per Free() → GC pressure
+//   2. SOLUTION: Pre-allocated slot arena where freed blocks reuse their OWN memory as freelist nodes
+//   3. KEY OPTIMIZATION: Tagged pointer [tag:16][index:48] prevents ABA without fresh allocs
+//   4. GOAL: @C>=64 throughput matches/beats sync.Pool; ZERO allocs/op on Free path
 package wasm
 
 import (
@@ -21,277 +16,484 @@ import (
 	"sort"
 	"sync"
 	"sync/atomic"
+	"testing"
 	"time"
+	"unsafe"
 )
 
 var (
-	// ErrHandleExhausted indicates allocator hit max handles for this session.
 	ErrHandleExhausted = errors.New("sharded-allocator: handle exhausted")
+	ErrInvalidHandle   = errors.New("sharded-allocator: invalid or double-freed handle")
 )
 
-// ShardKey encodes a logical handle into [shard_id:16bits][seq:48bits].
-// This encoding enables O(1) routing without atomic CAS.
+// ============================================================================
+// Arena Node Structure (intrusive, cache-line padded, lock-free fields)
+// ============================================================================
+
+const (
+	cacheLineSize     = 64
+	maxSegments       = 256    // Segment table capacity
+	slotsPerSegment   = 256    // Nodes per segment
+	maxArenasPerShard = maxSegments * slotsPerSegment // Total handles per shard (65K)
+)
+
+// nodeStateLive/free/invalid for validation
+const (
+	nodeStateLive uint32 = iota
+	nodeStateFree
+	nodeStateInvalid
+)
+
+// ShardKey encodes a logical handle into [shard_id:16bits][seq:48bits] for O(1)
+// routing on Free without any atomic operation.
 type ShardKey uint64
 
 // ShardID extracts the 16-bit shard identifier from key.
-func (k ShardKey) ShardID() uint16 {
-	return uint16(k >> 48)
-}
+func (k ShardKey) ShardID() uint16 { return uint16(k >> 48) }
 
 // SeqNum extracts the 48-bit sequence number from key.
-func (k ShardKey) SeqNum() uint64 {
-	return uint64(k & 0x0000FFFFFFFFFFFF)
+func (k ShardKey) SeqNum() uint64 { return uint64(k & 0x0000FFFFFFFFFFFF) }
+
+// defaultSizeClassSpec is the jemalloc-style geometric ladder (r=2) spanning
+// 256B .. 256B*2^15 = 8MiB across 16 classes.
+func defaultSizeClassSpec() *SizeClassSpec {
+	return NewSizeClassSpec(256, 2.0, 16)
 }
 
-// EncodeShardKey creates a new handle from shard ID and sequence.
-func EncodeShardKey(shard uint16, seq uint64) ShardKey {
-	return ShardKey((uint64(shard) << 48) | (seq & 0x0000FFFFFFFFFFFF))
+// arenaNode is ONE slot in the global arena. It stores:
+//   - next: lock-free freelist link (packed [tag:16][slotIdx:48])
+//   - size: exact allocation size (for GetHandleSize capability)
+//   - state: live/free/invalid validation (ABA protection)
+type arenaNode struct {
+	next    atomic.Uint64 // packed: [tag:16bits][slotIdx:48bits] -> next freelist index
+	size    atomic.Uint64 // exact byte size when allocated
+	state   atomic.Uint32 // nodeStateLive/nodeStateFree/nodeStateInvalid
+	padding [cacheLineSize - 20]byte // pad to 64B to prevent false sharing
 }
 
-// ============================================================================
-// ShardedHandleAllocator Implementation
-// ============================================================================
+// arenaSegment is a fixed block of arena nodes. Segments never move once
+// published, so lock-free readers on the alloc/free hot path are always safe.
+type arenaSegment struct {
+	nodes [slotsPerSegment]arenaNode
+}
 
-// shardBucket represents a single shard that owns its own memory and locks.
-// The internal mu protects bitmap and nextHandle for that shard only.
+// shardBucket owns one shard's state using INTRUSIVE slot arena.
 type shardBucket struct {
-	mu       sync.Mutex
-	bitmap   []uint64     // bitset for allocated handles in this shard
-	nextHandle uint64    // base sequence for next allocation
-	baseSeq  uint64       // reserved range start
-	reserved bool         // if true, bucket is in use
+	mu         sync.Mutex           // protects ONLY segTable growth during fresh mint
+	segTable   [maxSegments]atomic.Pointer[arenaSegment] // never move, only grow under mutex
+	arenaEnd   atomic.Uint64        // next available sequence number (bump pointer)
+	freeLists  [16]atomic.Uint64    // per-size-class tagged pointers: [tag:16][idx:48]
+	padding    [cacheLineSize - 8]byte
 }
 
-// ShardedHandleAllocator replaces global mutex + map with N-shard locking.
-// Allocation is lock-free under no contention via atomic counter; contentio fallback uses per-shard mutexes.
+// ShardedHandleAllocator uses pre-allocated slot arena + lock-free tagged-pointer freelists.
 type ShardedHandleAllocator struct {
-	shards []*shardBucket  // pool of runtime.NumCPU() shards
-	shardMask uint32      // NumCPU - 1, power-of-two assumption for fast mod
-	allocated map[ShardKey]uint64  // handle -> sizeBytes mapping
-	totalAllocs int64    // for accounting/monitoring
-	closed    bool
-	mu        sync.RWMutex   // protects allocated map access
-	shardCounter atomic.Uint32  // atomically incrementing counter for shard routing
+	shards     []*shardBucket
+	shardMask  uint32                 // shardCount-1 (power-of-two)
+	spec       *SizeClassSpec         // jemalloc-style geometric ladder
+	closed     atomic.Bool            // shutdown flag
+	liveCount  atomic.Int64          // COUNT LIVE HANDLES (for Count() correctness)
+	freshMints  atomic.Int64         // metrics (off hot path)
+	reuseHits   atomic.Int64
+	totalAllocs atomic.Int64
 }
 
-// NewShardedHandleAllocator creates a fresh allocator with CPU-aware sharding.
-// Pre-allocates N shards where N = runtime.NumCPU(), each with isolated locks.
-func NewShardedHandleAllocator() *ShardedHandleAllocator {
-	n := runtime.NumCPU()
-	if n < 4 {
-		n = 4 // minimum 4 shards for small CPUs
+// Lock-free shard selection using runtime_fastrand (stable go:linkname)
+var fallbackCounter atomic.Uint32
+
+//go:linkname runtime_fastrand runtime.fastrand
+func runtime_fastrand() uint32
+
+// ============================================================================
+// Core Intrinsics (lock-free, zero-allocation)
+// ============================================================================
+
+func getArenaIndex(shard *shardBucket, seq uint64) (*arenaNode, bool) {
+	segIdx := int(seq / slotsPerSegment)
+	localIdx := int(seq % slotsPerSegment)
+
+	if segIdx >= maxSegments {
+		return nil, false
 	}
-	// Round down to power-of-two for mask arithmetic
+
+	segPtr := shard.segTable[segIdx].Load()
+	if segPtr == nil {
+		return nil, false
+	}
+
+	// Access node from segment's nodes array (now works correctly!)
+	return &segPtr.nodes[localIdx], true
+}
+
+// ensureSegment creates a new arena segment if needed. MUST be called while holding shard.mu.
+func (sb *shardBucket) ensureSegment(segIdx int) {
+	if segIdx < 0 || segIdx >= maxSegments {
+		return
+	}
+
+	ptr := sb.segTable[segIdx].Load()
+	if ptr != nil {
+		return
+	}
+
+	// Create a full segment of arenas (one-time alloc at construction time!)
+	newSeg := &arenaSegment{}
+
+	// Try to install it (CAS guarantees only one succeeds)
+	if !sb.segTable[segIdx].CompareAndSwap(nil, newSeg) {
+		_ = newSeg // discard duplicate
+	}
+}
+
+// pushFreelist pushes a slot index onto the lock-free head (tag increments each time)
+func pushFreelist(head *atomic.Uint64, slotIdx uint64) {
+	for retry := 0; retry < 64; retry++ {
+		old := head.Load()
+
+		// Increment tag (upper 16 bits), preserve index (lower 48 bits)
+		tag := uint64(old>>48) + 1
+		newPacked := (tag << 48) | (slotIdx & 0x0000FFFFFFFFFFFF)
+
+		if head.CompareAndSwap(old, newPacked) {
+			return
+		}
+
+		if retry >= 8 {
+			runtime.Gosched()
+		}
+	}
+}
+
+// popFreelist atomically pops and returns slot index from head
+func popFreelist(head *atomic.Uint64) (uint64, bool) {
+	for retry := 0; retry < 64; retry++ {
+		old := head.Load()
+
+		idx := old & 0x0000FFFFFFFFFFFF
+		if idx == 0 {
+			return 0, false // empty freelist
+		}
+
+		// Read next pointer from THIS slot (intrusive! the slot being popped contains the link)
+		// Problem: we don't have shard context here to call getArenaIndex
+		// We'll inline this into callers instead...
+		_ = idx
+		return 0, false // placeholder
+	}
+	return 0, false
+}
+
+// Pop inline that has access to shard for slot lookup
+func popFreelistInline(shard *shardBucket, classIdx int) (uint64, bool) {
+	head := &shard.freeLists[classIdx]
+	for retry := 0; retry < 64; retry++ {
+		old := head.Load()
+
+		idx := old & 0x0000FFFFFFFFFFFF
+		if idx == 0 {
+			return 0, false // empty freelist
+		}
+
+		// Get node pointer to read its 'next' field (intrusive!)
+		node, valid := getArenaIndex(shard, idx)
+		if !valid || node == nil {
+			return 0, false
+		}
+
+		// Slot's 'next' field becomes the freelist link (zero allocations!)
+		nextPacked := node.next.Load()
+
+		// CAS head forward
+		if head.CompareAndSwap(old, nextPacked) {
+			return idx, true // return just the index portion
+		}
+
+		if retry >= 8 {
+			runtime.Gosched()
+		}
+	}
+	return 0, false
+}
+
+// ============================================================================
+// Public API Implementation
+// ============================================================================
+
+func NewShardedHandleAllocator() *ShardedHandleAllocator {
+	n := runtime.GOMAXPROCS(0)
+	if n < runtime.NumCPU() {
+		n = runtime.NumCPU()
+	}
+	if n < 4 {
+		n = 4
+	}
 	powerOfTwo := 1
 	for powerOfTwo < n {
 		powerOfTwo <<= 1
 	}
-	if powerOfTwo > 64 {
-		powerOfTwo = 64 // reasonable upper bound
+	if powerOfTwo > 256 {
+		powerOfTwo = 256
 	}
 
-	shardCount := powerOfTwo
-	allocators := make([]*shardBucket, shardCount)
-	for i := range allocators {
-		allocators[i] = &shardBucket{
-			bitmap:   make([]uint64, 0),
-			nextHandle: 1,
-			baseSeq:  0,
-			reserved: false,
-		}
+	spec := defaultSizeClassSpec()
+	shards := make([]*shardBucket, powerOfTwo)
+	for i := range shards {
+		shards[i] = &shardBucket{}
 	}
 
 	return &ShardedHandleAllocator{
-		shards:     allocators,
-		shardMask:  uint32(shardCount - 1),
-		allocated:  make(map[ShardKey]uint64, 16),
-		totalAllocs: 0,
-		closed:     false,
+		shards:    shards,
+		shardMask: uint32(powerOfTwo - 1),
+		spec:      spec,
+		liveCount: atomic.Int64{}, // zero-initialized count
 	}
 }
 
-// AllocFast reserves a buffer handle with minimal latency (<15ns no contention).
-// It encodes [shard_id:16bits][seq:48bits] for O(1) routing.
-// Returns error if out of range or closed.
+func (sa *ShardedHandleAllocator) pickShard() int {
+	r := runtime_fastrand()
+	if r == 0 {
+		r = fallbackCounter.Add(1)
+	}
+	return int(r & sa.shardMask)
+}
+
+func EncodeShardKey(shard uint16, seq uint64) ShardKey {
+	return ShardKey((uint64(shard) << 48) | (seq & 0x0000FFFFFFFFFFFF))
+}
+
 func (sa *ShardedHandleAllocator) AllocFast(ctx context.Context, sizeBytes uint64) (uint64, error) {
-	if sa.closed {
+	if sa.closed.Load() {
 		return 0, fmt.Errorf("sharded-allocator: already closed")
 	}
 
-	// Fast path: use atomic add to pick shard index without locks (lock-free)
-	idx := int(sa.shardCounter.Add(1) & sa.shardMask)
-	
-	shard := sa.shards[idx]
-	shard.mu.Lock()
-	defer shard.mu.Unlock()
+	classIdx, slotSize := sa.spec.ClassOf(sizeBytes)
 
-	handle := shard.baseSeq + shard.nextHandle
-	shard.nextHandle++
+	for attempt := 0; attempt < len(sa.shards); attempt++ {
+		idx := int(uint32(attempt) & sa.shardMask)
+		shard := sa.shards[idx]
 
-	key := EncodeShardKey(uint16(idx), handle)
-	if sa.allocated[key] == 0 {
-		sa.allocated[key] = sizeBytes
-		return uint64(key), nil
+		seq, ok := popFreelistInline(shard, classIdx)
+		if ok && seq != 0 {
+			node, valid := getArenaIndex(shard, seq)
+			if !valid || node == nil {
+				continue // invalid node, try next shard
+			}
+
+			// Validate state is free
+			if node.state.Load() != nodeStateFree {
+				continue // stale state, try next shard
+			}
+
+			// Mark as live (prevents double-use race)
+			if !node.state.CompareAndSwap(nodeStateFree, nodeStateLive) {
+				continue // CAS failed due to concurrent free/reclaim, try next shard
+			}
+
+			// Store size for GetHandleSize capability
+			node.size.Store(slotSize)
+
+			sa.reuseHits.Add(1)
+			sa.totalAllocs.Add(1)
+			sa.liveCount.Add(1) // track live handle
+			return uint64(EncodeShardKey(uint16(idx), seq)), nil
+		}
 	}
 
-	return 0, ErrHandleExhausted
+	// All shards exhausted — fall through to fresh mint path
+	// --- Fresh Mint Path (Rare Growth, Still Zero-Allocation After First Time) ---
+	mintIdx := int(sa.pickShard()) // Pick random shard for new handle
+	mintShard := sa.shards[mintIdx]
+	mintShard.mu.Lock()
+	defer mintShard.mu.Unlock()
+
+	mintSeq := mintShard.arenaEnd.Add(1)
+
+	if mintSeq/slotsPerSegment >= maxSegments {
+		return 0, ErrHandleExhausted
+	}
+
+	mintShard.ensureSegment(int(mintSeq / slotsPerSegment))
+	node, valid := getArenaIndex(mintShard, mintSeq)
+	if !valid || node == nil {
+		return 0, ErrHandleExhausted
+	}
+
+	node.size.Store(slotSize)
+	node.next.Store(0)
+	node.state.Store(nodeStateLive)
+
+	sa.freshMints.Add(1)
+	sa.totalAllocs.Add(1)
+	sa.liveCount.Add(1) // track live handle
+	return uint64(EncodeShardKey(uint16(mintIdx), mintSeq)), nil
 }
 
-// FreeFast releases a previously allocated handle by its key.
-// Thread-safe, O(1), expected <5ns latency.
 func (sa *ShardedHandleAllocator) FreeFast(handle uint64) error {
-	if sa.closed {
+	if sa.closed.Load() {
 		return fmt.Errorf("sharded-allocator: already closed")
 	}
 
 	key := ShardKey(handle)
-	shardIdx := key.ShardID()
-	if int(shardIdx) >= len(sa.shards) {
+	shardIdx := int(key.ShardID())
+	if shardIdx >= len(sa.shards) {
 		return fmt.Errorf("sharded-allocator: invalid shard %d", shardIdx)
 	}
-
 	shard := sa.shards[shardIdx]
-	shard.mu.Lock()
-	defer shard.mu.Unlock()
 
-	size, exists := sa.allocated[key]
-	if !exists {
-		return fmt.Errorf("sharded-allocator: unknown handle %d", handle)
-	}
-	delete(sa.allocated, key)
-
-	// Update stats
-	if size > 0 {
-		// Track freed but don't reclaim immediately (simple design)
+	seq := key.SeqNum()
+	node, valid := getArenaIndex(shard, seq)
+	if !valid || node == nil {
+		return ErrInvalidHandle
 	}
 
-	return nil
+	// Validate state is live
+	prevState := node.state.Load()
+	if prevState != nodeStateLive {
+		return ErrInvalidHandle
+	}
+
+	// Read size BEFORE marking free (need size class for freelist routing)
+	size := node.size.Load()
+	classIdx, _ := sa.spec.ClassOf(size)
+
+	// Atomic state transition to free (prevents double-fre)
+	if !node.state.CompareAndSwap(nodeStateLive, nodeStateFree) {
+		return ErrInvalidHandle
+	}
+
+	// --- Push onto Freelist Using Slot's OWN Memory (Intrusive! Zero-Allocation!) ---
+	// NOTE: Must update node.next INSIDE the CAS loop on every retry, not once before.
+	// This prevents freelist corruption when CAS retries due to contention.
+	for retry := 0; retry < 64; retry++ {
+		oldHead := shard.freeLists[classIdx].Load()
+		
+		// Set this slot's 'next' pointer to point to the old head
+		node.next.Store(oldHead)
+		
+		// Increment tag (upper 16 bits), preserve slot index (lower 48 bits)
+		slotIndex := seq // sequence number IS the slot index in our arena
+		newTag := uint64(oldHead >> 48) + 1
+		newPacked := (newTag << 48) | (slotIndex & 0x0000FFFFFFFFFFFF)
+		
+		if shard.freeLists[classIdx].CompareAndSwap(oldHead, newPacked) {
+			sa.liveCount.Add(-1) // handle returned to freelist
+			return nil
+		}
+		if retry >= 8 {
+			runtime.Gosched()
+		}
+	}
+
+	return fmt.Errorf("sharded-allocator: CAS budget exceeded for handle %d", handle)
 }
 
-// Count returns current live allocation count.
-func (sa *ShardedHandleAllocator) Count() int {
-	return len(sa.allocated)
-}
-
-// GetHandleSize returns the size of a previously allocated handle, if it exists.
-// Used by zero-copy path to validate buffer bounds without full lock.
 func (sa *ShardedHandleAllocator) GetHandleSize(handle uint64) (uint64, bool) {
-	sa.mu.RLock()
-	defer sa.mu.RUnlock()
-	
 	key := ShardKey(handle)
-	size, ok := sa.allocated[key]
-	return size, ok
-}
-
-// Close gracefully shuts down the allocator.
-func (sa *ShardedHandleAllocator) Close() {
-	sa.closed = true
-	sa.allocated = make(map[ShardKey]uint64)
-}
-
-// ============================================================================
-// Compatibility Wrapper: Adapts to old mockGPUService signature
-// ============================================================================
-
-// AllocateCompat wraps AllocFast for compatibility with existing GPUService.Alloc.
-func (sa *ShardedHandleAllocator) AllocateCompat(ctx context.Context, sizeBytes uint64) (uint64, error) {
-	if sizeBytes == 0 || sizeBytes > 8*1024*1024*1024 {
-		return 0, fmt.Errorf("invalid allocation size %d bytes", sizeBytes)
+	shardIdx := int(key.ShardID())
+	if shardIdx >= len(sa.shards) {
+		return 0, false
 	}
-	return sa.AllocFast(ctx, sizeBytes)
+
+	seq := key.SeqNum()
+	node, valid := getArenaIndex(sa.shards[shardIdx], seq)
+	if !valid || node == nil || node.state.Load() != nodeStateLive {
+		return 0, false
+	}
+
+	return node.size.Load(), true
 }
 
-// FreeCompat wraps FreeFast for compatibility with existing GPUService.Free.
-func (sa *ShardedHandleAllocator) FreeCompat(ctx context.Context, handle uint64) error {
-	return sa.FreeFast(handle)
+func (sa *ShardedHandleAllocator) Count() int {
+	return int(sa.liveCount.Load())
 }
 
-// BenchmarkLatencyNoContention measures Alloc+Free latency under zero contention.
-// Expected <15ns per operation.
+func (sa *ShardedHandleAllocator) ReuseStats() (freshMints, reuseHits, totalAllocs int64) {
+	return sa.freshMints.Load(), sa.reuseHits.Load(), sa.totalAllocs.Load()
+}
+
+func (sa *ShardedHandleAllocator) Close() {
+	if sa.closed.Swap(true) {
+		return
+	}
+	for _, shard := range sa.shards {
+		for i := range shard.segTable {
+			shard.segTable[i].Store(nil)
+		}
+		for i := range shard.freeLists {
+			shard.freeLists[i].Store(0)
+		}
+		shard.arenaEnd.Store(0)
+	}
+}
+
+// ============================================================================
+// Benchmark Helpers (keep existing interface)
+// ============================================================================
+
 func BenchmarkLatencyNoContention() (allocNs uint64, freeNs uint64) {
 	alloc := NewShardedHandleAllocator()
 	defer alloc.Close()
-	
+
 	ctx := context.Background()
 	start := time.Now().UnixNano()
 	h, _ := alloc.AllocFast(ctx, 4096)
 	allocNs = uint64(time.Now().UnixNano() - start)
-	
+
 	start = time.Now().UnixNano()
 	_ = alloc.FreeFast(h)
 	freeNs = uint64(time.Now().UnixNano() - start)
-	
+
 	return allocNs, freeNs
 }
 
-// runtimeNano provides nanosecond timestamp using time.Now().UnixNano().
-func runtimeNano() int64 {
-	return time.Now().UnixNano()
-}
-
-// ConcurrentBenchmarkSimulates N concurrent goroutines calling Alloc+Free simultaneously.
-// Measures p99 latency degradation vs serial baseline.
 func ConcurrentBenchmark(concurrency int) (avgNs float64, p99Ns uint64) {
 	alloc := NewShardedHandleAllocator()
 	defer alloc.Close()
-	
+
 	results := make(chan int64, concurrency)
-	sem := make(chan struct{}, concurrency)
-	
 	var wg sync.WaitGroup
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			
 			ctx := context.Background()
-			start := runtimeNano()
+			start := time.Now().UnixNano()
 			h, err := alloc.AllocFast(ctx, 4096)
 			if err != nil {
 				results <- -1
 				return
 			}
-			allocNs := runtimeNano() - start
-			
-			err = alloc.FreeFast(h)
-			if err != nil {
+			if err := alloc.FreeFast(h); err != nil {
 				results <- -1
 				return
 			}
-			freeNs := runtimeNano() - start
-			
-			results <- allocNs + freeNs
+			results <- time.Now().UnixNano() - start
 		}()
 	}
 	wg.Wait()
 	close(results)
-	
+
 	latencies := make([]int64, 0, concurrency)
 	for r := range results {
 		if r > 0 {
 			latencies = append(latencies, r)
 		}
 	}
-	
 	if len(latencies) == 0 {
 		return 0, 0
 	}
-	
+
 	sum := int64(0)
 	for _, l := range latencies {
 		sum += l
 	}
 	avg := float64(sum) / float64(len(latencies))
-	
+
 	sort.Ints(convertToSlice(latencies))
 	p99Index := int(float64(len(latencies)) * 0.99)
 	if p99Index >= len(latencies) {
 		p99Index = len(latencies) - 1
 	}
-	
 	return avg, uint64(latencies[p99Index])
 }
 
@@ -302,3 +504,52 @@ func convertToSlice(ints []int64) []int {
 	}
 	return result
 }
+
+// BenchmarkFragmentationReuse proves reuse rate approaches ~100% under churn.
+func BenchmarkFragmentationReuse(b *testing.B) {
+	alloc := NewShardedHandleAllocator()
+	defer alloc.Close()
+	ctx := context.Background()
+
+	for i := 0; i < b.N; i++ {
+		h, err := alloc.AllocFast(ctx, 4096)
+		if err != nil {
+			b.Fatalf("warmup alloc failed: %v", err)
+		}
+		_ = alloc.FreeFast(h)
+	}
+
+	fresh, reuse, total := alloc.ReuseStats()
+	denom := float64(fresh + reuse)
+	rate := 0.0
+	if denom > 0 {
+		rate = 100 * float64(reuse) / denom
+	}
+	b.Logf("[reuse] freshMints=%d reuseHits=%d total=%d reuseRate=%.2f%%", fresh, reuse, total, rate)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		h, err := alloc.AllocFast(ctx, 4096)
+		if err != nil {
+			b.Fatalf("alloc %d failed: %v", i, err)
+		}
+		_ = alloc.FreeFast(h)
+	}
+}
+
+// ============================================================================
+// Compatibility wrappers (keep existing API surface)
+// ============================================================================
+
+// AllocateCompat wraps AllocFast for compatibility with existing callers.
+func (sa *ShardedHandleAllocator) AllocateCompat(ctx context.Context, sizeBytes uint64) (uint64, error) {
+	return sa.AllocFast(ctx, sizeBytes)
+}
+
+// FreeCompat wraps FreeFast for existing callers.
+func (sa *ShardedHandleAllocator) FreeCompat(_ context.Context, handle uint64) error {
+	return sa.FreeFast(handle)
+}
+
+// _ ensures unsafe stays referenced for potential future use.
+var _ = unsafe.Sizeof(arenaNode{})
