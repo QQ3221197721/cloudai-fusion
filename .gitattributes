@@ -1,3 +1,20 @@
+* text eol=lf
+*.go text diff=go
+*.md text
+*.yaml text
+*.yml text
+*.json text
+*.toml text
+*.sh text
+*.ps1 text
+*.bat text
+
+# GitHub large files (>100MB)
+*.exe binary
+*.test binary
+bin/* binary
+tmp/* binary
+output/* txt
 *.exe filter=lfs diff=lfs merge=lfs -text
 *.test.exe filter=lfs diff=lfs merge=lfs -text
 bin/* filter=lfs diff=lfs merge=lfs -text
