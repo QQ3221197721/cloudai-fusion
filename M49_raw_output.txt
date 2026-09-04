@@ -1,0 +1,10 @@
+﻿FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/aiops [setup failed]
+go : # github.com/cloudai-fusion/cloudai-fusion/pkg/aiops
+所在位置 行:1 字符: 45
++ ... dai-fusion; go test -bench=BenchmarkM49_FullComparison -benchtime=1s  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# github.com/cl...usion/pkg/aiops:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+pkg\aiops\M49_self_heal_controller_bench_test.go:11:75: illegal UTF-8 encoding
+FAIL

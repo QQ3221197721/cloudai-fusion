@@ -1,0 +1,1 @@
+Clear-Host; Write-Host "=== Pushing Core Code Only ==="-ForegroundColor Green; git reset HEAD . -q; git add pkg/cmd pkg/aisecops pkg/evidence pkg/store .gitignore go.mod go.sum -f; git commit -m "AISecOps Wells Framework v1.0.0-rc1" -q; Write-Host "Commit created successfully!" -ForegroundColor Green

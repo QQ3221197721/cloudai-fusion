@@ -145,3 +145,19 @@ _ux_innovation_plan.md
 task*_fix_report.md
 task*_report.md
 **/TASK_*_SUMMARY.md
+# Audit reports and benchmark summaries (internal use)
+BUILD_FIX_SUMMARY.md
+M*_BENCHMARK*.md
+M*_VERDICT.md
+M*_H2H*.md
+M*_COMPLETE.md
+M*_FINAL*.md
+M*_STATS.md
+M*_COMPARISON*.md
+M*_BASLINE*.txt
+*benchmark*.json
+*head-to-head*.md
+AISecOps_WELLS*.md
+AISECOPS*.md
+EVIDENCE_LEDGER*.md
+FLIP_BENCHMARK*.md
