@@ -1,0 +1,6 @@
+# CloudAI Fusion — APT Repository Configuration
+# Install:
+#   curl -fsSL https://apt.cloudai-fusion.io/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/cloudai-fusion.gpg
+#   echo "deb [signed-by=/usr/share/keyrings/cloudai-fusion.gpg] https://apt.cloudai-fusion.io stable main" | sudo tee /etc/apt/sources.list.d/cloudai-fusion.list
+#   sudo apt update && sudo apt install cloudai-fusion
+deb [signed-by=/usr/share/keyrings/cloudai-fusion.gpg] https://apt.cloudai-fusion.io stable main

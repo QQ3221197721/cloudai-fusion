@@ -1,0 +1,42 @@
+{
+  "id": "job-fe1b265a647447b4",
+  "name": "second-finetune",
+  "image": "pytorch:2.0",
+  "gpu_count": 2,
+  "memory_gb": 16,
+  "base_model": "resnet50:1.0.0",
+  "dataset_ref": "ds-abc123",
+  "command": "python train.py --epochs 10",
+  "status": "succeeded",
+  "events": [
+    {
+      "timestamp": "2026-08-16T11:50:39.2312436Z",
+      "from": "",
+      "to": "queued",
+      "reason": "submitted"
+    },
+    {
+      "timestamp": "2026-08-16T11:50:50.1360829Z",
+      "from": "queued",
+      "to": "scheduled",
+      "reason": "resources allocated"
+    },
+    {
+      "timestamp": "2026-08-16T11:50:50.1389166Z",
+      "from": "scheduled",
+      "to": "running",
+      "reason": "execution started"
+    },
+    {
+      "timestamp": "2026-08-16T11:50:50.1454927Z",
+      "from": "running",
+      "to": "succeeded",
+      "reason": "completed (simulated run-once) (model resnet50:1.2.0 registered)"
+    }
+  ],
+  "created_at": "2026-08-16T11:50:39.2312436Z",
+  "scheduled_at": "2026-08-16T11:50:50.1360829Z",
+  "started_at": "2026-08-16T11:50:50.1389166Z",
+  "completed_at": "2026-08-16T11:50:50.1454927Z",
+  "actor": "cafctl-train"
+}

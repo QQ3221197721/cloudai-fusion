@@ -1,0 +1,16 @@
+{
+  "name": "resnet50",
+  "version": "1.0.0",
+  "sha256": "98b126d10cbe681f49a877466f2b9c471d9de6993a0a1f65b258a009e9002d35",
+  "size_bytes": 41,
+  "created_by": "cafctl",
+  "created_at": "2026-08-16T11:49:41.5421456Z",
+  "lineage": {
+    "dataset_ref": "ds-abc123",
+    "code_ref": "git:9f8e7d6"
+  },
+  "model_card": {
+    "task_type": "classification",
+    "framework": "pytorch"
+  }
+}

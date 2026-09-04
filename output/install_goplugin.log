@@ -1,0 +1,8 @@
+﻿go : go: added github.com/hashicorp/go-plugin v1.5.1
+所在位置 行:1 字符: 45
++ ... dai-fusion; go get github.com/hashicorp/go-plugin@v1.5.1 2>&1 | Out-F ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (go: added githu...o-plugin v1.5.1:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+go: added github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb

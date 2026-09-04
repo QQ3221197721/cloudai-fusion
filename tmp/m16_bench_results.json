@@ -1,0 +1,134 @@
+﻿{"Time":"2026-08-25T07:47:24.1692521+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler"}
+{"Time":"2026-08-25T07:47:24.2105261+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"goos: windows\n"}
+{"Time":"2026-08-25T07:47:24.2105261+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"goarch: amd64\n"}
+{"Time":"2026-08-25T07:47:24.2105261+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/scaler\n"}
+{"Time":"2026-08-25T07:47:24.2105261+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-25T07:47:24.2105261+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkFSMDecisionLatency"}
+{"Time":"2026-08-25T07:47:24.2105261+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkFSMDecisionLatency","Output":"=== RUN   BenchmarkFSMDecisionLatency\n"}
+{"Time":"2026-08-25T07:47:24.2105261+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkFSMDecisionLatency","Output":"BenchmarkFSMDecisionLatency\n"}
+{"Time":"2026-08-25T07:47:28.1553335+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkFSMDecisionLatency","Output":"BenchmarkFSMDecisionLatency-24                \t"}
+{"Time":"2026-08-25T07:47:28.1553335+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkFSMDecisionLatency","Output":"   10910\t    233649 ns/op\t    3198 B/op\t      39 allocs/op\n"}
+{"Time":"2026-08-25T07:47:32.3665725+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkFSMDecisionLatency-24                \t"}
+{"Time":"2026-08-25T07:47:32.3665725+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    8590\t    253192 ns/op\t    3199 B/op\t      39 allocs/op\n"}
+{"Time":"2026-08-25T07:47:36.970427+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkFSMDecisionLatency-24                \t"}
+{"Time":"2026-08-25T07:47:36.970427+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    9398\t    306454 ns/op\t    3197 B/op\t      39 allocs/op\n"}
+{"Time":"2026-08-25T07:47:40.7791957+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkFSMDecisionLatency-24                \t"}
+{"Time":"2026-08-25T07:47:40.7797325+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    9444\t    213307 ns/op\t    3201 B/op\t      39 allocs/op\n"}
+{"Time":"2026-08-25T07:47:45.6998581+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkFSMDecisionLatency-24                \t"}
+{"Time":"2026-08-25T07:47:45.7004098+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    9366\t    348483 ns/op\t    3197 B/op\t      39 allocs/op\n"}
+{"Time":"2026-08-25T07:47:49.9599396+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkFSMDecisionLatency-24                \t"}
+{"Time":"2026-08-25T07:47:49.9599396+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    9930\t    288430 ns/op\t    3182 B/op\t      39 allocs/op\n"}
+{"Time":"2026-08-25T07:47:49.9599396+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkKEDADecisionLatency"}
+{"Time":"2026-08-25T07:47:49.9599396+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkKEDADecisionLatency","Output":"=== RUN   BenchmarkKEDADecisionLatency\n"}
+{"Time":"2026-08-25T07:47:49.9599396+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkKEDADecisionLatency","Output":"BenchmarkKEDADecisionLatency\n"}
+{"Time":"2026-08-25T07:47:52.9596026+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkKEDADecisionLatency","Output":"BenchmarkKEDADecisionLatency-24               \t"}
+{"Time":"2026-08-25T07:47:52.9596026+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkKEDADecisionLatency","Output":"1000000000\t         2.759 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:47:55.4412301+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkKEDADecisionLatency-24               \t"}
+{"Time":"2026-08-25T07:47:55.4421055+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"898490422\t         2.456 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:47:58.187347+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkKEDADecisionLatency-24               \t"}
+{"Time":"2026-08-25T07:47:58.187347+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"1000000000\t         2.506 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:48:00.8016759+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkKEDADecisionLatency-24               \t"}
+{"Time":"2026-08-25T07:48:00.8026688+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"914694103\t         2.560 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:48:03.7285998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkKEDADecisionLatency-24               \t"}
+{"Time":"2026-08-25T07:48:03.7292157+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"1000000000\t         2.679 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:48:06.3072563+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkKEDADecisionLatency-24               \t"}
+{"Time":"2026-08-25T07:48:06.3072563+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"882601496\t         2.603 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:48:06.3072563+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1"}
+{"Time":"2026-08-25T07:48:06.3072563+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1","Output":"=== RUN   BenchmarkCompareThroughput_C1\n"}
+{"Time":"2026-08-25T07:48:06.3072563+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1","Output":"BenchmarkCompareThroughput_C1\n"}
+{"Time":"2026-08-25T07:48:06.3231455+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/FSM_only"}
+{"Time":"2026-08-25T07:48:06.3235417+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/FSM_only","Output":"=== RUN   BenchmarkCompareThroughput_C1/FSM_only\n"}
+{"Time":"2026-08-25T07:48:06.3235417+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/FSM_only","Output":"BenchmarkCompareThroughput_C1/FSM_only\n"}
+{"Time":"2026-08-25T07:48:09.1423194+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/FSM_only","Output":"BenchmarkCompareThroughput_C1/FSM_only-24     \t"}
+{"Time":"2026-08-25T07:48:09.1423194+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/FSM_only","Output":"   10000\t    279484 ns/op\n"}
+{"Time":"2026-08-25T07:48:11.5653615+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/FSM_only-24     \t"}
+{"Time":"2026-08-25T07:48:11.5663605+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    8725\t    274174 ns/op\n"}
+{"Time":"2026-08-25T07:48:13.8851464+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/FSM_only-24     \t"}
+{"Time":"2026-08-25T07:48:13.8851464+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    8994\t    254417 ns/op\n"}
+{"Time":"2026-08-25T07:48:18.0727917+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/FSM_only-24     \t"}
+{"Time":"2026-08-25T07:48:18.0727917+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   10617\t    246469 ns/op\n"}
+{"Time":"2026-08-25T07:48:20.3616933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/FSM_only-24     \t"}
+{"Time":"2026-08-25T07:48:20.3616933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   10000\t    226626 ns/op\n"}
+{"Time":"2026-08-25T07:48:22.5887998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/FSM_only-24     \t"}
+{"Time":"2026-08-25T07:48:22.5887998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   10000\t    220265 ns/op\n"}
+{"Time":"2026-08-25T07:48:22.5887998+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/KEDA_only"}
+{"Time":"2026-08-25T07:48:22.5887998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/KEDA_only","Output":"=== RUN   BenchmarkCompareThroughput_C1/KEDA_only\n"}
+{"Time":"2026-08-25T07:48:22.5887998+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/KEDA_only","Output":"BenchmarkCompareThroughput_C1/KEDA_only\n"}
+{"Time":"2026-08-25T07:48:25.0044023+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/KEDA_only","Output":"BenchmarkCompareThroughput_C1/KEDA_only-24    \t"}
+{"Time":"2026-08-25T07:48:25.0044023+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkCompareThroughput_C1/KEDA_only","Output":"799114580\t         2.621 ns/op\n"}
+{"Time":"2026-08-25T07:48:28.0588434+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/KEDA_only-24    \t"}
+{"Time":"2026-08-25T07:48:28.0588434+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"937339260\t         2.977 ns/op\n"}
+{"Time":"2026-08-25T07:48:30.6759483+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/KEDA_only-24    \t"}
+{"Time":"2026-08-25T07:48:30.6769317+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"950264350\t         2.476 ns/op\n"}
+{"Time":"2026-08-25T07:48:33.2896414+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/KEDA_only-24    \t"}
+{"Time":"2026-08-25T07:48:33.2896414+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"927762480\t         2.521 ns/op\n"}
+{"Time":"2026-08-25T07:48:36.0864557+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/KEDA_only-24    \t"}
+{"Time":"2026-08-25T07:48:36.0864557+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"984264078\t         2.571 ns/op\n"}
+{"Time":"2026-08-25T07:48:38.6508869+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkCompareThroughput_C1/KEDA_only-24    \t"}
+{"Time":"2026-08-25T07:48:38.6516847+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"895456231\t         2.546 ns/op\n"}
+{"Time":"2026-08-25T07:48:38.6631844+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkPredictiveScaling_FullPipeline"}
+{"Time":"2026-08-25T07:48:38.6631844+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkPredictiveScaling_FullPipeline","Output":"=== RUN   BenchmarkPredictiveScaling_FullPipeline\n"}
+{"Time":"2026-08-25T07:48:38.6631844+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkPredictiveScaling_FullPipeline","Output":"BenchmarkPredictiveScaling_FullPipeline\n"}
+{"Time":"2026-08-25T07:48:43.8437911+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkPredictiveScaling_FullPipeline","Output":"BenchmarkPredictiveScaling_FullPipeline-24    \t"}
+{"Time":"2026-08-25T07:48:43.8444431+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkPredictiveScaling_FullPipeline","Output":"   15158\t    234211 ns/op\t  257222 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:48:48.792757+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkPredictiveScaling_FullPipeline-24    \t"}
+{"Time":"2026-08-25T07:48:48.7933386+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   15060\t    221908 ns/op\t  255695 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:48:53.7887102+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkPredictiveScaling_FullPipeline-24    \t"}
+{"Time":"2026-08-25T07:48:53.7892759+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   16561\t    212982 ns/op\t  279943 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:48:59.1881139+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkPredictiveScaling_FullPipeline-24    \t"}
+{"Time":"2026-08-25T07:48:59.1881139+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   17305\t    230539 ns/op\t  291875 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:49:04.2720277+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkPredictiveScaling_FullPipeline-24    \t"}
+{"Time":"2026-08-25T07:49:04.2726174+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   15553\t    226198 ns/op\t  263649 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:49:09.1867219+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkPredictiveScaling_FullPipeline-24    \t"}
+{"Time":"2026-08-25T07:49:09.1873306+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   16542\t    207767 ns/op\t  279624 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:49:09.1873306+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad"}
+{"Time":"2026-08-25T07:49:09.1873306+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad","Output":"=== RUN   BenchmarkScalability_HeavyLoad\n"}
+{"Time":"2026-08-25T07:49:09.1873306+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad","Output":"BenchmarkScalability_HeavyLoad\n"}
+{"Time":"2026-08-25T07:49:09.1878393+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/FSM_heavy"}
+{"Time":"2026-08-25T07:49:09.1878393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/FSM_heavy","Output":"=== RUN   BenchmarkScalability_HeavyLoad/FSM_heavy\n"}
+{"Time":"2026-08-25T07:49:09.1878393+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/FSM_heavy","Output":"BenchmarkScalability_HeavyLoad/FSM_heavy\n"}
+{"Time":"2026-08-25T07:49:13.6384042+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/FSM_heavy","Output":"BenchmarkScalability_HeavyLoad/FSM_heavy-24   \t"}
+{"Time":"2026-08-25T07:49:13.6384042+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/FSM_heavy","Output":"    9778\t    302481 ns/op\t    3423 B/op\t      40 allocs/op\n"}
+{"Time":"2026-08-25T07:49:17.7369527+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/FSM_heavy-24   \t"}
+{"Time":"2026-08-25T07:49:17.7369527+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    8431\t    255589 ns/op\t    3423 B/op\t      40 allocs/op\n"}
+{"Time":"2026-08-25T07:49:21.689933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/FSM_heavy-24   \t"}
+{"Time":"2026-08-25T07:49:21.689933+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    8240\t    251936 ns/op\t    3425 B/op\t      40 allocs/op\n"}
+{"Time":"2026-08-25T07:49:28.318872+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/FSM_heavy-24   \t"}
+{"Time":"2026-08-25T07:49:28.318872+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    9686\t    375331 ns/op\t    3423 B/op\t      40 allocs/op\n"}
+{"Time":"2026-08-25T07:49:33.5006848+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/FSM_heavy-24   \t"}
+{"Time":"2026-08-25T07:49:33.5006848+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   10834\t    320776 ns/op\t    3420 B/op\t      40 allocs/op\n"}
+{"Time":"2026-08-25T07:49:37.0119872+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/FSM_heavy-24   \t"}
+{"Time":"2026-08-25T07:49:37.0119872+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"    9505\t    308630 ns/op\t    3421 B/op\t      40 allocs/op\n"}
+{"Time":"2026-08-25T07:49:37.0119872+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/KEDA_heavy"}
+{"Time":"2026-08-25T07:49:37.0119872+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/KEDA_heavy","Output":"=== RUN   BenchmarkScalability_HeavyLoad/KEDA_heavy\n"}
+{"Time":"2026-08-25T07:49:37.0119872+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/KEDA_heavy","Output":"BenchmarkScalability_HeavyLoad/KEDA_heavy\n"}
+{"Time":"2026-08-25T07:49:39.7965475+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/KEDA_heavy","Output":"BenchmarkScalability_HeavyLoad/KEDA_heavy-24  \t"}
+{"Time":"2026-08-25T07:49:39.7965475+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/KEDA_heavy","Output":"850450118\t         2.932 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:49:42.4812422+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/KEDA_heavy-24  \t"}
+{"Time":"2026-08-25T07:49:42.4812422+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"794701460\t         2.989 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:49:45.2452178+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/KEDA_heavy-24  \t"}
+{"Time":"2026-08-25T07:49:45.2452178+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"828802831\t         2.963 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:49:48.0290773+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/KEDA_heavy-24  \t"}
+{"Time":"2026-08-25T07:49:48.0294698+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"824214600\t         3.015 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:49:50.8354182+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/KEDA_heavy-24  \t"}
+{"Time":"2026-08-25T07:49:50.8361838+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"800081074\t         3.110 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:49:53.6606727+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/KEDA_heavy-24  \t"}
+{"Time":"2026-08-25T07:49:53.6606727+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"881808942\t         2.875 ns/op\t       0 B/op\t       0 allocs/op\n"}
+{"Time":"2026-08-25T07:49:53.6614579+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/Predictive_heavy"}
+{"Time":"2026-08-25T07:49:53.6614579+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/Predictive_heavy","Output":"=== RUN   BenchmarkScalability_HeavyLoad/Predictive_heavy\n"}
+{"Time":"2026-08-25T07:49:53.6614579+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/Predictive_heavy","Output":"BenchmarkScalability_HeavyLoad/Predictive_heavy\n"}
+{"Time":"2026-08-25T07:49:58.7131396+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/Predictive_heavy","Output":"BenchmarkScalability_HeavyLoad/Predictive_heavy-24         \t"}
+{"Time":"2026-08-25T07:49:58.7131396+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Test":"BenchmarkScalability_HeavyLoad/Predictive_heavy","Output":"   18300\t    203758 ns/op\t  307962 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:50:03.6988374+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/Predictive_heavy-24         \t"}
+{"Time":"2026-08-25T07:50:03.6998328+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   18310\t    200057 ns/op\t  308116 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:50:08.9590247+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/Predictive_heavy-24         \t"}
+{"Time":"2026-08-25T07:50:08.9596034+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   19360\t    206364 ns/op\t  325105 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:50:14.2086843+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/Predictive_heavy-24         \t"}
+{"Time":"2026-08-25T07:50:14.2092186+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   20412\t    197812 ns/op\t  342038 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:50:19.0116199+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/Predictive_heavy-24         \t"}
+{"Time":"2026-08-25T07:50:19.0119542+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   18777\t    187108 ns/op\t  315784 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:50:24.471765+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"BenchmarkScalability_HeavyLoad/Predictive_heavy-24         \t"}
+{"Time":"2026-08-25T07:50:24.4725193+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"   20101\t    211583 ns/op\t  337184 B/op\t      10 allocs/op\n"}
+{"Time":"2026-08-25T07:50:24.4725193+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"PASS\n"}
+{"Time":"2026-08-25T07:50:24.4771405+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/scaler\t180.308s\n"}
+{"Time":"2026-08-25T07:50:24.4771405+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/scaler","Elapsed":180.308}

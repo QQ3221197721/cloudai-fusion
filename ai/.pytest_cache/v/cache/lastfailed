@@ -1,0 +1,14 @@
+{
+  "tests/test_anomaly.py::TestTimeSeriesAnomalyDetector": true,
+  "tests/test_anomaly.py::TestGPUAnomalyDetector": true,
+  "tests/test_llm_client.py::TestLLMConfig": true,
+  "tests/test_llm_client.py::TestLLMClient": true,
+  "tests/test_llm_client.py::TestPromptTemplates": true,
+  "tests/test_llm_client.py::TestLLMProvider": true,
+  "tests/test_operations_agent.py::TestIncident": true,
+  "tests/test_operations_agent.py::TestRemediationAction": true,
+  "tests/test_operations_agent.py::TestIncidentAnalysis": true,
+  "tests/test_operations_agent.py::TestOperationsAgent": true,
+  "tests/test_scheduler.py::TestGPUSchedulingEnv": true,
+  "tests/test_scheduler.py::TestSchedulingTrainer": true
+}

@@ -1,0 +1,104 @@
+﻿{"Time":"2026-08-24T13:24:24.7411368+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing"}
+{"Time":"2026-08-24T13:24:24.7897702+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchRelativeErrorBound"}
+{"Time":"2026-08-24T13:24:24.7897702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchRelativeErrorBound","Output":"=== RUN   TestSketchRelativeErrorBound\n"}
+{"Time":"2026-08-24T13:24:24.7897702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchRelativeErrorBound","Output":"--- PASS: TestSketchRelativeErrorBound (0.00s)\n"}
+{"Time":"2026-08-24T13:24:24.7897702+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchRelativeErrorBound","Elapsed":0}
+{"Time":"2026-08-24T13:24:24.7897702+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchQuantileAccuracy"}
+{"Time":"2026-08-24T13:24:24.7897702+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchQuantileAccuracy","Output":"=== RUN   TestSketchQuantileAccuracy\n"}
+{"Time":"2026-08-24T13:24:24.801449+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchQuantileAccuracy","Output":"--- PASS: TestSketchQuantileAccuracy (0.01s)\n"}
+{"Time":"2026-08-24T13:24:24.801449+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchQuantileAccuracy","Elapsed":0.01}
+{"Time":"2026-08-24T13:24:24.801449+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchBucketBoundedByRange"}
+{"Time":"2026-08-24T13:24:24.801449+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchBucketBoundedByRange","Output":"=== RUN   TestSketchBucketBoundedByRange\n"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchBucketBoundedByRange","Output":"    compression_test.go:91: 1e6 samples -\u003e 347 buckets (bound 348)\n"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchBucketBoundedByRange","Output":"--- PASS: TestSketchBucketBoundedByRange (0.03s)\n"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestSketchBucketBoundedByRange","Elapsed":0.03}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonOrderIndependence"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonOrderIndependence","Output":"=== RUN   TestCanonicalSkeletonOrderIndependence\n"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonOrderIndependence","Output":"--- PASS: TestCanonicalSkeletonOrderIndependence (0.00s)\n"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonOrderIndependence","Elapsed":0}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonDistinguishesShapes"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonDistinguishesShapes","Output":"=== RUN   TestCanonicalSkeletonDistinguishesShapes\n"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonDistinguishesShapes","Output":"--- PASS: TestCanonicalSkeletonDistinguishesShapes (0.00s)\n"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCanonicalSkeletonDistinguishesShapes","Elapsed":0}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressorReconstruction"}
+{"Time":"2026-08-24T13:24:24.828643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressorReconstruction","Output":"=== RUN   TestCompressorReconstruction\n"}
+{"Time":"2026-08-24T13:24:24.9027239+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressorReconstruction","Output":"    compression_test.go:233: reconstruction OK: spans=150000 traces=50000 skeletons=1 raw=11150000B compressed=2070B ratio=5386.5x\n"}
+{"Time":"2026-08-24T13:24:24.9027239+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressorReconstruction","Output":"--- PASS: TestCompressorReconstruction (0.07s)\n"}
+{"Time":"2026-08-24T13:24:24.9027239+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressorReconstruction","Elapsed":0.07}
+{"Time":"2026-08-24T13:24:24.9027239+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressingExporterIntegration"}
+{"Time":"2026-08-24T13:24:24.9027239+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressingExporterIntegration","Output":"=== RUN   TestCompressingExporterIntegration\n"}
+{"Time":"2026-08-24T13:24:25.0098354+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressingExporterIntegration","Output":"    compression_test.go:282: exporter integration: 600 spans -\u003e 1 skeleton, ratio=314.1x (raw=44600B, compressed=142B)\n"}
+{"Time":"2026-08-24T13:24:25.0098354+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressingExporterIntegration","Output":"--- PASS: TestCompressingExporterIntegration (0.11s)\n"}
+{"Time":"2026-08-24T13:24:25.0098354+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompressingExporterIntegration","Elapsed":0.11}
+{"Time":"2026-08-24T13:24:25.0098354+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_ProducesVerifiableReceipt"}
+{"Time":"2026-08-24T13:24:25.0098354+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_ProducesVerifiableReceipt","Output":"=== RUN   TestCompleteTrace_ProducesVerifiableReceipt\n"}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_ProducesVerifiableReceipt","Output":"--- PASS: TestCompleteTrace_ProducesVerifiableReceipt (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_ProducesVerifiableReceipt","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_RejectsBadInput"}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_RejectsBadInput","Output":"=== RUN   TestCompleteTrace_RejectsBadInput\n"}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_RejectsBadInput","Output":"--- PASS: TestCompleteTrace_RejectsBadInput (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestCompleteTrace_RejectsBadInput","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_DetectsAnomaly"}
+{"Time":"2026-08-24T13:24:25.0113896+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_DetectsAnomaly","Output":"=== RUN   TestLatencyFingerprint_DetectsAnomaly\n"}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_DetectsAnomaly","Output":"--- PASS: TestLatencyFingerprint_DetectsAnomaly (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_DetectsAnomaly","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_NoColdStartFalsePositive"}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_NoColdStartFalsePositive","Output":"=== RUN   TestLatencyFingerprint_NoColdStartFalsePositive\n"}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_NoColdStartFalsePositive","Output":"--- PASS: TestLatencyFingerprint_NoColdStartFalsePositive (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestLatencyFingerprint_NoColdStartFalsePositive","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanBasics"}
+{"Time":"2026-08-24T13:24:25.0129556+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanBasics","Output":"=== RUN   TestFastSpanBasics\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanBasics","Output":"--- PASS: TestFastSpanBasics (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanBasics","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanParentLinking"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanParentLinking","Output":"=== RUN   TestFastSpanParentLinking\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanParentLinking","Output":"--- PASS: TestFastSpanParentLinking (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanParentLinking","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanUniqueIDs"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanUniqueIDs","Output":"=== RUN   TestFastSpanUniqueIDs\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanUniqueIDs","Output":"--- PASS: TestFastSpanUniqueIDs (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanUniqueIDs","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastTracerOnEnd"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastTracerOnEnd","Output":"=== RUN   TestFastTracerOnEnd\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastTracerOnEnd","Output":"--- PASS: TestFastTracerOnEnd (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastTracerOnEnd","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanDroppedAttributes"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanDroppedAttributes","Output":"=== RUN   TestFastSpanDroppedAttributes\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanDroppedAttributes","Output":"--- PASS: TestFastSpanDroppedAttributes (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanDroppedAttributes","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanPoolResetNoLeak"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanPoolResetNoLeak","Output":"=== RUN   TestFastSpanPoolResetNoLeak\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanPoolResetNoLeak","Output":"--- PASS: TestFastSpanPoolResetNoLeak (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanPoolResetNoLeak","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanConcurrent"}
+{"Time":"2026-08-24T13:24:25.0134649+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanConcurrent","Output":"=== RUN   TestFastSpanConcurrent\n"}
+{"Time":"2026-08-24T13:24:25.0139929+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanConcurrent","Output":"--- PASS: TestFastSpanConcurrent (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0139929+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestFastSpanConcurrent","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0139929+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_Disabled"}
+{"Time":"2026-08-24T13:24:25.0139929+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_Disabled","Output":"=== RUN   TestInit_Disabled\n"}
+{"Time":"2026-08-24T13:24:25.0139929+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_Disabled","Output":"--- PASS: TestInit_Disabled (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_Disabled","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_NoEndpoint"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_NoEndpoint","Output":"=== RUN   TestInit_NoEndpoint\n"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_NoEndpoint","Output":"--- PASS: TestInit_NoEndpoint (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestInit_NoEndpoint","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestStartSpan"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestStartSpan","Output":"=== RUN   TestStartSpan\n"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestStartSpan","Output":"--- PASS: TestStartSpan (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestStartSpan","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestConfig_SampleRate"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestConfig_SampleRate","Output":"=== RUN   TestConfig_SampleRate\n"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestConfig_SampleRate","Output":"--- PASS: TestConfig_SampleRate (0.00s)\n"}
+{"Time":"2026-08-24T13:24:25.0145113+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"TestConfig_SampleRate","Elapsed":0}
+{"Time":"2026-08-24T13:24:25.0160643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"goos: windows\n"}
+{"Time":"2026-08-24T13:24:25.0160643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T13:24:25.0160643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/tracing\n"}
+{"Time":"2026-08-24T13:24:25.0160643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T13:24:25.0160643+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkCompressionBandwidth"}
+{"Time":"2026-08-24T13:24:25.0160643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkCompressionBandwidth","Output":"=== RUN   BenchmarkCompressionBandwidth\n"}
+{"Time":"2026-08-24T13:24:25.0160643+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkCompressionBandwidth","Output":"BenchmarkCompressionBandwidth\n"}
+{"Time":"2026-08-24T13:24:30.9081044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkCompressionBandwidth","Output":"BenchmarkCompressionBandwidth-24    \t"}
+{"Time":"2026-08-24T13:24:30.9081044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Test":"BenchmarkCompressionBandwidth","Output":"      16\t 346603288 ns/op\t         0.9934 %-max-recon-err\t       695.9 x-reduction\t236329913 B/op\t 2673601 allocs/op\n"}
+{"Time":"2026-08-24T13:24:30.9081044+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"PASS\n"}
+{"Time":"2026-08-24T13:24:30.9152531+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/tracing\t6.174s\n"}
+{"Time":"2026-08-24T13:24:30.9152531+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing","Elapsed":6.174}

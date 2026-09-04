@@ -1,0 +1,23 @@
+{
+  "name": "resnet50",
+  "version": "1.2.0",
+  "sha256": "82dc3c13eec5fd67b35455a8e657d8c32d32fac7a983ccc29a1456fcb14cc40d",
+  "size_bytes": 34,
+  "created_by": "cafctl-train",
+  "created_at": "2026-08-16T11:50:50.1422104Z",
+  "lineage": {
+    "dataset_ref": "ds-abc123",
+    "code_ref": "python train.py --epochs 10",
+    "hyperparams": {
+      "command": "python train.py --epochs 10",
+      "gpu_count": "2",
+      "memory_gb": "16"
+    },
+    "parent_version": "1.0.0"
+  },
+  "model_card": {
+    "summary": "Training job job-fe1b265a647447b4 completed",
+    "task_type": "fine-tuning",
+    "framework": "pytorch"
+  }
+}

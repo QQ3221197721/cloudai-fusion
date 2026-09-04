@@ -1,0 +1,7 @@
+﻿{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster [github.com/cloudai-fusion/cloudai-fusion/pkg/cluster.test]","Action":"build-output","Output":"# github.com/cloudai-fusion/cloudai-fusion/pkg/cluster [github.com/cloudai-fusion/cloudai-fusion/pkg/cluster.test]\n"}
+{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster [github.com/cloudai-fusion/cloudai-fusion/pkg/cluster.test]","Action":"build-output","Output":"pkg\\cluster\\raft_t2_bench_test.go:47:14: undefined: io\n"}
+{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster [github.com/cloudai-fusion/cloudai-fusion/pkg/cluster.test]","Action":"build-output","Output":"pkg\\cluster\\raft_t2_bench_test.go:64:16: undefined: io\n"}
+{"ImportPath":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster [github.com/cloudai-fusion/cloudai-fusion/pkg/cluster.test]","Action":"build-fail"}
+{"Time":"2026-08-26T02:39:24.4764517+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster"}
+{"Time":"2026-08-26T02:39:24.4764517+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster","Output":"FAIL\tgithub.com/cloudai-fusion/cloudai-fusion/pkg/cluster [build failed]\n"}
+{"Time":"2026-08-26T02:39:24.4769659+08:00","Action":"fail","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster","Elapsed":0.001,"FailedBuild":"github.com/cloudai-fusion/cloudai-fusion/pkg/cluster [github.com/cloudai-fusion/cloudai-fusion/pkg/cluster.test]"}

@@ -1,0 +1,23 @@
+# CloudAI Fusion — YUM/DNF Repository Configuration
+# Install:
+#   sudo rpm --import https://yum.cloudai-fusion.io/gpg.key
+#   sudo cp cloudai-fusion.repo /etc/yum.repos.d/
+#   sudo yum install cloudai-fusion   (or: sudo dnf install cloudai-fusion)
+
+[cloudai-fusion]
+name=CloudAI Fusion — Cloud-Native AI Unified Management Platform
+baseurl=https://yum.cloudai-fusion.io/stable/$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://yum.cloudai-fusion.io/gpg.key
+repo_gpgcheck=1
+sslverify=1
+metadata_expire=300
+type=rpm-md
+
+[cloudai-fusion-nightly]
+name=CloudAI Fusion — Nightly Builds
+baseurl=https://yum.cloudai-fusion.io/nightly/$basearch
+enabled=0
+gpgcheck=1
+gpgkey=https://yum.cloudai-fusion.io/gpg.key

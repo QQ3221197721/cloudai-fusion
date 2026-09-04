@@ -1,0 +1,29 @@
+episodes=6000  final_states=21577
+
+block mean episode reward (500-episode blocks):
+  ep     0-500   mean= -179.18  std=  30.77  min=  -254.9  max=   -73.7
+  ep   500-1000  mean= -181.43  std=  31.99  min=  -246.0  max=   -79.0
+  ep  1000-1500  mean= -179.77  std=  30.74  min=  -253.1  max=   -75.7
+  ep  1500-2000  mean= -175.34  std=  31.98  min=  -245.6  max=   -80.5
+  ep  2000-2500  mean= -180.99  std=  30.98  min=  -252.1  max=   -79.1
+  ep  2500-3000  mean= -176.50  std=  29.71  min=  -243.4  max=   -87.3
+  ep  3000-3500  mean= -179.54  std=  30.48  min=  -241.2  max=   -80.5
+  ep  3500-4000  mean= -180.32  std=  32.77  min=  -262.0  max=   -75.0
+  ep  4000-4500  mean= -178.07  std=  32.55  min=  -259.3  max=   -87.7
+  ep  4500-5000  mean= -176.24  std=  33.40  min=  -244.8  max=   -65.5
+  ep  5000-5500  mean= -175.18  std=  31.89  min=  -245.9  max=   -84.1
+  ep  5500-6000  mean= -175.17  std=  30.69  min=  -236.4  max=   -72.0
+
+Q-table growth at checkpoints:
+  ep   250: states=  7997
+  ep   500: states= 11095
+  ep  1000: states= 14093
+  ep  2000: states= 17212
+  ep  3500: states= 19487
+  ep  6000: states= 21577
+
+first-500 mean = -179.18
+last-1000 mean = -175.17 +/- 31.29
+improvement    = +4.01
+ep 3000-4000 mean = -179.93
+ep 5000-6000 mean = -175.17

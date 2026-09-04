@@ -1,0 +1,1649 @@
+{
+  "experiment": "competitor_baselines",
+  "environment": "central_pool (Week 4.5, production)",
+  "config": {
+    "num_nodes": 10,
+    "max_gpus_per_node": 8,
+    "max_pending_jobs": 50,
+    "service_time_mean": 2.0,
+    "arrival_rate": 0.12,
+    "horizon_steps": 700,
+    "train_seed": 42,
+    "train_episodes": 300,
+    "train_episode_steps": 300,
+    "alpha": 0.1,
+    "gamma": 0.99,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 0.9995,
+    "eval_seeds": [
+      901001,
+      901002
+    ],
+    "curve_checkpoints": [
+      100,
+      300
+    ],
+    "ablation_episodes": 2000,
+    "significance_alpha": 0.05,
+    "results_dir": "D:\\IdeaProjects\\untitled\\cloudai-fusion\\tmp"
+  },
+  "training": {
+    "algorithm": "factored_per_node_tabular_q",
+    "seconds": 36.8,
+    "states": 728,
+    "tail1000_mean_reward": -158.74869596921747,
+    "tail1000_std_reward": 24.001047721284237,
+    "ppo_sac_trained": false,
+    "ppo_sac_reason": "torch / stable_baselines3 not installed"
+  },
+  "strategies": {
+    "q_learning_greedy": {
+      "throughput": {
+        "mean": 9.285714285714425,
+        "std": 0.8081220356417808,
+        "ci_low": 2.0250258650430633,
+        "ci_high": 16.546402706385788,
+        "n": 2
+      },
+      "completion_ratio": {
+        "mean": 0.6507323434991974,
+        "std": 0.04901793597511077,
+        "ci_low": 0.2103236620838328,
+        "ci_high": 1.0911410249145619,
+        "n": 2
+      },
+      "total_reward": {
+        "mean": -301.98850738670166,
+        "std": 24.126143742083027,
+        "ci_low": -518.7533087133721,
+        "ci_high": -85.22370606003122,
+        "n": 2
+      },
+      "sla_violation_rate": {
+        "mean": 0.125,
+        "std": 0.1767766952966369,
+        "ci_low": -1.4632755920218368,
+        "ci_high": 1.7132755920218368,
+        "n": 2
+      },
+      "gini_completion": {
+        "mean": 0.43942042485315824,
+        "std": 0.0027256762954099745,
+        "ci_low": 0.41493119495502173,
+        "ci_high": 0.46390965475129475,
+        "n": 2
+      },
+      "gini_gpu_hours": {
+        "mean": 0.2955599341033837,
+        "std": 0.0647605257528175,
+        "ci_low": -0.2862903047366589,
+        "ci_high": 0.8774101729434263,
+        "n": 2
+      },
+      "total_cost_usd": {
+        "mean": 42410.32799999931,
+        "std": 3104.153514574923,
+        "ci_low": 14520.615202647634,
+        "ci_high": 70300.04079735099,
+        "n": 2
+      },
+      "catastrophic_failures": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "arrived": {
+        "mean": 100.5,
+        "std": 16.263455967290593,
+        "ci_low": -45.621354466008995,
+        "ci_high": 246.621354466009,
+        "n": 2
+      },
+      "scheduled": {
+        "mean": 86.0,
+        "std": 1.4142135623730951,
+        "ci_low": 73.2937952638253,
+        "ci_high": 98.7062047361747,
+        "n": 2
+      },
+      "completed": {
+        "mean": 65.0,
+        "std": 5.656854249492381,
+        "ci_low": 14.175181055301223,
+        "ci_high": 115.82481894469878,
+        "n": 2
+      },
+      "pending_at_end": {
+        "mean": 14.5,
+        "std": 14.849242404917497,
+        "ci_low": -118.91514972983427,
+        "ci_high": 147.91514972983427,
+        "n": 2
+      },
+      "failed_placements": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "dropped_overflow": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops_hp": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "structural_starved_hp": {
+        "mean": 1.5,
+        "std": 0.7071067811865476,
+        "ci_low": -4.853102368087347,
+        "ci_high": 7.853102368087347,
+        "n": 2
+      },
+      "avg_completion_time_hours": {
+        "mean": 35.587940128296,
+        "std": 5.693585498396664,
+        "ci_low": -15.566895994296374,
+        "ci_high": 86.74277625088837,
+        "n": 2
+      },
+      "gpu_utilization": {
+        "mean": 0.5128482142857137,
+        "std": 0.09418409787268661,
+        "ci_low": -0.33336233149220496,
+        "ci_high": 1.3590587600636324,
+        "n": 2
+      },
+      "catastrophic_failures_total": 0,
+      "failed_placements_total": 0,
+      "forced_drops_total": 0,
+      "forced_drops_hp_total": 0
+    },
+    "k8s_default_binpack": {
+      "throughput": {
+        "mean": 9.357142857142996,
+        "std": 0.9091372900970028,
+        "ci_low": 1.1888683838877174,
+        "ci_high": 17.525417330398277,
+        "n": 2
+      },
+      "completion_ratio": {
+        "mean": 0.6728853084587662,
+        "std": 0.017688912482512774,
+        "ci_low": 0.5139567353329854,
+        "ci_high": 0.8318138815845469,
+        "n": 2
+      },
+      "total_reward": {
+        "mean": -332.4330009689141,
+        "std": 14.898912711083595,
+        "ci_low": -466.2944206937807,
+        "ci_high": -198.57158124404748,
+        "n": 2
+      },
+      "sla_violation_rate": {
+        "mean": 0.11290322580645161,
+        "std": 0.1596692731711559,
+        "ci_low": -1.3216682766648848,
+        "ci_high": 1.5474747282777879,
+        "n": 2
+      },
+      "gini_completion": {
+        "mean": 0.4716682800590566,
+        "std": 0.023102248390193814,
+        "ci_low": 0.2641028134832784,
+        "ci_high": 0.6792337466348348,
+        "n": 2
+      },
+      "gini_gpu_hours": {
+        "mean": 0.18115541669698065,
+        "std": 0.003531663755428631,
+        "ci_low": 0.14942467677923887,
+        "ci_high": 0.21288615661472243,
+        "n": 2
+      },
+      "total_cost_usd": {
+        "mean": 49523.34599999914,
+        "std": 278.13903816625736,
+        "ci_low": 47024.3658897159,
+        "ci_high": 52022.32611028238,
+        "n": 2
+      },
+      "catastrophic_failures": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "arrived": {
+        "mean": 97.5,
+        "std": 12.020815280171307,
+        "ci_low": -10.502740257484874,
+        "ci_high": 205.50274025748487,
+        "n": 2
+      },
+      "scheduled": {
+        "mean": 87.0,
+        "std": 1.4142135623730951,
+        "ci_low": 74.2937952638253,
+        "ci_high": 99.7062047361747,
+        "n": 2
+      },
+      "completed": {
+        "mean": 65.5,
+        "std": 6.363961030678928,
+        "ci_low": 8.322078687213875,
+        "ci_high": 122.67792131278613,
+        "n": 2
+      },
+      "pending_at_end": {
+        "mean": 10.5,
+        "std": 10.606601717798213,
+        "ci_low": -84.7965355213102,
+        "ci_high": 105.7965355213102,
+        "n": 2
+      },
+      "failed_placements": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "dropped_overflow": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops_hp": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "structural_starved_hp": {
+        "mean": 2.5,
+        "std": 2.1213203435596424,
+        "ci_low": -16.55930710426204,
+        "ci_high": 21.55930710426204,
+        "n": 2
+      },
+      "avg_completion_time_hours": {
+        "mean": 31.77979391100657,
+        "std": 3.791191923044346,
+        "ci_low": -2.282714079299886,
+        "ci_high": 65.84230190131302,
+        "n": 2
+      },
+      "gpu_utilization": {
+        "mean": 0.5643839285714275,
+        "std": 0.03481238206663125,
+        "ci_low": 0.2516070851996925,
+        "ci_high": 0.8771607719431624,
+        "n": 2
+      },
+      "catastrophic_failures_total": 0,
+      "failed_placements_total": 0,
+      "forced_drops_total": 0,
+      "forced_drops_hp_total": 0
+    },
+    "k8s_spread": {
+      "throughput": {
+        "mean": 10.285714285714441,
+        "std": 1.8182745801940068,
+        "ci_low": -6.050834660796127,
+        "ci_high": 26.62226323222501,
+        "n": 2
+      },
+      "completion_ratio": {
+        "mean": 0.7254922172971858,
+        "std": 0.024928411417977477,
+        "ci_low": 0.5015193268852824,
+        "ci_high": 0.9494651077090892,
+        "n": 2
+      },
+      "total_reward": {
+        "mean": -308.70274228451814,
+        "std": 32.30019701655367,
+        "ci_low": -598.908498494651,
+        "ci_high": -18.49698607438529,
+        "n": 2
+      },
+      "sla_violation_rate": {
+        "mean": 0.05,
+        "std": 0.07071067811865477,
+        "ci_low": -0.5853102368087347,
+        "ci_high": 0.6853102368087348,
+        "n": 2
+      },
+      "gini_completion": {
+        "mean": 0.4644337681322995,
+        "std": 0.0195310124896313,
+        "ci_low": 0.2889545830920913,
+        "ci_high": 0.6399129531725076,
+        "n": 2
+      },
+      "gini_gpu_hours": {
+        "mean": 0.22357684993826074,
+        "std": 0.0166466207835422,
+        "ci_low": 0.07401289618419088,
+        "ci_high": 0.3731408036923306,
+        "n": 2
+      },
+      "total_cost_usd": {
+        "mean": 46356.43199999922,
+        "std": 4535.094394963712,
+        "ci_low": 5610.225476853877,
+        "ci_high": 87102.63852314456,
+        "n": 2
+      },
+      "catastrophic_failures": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "arrived": {
+        "mean": 99.0,
+        "std": 14.142135623730951,
+        "ci_low": -28.06204736174695,
+        "ci_high": 226.06204736174695,
+        "n": 2
+      },
+      "scheduled": {
+        "mean": 93.5,
+        "std": 12.020815280171307,
+        "ci_low": -14.502740257484874,
+        "ci_high": 201.50274025748487,
+        "n": 2
+      },
+      "completed": {
+        "mean": 72.0,
+        "std": 12.727922061357855,
+        "ci_low": -42.35584262557225,
+        "ci_high": 186.35584262557225,
+        "n": 2
+      },
+      "pending_at_end": {
+        "mean": 5.5,
+        "std": 2.1213203435596424,
+        "ci_low": -13.55930710426204,
+        "ci_high": 24.55930710426204,
+        "n": 2
+      },
+      "failed_placements": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "dropped_overflow": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops_hp": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "structural_starved_hp": {
+        "mean": 1.5,
+        "std": 0.7071067811865476,
+        "ci_low": -4.853102368087347,
+        "ci_high": 7.853102368087347,
+        "n": 2
+      },
+      "avg_completion_time_hours": {
+        "mean": 29.764021164020747,
+        "std": 0.06435045839371961,
+        "ci_low": 29.185855234226345,
+        "ci_high": 30.34218709381515,
+        "n": 2
+      },
+      "gpu_utilization": {
+        "mean": 0.5186607142857136,
+        "std": 0.005555838995037423,
+        "ci_low": 0.46874348139359634,
+        "ci_high": 0.5685779471778308,
+        "n": 2
+      },
+      "catastrophic_failures_total": 0,
+      "failed_placements_total": 0,
+      "forced_drops_total": 0,
+      "forced_drops_hp_total": 0
+    },
+    "feasibility_oracle": {
+      "throughput": {
+        "mean": 8.857142857142989,
+        "std": 0.2020305089104452,
+        "ci_low": 7.041970751975149,
+        "ci_high": 10.67231496231083,
+        "n": 2
+      },
+      "completion_ratio": {
+        "mean": 0.6546511627906977,
+        "std": 0.07728841561806454,
+        "ci_low": -0.03975770069791973,
+        "ci_high": 1.349060026279315,
+        "n": 2
+      },
+      "total_reward": {
+        "mean": -358.1240433237442,
+        "std": 6.528286497010438,
+        "ci_low": -416.77837037476405,
+        "ci_high": -299.4697162727244,
+        "n": 2
+      },
+      "sla_violation_rate": {
+        "mean": 0.04838709677419355,
+        "std": 0.06842968850192395,
+        "ci_low": -0.5664292614278077,
+        "ci_high": 0.6632034549761947,
+        "n": 2
+      },
+      "gini_completion": {
+        "mean": 0.48460582535523944,
+        "std": 0.019853278101972578,
+        "ci_low": 0.306231198665493,
+        "ci_high": 0.6629804520449859,
+        "n": 2
+      },
+      "gini_gpu_hours": {
+        "mean": 0.25187010473951815,
+        "std": 0.014648697415788153,
+        "ci_low": 0.12025678024915867,
+        "ci_high": 0.38348342922987766,
+        "n": 2
+      },
+      "total_cost_usd": {
+        "mean": 43374.17399999927,
+        "std": 3534.6203239712895,
+        "ci_low": 11616.8703678235,
+        "ci_high": 75131.47763217504,
+        "n": 2
+      },
+      "catastrophic_failures": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "arrived": {
+        "mean": 95.5,
+        "std": 13.435028842544403,
+        "ci_low": -25.2089449936596,
+        "ci_high": 216.2089449936596,
+        "n": 2
+      },
+      "scheduled": {
+        "mean": 83.5,
+        "std": 3.5355339059327378,
+        "ci_low": 51.73448815956326,
+        "ci_high": 115.26551184043674,
+        "n": 2
+      },
+      "completed": {
+        "mean": 62.0,
+        "std": 1.4142135623730951,
+        "ci_low": 49.2937952638253,
+        "ci_high": 74.7062047361747,
+        "n": 2
+      },
+      "pending_at_end": {
+        "mean": 12.0,
+        "std": 9.899494936611665,
+        "ci_low": -76.94343315322284,
+        "ci_high": 100.94343315322284,
+        "n": 2
+      },
+      "failed_placements": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "dropped_overflow": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops_hp": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "structural_starved_hp": {
+        "mean": 2.5,
+        "std": 2.1213203435596424,
+        "ci_low": -16.55930710426204,
+        "ci_high": 21.55930710426204,
+        "n": 2
+      },
+      "avg_completion_time_hours": {
+        "mean": 29.665136612021456,
+        "std": 1.1901032164231944,
+        "ci_low": 18.97248344606083,
+        "ci_high": 40.35778977798208,
+        "n": 2
+      },
+      "gpu_utilization": {
+        "mean": 0.49924107142857066,
+        "std": 0.03289309223198213,
+        "ci_low": 0.2037083630559292,
+        "ci_high": 0.7947737798012121,
+        "n": 2
+      },
+      "catastrophic_failures_total": 0,
+      "failed_placements_total": 0,
+      "forced_drops_total": 0,
+      "forced_drops_hp_total": 0
+    },
+    "round_robin": {
+      "throughput": {
+        "mean": 10.071428571428722,
+        "std": 1.111167799007448,
+        "ci_low": 0.08798199300560228,
+        "ci_high": 20.054875149851842,
+        "n": 2
+      },
+      "completion_ratio": {
+        "mean": 0.7190177638453501,
+        "std": 0.03975166648676723,
+        "ci_low": 0.36186321065506893,
+        "ci_high": 1.0761723170356312,
+        "n": 2
+      },
+      "total_reward": {
+        "mean": -304.16423117324956,
+        "std": 53.912772178233226,
+        "ci_low": -788.5512710216567,
+        "ci_high": 180.22280867515764,
+        "n": 2
+      },
+      "sla_violation_rate": {
+        "mean": 0.03125,
+        "std": 0.04419417382415922,
+        "ci_low": -0.3658188980054592,
+        "ci_high": 0.4283188980054592,
+        "n": 2
+      },
+      "gini_completion": {
+        "mean": 0.4723323503010399,
+        "std": 0.04250679219824225,
+        "ci_low": 0.09042397470704949,
+        "ci_high": 0.8542407258950304,
+        "n": 2
+      },
+      "gini_gpu_hours": {
+        "mean": 0.230930345121644,
+        "std": 0.0387575209679175,
+        "ci_low": -0.11729216496274392,
+        "ci_high": 0.5791528552060319,
+        "n": 2
+      },
+      "total_cost_usd": {
+        "mean": 47174.36399999925,
+        "std": 7225.828030422893,
+        "ci_low": -17747.125077561526,
+        "ci_high": 112095.85307756002,
+        "n": 2
+      },
+      "catastrophic_failures": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "arrived": {
+        "mean": 98.5,
+        "std": 16.263455967290593,
+        "ci_low": -47.621354466008995,
+        "ci_high": 244.621354466009,
+        "n": 2
+      },
+      "scheduled": {
+        "mean": 91.5,
+        "std": 12.020815280171307,
+        "ci_low": -16.502740257484874,
+        "ci_high": 199.50274025748487,
+        "n": 2
+      },
+      "completed": {
+        "mean": 70.5,
+        "std": 7.7781745930520225,
+        "ci_low": 0.6158739510391911,
+        "ci_high": 140.3841260489608,
+        "n": 2
+      },
+      "pending_at_end": {
+        "mean": 7.0,
+        "std": 4.242640687119285,
+        "ci_low": -31.11861420852408,
+        "ci_high": 45.11861420852408,
+        "n": 2
+      },
+      "failed_placements": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "dropped_overflow": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops_hp": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "structural_starved_hp": {
+        "mean": 1.0,
+        "std": 0.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0,
+        "n": 2
+      },
+      "avg_completion_time_hours": {
+        "mean": 29.539360323886214,
+        "std": 2.888877597586356,
+        "ci_low": 3.583824901721421,
+        "ci_high": 55.49489574605101,
+        "n": 2
+      },
+      "gpu_utilization": {
+        "mean": 0.5149196428571423,
+        "std": 0.03127684816069686,
+        "ci_low": 0.23390831132585888,
+        "ci_high": 0.7959309743884257,
+        "n": 2
+      },
+      "catastrophic_failures_total": 0,
+      "failed_placements_total": 0,
+      "forced_drops_total": 0,
+      "forced_drops_hp_total": 0
+    },
+    "random": {
+      "throughput": {
+        "mean": 10.00000000000015,
+        "std": 1.6162440712835615,
+        "ci_low": -4.521376841342574,
+        "ci_high": 24.52137684134287,
+        "n": 2
+      },
+      "completion_ratio": {
+        "mean": 0.7141803624104509,
+        "std": 0.03382074153589266,
+        "ci_low": 0.4103130557193784,
+        "ci_high": 1.0180476691015234,
+        "n": 2
+      },
+      "total_reward": {
+        "mean": -304.65349202081023,
+        "std": 73.22099176198006,
+        "ci_low": -962.5180020685743,
+        "ci_high": 353.2110180269538,
+        "n": 2
+      },
+      "sla_violation_rate": {
+        "mean": 0.018518518518518517,
+        "std": 0.026189140043946204,
+        "ci_low": -0.21678156918842026,
+        "ci_high": 0.25381860622545727,
+        "n": 2
+      },
+      "gini_completion": {
+        "mean": 0.4599760723558409,
+        "std": 0.03658533364763063,
+        "ci_low": 0.13126989102916448,
+        "ci_high": 0.7886822536825173,
+        "n": 2
+      },
+      "gini_gpu_hours": {
+        "mean": 0.1957615466711079,
+        "std": 0.009553731231638005,
+        "ci_low": 0.10992467715340941,
+        "ci_high": 0.2815984161888064,
+        "n": 2
+      },
+      "total_cost_usd": {
+        "mean": 44896.24799999923,
+        "std": 11545.328396229987,
+        "ci_low": -58834.41210108686,
+        "ci_high": 148626.9081010853,
+        "n": 2
+      },
+      "catastrophic_failures": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "arrived": {
+        "mean": 98.5,
+        "std": 20.506096654409877,
+        "ci_low": -85.73996867453303,
+        "ci_high": 282.73996867453303,
+        "n": 2
+      },
+      "scheduled": {
+        "mean": 90.0,
+        "std": 14.142135623730951,
+        "ci_low": -37.06204736174695,
+        "ci_high": 217.06204736174695,
+        "n": 2
+      },
+      "completed": {
+        "mean": 70.0,
+        "std": 11.313708498984761,
+        "ci_low": -31.649637889397553,
+        "ci_high": 171.64963788939755,
+        "n": 2
+      },
+      "pending_at_end": {
+        "mean": 8.5,
+        "std": 6.363961030678928,
+        "ci_low": -48.677921312786125,
+        "ci_high": 65.67792131278613,
+        "n": 2
+      },
+      "failed_placements": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "dropped_overflow": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "forced_drops_hp": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "n": 2
+      },
+      "structural_starved_hp": {
+        "mean": 0.5,
+        "std": 0.7071067811865476,
+        "ci_low": -5.853102368087347,
+        "ci_high": 6.853102368087347,
+        "n": 2
+      },
+      "avg_completion_time_hours": {
+        "mean": 30.672406947890373,
+        "std": 5.149772711619023,
+        "ci_low": -15.596465137310389,
+        "ci_high": 76.94127903309113,
+        "n": 2
+      },
+      "gpu_utilization": {
+        "mean": 0.5071874999999991,
+        "std": 0.07314767113238632,
+        "ci_low": -0.15001825032731653,
+        "ci_high": 1.1643932503273149,
+        "n": 2
+      },
+      "catastrophic_failures_total": 0,
+      "failed_placements_total": 0,
+      "forced_drops_total": 0,
+      "forced_drops_hp_total": 0
+    }
+  },
+  "per_seed": {
+    "q_learning_greedy": [
+      {
+        "seed": 901001,
+        "steps": 700,
+        "arrived": 112,
+        "scheduled": 87,
+        "completed": 69,
+        "running_at_end": 18,
+        "pending_at_end": 25,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 2,
+        "hp_jobs": 32,
+        "sla_violated": 8,
+        "sla_violation_rate": 0.25,
+        "avg_completion_time_hours": 39.613913043477666,
+        "total_cost_usd": 40215.359999999324,
+        "total_reward": -284.92874754279336,
+        "max_queue_depth": 27,
+        "gpu_utilization": 0.44624999999999954,
+        "throughput": 9.857142857143005,
+        "completion_ratio": 0.6160714285714286,
+        "gini_completion": 0.4374930806613544,
+        "gini_gpu_hours": 0.341352541016407
+      },
+      {
+        "seed": 901002,
+        "steps": 700,
+        "arrived": 89,
+        "scheduled": 85,
+        "completed": 61,
+        "running_at_end": 24,
+        "pending_at_end": 4,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 1,
+        "hp_jobs": 32,
+        "sla_violated": 0,
+        "sla_violation_rate": 0.0,
+        "avg_completion_time_hours": 31.561967213114325,
+        "total_cost_usd": 44605.29599999929,
+        "total_reward": -319.04826723060995,
+        "max_queue_depth": 7,
+        "gpu_utilization": 0.5794464285714279,
+        "throughput": 8.714285714285845,
+        "completion_ratio": 0.6853932584269663,
+        "gini_completion": 0.44134776904496203,
+        "gini_gpu_hours": 0.2497673271903604
+      }
+    ],
+    "k8s_default_binpack": [
+      {
+        "seed": 901001,
+        "steps": 700,
+        "arrived": 106,
+        "scheduled": 88,
+        "completed": 70,
+        "running_at_end": 18,
+        "pending_at_end": 18,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 4,
+        "hp_jobs": 31,
+        "sla_violated": 7,
+        "sla_violation_rate": 0.22580645161290322,
+        "avg_completion_time_hours": 34.460571428570894,
+        "total_cost_usd": 49326.671999999075,
+        "total_reward": -321.8978787586004,
+        "max_queue_depth": 22,
+        "gpu_utilization": 0.5397678571428556,
+        "throughput": 10.00000000000015,
+        "completion_ratio": 0.660377358490566,
+        "gini_completion": 0.48800403655641866,
+        "gini_gpu_hours": 0.17865815330664633
+      },
+      {
+        "seed": 901002,
+        "steps": 700,
+        "arrived": 89,
+        "scheduled": 86,
+        "completed": 61,
+        "running_at_end": 25,
+        "pending_at_end": 3,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 1,
+        "hp_jobs": 32,
+        "sla_violated": 0,
+        "sla_violation_rate": 0.0,
+        "avg_completion_time_hours": 29.099016393442245,
+        "total_cost_usd": 49720.019999999204,
+        "total_reward": -342.96812317922775,
+        "max_queue_depth": 5,
+        "gpu_utilization": 0.5889999999999994,
+        "throughput": 8.714285714285845,
+        "completion_ratio": 0.6853932584269663,
+        "gini_completion": 0.45533252356169457,
+        "gini_gpu_hours": 0.183652680087315
+      }
+    ],
+    "k8s_spread": [
+      {
+        "seed": 901001,
+        "steps": 700,
+        "arrived": 109,
+        "scheduled": 102,
+        "completed": 81,
+        "running_at_end": 21,
+        "pending_at_end": 7,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 2,
+        "hp_jobs": 30,
+        "sla_violated": 3,
+        "sla_violation_rate": 0.1,
+        "avg_completion_time_hours": 29.718518518518085,
+        "total_cost_usd": 49563.227999999166,
+        "total_reward": -285.86305394045155,
+        "max_queue_depth": 9,
+        "gpu_utilization": 0.514732142857142,
+        "throughput": 11.571428571428745,
+        "completion_ratio": 0.7431192660550459,
+        "gini_completion": 0.4782442795071569,
+        "gini_gpu_hours": 0.23534778837814435
+      },
+      {
+        "seed": 901002,
+        "steps": 700,
+        "arrived": 89,
+        "scheduled": 85,
+        "completed": 63,
+        "running_at_end": 22,
+        "pending_at_end": 4,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 1,
+        "hp_jobs": 32,
+        "sla_violated": 0,
+        "sla_violation_rate": 0.0,
+        "avg_completion_time_hours": 29.80952380952341,
+        "total_cost_usd": 43149.63599999928,
+        "total_reward": -331.5424306285847,
+        "max_queue_depth": 6,
+        "gpu_utilization": 0.5225892857142852,
+        "throughput": 9.000000000000135,
+        "completion_ratio": 0.7078651685393258,
+        "gini_completion": 0.450623256757442,
+        "gini_gpu_hours": 0.21180591149837713
+      }
+    ],
+    "feasibility_oracle": [
+      {
+        "seed": 901001,
+        "steps": 700,
+        "arrived": 105,
+        "scheduled": 86,
+        "completed": 63,
+        "running_at_end": 23,
+        "pending_at_end": 19,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 4,
+        "hp_jobs": 31,
+        "sla_violated": 3,
+        "sla_violation_rate": 0.0967741935483871,
+        "avg_completion_time_hours": 30.50666666666622,
+        "total_cost_usd": 45873.52799999916,
+        "total_reward": -353.50784767217954,
+        "max_queue_depth": 22,
+        "gpu_utilization": 0.4759821428571415,
+        "throughput": 9.000000000000135,
+        "completion_ratio": 0.6,
+        "gini_completion": 0.4986442129299266,
+        "gini_gpu_hours": 0.2415119114612645
+      },
+      {
+        "seed": 901002,
+        "steps": 700,
+        "arrived": 86,
+        "scheduled": 81,
+        "completed": 61,
+        "running_at_end": 20,
+        "pending_at_end": 5,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 1,
+        "hp_jobs": 34,
+        "sla_violated": 0,
+        "sla_violation_rate": 0.0,
+        "avg_completion_time_hours": 28.823606557376696,
+        "total_cost_usd": 40874.81999999938,
+        "total_reward": -362.74023897530884,
+        "max_queue_depth": 6,
+        "gpu_utilization": 0.5224999999999997,
+        "throughput": 8.714285714285845,
+        "completion_ratio": 0.7093023255813954,
+        "gini_completion": 0.4705674377805522,
+        "gini_gpu_hours": 0.2622282980177718
+      }
+    ],
+    "round_robin": [
+      {
+        "seed": 901001,
+        "steps": 700,
+        "arrived": 110,
+        "scheduled": 100,
+        "completed": 76,
+        "running_at_end": 24,
+        "pending_at_end": 10,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 1,
+        "hp_jobs": 32,
+        "sla_violated": 2,
+        "sla_violation_rate": 0.0625,
+        "avg_completion_time_hours": 31.582105263157427,
+        "total_cost_usd": 52283.795999999114,
+        "total_reward": -266.0421443734554,
+        "max_queue_depth": 13,
+        "gpu_utilization": 0.5370357142857131,
+        "throughput": 10.85714285714302,
+        "completion_ratio": 0.6909090909090909,
+        "gini_completion": 0.4422755092911754,
+        "gini_gpu_hours": 0.20352463922324973
+      },
+      {
+        "seed": 901002,
+        "steps": 700,
+        "arrived": 87,
+        "scheduled": 83,
+        "completed": 65,
+        "running_at_end": 18,
+        "pending_at_end": 4,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 1,
+        "hp_jobs": 36,
+        "sla_violated": 0,
+        "sla_violation_rate": 0.0,
+        "avg_completion_time_hours": 27.496615384614998,
+        "total_cost_usd": 42064.93199999939,
+        "total_reward": -342.2863179730437,
+        "max_queue_depth": 5,
+        "gpu_utilization": 0.49280357142857156,
+        "throughput": 9.285714285714425,
+        "completion_ratio": 0.7471264367816092,
+        "gini_completion": 0.5023891913109044,
+        "gini_gpu_hours": 0.25833605102003826
+      }
+    ],
+    "random": [
+      {
+        "seed": 901001,
+        "steps": 700,
+        "arrived": 113,
+        "scheduled": 100,
+        "completed": 78,
+        "running_at_end": 22,
+        "pending_at_end": 13,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 0,
+        "hp_jobs": 27,
+        "sla_violated": 1,
+        "sla_violation_rate": 0.037037037037037035,
+        "avg_completion_time_hours": 34.31384615384562,
+        "total_cost_usd": 53060.02799999906,
+        "total_reward": -252.8784322207098,
+        "max_queue_depth": 17,
+        "gpu_utilization": 0.5589107142857129,
+        "throughput": 11.14285714285731,
+        "completion_ratio": 0.6902654867256637,
+        "gini_completion": 0.43410633484162897,
+        "gini_gpu_hours": 0.18900603853158296
+      },
+      {
+        "seed": 901002,
+        "steps": 700,
+        "arrived": 84,
+        "scheduled": 80,
+        "completed": 62,
+        "running_at_end": 18,
+        "pending_at_end": 4,
+        "failed_placements": 0,
+        "dropped_failed": 0,
+        "forced_drops": 0,
+        "forced_drops_hp": 0,
+        "dropped_overflow": 0,
+        "catastrophic_failures": 0,
+        "structural_starved_hp": 1,
+        "hp_jobs": 30,
+        "sla_violated": 0,
+        "sla_violation_rate": 0.0,
+        "avg_completion_time_hours": 27.030967741935125,
+        "total_cost_usd": 36732.4679999994,
+        "total_reward": -356.4285518209107,
+        "max_queue_depth": 5,
+        "gpu_utilization": 0.45546428571428527,
+        "throughput": 8.857142857142989,
+        "completion_ratio": 0.7380952380952381,
+        "gini_completion": 0.48584580987005294,
+        "gini_gpu_hours": 0.20251705481063284
+      }
+    ]
+  },
+  "comparison": {
+    "comparisons": {
+      "k8s_default_binpack": {
+        "throughput": {
+          "ours_mean": 9.285714285714425,
+          "baseline_mean": 9.357142857142996,
+          "relative_advantage_pct": -0.7633587786259401,
+          "p_value": 0.9414708759453805,
+          "cohens_d": -0.08304547985373845,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "completion_ratio": {
+          "ours_mean": 0.6507323434991974,
+          "baseline_mean": 0.6728853084587662,
+          "relative_advantage_pct": -3.292234899630933,
+          "p_value": 0.6379461193223879,
+          "cohens_d": -0.6011868973547047,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_reward": {
+          "ours_mean": -301.98850738670166,
+          "baseline_mean": -332.4330009689141,
+          "relative_advantage_pct": 9.158084033016717,
+          "p_value": 0.29146499316672514,
+          "cohens_d": 1.518387615866077,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "sla_violation_rate": {
+          "ours_mean": 0.125,
+          "baseline_mean": 0.11290322580645161,
+          "relative_advantage_pct": -10.714285714285717,
+          "p_value": 0.949342972740462,
+          "cohens_d": 0.07181638478236822,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_completion": {
+          "ours_mean": 0.43942042485315824,
+          "baseline_mean": 0.4716682800590566,
+          "relative_advantage_pct": 6.8369777170219415,
+          "p_value": 0.29502355850194006,
+          "cohens_d": -1.960467889899508,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_gpu_hours": {
+          "ours_mean": 0.2955599341033837,
+          "baseline_mean": 0.18115541669698065,
+          "relative_advantage_pct": -63.15268927219987,
+          "p_value": 0.24152434336652656,
+          "cohens_d": 2.4946118003119757,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_cost_usd": {
+          "ours_mean": 42410.32799999931,
+          "baseline_mean": 49523.34599999914,
+          "relative_advantage_pct": 14.362959239466477,
+          "p_value": 0.18810286356195785,
+          "cohens_d": -3.2276712710842794,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "catastrophic_failures": {
+          "ours_mean": 0.0,
+          "baseline_mean": 0.0,
+          "relative_advantage_pct": 0.0,
+          "p_value": 1.0,
+          "cohens_d": 0.0,
+          "significant": false,
+          "verdict": "TIE"
+        }
+      },
+      "k8s_spread": {
+        "throughput": {
+          "ours_mean": 9.285714285714425,
+          "baseline_mean": 10.285714285714441,
+          "relative_advantage_pct": -9.72222222222223,
+          "p_value": 0.5779427224064978,
+          "cohens_d": -0.710742315593534,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "completion_ratio": {
+          "ours_mean": 0.6507323434991974,
+          "baseline_mean": 0.7254922172971858,
+          "relative_advantage_pct": -10.304710652376894,
+          "p_value": 0.23654306106791598,
+          "cohens_d": -1.9225580869948538,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_reward": {
+          "ours_mean": -301.98850738670166,
+          "baseline_mean": -308.70274228451814,
+          "relative_advantage_pct": 2.174983885186306,
+          "p_value": 0.8372681460266788,
+          "cohens_d": 0.2355238740140789,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "sla_violation_rate": {
+          "ours_mean": 0.125,
+          "baseline_mean": 0.05,
+          "relative_advantage_pct": -149.99999999999997,
+          "p_value": 0.6574813428347565,
+          "cohens_d": 0.5570860145311555,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_completion": {
+          "ours_mean": 0.43942042485315824,
+          "baseline_mean": 0.4644337681322995,
+          "relative_advantage_pct": 5.385771878675256,
+          "p_value": 0.31665615623670257,
+          "cohens_d": -1.7937978007703916,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_gpu_hours": {
+          "ours_mean": 0.2955599341033837,
+          "baseline_mean": 0.22357684993826074,
+          "relative_advantage_pct": -32.19612593387939,
+          "p_value": 0.34887398816469906,
+          "cohens_d": 1.5224441873287216,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_cost_usd": {
+          "ours_mean": 42410.32799999931,
+          "baseline_mean": 46356.43199999922,
+          "relative_advantage_pct": 8.512527452501043,
+          "p_value": 0.4284576280630468,
+          "cohens_d": -1.0154523765762795,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "catastrophic_failures": {
+          "ours_mean": 0.0,
+          "baseline_mean": 0.0,
+          "relative_advantage_pct": 0.0,
+          "p_value": 1.0,
+          "cohens_d": 0.0,
+          "significant": false,
+          "verdict": "TIE"
+        }
+      },
+      "feasibility_oracle": {
+        "throughput": {
+          "ours_mean": 9.285714285714425,
+          "baseline_mean": 8.857142857142989,
+          "relative_advantage_pct": 4.838709677419366,
+          "p_value": 0.5882950283399665,
+          "cohens_d": 0.7276068751090005,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "completion_ratio": {
+          "ours_mean": 0.6507323434991974,
+          "baseline_mean": 0.6546511627906977,
+          "relative_advantage_pct": -0.5986118278313048,
+          "p_value": 0.9580859614080788,
+          "cohens_d": -0.06055433401939241,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_reward": {
+          "ours_mean": -301.98850738670166,
+          "baseline_mean": -358.1240433237442,
+          "relative_advantage_pct": 15.674886113774836,
+          "p_value": 0.16814029626380952,
+          "cohens_d": 3.176294955501923,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "sla_violation_rate": {
+          "ours_mean": 0.125,
+          "baseline_mean": 0.04838709677419355,
+          "relative_advantage_pct": -158.33333333333334,
+          "p_value": 0.6509263263384498,
+          "cohens_d": 0.5715739957163775,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_completion": {
+          "ours_mean": 0.43942042485315824,
+          "baseline_mean": 0.48460582535523944,
+          "relative_advantage_pct": 9.324155455407107,
+          "p_value": 0.18614946198707474,
+          "cohens_d": -3.188790847794714,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_gpu_hours": {
+          "ours_mean": 0.2955599341033837,
+          "baseline_mean": 0.25187010473951815,
+          "relative_advantage_pct": -17.346175088563687,
+          "p_value": 0.5110392634433465,
+          "cohens_d": 0.9305708188511036,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_cost_usd": {
+          "ours_mean": 42410.32799999931,
+          "baseline_mean": 43374.17399999927,
+          "relative_advantage_pct": 2.2221656601460067,
+          "p_value": 0.799680143209189,
+          "cohens_d": -0.28976018621480504,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "catastrophic_failures": {
+          "ours_mean": 0.0,
+          "baseline_mean": 0.0,
+          "relative_advantage_pct": 0.0,
+          "p_value": 1.0,
+          "cohens_d": 0.0,
+          "significant": false,
+          "verdict": "TIE"
+        }
+      },
+      "round_robin": {
+        "throughput": {
+          "ours_mean": 9.285714285714425,
+          "baseline_mean": 10.071428571428722,
+          "relative_advantage_pct": -7.801418439716308,
+          "p_value": 0.5104471411574232,
+          "cohens_d": -0.8087360843031884,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "completion_ratio": {
+          "ours_mean": 0.6507323434991974,
+          "baseline_mean": 0.7190177638453501,
+          "relative_advantage_pct": -9.497042184459836,
+          "p_value": 0.2706956115726843,
+          "cohens_d": -1.530172498529131,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_reward": {
+          "ours_mean": -301.98850738670166,
+          "baseline_mean": -304.16423117324956,
+          "relative_advantage_pct": 0.7153121779492311,
+          "p_value": 0.9649439472190753,
+          "cohens_d": 0.05209422370648103,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "sla_violation_rate": {
+          "ours_mean": 0.125,
+          "baseline_mean": 0.03125,
+          "relative_advantage_pct": -300.0,
+          "p_value": 0.5882950283399672,
+          "cohens_d": 0.7276068751089989,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_completion": {
+          "ours_mean": 0.43942042485315824,
+          "baseline_mean": 0.4723323503010399,
+          "relative_advantage_pct": 6.967959197989582,
+          "p_value": 0.470642743338303,
+          "cohens_d": -1.0927452347969917,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_gpu_hours": {
+          "ours_mean": 0.2955599341033837,
+          "baseline_mean": 0.230930345121644,
+          "relative_advantage_pct": -27.98661602817753,
+          "p_value": 0.37218336668526547,
+          "cohens_d": 1.2110405634569699,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_cost_usd": {
+          "ours_mean": 42410.32799999931,
+          "baseline_mean": 47174.36399999925,
+          "relative_advantage_pct": 10.098781617914376,
+          "p_value": 0.5162106175723256,
+          "cohens_d": -0.8566944220028523,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "catastrophic_failures": {
+          "ours_mean": 0.0,
+          "baseline_mean": 0.0,
+          "relative_advantage_pct": 0.0,
+          "p_value": 1.0,
+          "cohens_d": 0.0,
+          "significant": false,
+          "verdict": "TIE"
+        }
+      },
+      "random": {
+        "throughput": {
+          "ours_mean": 9.285714285714425,
+          "baseline_mean": 10.00000000000015,
+          "relative_advantage_pct": -7.142857142857135,
+          "p_value": 0.6493003574796913,
+          "cohens_d": -0.5590169943749468,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "completion_ratio": {
+          "ours_mean": 0.6507323434991974,
+          "baseline_mean": 0.7141803624104509,
+          "relative_advantage_pct": -8.88403297692312,
+          "p_value": 0.2855842378831616,
+          "cohens_d": -1.506700464712798,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_reward": {
+          "ours_mean": -301.98850738670166,
+          "baseline_mean": -304.65349202081023,
+          "relative_advantage_pct": 0.8747592605721841,
+          "p_value": 0.967787677314727,
+          "cohens_d": 0.04888693338997322,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "sla_violation_rate": {
+          "ours_mean": 0.125,
+          "baseline_mean": 0.018518518518518517,
+          "relative_advantage_pct": -575.0,
+          "p_value": 0.5493917227146082,
+          "cohens_d": 0.8426548012644084,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_completion": {
+          "ours_mean": 0.43942042485315824,
+          "baseline_mean": 0.4599760723558409,
+          "relative_advantage_pct": 4.468851476861318,
+          "p_value": 0.5722317569847819,
+          "cohens_d": -0.7923867222744144,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "gini_gpu_hours": {
+          "ours_mean": 0.2955599341033837,
+          "baseline_mean": 0.1957615466711079,
+          "relative_advantage_pct": -50.97956627812283,
+          "p_value": 0.26817470841207025,
+          "cohens_d": 2.1560210671265687,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "total_cost_usd": {
+          "ours_mean": 42410.32799999931,
+          "baseline_mean": 44896.24799999923,
+          "relative_advantage_pct": 5.537032849604628,
+          "p_value": 0.8130460532749142,
+          "cohens_d": -0.29406265693869515,
+          "significant": false,
+          "verdict": "TIE"
+        },
+        "catastrophic_failures": {
+          "ours_mean": 0.0,
+          "baseline_mean": 0.0,
+          "relative_advantage_pct": 0.0,
+          "p_value": 1.0,
+          "cohens_d": 0.0,
+          "significant": false,
+          "verdict": "TIE"
+        }
+      }
+    },
+    "ledger": {
+      "win": [],
+      "loss": [],
+      "tie": [
+        "k8s_default_binpack/throughput",
+        "k8s_default_binpack/completion_ratio",
+        "k8s_default_binpack/total_reward",
+        "k8s_default_binpack/sla_violation_rate",
+        "k8s_default_binpack/gini_completion",
+        "k8s_default_binpack/gini_gpu_hours",
+        "k8s_default_binpack/total_cost_usd",
+        "k8s_default_binpack/catastrophic_failures",
+        "k8s_spread/throughput",
+        "k8s_spread/completion_ratio",
+        "k8s_spread/total_reward",
+        "k8s_spread/sla_violation_rate",
+        "k8s_spread/gini_completion",
+        "k8s_spread/gini_gpu_hours",
+        "k8s_spread/total_cost_usd",
+        "k8s_spread/catastrophic_failures",
+        "feasibility_oracle/throughput",
+        "feasibility_oracle/completion_ratio",
+        "feasibility_oracle/total_reward",
+        "feasibility_oracle/sla_violation_rate",
+        "feasibility_oracle/gini_completion",
+        "feasibility_oracle/gini_gpu_hours",
+        "feasibility_oracle/total_cost_usd",
+        "feasibility_oracle/catastrophic_failures",
+        "round_robin/throughput",
+        "round_robin/completion_ratio",
+        "round_robin/total_reward",
+        "round_robin/sla_violation_rate",
+        "round_robin/gini_completion",
+        "round_robin/gini_gpu_hours",
+        "round_robin/total_cost_usd",
+        "round_robin/catastrophic_failures",
+        "random/throughput",
+        "random/completion_ratio",
+        "random/total_reward",
+        "random/sla_violation_rate",
+        "random/gini_completion",
+        "random/gini_gpu_hours",
+        "random/total_cost_usd",
+        "random/catastrophic_failures"
+      ]
+    },
+    "alpha": 0.05
+  },
+  "elapsed_seconds": 40.0,
+  "timestamp": "2026-08-17T19:08:15"
+}

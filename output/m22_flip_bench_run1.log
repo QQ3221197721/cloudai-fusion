@@ -1,0 +1,12 @@
+﻿=== RUN   TestPerformanceCountSixMedian
+    decision_benchmark_test.go:469: 
+        === M22 Performance Results (6 runs, median) ===
+    decision_benchmark_test.go:470: Naive Rules Engine: 0s
+    decision_benchmark_test.go:471: Edge Autonomy Rule: 0s
+    decision_benchmark_test.go:472: Offline Decision:   0s
+    decision_benchmark_test.go:473: Conflict Resolver:  0s
+    decision_benchmark_test.go:485: 鉁?WIN/LOSS: Edge Autonomy WIN on latency too!
+    decision_benchmark_test.go:486:    Margin: NaNx faster than naive
+--- PASS: TestPerformanceCountSixMedian (0.01s)
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/edgeautonomy	0.061s

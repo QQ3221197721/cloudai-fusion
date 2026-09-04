@@ -1,0 +1,8 @@
+﻿go : go: errors parsing go.mod:
+所在位置 行:1 字符: 45
++ cd d:\IdeaProjects\untitled\cloudai-fusion; go mod tidy 2>&1 | Out-Fi ...
++                                             ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (go: errors parsing go.mod::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+go.mod:1: unexpected input character '\ufeff'

@@ -1,0 +1,4 @@
+{"model_version":"resnet50:1.1.0","timestamp":"2026-08-16T12:33:36.7842479Z","latency_p50_ms":40,"latency_p95_ms":120,"latency_p99_ms":200,"throughput_qps":850,"accuracy":0.91,"error_rate":0.002,"sample_count":10000}
+{"model_version":"resnet50:1.1.0","timestamp":"2026-08-16T12:33:58.296077Z","latency_p50_ms":80,"latency_p95_ms":240,"latency_p99_ms":480,"throughput_qps":400,"accuracy":0.84,"error_rate":0.02,"sample_count":10000}
+{"model_version":"resnet50:1.1.0","timestamp":"2026-08-16T12:36:01.7165713Z","latency_p50_ms":40,"latency_p95_ms":120,"latency_p99_ms":200,"throughput_qps":850,"accuracy":0.91,"error_rate":0.002,"sample_count":10000}
+{"model_version":"resnet50:1.1.0","timestamp":"2026-08-16T12:36:16.1291786Z","latency_p50_ms":42,"latency_p95_ms":125,"latency_p99_ms":210,"throughput_qps":840,"accuracy":0.905,"error_rate":0.003,"sample_count":9800}

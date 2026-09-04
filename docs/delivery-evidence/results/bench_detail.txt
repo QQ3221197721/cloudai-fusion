@@ -1,0 +1,110 @@
+﻿time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=20004 model=m3 orig_bytes=80000 rel_rmse_pct=26.95 sqnr_db=11.4 stages="[structured_pruning weight_sharing quantization_aware_training]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=20004 model=q orig_bytes=80000 rel_rmse_pct=0.84 sqnr_db=41.5 stages="[quantization_aware_training]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=20004 model=pq orig_bytes=80000 rel_rmse_pct=26.93 sqnr_db=11.4 stages="[structured_pruning quantization_aware_training]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=4004 model=llm orig_bytes=32000 rel_rmse_pct=17.01 sqnr_db=15.4 stages="[gptq]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=4004 model=llm orig_bytes=32000 rel_rmse_pct=17.01 sqnr_db=15.4 stages="[awq]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=4004 model=llm orig_bytes=32000 rel_rmse_pct=17.01 sqnr_db=15.4 stages="[gguf]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=4004 model=llm orig_bytes=32000 rel_rmse_pct=17.01 sqnr_db=15.4 stages="[squeezellm]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-1 region=cn-east tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=llama-50b original_mb=102400 stages=3 target_ratio=0.25
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="1.00%" input_mb=102400 output_mb=51200 speedup=1.7x stage=structured_pruning
+time="2026-08-23T23:55:54+08:00" level=warning msg="Stage skipped: accuracy budget exceeded" stage=knowledge_distillation
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="0.50%" input_mb=51200 output_mb=12800 speedup=4.0x stage=quantization_aware_training
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="1.50%" compressed_mb=12800 meets_budget=true model=llama-50b original_mb=102400 ratio=8.0x reduction="87.5%" speedup=6.7x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=llama-50b original_mb=102400 stages=3 target_ratio=0.25
+time="2026-08-23T23:55:54+08:00" level=warning msg="Stage skipped: accuracy budget exceeded" stage=structured_pruning
+time="2026-08-23T23:55:54+08:00" level=warning msg="Stage skipped: accuracy budget exceeded" stage=knowledge_distillation
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="0.50%" input_mb=102400 output_mb=25600 speedup=4.0x stage=quantization_aware_training
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="0.50%" compressed_mb=25600 meets_budget=true model=llama-50b original_mb=102400 ratio=4.0x reduction="75.0%" speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=test-50b original_mb=102400 stages=1 target_ratio=0.5
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="0.12%" input_mb=102400 output_mb=19200 speedup=4.0x stage=gptq
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="0.12%" compressed_mb=19200 meets_budget=true model=test-50b original_mb=102400 ratio=5.3x reduction="81.2%" speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=test-50b original_mb=102400 stages=1 target_ratio=0.5
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="0.10%" input_mb=102400 output_mb=13184 speedup=4.5x stage=awq
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="0.10%" compressed_mb=13184 meets_budget=true model=test-50b original_mb=102400 ratio=7.8x reduction="87.1%" speedup=4.5x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=test-50b original_mb=102400 stages=1 target_ratio=0.5
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="0.20%" input_mb=102400 output_mb=15519.999999046326 speedup=4.0x stage=gguf
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="0.20%" compressed_mb=15519.999999046326 meets_budget=true model=test-50b original_mb=102400 ratio=6.6x reduction="84.8%" speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=test-50b original_mb=102400 stages=1 target_ratio=0.5
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="0.55%" input_mb=102400 output_mb=11679.999999046326 speedup=3.2x stage=squeezellm
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="0.55%" compressed_mb=11679.999999046326 meets_budget=true model=test-50b original_mb=102400 ratio=8.8x reduction="88.6%" speedup=3.2x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=test-50b original_mb=102400 stages=1 target_ratio=0.5
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="3.37%" input_mb=102400 output_mb=14628.57142829895 speedup=6.0x stage=llm_distillation
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="3.37%" compressed_mb=14628.57142829895 meets_budget=true model=test-50b original_mb=102400 ratio=7.0x reduction="85.7%" speedup=6.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting GPTQ quantization" bits=4 desc_act=true group_size=128 model=llama-50b
+time="2026-08-23T23:55:54+08:00" level=info msg="GPTQ quantization complete" mem_reduce="86.7%" model=llama-50b orig_gb=100 ppl_delta=0.24 quant_gb=13.28125 speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting GPTQ quantization" bits=2 desc_act=true group_size=128 model=test-model
+time="2026-08-23T23:55:54+08:00" level=info msg="GPTQ quantization complete" mem_reduce="93.0%" model=test-model orig_gb=100 ppl_delta=4.32 quant_gb=7.03125 speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting GPTQ quantization" bits=3 desc_act=true group_size=128 model=test-model
+time="2026-08-23T23:55:54+08:00" level=info msg="GPTQ quantization complete" mem_reduce="89.8%" model=test-model orig_gb=100 ppl_delta=0.81 quant_gb=10.15625 speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting GPTQ quantization" bits=4 desc_act=true group_size=128 model=test-model
+time="2026-08-23T23:55:54+08:00" level=info msg="GPTQ quantization complete" mem_reduce="86.7%" model=test-model orig_gb=100 ppl_delta=0.24 quant_gb=13.28125 speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting GPTQ quantization" bits=8 desc_act=true group_size=128 model=test-model
+time="2026-08-23T23:55:54+08:00" level=info msg="GPTQ quantization complete" mem_reduce="74.2%" model=test-model orig_gb=100 ppl_delta=0.01 quant_gb=25.78125 speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting AWQ quantization" bits=4 model=llama-50b salient="1.0%" version=gemm
+time="2026-08-23T23:55:54+08:00" level=info msg="AWQ quantization complete" mem_reduce="80.9%" model=llama-50b ppl_delta=0.207 quant_gb=19.0625 speedup=4.5x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting AWQ quantization" bits=4 model=test salient="1.0%" version=gemm
+time="2026-08-23T23:55:54+08:00" level=info msg="AWQ quantization complete" mem_reduce="80.9%" model=test ppl_delta=0.207 quant_gb=19.0625 speedup=4.5x
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting GPTQ quantization" bits=4 desc_act=true group_size=128 model=test
+time="2026-08-23T23:55:54+08:00" level=info msg="GPTQ quantization complete" mem_reduce="86.7%" model=test orig_gb=100 ppl_delta=0.24 quant_gb=13.28125 speedup=4.0x
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=4.85 model=llama-50b ppl_delta=0.32 quant_gb=15.2 quant_type=Q4_K_M tps=52.8
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=2.63 model=test ppl_delta=4.80 quant_gb=8.2 quant_type=Q2_K tps=97.3
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=3.44 model=test ppl_delta=2.00 quant_gb=10.8 quant_type=Q3_K_S tps=74.4
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=3.91 model=test ppl_delta=1.44 quant_gb=12.2 quant_type=Q3_K_M tps=65.5
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=4.27 model=test ppl_delta=0.96 quant_gb=13.3 quant_type=Q3_K_L tps=60.0
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=4.58 model=test ppl_delta=0.48 quant_gb=14.3 quant_type=Q4_K_S tps=55.9
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=4.85 model=test ppl_delta=0.32 quant_gb=15.2 quant_type=Q4_K_M tps=52.8
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=5.54 model=test ppl_delta=0.16 quant_gb=17.3 quant_type=Q5_K_S tps=46.2
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=5.69 model=test ppl_delta=0.12 quant_gb=17.8 quant_type=Q5_K_M tps=45.0
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=6.56 model=test ppl_delta=0.04 quant_gb=20.5 quant_type=Q6_K tps=39.0
+time="2026-08-23T23:55:54+08:00" level=info msg="GGUF quantization complete" bpw=8.50 model=test ppl_delta=0.01 quant_gb=26.6 quant_type=Q8_0 tps=30.1
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting LLM knowledge distillation" alpha_kd=0.7 student=32L-4096H teacher=50B temperature=4
+time="2026-08-23T23:55:54+08:00" level=info msg="LLM distillation complete" edge_deployable=true edge_power=11W quality_retained="89.8%" speedup=8.0x student_gb=12.6 student_params=6.7B
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting LLM knowledge distillation" alpha_kd=0.7 student=32L-4096H teacher=50B temperature=4
+time="2026-08-23T23:55:54+08:00" level=info msg="LLM distillation complete" edge_deployable=true edge_power=11W quality_retained="89.8%" speedup=8.0x student_gb=12.6 student_params=6.7B
+time="2026-08-23T23:55:54+08:00" level=info msg="Offline runtime state transition" event=heartbeat_lost from=online node=edge-01 to=disconnecting
+time="2026-08-23T23:55:54+08:00" level=info msg="Offline runtime state transition" event=heartbeat_timeout from=disconnecting node=edge-01 to=offline
+time="2026-08-23T23:55:54+08:00" level=info msg="Offline runtime state transition" event=reconnected from=offline node=edge-01 to=recovering
+time="2026-08-23T23:55:54+08:00" level=info msg="Exiting offline mode" local_decisions=0 node=edge-01
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting offline鈫抩nline recovery" node=edge-01
+time="2026-08-23T23:55:54+08:00" level=info msg="Offline runtime state transition" event=sync_complete from=recovering node=edge-01 to=online
+time="2026-08-23T23:55:54+08:00" level=info msg="Offline runtime state transition" event=resource_critical from=online node=edge-02 to=degraded
+time="2026-08-23T23:55:54+08:00" level=info msg="Offline runtime state transition" event=resource_recovered from=degraded node=edge-02 to=online
+time="2026-08-23T23:55:54+08:00" level=info msg="Registered new firmware release for OTA" release=rel-1 size_mb=500 version=2.0.0
+time="2026-08-23T23:55:54+08:00" level=info msg="Created grayscale rollout plan" first_target=1 release=2.0.0 rollout=rollout-rel-1-1787500554 stage="1%" total_nodes=100
+time="2026-08-23T23:55:54+08:00" level=info msg="Advanced rollout to next stage" percent="5%" rollout=rollout-rel-1-1787500554 stage=1 target=5
+time="2026-08-23T23:55:54+08:00" level=info msg="Registered new firmware release for OTA" release=rel-2 size_mb=300 version=2.1.0
+time="2026-08-23T23:55:54+08:00" level=info msg="Started A/B partition OTA upgrade" active=A node=node-1 release=2.1.0 staging=B
+time="2026-08-23T23:55:54+08:00" level=warning msg="Node OTA upgrade rolled back" active=A node=node-1 reverted=2.0.0
+time="2026-08-23T23:55:54+08:00" level=info msg="Discovered edge device via mDNS" host=edge-node-1.local instance=cloudai-edge-001 ips="[192.168.1.100]" port=8082
+time="2026-08-23T23:55:54+08:00" level=info msg="Discovered edge device via mDNS" host= instance=stale-device ips="[10.0.0.1]" port=0
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-factory-01 region=cn-shanghai tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Model deploying to edge node" model=Llama-50B-Chat node=edge-factory-01 params=50B quant=INT4
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-beijing-01 region=cn-beijing tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=cloud-1 region= tier=cloud
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-1 region= tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-2 region= tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=terminal-1 region= tier=terminal
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-1 region= tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Model deploying to edge node" model=llama-7b node=edge-1 params=7B quant=INT4
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-1 region= tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=edge-1 region= tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=c1 region= tier=cloud
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=e1 region= tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=e2 region= tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=t1 region= tier=terminal
+time="2026-08-23T23:55:54+08:00" level=info msg="Set current model version" model=modelA version=v2
+time="2026-08-23T23:55:54+08:00" level=info msg="Set current model version" model=modelC version=v2
+time="2026-08-23T23:55:54+08:00" level=info msg="Set current model version" model=modelC version=v1
+time="2026-08-23T23:55:54+08:00" level=info msg="Edge node registered" node=test-edge-01 region=cn-hangzhou tier=edge
+time="2026-08-23T23:55:54+08:00" level=info msg="Measured compression pipeline completed (real tensor path)" comp_bytes=20004 model=e2e-model orig_bytes=80000 rel_rmse_pct=26.61 sqnr_db=11.5 stages="[structured_pruning quantization_aware_training]"
+time="2026-08-23T23:55:54+08:00" level=info msg="Starting compression pipeline" model=modeled-model original_mb=100 stages=2 target_ratio=0.5
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression stage completed" accuracy_loss="1.00%" input_mb=100 output_mb=50 speedup=1.7x stage=structured_pruning
+time="2026-08-23T23:55:54+08:00" level=info msg="Compression pipeline completed" accuracy_loss="1.00%" compressed_mb=50 meets_budget=true model=modeled-model original_mb=100 ratio=2.0x reduction="50.0%" speedup=1.7x
+goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/edge
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkCRDTDeltaSync_1PercentChange-24    	      19	  62446274 ns/op	        99.00 bandwidth_savings_pct	   1048740 delta_sync_bytes/op	 1078214 B/op	     605 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/edge	2.707s

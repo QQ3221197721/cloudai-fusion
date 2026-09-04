@@ -1,0 +1,143 @@
+﻿{"Time":"2026-08-24T17:21:30.6186424+08:00","Action":"start","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt"}
+{"Time":"2026-08-24T17:21:30.67559+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"goos: windows\n"}
+{"Time":"2026-08-24T17:21:30.67559+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"goarch: amd64\n"}
+{"Time":"2026-08-24T17:21:30.67559+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/hunt\n"}
+{"Time":"2026-08-24T17:21:30.67559+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"cpu: Intel(R) Core(TM) Ultra 9 275HX\n"}
+{"Time":"2026-08-24T17:21:30.67559+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_100patterns"}
+{"Time":"2026-08-24T17:21:30.67559+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_100patterns","Output":"=== RUN   BenchmarkIOC_OurAC_100patterns\n"}
+{"Time":"2026-08-24T17:21:30.67559+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_100patterns","Output":"BenchmarkIOC_OurAC_100patterns\n"}
+{"Time":"2026-08-24T17:21:33.1641367+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_100patterns","Output":"BenchmarkIOC_OurAC_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:33.1651383+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_100patterns","Output":"    4219\t    574088 ns/op\t   11328 B/op\t       4 allocs/op\n"}
+{"Time":"2026-08-24T17:21:35.615434+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:35.6161062+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    4238\t    563013 ns/op\t   11328 B/op\t       4 allocs/op\n"}
+{"Time":"2026-08-24T17:21:37.8643491+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:37.865354+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3764\t    577873 ns/op\t   11328 B/op\t       4 allocs/op\n"}
+{"Time":"2026-08-24T17:21:40.4788991+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:40.4788991+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    4443\t    574096 ns/op\t   11328 B/op\t       4 allocs/op\n"}
+{"Time":"2026-08-24T17:21:45.9385211+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:45.9385211+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3764\t    906995 ns/op\t   11328 B/op\t       4 allocs/op\n"}
+{"Time":"2026-08-24T17:21:48.3788116+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:48.379343+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    4143\t    572824 ns/op\t   11328 B/op\t       4 allocs/op\n"}
+{"Time":"2026-08-24T17:21:48.379343+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_100patterns"}
+{"Time":"2026-08-24T17:21:48.379343+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_100patterns","Output":"=== RUN   BenchmarkIOC_Naive_100patterns\n"}
+{"Time":"2026-08-24T17:21:48.379343+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_100patterns","Output":"BenchmarkIOC_Naive_100patterns\n"}
+{"Time":"2026-08-24T17:21:51.4014684+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_100patterns","Output":"BenchmarkIOC_Naive_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:51.4014684+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_100patterns","Output":"     392\t   6119882 ns/op\t    4416 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-24T17:21:54.4162491+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:54.4170386+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"     394\t   6080022 ns/op\t    4416 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-24T17:21:57.7140743+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_100patterns-24      \t"}
+{"Time":"2026-08-24T17:21:57.7143905+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"     392\t   6821476 ns/op\t    4416 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-24T17:22:01.1684295+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_100patterns-24      \t"}
+{"Time":"2026-08-24T17:22:01.1684295+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"     288\t   9053414 ns/op\t    4416 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-24T17:22:04.7071856+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_100patterns-24      \t"}
+{"Time":"2026-08-24T17:22:04.7071856+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"     249\t  10285854 ns/op\t    4416 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-24T17:22:09.9582481+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_100patterns-24      \t"}
+{"Time":"2026-08-24T17:22:09.9582481+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"     350\t   7196049 ns/op\t    4416 B/op\t       6 allocs/op\n"}
+{"Time":"2026-08-24T17:22:09.9582481+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_100patterns"}
+{"Time":"2026-08-24T17:22:09.9582481+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_100patterns","Output":"=== RUN   BenchmarkIOC_Bobo_100patterns\n"}
+{"Time":"2026-08-24T17:22:09.9582481+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_100patterns","Output":"BenchmarkIOC_Bobo_100patterns\n"}
+{"Time":"2026-08-24T17:22:12.3238094+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_100patterns","Output":"BenchmarkIOC_Bobo_100patterns-24       \t"}
+{"Time":"2026-08-24T17:22:12.3238094+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_100patterns","Output":"    4576\t    502617 ns/op\t  264745 B/op\t      41 allocs/op\n"}
+{"Time":"2026-08-24T17:22:14.9374527+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_100patterns-24       \t"}
+{"Time":"2026-08-24T17:22:14.938183+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    5311\t    482348 ns/op\t  264744 B/op\t      41 allocs/op\n"}
+{"Time":"2026-08-24T17:22:17.8119687+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_100patterns-24       \t"}
+{"Time":"2026-08-24T17:22:17.8119687+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    5329\t    528182 ns/op\t  264744 B/op\t      41 allocs/op\n"}
+{"Time":"2026-08-24T17:22:20.3339699+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_100patterns-24       \t"}
+{"Time":"2026-08-24T17:22:20.3339699+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    4854\t    507909 ns/op\t  264744 B/op\t      41 allocs/op\n"}
+{"Time":"2026-08-24T17:22:22.6869964+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_100patterns-24       \t"}
+{"Time":"2026-08-24T17:22:22.6874178+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    4552\t    503427 ns/op\t  264744 B/op\t      41 allocs/op\n"}
+{"Time":"2026-08-24T17:22:25.1464411+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_100patterns-24       \t"}
+{"Time":"2026-08-24T17:22:25.1464411+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    4874\t    490944 ns/op\t  264744 B/op\t      41 allocs/op\n"}
+{"Time":"2026-08-24T17:22:25.1464411+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_1000patterns"}
+{"Time":"2026-08-24T17:22:25.1464411+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_1000patterns","Output":"=== RUN   BenchmarkIOC_OurAC_1000patterns\n"}
+{"Time":"2026-08-24T17:22:25.1464411+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_1000patterns","Output":"BenchmarkIOC_OurAC_1000patterns\n"}
+{"Time":"2026-08-24T17:22:27.6532824+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_1000patterns","Output":"BenchmarkIOC_OurAC_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:27.6542796+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_1000patterns","Output":"    3789\t    641240 ns/op\t   97346 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T17:22:30.7831733+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:30.7831733+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3426\t    889938 ns/op\t   97344 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T17:22:33.2441901+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:33.2451901+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2466\t    953466 ns/op\t   97344 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T17:22:35.5845737+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:35.5845737+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2376\t    936459 ns/op\t   97344 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T17:22:38.2040431+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:38.2044431+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2562\t    975940 ns/op\t   97344 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T17:22:40.4827547+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:40.4827547+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2394\t    904623 ns/op\t   97344 B/op\t       7 allocs/op\n"}
+{"Time":"2026-08-24T17:22:40.4827547+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_1000patterns"}
+{"Time":"2026-08-24T17:22:40.4827547+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_1000patterns","Output":"=== RUN   BenchmarkIOC_Naive_1000patterns\n"}
+{"Time":"2026-08-24T17:22:40.4827547+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_1000patterns","Output":"BenchmarkIOC_Naive_1000patterns\n"}
+{"Time":"2026-08-24T17:22:45.5850374+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_1000patterns","Output":"BenchmarkIOC_Naive_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:45.5860035+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_1000patterns","Output":"      37\t  86575700 ns/op\t   37440 B/op\t       9 allocs/op\n"}
+{"Time":"2026-08-24T17:22:49.0623904+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:49.0633886+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"      39\t  87117774 ns/op\t   37440 B/op\t       9 allocs/op\n"}
+{"Time":"2026-08-24T17:22:51.6637385+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:51.6637385+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"      34\t  74343674 ns/op\t   37440 B/op\t       9 allocs/op\n"}
+{"Time":"2026-08-24T17:22:54.1272427+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:54.1276034+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"      31\t  76774852 ns/op\t   37440 B/op\t       9 allocs/op\n"}
+{"Time":"2026-08-24T17:22:56.2308202+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:56.2308202+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"      26\t  77345281 ns/op\t   37440 B/op\t       9 allocs/op\n"}
+{"Time":"2026-08-24T17:22:58.8631467+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_1000patterns-24     \t"}
+{"Time":"2026-08-24T17:22:58.8631467+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"      37\t  69319776 ns/op\t   37440 B/op\t       9 allocs/op\n"}
+{"Time":"2026-08-24T17:22:58.8631467+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_1000patterns"}
+{"Time":"2026-08-24T17:22:58.8631467+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_1000patterns","Output":"=== RUN   BenchmarkIOC_Bobo_1000patterns\n"}
+{"Time":"2026-08-24T17:22:58.8631467+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_1000patterns","Output":"BenchmarkIOC_Bobo_1000patterns\n"}
+{"Time":"2026-08-24T17:23:01.3795309+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_1000patterns","Output":"BenchmarkIOC_Bobo_1000patterns-24      \t"}
+{"Time":"2026-08-24T17:23:01.3805275+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_1000patterns","Output":"    4189\t    583573 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:23:03.7619633+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_1000patterns-24      \t"}
+{"Time":"2026-08-24T17:23:03.7619633+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3516\t    654849 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:23:06.0941285+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_1000patterns-24      \t"}
+{"Time":"2026-08-24T17:23:06.0949556+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3598\t    625388 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:23:08.6572306+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_1000patterns-24      \t"}
+{"Time":"2026-08-24T17:23:08.6572306+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    4000\t    623261 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:23:10.928878+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_1000patterns-24      \t"}
+{"Time":"2026-08-24T17:23:10.9296565+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3656\t    600564 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:23:13.3343339+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_1000patterns-24      \t"}
+{"Time":"2026-08-24T17:23:13.3348775+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2766\t    833506 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:23:13.3348775+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_10000patterns"}
+{"Time":"2026-08-24T17:23:13.3348775+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_10000patterns","Output":"=== RUN   BenchmarkIOC_OurAC_10000patterns\n"}
+{"Time":"2026-08-24T17:23:13.3348775+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_10000patterns","Output":"BenchmarkIOC_OurAC_10000patterns\n"}
+{"Time":"2026-08-24T17:23:16.038105+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_10000patterns","Output":"BenchmarkIOC_OurAC_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:16.0389793+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_OurAC_10000patterns","Output":"    1428\t   1738883 ns/op\t 1449031 B/op\t      13 allocs/op\n"}
+{"Time":"2026-08-24T17:23:18.6738539+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:18.6745528+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    1417\t   1700798 ns/op\t 1449024 B/op\t      13 allocs/op\n"}
+{"Time":"2026-08-24T17:23:21.2355622+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:21.2355622+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    1515\t   1549237 ns/op\t 1449028 B/op\t      13 allocs/op\n"}
+{"Time":"2026-08-24T17:23:24.0211427+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:24.0221462+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2456\t   1078667 ns/op\t 1449029 B/op\t      13 allocs/op\n"}
+{"Time":"2026-08-24T17:23:26.428723+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:26.4290561+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    1942\t   1149471 ns/op\t 1449024 B/op\t      13 allocs/op\n"}
+{"Time":"2026-08-24T17:23:29.5294661+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_OurAC_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:29.5294661+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2643\t   1125995 ns/op\t 1449026 B/op\t      13 allocs/op\n"}
+{"Time":"2026-08-24T17:23:29.5294661+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_10000patterns"}
+{"Time":"2026-08-24T17:23:29.5294661+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_10000patterns","Output":"=== RUN   BenchmarkIOC_Naive_10000patterns\n"}
+{"Time":"2026-08-24T17:23:29.5294661+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_10000patterns","Output":"BenchmarkIOC_Naive_10000patterns\n"}
+{"Time":"2026-08-24T17:23:35.1707805+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_10000patterns","Output":"BenchmarkIOC_Naive_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:35.1707805+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Naive_10000patterns","Output":"       3\t 992080000 ns/op\t  594496 B/op\t      15 allocs/op\n"}
+{"Time":"2026-08-24T17:23:40.3560318+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:40.3563346+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"       3\t 949337333 ns/op\t  594496 B/op\t      15 allocs/op\n"}
+{"Time":"2026-08-24T17:23:45.9481114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:45.9484983+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"       3\t 971498867 ns/op\t  594496 B/op\t      15 allocs/op\n"}
+{"Time":"2026-08-24T17:23:49.3187558+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:49.3192251+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"       2\t1129229250 ns/op\t  594496 B/op\t      15 allocs/op\n"}
+{"Time":"2026-08-24T17:23:52.7102245+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:52.7105864+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"       2\t1121860800 ns/op\t  594496 B/op\t      15 allocs/op\n"}
+{"Time":"2026-08-24T17:23:56.0381743+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Naive_10000patterns-24    \t"}
+{"Time":"2026-08-24T17:23:56.0390089+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"       2\t1096015400 ns/op\t  594496 B/op\t      15 allocs/op\n"}
+{"Time":"2026-08-24T17:23:56.0390089+08:00","Action":"run","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_10000patterns"}
+{"Time":"2026-08-24T17:23:56.0390089+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_10000patterns","Output":"=== RUN   BenchmarkIOC_Bobo_10000patterns\n"}
+{"Time":"2026-08-24T17:23:56.0390089+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_10000patterns","Output":"BenchmarkIOC_Bobo_10000patterns\n"}
+{"Time":"2026-08-24T17:23:58.3966268+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_10000patterns","Output":"BenchmarkIOC_Bobo_10000patterns-24     \t"}
+{"Time":"2026-08-24T17:23:58.3975202+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Test":"BenchmarkIOC_Bobo_10000patterns","Output":"    2770\t    801288 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:24:00.8981229+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_10000patterns-24     \t"}
+{"Time":"2026-08-24T17:24:00.8991263+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3030\t    782290 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:24:03.2386114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_10000patterns-24     \t"}
+{"Time":"2026-08-24T17:24:03.2386114+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2833\t    779258 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:24:05.4985234+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_10000patterns-24     \t"}
+{"Time":"2026-08-24T17:24:05.4985234+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    2726\t    784009 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:24:08.1550751+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_10000patterns-24     \t"}
+{"Time":"2026-08-24T17:24:08.1553849+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3064\t    824192 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:24:10.7222742+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"BenchmarkIOC_Bobo_10000patterns-24     \t"}
+{"Time":"2026-08-24T17:24:10.7227395+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"    3114\t    786540 ns/op\t  264840 B/op\t      43 allocs/op\n"}
+{"Time":"2026-08-24T17:24:10.7227395+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"PASS\n"}
+{"Time":"2026-08-24T17:24:10.7312717+08:00","Action":"output","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Output":"ok  \tgithub.com/cloudai-fusion/cloudai-fusion/pkg/hunt\t160.113s\n"}
+{"Time":"2026-08-24T17:24:10.7312717+08:00","Action":"pass","Package":"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt","Elapsed":160.113}

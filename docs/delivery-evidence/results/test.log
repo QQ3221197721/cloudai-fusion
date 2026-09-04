@@ -1,0 +1,158 @@
+﻿ok  	github.com/cloudai-fusion/cloudai-fusion	0.024s [no tests to run]
+ok  	github.com/cloudai-fusion/cloudai-fusion/cmd/agent	0.435s
+ok  	github.com/cloudai-fusion/cloudai-fusion/cmd/apiserver	0.474s
+ok  	github.com/cloudai-fusion/cloudai-fusion/cmd/cafctl	26.835s
+ok  	github.com/cloudai-fusion/cloudai-fusion/cmd/cafdemo	0.817s
+ok  	github.com/cloudai-fusion/cloudai-fusion/cmd/healthcheck	0.216s
+ok  	github.com/cloudai-fusion/cloudai-fusion/cmd/scheduler	0.137s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/agent	0.140s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/ai/orchestrator	0.153s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/aiops	0.413s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/aisecops	0.210s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/alerting	0.369s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/anomaly	0.503s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/api	3.157s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/apiclientgen	0.077s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/audit	0.416s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/auth	1.408s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/billing	0.560s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cache	0.606s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/capability	0.153s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cloud	1.159s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/auth	0.095s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cloud/providers	0.287s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cloudprovider	0.181s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cluster	1.531s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/common	0.140s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/config	0.417s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/controller	4.231s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/controlplane	0.224s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/correlation	0.171s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/cost	0.127s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/delivery	0.115s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync	4.347s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/deploy	0.088s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/detect	0.622s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/devsecops	0.127s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/disaster	0.106s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/docgen	0.112s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/dr	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/dr_integrations	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/edge	0.513s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/edgeautonomy	23.384s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/elasticpool	10.818s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/election	2.078s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/enterprise	0.110s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/errors	0.039s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/eventbus	10.883s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/evidence	2.032s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/evidence/zk	7.865s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/experiment	0.612s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/exploit	0.084s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/fabric	0.219s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/feature	0.069s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/fed	0.069s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/finops	0.194s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/gitops	0.749s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/ha	0.420s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/hotswap	5.464s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/hunt	0.589s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/inference	0.799s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/integrations	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/integrations/jira	0.078s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/intel	1.255s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/k8s	0.083s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/logging	0.058s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/manifest	0.201s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/marketplace	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/mesh	7.543s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/messaging	163.296s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/metrics	0.624s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/middleware	0.213s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/migrate	0.060s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/mlops	0.069s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/modelmonitor	1.019s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/modelregistry	1.683s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/monitor	0.046s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/multicluster	0.302s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/observability	1.646s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/pipeline	1.826s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin	0.100s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/builtin	0.156s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib/customerservice	0.157s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib/disasterrecovery	3.146s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib/renderfarm	0.217s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin/contrib/threatdetection	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/provenance	0.044s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/qa	0.132s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/quantile	10.553s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam	0.306s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/ad	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/ad_kerberos	0.072s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/ad_kerberos/native/asn1	0.148s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/ad_kerberos/native/crypto	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/api	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/attack_graph	4.588s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/autoremediation	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/cache	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/dashboard	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/edr_bypass	0.070s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/edr_telemetry	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/edrbypass	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2023_28868	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2023_36899	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2023_48725	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_21410	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_21412	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_21526	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_21626	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_28390	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_30076	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_3091	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_38075	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_38694	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploit_engine/cve_2024_38694_v2	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/exploits	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/integration	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/intelligence	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/metasploit	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/metasploit_api	[no test files]
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/mitre_optimization	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/reporting	0.039s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/resilience	0.911s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/resources	1.196s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/rpcserver	1.056s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/runmode	2.309s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/sandbox	2.376s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/scaler	2.902s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/scanners	1.130s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler	20.836s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/sdk	0.055s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/security	0.480s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/soc	0.321s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/store	2.813s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/support	0.064s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tee	0.069s
+?   	github.com/cloudai-fusion/cloudai-fusion/pkg/tee_integrations	[no test files]
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tenant	0.063s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tenants	1.468s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/testutil	0.136s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tracing	0.107s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/training	1.272s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tsdb	0.118s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/tutorial	0.172s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/validation	0.077s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/version	0.119s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/wasm	0.695s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/websocket	0.196s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/wellreadiness	0.061s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/wellrouter	1.367s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/workload	0.061s
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/zkp	0.054s
+ok  	github.com/cloudai-fusion/cloudai-fusion/tests/chaos	2.693s
+ok  	github.com/cloudai-fusion/cloudai-fusion/tests/e2e	0.341s
+ok  	github.com/cloudai-fusion/cloudai-fusion/tests/integration	0.137s
+ok  	github.com/cloudai-fusion/cloudai-fusion/tests/performance	14.367s
+?   	github.com/cloudai-fusion/cloudai-fusion/web/node_modules/flatted/golang/pkg/flatted	[no test files]

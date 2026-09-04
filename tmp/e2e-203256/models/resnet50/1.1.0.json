@@ -1,0 +1,10 @@
+{
+  "name": "resnet50",
+  "version": "1.1.0",
+  "sha256": "7ae8c0422f0809fa32d374b21c433e794753a50f669ab14b1686e4046e4f13f1",
+  "size_bytes": 15,
+  "created_by": "cafctl",
+  "created_at": "2026-08-16T12:36:01.5403012Z",
+  "lineage": {},
+  "model_card": {}
+}

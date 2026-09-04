@@ -1,0 +1,89 @@
+﻿time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=dryrun template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=base
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=base
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=ext
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=ext
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=dryrun template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=base
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=base
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=ext
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=ext
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=deny template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Constraint template registered" engine=gatekeeper template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="Policy constraint created" constraint=c1 enforcement=dryrun template=tmpl
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=test-plug
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="starting plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin started" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=b
+time="2026-08-24T20:33:16+08:00" level=info msg="stopping plugin" plugin=a
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=base
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=base
+time="2026-08-24T20:33:16+08:00" level=info msg="initializing plugin" plugin=ext
+time="2026-08-24T20:33:16+08:00" level=info msg="plugin initialized" plugin=ext
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/plugin	0.063s

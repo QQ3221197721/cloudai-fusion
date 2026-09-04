@@ -1,0 +1,91 @@
+[_run_bench] mode=full start=2026-08-17T20:35:23
+[_run_bench] FULL config: train_episodes=6000, eval_seeds=[901001, 901002, 901003, 901004, 901005, 901006, 901007, 901008, 901009, 901010]
+
+============================================================================================================
+COMPETITOR BASELINE BENCHMARK ¡ª central_pool (Week 4.5, production)
+============================================================================================================
+cluster 10x8 GPU, rate=0.12, horizon=700 steps (7 days), seeds=[901001, 901002, 901003, 901004, 901005, 901006, 901007, 901008, 901009, 901010]
+NOTE: the only learned policy here is NumPy tabular Q ¡ª torch/stable_baselines3 are NOT installed, so PPO/SAC are untrained.
+
+[1/3] Training tabular Q (6000 episodes x 300 steps)...
+      583s, states=21464, tail-1000 reward=-177.1 ¡À 33.6
+
+[2/3] Evaluating 6 policies x 10 seeds...
+      q_learning_greedy      thrpt= 8.76/d  sla= 14.6%  cost=$  42636  catas=  0  reward=  -467.1
+      k8s_default_binpack    thrpt= 8.50/d  sla= 12.5%  cost=$  43325  catas=  0  reward=  -480.5
+      k8s_spread             thrpt= 8.81/d  sla= 12.4%  cost=$  41275  catas=  0  reward=  -517.2
+      feasibility_oracle     thrpt= 8.63/d  sla= 10.9%  cost=$  37954  catas=  0  reward=  -541.6
+      round_robin            thrpt= 8.56/d  sla= 13.3%  cost=$  43601  catas=  0  reward=  -460.0
+      random                 thrpt= 8.74/d  sla=  8.0%  cost=$  41651  catas=  0  reward=  -469.2
+
+[3/3] Significance testing + artifact...
+
+------------------------------------------------------------------------------------------------------------
+MATRIX ¡ª central_pool (Week 4.5, production)
+------------------------------------------------------------------------------------------------------------
+policy                  thrpt/d   compl%    sla%  giniJCT  giniGPU     cost$  catas    reward
+*q_learning_greedy         8.76     65.0    14.6    0.433    0.236     42636      0    -467.1
+ k8s_default_binpack       8.50     62.9    12.5    0.438    0.215     43325      0    -480.5
+ k8s_spread                8.81     64.6    12.4    0.428    0.281     41275      0    -517.2
+ feasibility_oracle        8.63     64.4    10.9    0.439    0.300     37954      0    -541.6
+ round_robin               8.56     63.5    13.3    0.433    0.247     43601      0    -460.0
+ random                    8.74     65.4     8.0    0.437    0.246     41651      0    -469.2
+
+  OURS vs each baseline (+ = we are better; p from Welch t-test, n=10):
+    vs k8s_default_binpack:
+      throughput               +3.0%  p=0.6095  d=+0.23  TIE
+      completion_ratio         +3.3%  p=0.6155  d=+0.23  TIE
+      total_reward             +2.8%  p=0.6630  d=+0.20  TIE
+      sla_violation_rate      -16.9%  p=0.6560  d=+0.20  TIE
+      gini_completion          +1.1%  p=0.6966  d=-0.18  TIE
+      gini_gpu_hours           -9.9%  p=0.3468  d=+0.43  TIE
+      total_cost_usd           +1.6%  p=0.8536  d=-0.08  TIE
+      catastrophic_failures    +0.0%  p=1.0000  d=+0.00  TIE
+    vs k8s_spread:
+      throughput               -0.6%  p=0.9197  d=-0.05  TIE
+      completion_ratio         +0.6%  p=0.9344  d=+0.04  TIE
+      total_reward             +9.7%  p=0.0675  d=+0.87  TIE
+      sla_violation_rate      -18.0%  p=0.6376  d=+0.21  TIE
+      gini_completion          -1.1%  p=0.7446  d=+0.15  TIE
+      gini_gpu_hours          +16.1%  p=0.0426  d=-0.98  WIN
+      total_cost_usd           -3.3%  p=0.7120  d=+0.17  TIE
+      catastrophic_failures    +0.0%  p=1.0000  d=+0.00  TIE
+    vs feasibility_oracle:
+      throughput               +1.5%  p=0.7494  d=+0.15  TIE
+      completion_ratio         +0.9%  p=0.8741  d=+0.07  TIE
+      total_reward            +13.8%  p=0.0103  d=+1.28  WIN
+      sla_violation_rate      -33.5%  p=0.4002  d=+0.39  TIE
+      gini_completion          +1.4%  p=0.7416  d=-0.15  TIE
+      gini_gpu_hours          +21.4%  p=0.0155  d=-1.20  WIN
+      total_cost_usd          -12.3%  p=0.2065  d=+0.59  TIE
+      catastrophic_failures    +0.0%  p=1.0000  d=+0.00  TIE
+    vs round_robin:
+      throughput               +2.3%  p=0.7268  d=+0.16  TIE
+      completion_ratio         +2.3%  p=0.7331  d=+0.16  TIE
+      total_reward             -1.5%  p=0.7957  d=-0.12  TIE
+      sla_violation_rate       -9.9%  p=0.8003  d=+0.11  TIE
+      gini_completion          +0.2%  p=0.9603  d=-0.02  TIE
+      gini_gpu_hours           +4.5%  p=0.5868  d=-0.25  TIE
+      total_cost_usd           +2.2%  p=0.7998  d=-0.12  TIE
+      catastrophic_failures    +0.0%  p=1.0000  d=+0.00  TIE
+    vs random:
+      throughput               +0.2%  p=0.9762  d=+0.01  TIE
+      completion_ratio         -0.6%  p=0.9173  d=-0.05  TIE
+      total_reward             +0.5%  p=0.9309  d=+0.04  TIE
+      sla_violation_rate      -82.2%  p=0.1518  d=+0.67  TIE
+      gini_completion          +1.0%  p=0.7172  d=-0.16  TIE
+      gini_gpu_hours           +3.9%  p=0.6667  d=-0.20  TIE
+      total_cost_usd           -2.4%  p=0.8033  d=+0.11  TIE
+      catastrophic_failures    +0.0%  p=1.0000  d=+0.00  TIE
+
+  ledger: 3 WIN / 0 LOSS / 37 TIE
+
+  results -> D:\IdeaProjects\untitled\cloudai-fusion\tmp\competitor_baselines_central_pool.json
+
+[_run_bench] ---- gate verification ----
+[GATE A] ours catastrophic_failures_total = 0 (expected 0)
+[GATE G] reward vs round_robin = -1.54%  ours=-467.1 rr=-460.0 p=0.7957 verdict=TIE
+[LEDGER] WIN=3 LOSS=0 TIE=37
+
+[_run_bench] TOTAL_ELAPSED_SECONDS=593.3
+[_run_bench] DONE end=2026-08-17T20:45:17

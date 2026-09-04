@@ -1,0 +1,42 @@
+{
+  "id": "job-6ce5a372fd17df5e",
+  "name": "fine-tune-resnet",
+  "image": "pytorch:2.0",
+  "gpu_count": 4,
+  "memory_gb": 32,
+  "base_model": "resnet50:1.0.0",
+  "dataset_ref": "ds-abc123",
+  "command": "python train.py",
+  "status": "succeeded",
+  "events": [
+    {
+      "timestamp": "2026-08-16T11:49:51.7822488Z",
+      "from": "",
+      "to": "queued",
+      "reason": "submitted"
+    },
+    {
+      "timestamp": "2026-08-16T11:50:02.5520748Z",
+      "from": "queued",
+      "to": "scheduled",
+      "reason": "resources allocated"
+    },
+    {
+      "timestamp": "2026-08-16T11:50:02.5536744Z",
+      "from": "scheduled",
+      "to": "running",
+      "reason": "execution started"
+    },
+    {
+      "timestamp": "2026-08-16T11:50:02.5593511Z",
+      "from": "running",
+      "to": "succeeded",
+      "reason": "completed (simulated run-once) (model resnet50:1.1.0 registered)"
+    }
+  ],
+  "created_at": "2026-08-16T11:49:51.7822488Z",
+  "scheduled_at": "2026-08-16T11:50:02.5520748Z",
+  "started_at": "2026-08-16T11:50:02.5536744Z",
+  "completed_at": "2026-08-16T11:50:02.5593511Z",
+  "actor": "cafctl-train"
+}

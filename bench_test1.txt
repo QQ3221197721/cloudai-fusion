@@ -1,0 +1,22 @@
+﻿time="2026-08-24T19:44:41+08:00" level=info msg="Event bus closed"
+--- FAIL: TestHead2Head_Correctness (0.00s)
+    --- FAIL: TestHead2Head_Correctness/SOAR_decisions_work (0.00s)
+        soar_opa_bench_test.go:431: SOAR decision failed for f-003: <nil>
+    --- FAIL: TestHead2Head_Correctness/correctness_verification (0.00s)
+        soar_opa_bench_test.go:455: SOAR decision failed for f-003: <nil>
+time="2026-08-24T19:44:42+08:00" level=info msg="Event bus closed"
+--- FAIL: TestHead2Head_Correctness (0.00s)
+    --- FAIL: TestHead2Head_Correctness/SOAR_decisions_work (0.00s)
+        soar_opa_bench_test.go:431: SOAR decision failed for f-003: <nil>
+    --- FAIL: TestHead2Head_Correctness/correctness_verification (0.00s)
+        soar_opa_bench_test.go:455: SOAR decision failed for f-003: <nil>
+time="2026-08-24T19:44:42+08:00" level=info msg="Event bus closed"
+--- FAIL: TestHead2Head_Correctness (0.00s)
+    --- FAIL: TestHead2Head_Correctness/SOAR_decisions_work (0.00s)
+        soar_opa_bench_test.go:431: SOAR decision failed for f-003: <nil>
+    --- FAIL: TestHead2Head_Correctness/correctness_verification (0.00s)
+        soar_opa_bench_test.go:455: SOAR decision failed for f-003: <nil>
+FAIL
+exit status 1
+FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/soc	0.718s
+FAIL

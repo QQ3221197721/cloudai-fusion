@@ -1,0 +1,98 @@
+{
+  "week": "4.5",
+  "experiment": "central_pool_learning_proof",
+  "config": {
+    "num_nodes": 5,
+    "max_gpus_per_node": 8,
+    "max_pending_jobs": 20,
+    "arrival_rate": 1.0,
+    "service_time_mean": 2.0,
+    "steps": 100,
+    "baseline_episodes": 1000,
+    "train_episodes": 8000,
+    "eval_episodes": 2000,
+    "train_seed": 42,
+    "eval_seed_base": 900000,
+    "gate_margin": 0.1,
+    "alpha": 0.1,
+    "gamma": 0.99,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 0.9995,
+    "overload_rate": 2.0,
+    "overload_episodes": 300
+  },
+  "results": {
+    "random": {
+      "mean": -38.668527909843284,
+      "std": 18.30558076795937
+    },
+    "round_robin": {
+      "mean": -37.38262443007666,
+      "std": 17.68048775099851
+    },
+    "q_greedy": {
+      "mean": -34.026851764241044,
+      "std": 19.434840554489327
+    },
+    "paired_base": {
+      "name": "round_robin",
+      "mean": -37.673535681151215
+    },
+    "paired_diff": {
+      "mean": 3.6466839169101815,
+      "se": 0.3479656662401688,
+      "n": 2000,
+      "margin_abs": 3.7673535681151216
+    },
+    "train_tail500_mean": -33.464181618812624,
+    "train_tail500_std": 20.78888414994549,
+    "learning_curve_250ep_means": [
+      -38.27136629782609,
+      -37.49935054288632,
+      -36.75394261595904,
+      -38.84102309729722,
+      -34.64352664632534,
+      -36.531985301489975,
+      -35.50312232525258,
+      -38.16139242635856,
+      -34.924238129534245,
+      -34.50185094795215,
+      -35.7797184989121,
+      -34.2271092484955,
+      -33.97585182443573,
+      -37.06700606878378,
+      -34.75418494309197,
+      -36.60854916775344,
+      -36.461117602516154,
+      -34.28776410806584,
+      -35.44190117123842,
+      -35.1522488651337,
+      -35.20775547848877,
+      -33.348228248838815,
+      -34.463574533285446,
+      -37.28585671412531,
+      -33.61815984095078,
+      -35.928390466346755,
+      -35.460561048876116,
+      -36.32152922029377,
+      -34.311724149507484,
+      -33.684532269362855,
+      -34.39972662058653,
+      -32.52863661703872
+    ],
+    "gate_threshold": -33.906182113036095,
+    "gate_pass": false,
+    "improvement_pct_vs_best_baseline": 9.679696505721619,
+    "gate_method": "paired common-random-numbers diff > 10%|base| AND absolute mean > base + 10%|base| (upgraded from marginal means at n=500 which had SE 0.87 > the 0.62 gap \u2014 measured underpowered, fixed by statistics, not by tuning)",
+    "overload": {
+      "rate": 2.0,
+      "random": -37.18177913760586,
+      "q_greedy": -32.03610701557841,
+      "gap_pct": 13.839230508534456
+    }
+  },
+  "train_seconds": 264.9,
+  "elapsed_seconds": 447.7,
+  "timestamp": "2026-08-16T18:45:59"
+}
