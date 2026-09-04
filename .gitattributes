@@ -8,16 +8,13 @@
 *.sh text
 *.ps1 text
 *.bat text
-
 # GitHub large files (>100MB)
-*.exe binary
-*.test binary
-bin/* binary
-tmp/* binary
-output/* txt
 *.exe filter=lfs diff=lfs merge=lfs -text
-*.test.exe filter=lfs diff=lfs merge=lfs -text
+*.test binary
 bin/* filter=lfs diff=lfs merge=lfs -text
+tmp/* filter=lfs diff=lfs merge=lfs -text
+output/* txt
+*.test.exe filter=lfs diff=lfs merge=lfs -text
 tmp/*.exe filter=lfs diff=lfs merge=lfs -text
 M49_baseline_count6.txt filter=lfs diff=lfs merge=lfs -text
 output/*.txt filter=lfs diff=lfs merge=lfs -text
