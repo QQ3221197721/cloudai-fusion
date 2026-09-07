@@ -106,3 +106,19 @@ func execute(tmpl string, data any) string {
 	t.Execute(&b, data)
 	return b.String()
 }
+
+// ParseAndGen is a convenience pipeline that parses the Go package rooted at dir
+// via ParseDir and renders Markdown documentation into outDir using Generator.
+// It returns the parsed Package so callers can report symbol counts. An empty
+// title is derived from the package name; an empty outDir defaults to ./docs.
+func ParseAndGen(dir, outDir, title string) (*Package, error) {
+	pkg, err := ParseDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	g := &Generator{Dir: outDir, Title: title}
+	if err := g.Generate(pkg); err != nil {
+		return nil, err
+	}
+	return pkg, nil
+}

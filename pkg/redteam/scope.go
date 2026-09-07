@@ -1,4 +1,4 @@
-// Package redteam is the Verifiable AI Red Team subsystem (M0 foundation).
+﻿// Package redteam is the Verifiable AI Red Team subsystem (M0 foundation).
 //
 // It provides authorized, evidence-grade, scope-enforced security-validation
 // primitives. This foundational layer contains NO offensive tooling: it is the
@@ -82,13 +82,13 @@ type RateLimit struct {
 // outside it. All matching is deny-by-default: an empty allow-set authorizes
 // nothing.
 type Scope struct {
-	Targets         []Target   `json:"targets"`
-	AllowTechniques []string   `json:"allow_techniques"` // MITRE ATT&CK IDs; "*" = any
-	DenyTechniques  []string   `json:"deny_techniques"`
-	Window          TimeWindow `json:"window"`
-	MaxRiskTier     RiskTier   `json:"max_risk_tier"`
-	ApprovalReq     RiskTier   `json:"approval_required_at"` // actions >= this tier need approval
-	RateLimit       RateLimit  `json:"rate_limit"`
+	Targets         []Target      `json:"targets"`
+	AllowTechniques []string      `json:"allow_techniques"` // MITRE ATT&CK IDs; "*" = any
+	DenyTechniques  []string      `json:"deny_techniques"`
+	Window          TimeWindow    `json:"window"`
+	MaxRiskTier     RiskTier      `json:"max_risk_tier"`
+	ApprovalReq     RiskTier      `json:"approval_required_at"` // actions >= this tier need approval
+	RateLimit       RateLimit     `json:"rate_limit"`
 }
 
 // InScope reports whether target (an IP, host, URL, or cluster ref) is covered

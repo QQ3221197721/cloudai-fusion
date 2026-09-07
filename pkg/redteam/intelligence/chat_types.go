@@ -1,9 +1,9 @@
-
-package redteam
+﻿package redteam
 
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -125,3 +125,7 @@ func generateUUID() string {
 	return hex.EncodeToString(b)
 }
 
+// buildPromptTemplates is a placeholder - actual implementation in ai_chat_handler.go
+func buildPromptTemplates() map[string]string {
+	return nil
+}

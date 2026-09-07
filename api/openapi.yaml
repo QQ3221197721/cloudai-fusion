@@ -76,6 +76,255 @@ paths:
         "200":
           description: Service is healthy
 
+  # ==================== Edge-AI Autonomy APIs ====================
+  /api/v1/edge/nodes:
+    get:
+      summary: List all edge nodes
+      tags: [edge]
+      responses:
+        "200":
+          description: List of edge nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EdgeNode'
+    
+    post:
+      summary: Create a new edge node
+      tags: [edge]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEdgeNodeRequest'
+      responses:
+        "201":
+          description: Node created
+
+  /api/v1/edge/nodes/{id}:
+    get:
+      summary: Get node details
+      tags: [edge]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Node details
+        "404":
+          description: Node not found
+    
+    put:
+      summary: Update edge node
+      tags: [edge]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEdgeNodeRequest'
+      responses:
+        "200":
+          description: Node updated
+    
+    delete:
+      summary: Delete an edge node
+      tags: [edge]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Node deleted
+
+  /api/v1/edge/deploy:
+    post:
+      summary: Deploy workload to edge nodes
+      tags: [edge]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployWorkloadRequest'
+      responses:
+        "202":
+          description: Deployment initiated
+
+  /api/v1/edge/deployments/{id}:
+    get:
+      summary: Get deployment status
+      tags: [edge]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deployment status
+        "404":
+          description: Deployment not found
+    
+    post:
+      summary: Abort deployment
+      tags: [edge]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deployment aborted
+
+  /api/v1/edge/models:
+    get:
+      summary: List model registry
+      tags: [edge]
+      responses:
+        "200":
+          description: List of models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelInfo'
+    
+    post:
+      summary: Upload model to registry
+      tags: [edge]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadModelRequest'
+      responses:
+        "201":
+          description: Model uploaded
+
+  /api/v1/edge/models/{id}:
+    get:
+      summary: Get model details
+      tags: [edge]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Model details
+    
+    delete:
+      summary: Delete model from registry
+      tags: [edge]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Model deleted
+
+  /api/v1/edge/sync/sessions:
+    get:
+      summary: List sync sessions
+      tags: [edge]
+      responses:
+        "200":
+          description: Active sync sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: {type: integer}
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncSession'
+
+  /api/v1/edge/sync/sessions/{sessionId}:
+    get:
+      summary: Get sync session status
+      tags: [edge]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session status
+
+  /api/v1/edge/policies:
+    get:
+      summary: Get sync policies
+      tags: [edge]
+      responses:
+        "200":
+          description: Current sync policies
+    
+    put:
+      summary: Update sync policies
+      tags: [edge]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncConfig'
+      responses:
+        "200":
+          description: Policies updated
+
+  /api/v1/edge/offline/mode:
+    post:
+      summary: Toggle offline autonomy mode
+      tags: [edge]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleOfflineModeRequest'
+      responses:
+        "200":
+          description: Mode toggled
+
+
   /api/v1/wells:
     get:
       summary: AISecOps deep-well readiness (honest per-well maturity)
@@ -2199,6 +2448,125 @@ components:
         user:
           type: object
 
+    # ==================== Edge AI Schemas ====================
+    EdgeNode:
+      type: object
+      description: An edge computing node in the cloud-edge collaboration system
+      properties:
+        id: {type: string}
+        address: {type: string}
+        port: {type: integer}
+        status: {type: string, enum: [online, offline, syncing, degraded]}
+        version: {type: string, format: date-time}
+        last_seen: {type: string, format: date-time}
+        merkle_root: {type: string}
+        data_hashes: {type: array, items: {type: string}}
+        capabilities:
+          type: object
+          additionalProperties: {type: boolean}
+        metadata:
+          type: object
+          additionalProperties: {type: string}
+    
+    CreateEdgeNodeRequest:
+      type: object
+      required: [id, address, port]
+      properties:
+        id: {type: string}
+        address: {type: string}
+        port: {type: integer}
+        capabilities:
+          type: object
+          additionalProperties: {type: string}
+    
+    UpdateEdgeNodeRequest:
+      type: object
+      properties:
+        address: {type: string}
+        capabilities:
+          type: object
+          additionalProperties: {type: boolean}
+        metadata:
+          type: object
+          additionalProperties: {type: string}
+    
+    ModelInfo:
+      type: object
+      description: A model in the edge registry
+      properties:
+        id: {type: string}
+        name: {type: string}
+        version: {type: string}
+        framework: {type: string, enum: [pytorch, tensorflow, onnx, triton]}
+        size_gb: {type: number}
+        capabilities:
+          type: array
+          items: {type: string}
+        compatibility:
+          type: array
+          items: {type: string}
+        last_updated: {type: string, format: date-time}
+        description: {type: string}
+    
+    UploadModelRequest:
+      type: object
+      required: [name, version]
+      properties:
+        name: {type: string}
+        version: {type: string}
+        framework: {type: string}
+        size_gb: {type: number}
+        description: {type: string}
+    
+    DeployWorkloadRequest:
+      type: object
+      required: [workload_id, target_nodes]
+      properties:
+        workload_id: {type: string}
+        target_nodes:
+          type: array
+          items: {type: string}
+        sync_policy:
+          type: string
+          enum: [strong, eventual, manual]
+        model_size_params: {type: string}
+    
+    SyncSession:
+      type: object
+      description: Active synchronization session between cloud and edge
+      properties:
+        id: {type: string}
+        source_node: {type: string}
+        dest_node: {type: string}
+        status:
+          type: string
+          enum: [pending, active, complete, failed]
+        start_time: {type: string, format: date-time}
+        end_time: {type: string, format: date-time}
+        bytes_transferred: {type: integer}
+        changes_detected: {type: integer}
+        changed_blocks:
+          type: array
+          items: {type: object}
+        unchanged_blocks: {type: array, items: {type: string}}
+    
+    SyncConfig:
+      type: object
+      description: Configuration for delta synchronization
+      properties:
+        compression_enabled: {type: boolean}
+        bandwidth_limit_mbps: {type: integer}
+        max_batch_size: {type: integer}
+        retry_policy: {type: object}
+        sync_interval_minutes: {type: integer}
+    
+    ToggleOfflineModeRequest:
+      type: object
+      required: [node_id, autonomous]
+      properties:
+        node_id: {type: string}
+        autonomous: {type: boolean}
+        sync_strategy: {type: string}
     ImportClusterRequest:
       type: object
       required: [name, provider, region, kubeconfig]

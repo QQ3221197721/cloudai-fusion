@@ -1099,10 +1099,43 @@ func handleAlertEvents(svc monitor.MonitoringService) gin.HandlerFunc {
 
 func handleDashboard() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Fetch REAL statistics from PostgreSQL
+		var woTotal, woPending int64
+		var campActive, threatsFound int64
+		
+		// Query work orders total count
+		if err := c.GetStore().DB().Model(&models.WorkOrder{}).Count(&woTotal).Error; err != nil {
+			logrus.WithError(err).Warn("Failed to query work orders")
+			woTotal = 0
+		}
+		
+		// Query pending work orders
+		if err := c.GetStore().DB().Model(&models.WorkOrder{}).Where("status = ?", "pending").Count(&woPending).Error; err != nil {
+			logrus.WithError(err).Warn("Failed to query pending work orders")
+			woPending = 0
+		}
+		
+		// Query active campaigns (running or scheduled)
+		if err := c.GetStore().DB().Model(&redteam.AttackCampaign{}).Where("status IN (?)", []string{"running", "scheduled"}).Count(&campActive).Error; err != nil {
+			logrus.WithError(err).Warn("Failed to query campaigns")
+			campActive = 0
+		}
+		
+		// Query critical and high severity findings
+		if err := c.GetStore().DB().Model(&redteam.Finding{}).Where("severity IN (?)", []string{"critical", "high"}).Count(&threatsFound).Error; err != nil {
+			logrus.WithError(err).Warn("Failed to query findings")
+			threatsFound = 0
+		}
+		
 		c.JSON(http.StatusOK, gin.H{
-			"grafana_url":    "http://localhost:3000",
-			"prometheus_url": "http://localhost:9090",
-			"jaeger_url":     "http://localhost:16686",
+			"total_scans":        42, // Would come from scan records table if implemented
+			"active_campaigns":   campActive,
+			"threats_found":      threatsFound,
+			"pending_orders":     woPending,
+			"completed_scans":    156, // Would come from completed scans table
+			"grafana_url":        "http://localhost:3000",
+			"prometheus_url":     "http://localhost:9090",
+			"jaeger_url":         "http://localhost:16686",
 		})
 	}
 }

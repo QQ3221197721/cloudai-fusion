@@ -1,0 +1,621 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "8.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph",
+      "version": "8.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": "8.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "heatmap",
+      "name": "Heatmap",
+      "version": "8.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar Gauge",
+      "version": "8.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": "8.0.0"
+    }
+  ],
+  "title": "CloudAI Fusion - Unified Observability Platform",
+  "uid": "cloudai-fusion-unified",
+  "description": "Single pane of glass for M47/M29/M31/M49/M9 modules with cross-correlation insights",
+  "tags": ["cloudai", "observability", "ml-security", "tracing", "self-healing"],
+  "timezone": "browser",
+  "schemaVersion": 30,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": "global-health-overview",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "type": "row",
+      "title": "🔍 Global Health Overview",
+      "collapsed": false
+    },
+    
+    {
+      "id": "trace-throughput",
+      "title": "Real-Time Trace Throughput (M47)",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 1},
+      "targets": [
+        {
+          "expr": "rate(cloudai_spans_total[1m])",
+          "legendFormat": "Spans/sec",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"steps": [{"value": 0, "color": "green"}]},
+          "unit": "ops",
+          "decimals": 2
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    
+    {
+      "id": "error-rate-gauge",
+      "title": "Error Rate Distribution (M47)",
+      "type": "gauge",
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 1},
+      "targets": [
+        {
+          "expr": "cloudai_error_rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 0.01, "color": "yellow"},
+              {"value": 0.05, "color": "red"},
+              {"value": 1, "color": "red"}
+            ]
+          },
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit",
+          "decimals": 4
+        }
+      },
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    
+    {
+      "id": "active-traces",
+      "title": "Active Traces (M47)",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 1},
+      "targets": [
+        {
+          "expr": "cloudai_total_traces",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"steps": [{"value": 0, "color": "blue"}]},
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    
+    {
+      "id": "mttr-stat",
+      "title": "Current MTTR (M49)",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 1},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(cloudai_mttr_seconds_bucket[1h]))",
+          "legendFormat": "P95 MTTR",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 100, "color": "yellow"},
+              {"value": 300, "color": "red"}
+            ]
+          },
+          "unit": "s",
+          "decimals": 1
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      }
+    },
+    
+    {
+      "id": "module-summary-row",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 7},
+      "type": "row",
+      "title": "🤖 ML Security & Drift Detection (M29/M31)",
+      "collapsed": false
+    },
+    
+    {
+      "id": "psi-heatmap",
+      "title": "Model Drift Heatmap by Feature",
+      "type": "heatmap",
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "avg(cloudai_avg_drift_psi) by (feature)",
+          "legendFormat": "{{feature}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "continuous-BlYlRd"},
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "#2ea348"},
+              {"value": 0.1, "color": "#2ea348"},
+              {"value": 0.25, "color": "#f29e0e"},
+              {"value": 0.5, "color": "#d32f2f"}
+            ]
+          },
+          "max": 1.0,
+          "min": 0
+        }
+      },
+      "options": {
+        "calculate": false,
+        "calculation": {},
+        "color": {"scheme": "interpolateYlOrRd", "reverse": false},
+        "exponent": 0.5,
+        "format": "none",
+        "highlightColors": {"#10a4b7": "#30393d"},
+        "inverseColorMode": false,
+        "logarithmicScale": false,
+        "mode": "opacity",
+        "showValue": "never",
+        "tooltip": {"mode": "details"},
+        "hoverThreshold": 0,
+        "legend": {"show": true}
+      }
+    },
+    
+    {
+      "id": "drift-status-cards",
+      "title": "Drift Status Summary",
+      "type": "table",
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "cloudai_avg_drift_psi",
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {"id": "organize", "options": {"renameByName": {"cloudai_avg_drift_psi": "PSI Value"}}},
+        {"id": "sortBy", "options": {"sortBy": [{"fieldName": "PSI Value", "desc": true}]}}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "displayMode": "gradient",
+            "filterable": false
+          },
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 0.1, "color": "yellow"},
+              {"value": 0.25, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    
+    {
+      "id": "model-version-bar",
+      "title": "Active Model Versions",
+      "type": "bargauge",
+      "gridPos": {"h": 7, "w": 12, "x": 0, "y": 18},
+      "targets": [
+        {
+          "expr": "cloudai_model_versions_active",
+          "legendFormat": "Models",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "short",
+          "min": 0
+        }
+      }
+    },
+    
+    {
+      "id": "security-events-bar",
+      "title": "Security Events Blocked (M29/M31)",
+      "type": "bargauge",
+      "gridPos": {"h": 7, "w": 12, "x": 12, "y": 18},
+      "targets": [
+        {
+          "expr": "increase(cloudai_security_events_blocked_total[1h])",
+          "legendFormat": "Blocked Events",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 10, "color": "yellow"},
+              {"value": 50, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    
+    {
+      "id": "self-healing-row",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25},
+      "type": "row",
+      "title": "⚡ Self-Healing Performance (M49)",
+      "collapsed": false
+    },
+    
+    {
+      "id": "mttr-trend",
+      "title": "MTTR Trend Over Time",
+      "type": "graph",
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 26},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, rate(cloudai_mttr_seconds_bucket[1h]))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(cloudai_mttr_seconds_bucket[1h]))",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(cloudai_mttr_seconds_bucket[1h]))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "options": {
+        "legend": {"show": true, "calcs": ["mean", "max"]},
+        "tooltip": {"mode": "multi"},
+        "drawStyle": "line"
+      }
+    },
+    
+    {
+      "id": "remediation-success-rate",
+      "title": "Remediation Success Rate",
+      "type": "gauge",
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 26},
+      "targets": [
+        {
+          "expr": "sum(cloudai_remediations_success_total) / (sum(cloudai_remediations_success_total) + sum(cloudai_remediations_failed_total))",
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 0.8, "color": "yellow"},
+              {"value": 0.95, "color": "green"}
+            ]
+          },
+          "unit": "percentunit"
+        }
+      }
+    },
+    
+    {
+      "id": "remediation-actions-chart",
+      "title": "Remediation Actions Last Hour",
+      "type": "graph",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 36},
+      "targets": [
+        {
+          "expr": "increase(cloudai_remediations_success_total[1h])",
+          "legendFormat": "Successful: {{action_type}}",
+          "refId": "A"
+        },
+        {
+          "expr": "increase(cloudai_remediations_failed_total[1h])",
+          "legendFormat": "Failed: {{action_type}}",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {"show": true},
+        "tooltip": {"mode": "multi"}
+      }
+    },
+    
+    {
+      "id": "in-recovery-panel",
+      "title": "Currently In Recovery",
+      "type": "stat",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 36},
+      "targets": [
+        {
+          "expr": "cloudai_in_recovery_count",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 1, "color": "yellow"},
+              {"value": 5, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    
+    {
+      "id": "quantile-monitoring-row",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 45},
+      "type": "row",
+      "title": "📊 Streaming Percentiles (M9)",
+      "collapsed": false
+    },
+    
+    {
+      "id": "quantile-barchart",
+      "title": "Percentile Distribution Shift",
+      "type": "bargauge",
+      "gridPos": {"h": 10, "w": 8, "x": 0, "y": 46},
+      "targets": [
+        {
+          "expr": "cloudai_quantile_p50",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "cloudai_quantile_p90",
+          "legendFormat": "P90",
+          "refId": "B"
+        },
+        {
+          "expr": "cloudai_quantile_p99",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 2
+        }
+      }
+    },
+    
+    {
+      "id": "quantile-memory-usage",
+      "title": "Quantile Sketch Memory Usage (M9)",
+      "type": "stat",
+      "gridPos": {"h": 10, "w": 8, "x": 8, "y": 46},
+      "targets": [
+        {
+          "expr": "cloudai_quantile_memory_bytes",
+          "legendFormat": "Memory Bytes",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "bytes",
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 1000000, "color": "yellow"},
+              {"value": 5000000, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    
+    {
+      "id": "quantile-drift-trend",
+      "title": "Quantile Deviation from Baseline",
+      "type": "graph",
+      "gridPos": {"h": 10, "w": 8, "x": 16, "y": 46},
+      "targets": [
+        {
+          "expr": "cloudai_quantile_drift_percent",
+          "legendFormat": "Drift %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"value": -20, "color": "green"},
+              {"value": 0, "color": "yellow"},
+              {"value": 20, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    
+    {
+      "id": "correlation-insights-row",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 56},
+      "type": "row",
+      "title": "🔗 Cross-Module Correlation Insights",
+      "collapsed": true
+    },
+    
+    {
+      "id": "event-count-summary",
+      "title": "Event Counts by Module",
+      "type": "bargauge",
+      "gridPos": {"h": 7, "w": 12, "x": 0, "y": 57},
+      "targets": [
+        {
+          "expr": "cloudai_anomaly_events",
+          "legendFormat": "Anomalies",
+          "refId": "A"
+        },
+        {
+          "expr": "cloudai_trace_events",
+          "legendFormat": "Trace Events",
+          "refId": "B"
+        },
+        {
+          "expr": "cloudai_remediation_events",
+          "legendFormat": "Remediations",
+          "refId": "C"
+        }
+      ]
+    },
+    
+    {
+      "id": "composite-error-rate",
+      "title": "Composite Error Rate (Cross-Module)",
+      "type": "graph",
+      "gridPos": {"h": 7, "w": 12, "x": 12, "y": 57},
+      "targets": [
+        {
+          "expr": "cloudai_composite_error_rate",
+          "legendFormat": "Combined Error Rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 0.01, "color": "yellow"},
+              {"value": 0.05, "color": "red"}
+            ]
+          }
+        }
+      }
+    }
+  ],
+  
+  "templateVariables": [],
+  
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  
+  "links": [],
+  
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  
+  "style": "dark"
+}

@@ -1,4 +1,4 @@
-# 🚀 CloudAI Fusion FluxRouter Framework
+# 🚀 CloudAI Fusion SDK Router Framework
 
 **Core LLM Orchestration Engine of CloudAI Fusion Platform | Zero-Allocation Performance | Enterprise-Grade Features**
 
@@ -12,24 +12,24 @@
 
 ## 🎯 **Overview**
 
-CloudAI Fusion FluxRouter is the **core LLM orchestration engine** of the CloudAI Fusion platform, implementing a high-performance, zero-allocation architecture for production-grade AI agent capabilities.
+CloudAI Fusion SDK Router is the **core LLM orchestration engine** of the CloudAI Fusion platform, implementing a high-performance, zero-allocation architecture for production-grade AI agent capabilities.
 
 ---
 
 ## 🎯 **Overview**
 
-CloudAI Fusion FluxRouter is a **high-performance, zero-allocation LLM orchestration framework** written in pure Go. It establishes an **unrivaled performance MoAT** through innovative architectural patterns while providing developer-friendly APIs and enterprise-grade features.
+CloudAI Fusion SDK Router is a **high-performance, zero-allocation LLM orchestration framework** written in pure Go. It establishes an **unrivaled performance MoAT** through innovative architectural patterns while providing developer-friendly APIs and enterprise-grade features.
 
 ### Key Features
 
-- �?**Zero-Allocation Core Engine**: <10ns template rendering with single final copy allocation vs industry ~50B/op
-- �?**O(1) Provider Routing**: Direct map-based lookup (<5ns) vs reflection-based systems (~80μs)
-- �?**Fluent API Design**: Method chaining builder pattern with zero-copy abstraction
-- �?**Multi-Provider Support**: AWS Bedrock, Azure OpenAI, Google Vertex AI ready (adapters configurable)
-- �?**Enterprise Features**: LRU caching, exponential backoff retry, input validation pipeline
-- �?**Advanced Patterns**: Function calling, memory integration, agent orchestrator, zero-allocation tracing
+- ✅ **Zero-Allocation Core Engine**: <10ns template rendering with single final copy allocation vs industry ~50B/op
+- ✅ **O(1) Provider Routing**: Direct map-based lookup (<5ns) vs reflection-based systems (~80μs)
+- ✅ **Fluent API Design**: Method chaining builder pattern with zero-copy abstraction
+- ✅ **Multi-Provider Support**: AWS Bedrock, Azure OpenAI, Google Vertex AI ready (adapters configurable)
+- ✅ **Enterprise Features**: LRU caching, exponential backoff retry, input validation pipeline
+- ✅ **Advanced Patterns**: Function calling, memory integration, agent orchestrator, zero-allocation tracing
 
-### Why Choose FluxRouter?
+### Why Choose SDK Router?
 
 | Metric | CloudAI Fusion | LangChain-JS | Semantic-Kernel | AWS Bedrock SDK |
 |--------|----------------|--------------|-----------------|-----------------|
@@ -43,7 +43,7 @@ CloudAI Fusion FluxRouter is a **high-performance, zero-allocation LLM orchestra
 
 **Module**: `github.com/cloudai-fusion/cloudai-fusion/pkg/sdkrouter`
 
-**Integration Status**: �?Production-Ready (v1.0.0) | Part of CloudAI Fusion Core Platform
+**Integration Status**: ✅ Production-Ready (v1.0.0) | Part of CloudAI Fusion Core Platform
 
 **Installation**: Pre-integrated into cloudai-fusion framework
 ```bash
@@ -177,30 +177,30 @@ Improvement:            16,000x faster
 
 ---
 
-## 🏗�?**Architecture Overview**
+## 🏗️ **Architecture Overview**
 
 ```
-┌─────────────────────────────────────────────────────────────�?
-�?                    FluxRouter Framework                      �?
-├─────────────────────────────────────────────────────────────�?
-�? Phase 3: Advanced Patterns                                 �?
-�? ├─ Function Calling                                        �?
-�? ├─ Memory Integration                                       �?
-�? ├─ Agent Orchestrator                                       �?
-�? └─ Zero-Allocation Tracing                                  �?
-├─────────────────────────────────────────────────────────────�?
-�? Phase 2: Enterprise Features                               �?
-�? ├─ Multi-Provider Registry                                �?
-�? ├─ LRU Cache with Object Pools                            �?
-�? ├─ Retry with Exponential Backoff                         �?
-�? └─ Input Validation Pipeline                              �?
-├─────────────────────────────────────────────────────────────�?
-�? Phase 1: Core Engine (Zero-Allocation)                     �?
-�? ├─ @variable Template Rendering                           �?
-�? ├─ O(1) Provider Routing Table                            �?
-�? ├─ Fluent Prompt Builder API                              �?
-�? └─ SimpleProxy Implementation                             �?
-└─────────────────────────────────────────────────────────────�?
+┌─────────────────────────────────────────────────────────────┐
+│                     SDK Router Framework                      │
+├─────────────────────────────────────────────────────────────┤
+│  Phase 3: Advanced Patterns                                 │
+│  ├─ Function Calling                                        │
+│  ├─ Memory Integration                                       │
+│  ├─ Agent Orchestrator                                       │
+│  └─ Zero-Allocation Tracing                                  │
+├─────────────────────────────────────────────────────────────┤
+│  Phase 2: Enterprise Features                               │
+│  ├─ Multi-Provider Registry                                │
+│  ├─ LRU Cache with Object Pools                            │
+│  ├─ Retry with Exponential Backoff                         │
+│  └─ Input Validation Pipeline                              │
+├─────────────────────────────────────────────────────────────┤
+│  Phase 1: Core Engine (Zero-Allocation)                     │
+│  ├─ @variable Template Rendering                           │
+│  ├─ O(1) Provider Routing Table                            │
+│  ├─ Fluent Prompt Builder API                              │
+│  └─ SimpleProxy Implementation                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -246,7 +246,7 @@ config := sdkrouter.ProviderConfig{
 
 ---
 
-## 🛠�?**Contributing**
+## 🛠️ **Contributing**
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 

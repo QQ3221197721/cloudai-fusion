@@ -44,9 +44,7 @@ func newFinding(well Well, technique, asset, title string, sev Severity, ev map[
 type EndpointDetector struct{ intel IntelReader }
 
 // NewEndpointDetector builds an L3 detector over the given intel reader.
-func NewEndpointDetector(reader IntelReader) *EndpointDetector {
-	return &EndpointDetector{intel: reader}
-}
+func NewEndpointDetector(reader IntelReader) *EndpointDetector { return &EndpointDetector{intel: reader} }
 
 func (*EndpointDetector) Well() Well   { return WellEndpoint }
 func (*EndpointDetector) Name() string { return "endpoint-ioc" }

@@ -1,17 +1,14 @@
-
-// Package redteam - Quantum-resistant attack prediction engine (Patent #14)
+﻿// Package redteam - Quantum-resistant attack prediction engine (Patent #14)
 // ORIGINAL ALGORITHM: Post-quantum cryptography-based vulnerability prediction
 // This uses lattice-based crypto primitives, NOT traditional ML models!
 package redteam
 
 import (
 	"context"
-	cryptorand "crypto/rand"
-	"crypto/sha256"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
-	"math"
 	"math/big"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -133,7 +130,7 @@ func (p *QuantumResistantPredictor) PredictExploitationProbability(ctx context.C
 		ID:                 GenerateUUID(),
 		VulnerabilityID:    vuln.ID,
 		PredictedProbability: probability,
-		ContextMetrics:     nil,
+		ContextMetrics:     contextMetrics,
 		CryptographicTag:   predictionTag,
 		EvaluationTime:     time.Now(),
 	}
@@ -162,7 +159,7 @@ func (p *QuantumResistantPredictor) UpdateModel(ctx context.Context, actualOutco
 	// Homomorphic evaluation on lattice encrypted data
 	for _, record := range actualOutcomes {
 		// Decrypt using private key (post-quantum secure)
-	 decryptedData := p.decryptPredictionData([]byte(record.CryptographicTag))
+	 decryptedData := p.decryptPredictionData(record.CryptographicTag)
 		
 		// Update lattice parameters using gradient descent on encrypted gradients
 		updatedParams := p.updateLatticeParameters(decryptedData, record.ActualOutcome)
@@ -194,7 +191,7 @@ func (p *QuantumResistantPredictor) computeLatticeProbability(vuln VulnMetadata,
 	
 	// Create vector v from vulnerability features
 	v := make([]*big.Int, dimension)
-	for i := 0; int(i) < int(dimension) && i < len(vuln.FeatureVector); i++ {
+	for i := 0; i < dimension && i < len(vuln.FeatureVector); i++ {
 		val := int64(vuln.FeatureVector[i] * 1000) // Scale to integer
 		v[i] = big.NewInt(val)
 	}
@@ -204,7 +201,7 @@ func (p *QuantumResistantPredictor) computeLatticeProbability(vuln VulnMetadata,
 	
 	// Compute inner product mod q: w = v · s mod q
 	w := big.NewInt(0)
-	for i := 0; int(i) < int(dimension); i++ {
+	for i := 0; i < dimension; i++ {
 		product := new(big.Int).Mul(v[i], s[i])
 		w = new(big.Int).Add(w, product)
 	}
@@ -218,7 +215,7 @@ func (p *QuantumResistantPredictor) computeLatticeProbability(vuln VulnMetadata,
 	activation := p.applyActivationFunction(w)
 	
 	// Normalize to [0, 1] probability range
-	prob := float64(activation.Int64()) / float64(modulus.Int64())
+	prob := float64(activation.Int64()) / float64(modulus)
 	if prob < 0 {
 		prob = -prob
 	}
@@ -237,10 +234,10 @@ func (p *QuantumResistantPredictor) generateSecretVector() []*big.Int {
 	// Sample each coefficient from centered binomial distribution
 	beta := int(p.latticeParams.CoefficientBits)
 	
-	for i := 0; i < int(dimension); i++ {
+	for i := 0; i < dimension; i++ {
 		// Generate two random polynomials a and b
-		a := new(big.Int).Rand(rand.New(rand.NewSource(time.Now().UnixNano()+int64(i))), big.NewInt(int64(beta)))
-		b := new(big.Int).Rand(rand.New(rand.NewSource(time.Now().UnixNano()+int64(i)+1)), big.NewInt(int64(beta)))
+		a := new(big.Int).Rand(rand.Reader, big.NewInt(int64(beta)))
+		b := new(big.Int).Rand(rand.Reader, big.NewInt(int64(beta)))
 		
 		// Secret coefficient s = a - b (centered binomial)
 		secrets[i] = new(big.Int).Sub(a, b)
@@ -282,12 +279,12 @@ func generateKyberKeys(n, q uint) ([]byte, []byte, error) {
 	secretKey := make([]byte, 32)
 	publicKey := make([]byte, 768)
 	
-	_, err := cryptorand.Read(secretKey)
+	_, err := rand.Read(secretKey)
 	if err != nil {
 		return nil, nil, err
 	}
 	
-	_, err = cryptorand.Read(publicKey)
+	_, err = rand.Read(publicKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -346,21 +343,15 @@ func (p *QuantumResistantPredictor) computeConfidenceInterval(prob float64, reco
 	// Confidence interval based on lattice security parameter (sigma)
 	delta := p.latticeParams.NoiseStandard * 2.0
 	
-	lower := prob - delta
-	if lower < 0.0 {
-		lower = 0.0
+	return [2]float64{
+		max(0.0, prob-delta),
+		min(1.0, prob+delta),
 	}
-	upper := prob + delta
-	if upper > 1.0 {
-		upper = 1.0
-	}
-	
-	return [2]float64{lower, upper}
 }
 
 // computeVulnCommitment generates lattice commitment to vulnerability
 func (p *QuantumResistantPredictor) computeVulnCommitment(vulnID string) string {
-	data := []byte(vulnID + "-" + string(p.cryptoScheme.nonce))
+	data := []byte(vulnID + "-" + p.cryptoScheme.nonce)
 	hash := sha256.Sum256(data)
 	return fmt.Sprintf("%x", hash[:])
 }
@@ -373,7 +364,7 @@ func (p *QuantumResistantPredictor) verifyVulnCommitment(vulnID string, commitme
 
 // generatePredictionTag creates authenticated tag for prediction
 func (p *QuantumResistantPredictor) generatePredictionTag(vuln VulnMetadata, context []map[string]float64) string {
-	data := fmt.Sprintf("%s:%f:%d", vuln.ID, vuln.CVSSScore, len(context))
+	data := fmt.Sprintf("%s:%d:%d", vuln.ID, vuln.CVSS, len(context))
 	hash := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("%x", hash[:])
 }
@@ -437,7 +428,7 @@ func (p *QuantumResistantPredictor) refreshPostQuantumKeys() {
 	p.cryptoScheme.privateKey = newPrivKey
 	
 	// Update nonce for freshness
-	cryptorand.Read(p.cryptoScheme.nonce)
+	rand.Read(p.cryptoScheme.nonce)
 }
 
 // Helper functions

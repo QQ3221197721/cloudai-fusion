@@ -37,8 +37,8 @@ func genAlerts(rng *rand.Rand, n int, labels []map[string]string) []*Alert {
 		alert := &Alert{
 			Labels:   cloneMap(lbl),
 			Value:    rng.Float64(),
-			StartsAt: now.Add(time.Duration(i) * int64(rng.Intn(1000)) * time.Millisecond),
-			EndsAt:   now.Add(time.Duration(i+1) * int64(rng.Intn(1000)) * time.Millisecond),
+			StartsAt: now.Add(time.Duration(i)*int64(rng.Intn(1000)) * time.Millisecond),
+			EndsAt:   now.Add(time.Duration(i+1)*int64(rng.Intn(1000)) * time.Millisecond),
 		}
 		result = append(result, alert)
 	}
@@ -263,10 +263,10 @@ func BenchmarkM48StormSingleLinkage(b *testing.B) {
 func TestM48AccuracyCascade(b *testing.T) {
 	alerts, gold := prepareBenchData("cascade", 52)
 	icl := NewIntelligentAlertClustering(DefaultConfig())
-
+	
 	// Wait for async correlation if enabled
 	time.Sleep(300 * time.Millisecond)
-
+	
 	res := icl.ClusterAlerts(context.Background(), alerts)
 	prec, rec, f1 := computeMetrics(res.Clusters, gold)
 
@@ -281,9 +281,9 @@ func TestM48AccuracyCascade(b *testing.T) {
 func TestM48AccuracyStorm(t *testing.T) {
 	alerts, gold := prepareBenchData("storm", 208)
 	icl := NewIntelligentAlertClustering(DefaultConfig())
-
+	
 	time.Sleep(300 * time.Millisecond)
-
+	
 	res := icl.ClusterAlerts(context.Background(), alerts)
 	prec, rec, f1 := computeMetrics(res.Clusters, gold)
 
@@ -319,27 +319,27 @@ func evaluateHybridPerformance(nIterations int, nAlerts int) *HybridResult {
 	for iter := 0; iter < nIterations; iter++ {
 		rng := rand.New(rand.NewSource(int64(iter)))
 		alerts := genAlerts(rng, nAlerts, labels)
-
+		
 		icl := NewIntelligentAlertClustering(DefaultConfig{
-			AsyncCorrelation:    true,
+			AsyncCorrelation: true,
 			SimilarityCacheSize: 5000,
 		})
-
+		
 		start := time.Now()
 		fastRes := icl.ClusterAlerts(context.Background(), alerts)
 		fastLatency := time.Since(start).Nanoseconds()
 		totalFastLatency += fastLatency
-
+		
 		// Async path enriches data in background
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			_ = icl // trigger async goroutine
 		}()
-
+		
 		// Wait briefly then check accuracy
 		time.Sleep(50 * time.Millisecond)
-
+		
 		// Full evaluation
 		gold := generateGoldClusters(alerts)
 		prec, rec, f1 := computeMetrics(fastRes.Clusters, gold)
@@ -347,7 +347,7 @@ func evaluateHybridPerformance(nIterations int, nAlerts int) *HybridResult {
 	}
 
 	medianLatency := totalFastLatency / int64(nIterations)
-
+	
 	return &HybridResult{
 		FastLatencyNs: medianLatency,
 		F1:            finalF1,
@@ -358,16 +358,16 @@ func evaluateHybridPerformance(nIterations int, nAlerts int) *HybridResult {
 
 func BenchmarkM48HybridCascade(b *testing.B) {
 	result := evaluateHybridPerformance(6, 52)
-
+	
 	b.Logf("Hybrid Cascade-52: latency=%vns F1=%.3f P=%.3f R=%.3f",
 		result.FastLatencyNs, result.F1, result.Precision, result.Recall)
-
+	
 	// Report latency per op relative to pure single-linkage
 }
 
 func BenchmarkM48HybridStorm(b *testing.B) {
 	result := evaluateHybridPerformance(6, 208)
-
+	
 	b.Logf("Hybrid Storm-208: latency=%vns F1=%.3f P=%.3f R=%.3f",
 		result.FastLatencyNs, result.F1, result.Precision, result.Recall)
 }

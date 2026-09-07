@@ -1,4 +1,4 @@
-// Package metasploit - Stubs for external dependencies
+﻿// Package metasploit - Stubs for external dependencies
 package metasploit
 
 import "fmt"

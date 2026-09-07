@@ -24,9 +24,9 @@ func handleRedTeamBenchmarkCases() gin.HandlerFunc {
 		out := make([]gin.H, 0, len(cases))
 		for _, bc := range cases {
 			out = append(out, gin.H{
-				"name":             bc.Name,
-				"expect_technique": bc.ExpectFindingTechnique,
-				"actions":          len(bc.Actions),
+				"name":              bc.Name,
+				"expect_technique":  bc.ExpectFindingTechnique,
+				"actions":           len(bc.Actions),
 			})
 		}
 		c.JSON(http.StatusOK, gin.H{"cases": out, "total": len(out)})

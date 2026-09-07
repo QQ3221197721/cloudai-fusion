@@ -1,0 +1,30 @@
+
+# === Build artifacts & large files (excluded from Git; kept on disk) ===
+*.exe
+*.test.exe
+*.test
+bin/
+apiserver
+scheduler
+agent
+cafctl
+*-linux
+wasm.test
+fabric.test
+scheduler.test
+
+# Benchmark & temp output logs
+output/*.txt
+bench_*.txt
+_b*.txt
+_build_output.txt
+_test_output.txt
+tmp_*.txt
+tmp-*.txt
+test_output*.txt
+verification_output.txt
+bench_m53_out.txt
+run_bench.ps1
+
+# node_modules (frontend)
+web/node_modules/

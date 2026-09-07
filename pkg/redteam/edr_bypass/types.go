@@ -1,4 +1,4 @@
-package edrbypass
+﻿package edrbypass
 
 import "time"
 

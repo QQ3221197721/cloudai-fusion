@@ -66,7 +66,7 @@ func TestBudgetGuardCorrectness(t *testing.T) {
 		expectOK       bool
 		expectedAction string
 	}{
-		{"AcceptExactEquality", 98, 100, 2, true, "scale_up"},    // 98+2 == 100 → accept
+		{"AcceptExactEquality", 98, 100, 2, true, "scale_up"},   // 98+2 == 100 → accept
 		{"RejectClearOvershoot", 99, 100, 2, false, "no_change"}, // 99+2 > 100 → reject
 		{"AcceptUnderEpsilon", 97.9, 100, 2, true, "scale_up"},   // 97.9+2 < 100 → accept
 		{"RejectAboveLimit", 95, 100, 6, false, "no_change"},     // 95+6 > 100 → reject
@@ -140,7 +140,7 @@ func TestConcurrencyBasicStress(t *testing.T) {
 				}
 				atomic.AddInt64(&acquired, 1)
 				localOp++
-
+				
 				_, releaseErr := p.Release(ctx, l.ID)
 				if releaseErr != nil {
 					atomic.AddInt64(&failures, 1)
@@ -173,3 +173,5 @@ func TestConcurrencyBasicStress(t *testing.T) {
 	t.Logf("concurrency stress: ops_per_sec=%.0f duration=%v ledger_records=%d acquired=%d released=%d transient_failures=%d",
 		float64(acquired)/duration.Seconds(), duration, len(recs), acquired, released, failures)
 }
+
+

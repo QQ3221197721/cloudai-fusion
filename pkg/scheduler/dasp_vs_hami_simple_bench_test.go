@@ -1,4 +1,4 @@
-package scheduler_test
+package scheduler
 
 import (
 	"math/rand"
@@ -103,9 +103,9 @@ Benchmark Results (Simulated from 2026 production data):
 
 Metric                | Enhanced DASP | HAMi Proxy | Improvement
 ----------------------|---------------|------------|-------------
-Acceptance Rate       |   96.2%       |    87.3%   | +10.2pts ‚úÖ
-Fragmentation         |    5.8%       |   14.5%    | -60% ‚úÖ    
-Convergence Speed     |  38,000 ep    |  95,000 ep | 2.5√ó faster ‚úÖ
+Acceptance Rate       |   96.2%       |    87.3%   | +10.2pts ‚ú?
+Fragmentation         |    5.8%       |   14.5%    | -60% ‚ú?   
+Convergence Speed     |  38,000 ep    |  95,000 ep | 2.5√ó faster ‚ú?
 
 
 Detailed Analysis by Defect Fix:
@@ -113,7 +113,7 @@ Detailed Analysis by Defect Fix:
 
 Defect #4 (Enhanced State) Impact:
   - Added queue_depth[], memory_pressure[], gpu_topology to feature vector  
-  - InputDim: 50 ‚Üí 120 dimensions
+  - InputDim: 50 ‚Ü?120 dimensions
   - Result: +4.2pts acceptance improvement over vanilla DQN
   
 Defect #5 (Multi-Objective Reward) Impact:
@@ -123,7 +123,7 @@ Defect #5 (Multi-Objective Reward) Impact:
   
 Defect #3 (Adaptive Explorer/UCB) Impact:
   - Epsilon decay: 0.9995 with UCB alpha=0.1
-  - Convergence from 95k‚Üí38k episodes (-60%)
+  - Convergence from 95k‚Ü?8k episodes (-60%)
   - Better early-phase exploration efficiency
 
 
@@ -137,12 +137,12 @@ Production Validation Requirements:
 
 Conclusion:
 -----------
-‚úÖ Enhanced DQN WITH DEFECT FIXES creates REAL performance barriers vs HAMi:
+‚ú?Enhanced DQN WITH DEFECT FIXES creates REAL performance barriers vs HAMi:
    - Higher acceptance rates through better state representation
    - Lower fragmentation through fairer scheduling rewards
    - Faster training through adaptive exploration
    
-‚ùå VANILLA DQN WITHOUT FIXES does NOT beat HAMi significantly
+‚ù?VANILLA DQN WITHOUT FIXES does NOT beat HAMi significantly
 
 RECOMMENDATION: Deploy enhanced DASN with all 5 defect fixes for genuine moat
 

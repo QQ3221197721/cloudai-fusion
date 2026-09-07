@@ -1,0 +1,20 @@
+title: Unauthorized kube-apiserver Access from Pod Network Range
+id: e4f5g6h7-1b2c-3d4e-5f6g-7h8i9j0k1l2m
+status: stable
+description: Outbound connections to the Kubernetes API server from pods that are not system namespaces, suggesting lateral movement toward cluster control plane access.
+level: high
+tags:
+  - attack.discovery
+  - attack.t1018
+logsource:
+  category: network_connection
+  product: kubernetes
+detection:
+  selection_apiserver:
+    DestinationPort: '443'
+  filter_system:
+    SourceNamespace:
+      - 'kube-system'
+      - 'kube-public'
+      - 'ingress-nginx'
+  condition: selection_apiserver and not filter_system

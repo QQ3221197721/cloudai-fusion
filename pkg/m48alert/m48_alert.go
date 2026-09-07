@@ -21,12 +21,12 @@ type Alert struct {
 
 // Cluster represents a group of causally-related alerts.
 type Cluster struct {
-	ID              string
-	Alerts          []*Alert
-	CauseChain      []string // alert fingerprints forming causal chain
-	SimilarityScore float64  // Jaccard similarity within cluster
-	CreatedAt       time.Time
-	GroupedBy       GroupingStrategy
+	ID            string
+	Alerts        []*Alert
+	CauseChain    []string // alert fingerprints forming causal chain
+	SimilarityScore float64 // Jaccard similarity within cluster
+	CreatedAt     time.Time
+	GroupedBy     GroupingStrategy
 }
 
 // GroupingStrategy indicates how alerts were grouped.
@@ -76,22 +76,22 @@ type ClusteringResult struct {
 
 // ResultMetrics holds precision/recall/F1 statistics.
 type ResultMetrics struct {
-	Precision         float64
-	Recall            float64
-	F1                float64
+	Precision float64
+	Recall    float64
+	F1        float64
 	GroupingLatencyNs int64
-	AlertCount        int
-	ClusterCount      int
+	AlertCount  int
+	ClusterCount int
 }
 
 // IntelligentAlertClustering is the main orchestrator.
 type IntelligentAlertClustering struct {
-	config          Config
+	config       Config
 	similarityCache *SimilarityCache
-	dsu             *UnionFind
-	mu              sync.RWMutex
-	asyncQueue      chan []*Alert
-	resultsChan     chan *ClusteringResult
+	dsu         *UnionFind
+	mu          sync.RWMutex
+	asyncQueue  chan []*Alert
+	resultsChan chan *ClusteringResult
 }
 
 // NewIntelligentAlertClustering creates a new clustering engine.
@@ -104,11 +104,11 @@ func NewIntelligentAlertClustering(cfg Config) *IntelligentAlertClustering {
 	}
 
 	icl := &IntelligentAlertClustering{
-		config:          cfg,
+		config:        cfg,
 		similarityCache: NewSimilarityCache(cfg.SimilarityCacheSize),
-		dsu:             NewUnionFind(),
-		asyncQueue:      make(chan []*Alert, 100),
-		resultsChan:     make(chan *ClusteringResult, 10),
+		dsu:           NewUnionFind(),
+		asyncQueue:    make(chan []*Alert, 100),
+		resultsChan:   make(chan *ClusteringResult, 10),
 	}
 
 	if cfg.AsyncCorrelation {
@@ -127,9 +127,9 @@ func (icl *IntelligentAlertClustering) ClusterAlerts(ctx context.Context, alerts
 	latency := time.Since(startTime)
 
 	result := &ClusteringResult{
-		Clusters:       fastClusters,
-		ProcessingTime: latency,
-		Method:         FastLabelBucketing,
+		Clusters:        fastClusters,
+		ProcessingTime:  latency,
+		Method:          FastLabelBucketing,
 		Metrics: ResultMetrics{
 			GroupingLatencyNs: latency.Nanoseconds(),
 			AlertCount:        len(alerts),
@@ -181,11 +181,11 @@ func (icl *IntelligentAlertClustering) clusterByLabels(alerts []*Alert) []*Clust
 	for _, group := range buckets {
 		if len(group) > 0 {
 			clusters = append(clusters, &Cluster{
-				ID:              fmt.Sprintf("cluster-%d", idCounter),
-				Alerts:          group,
+				ID:            fmt.Sprintf("cluster-%d", idCounter),
+				Alerts:        group,
 				SimilarityScore: 1.0,
-				CreatedAt:       time.Now(),
-				GroupedBy:       FastLabelBucketing,
+				CreatedAt:     time.Now(),
+				GroupedBy:     FastLabelBucketing,
 			})
 			idCounter++
 		}
@@ -240,7 +240,7 @@ func (icl *IntelligentAlertClustering) asyncCorrelator() {
 func (icl *IntelligentAlertClustering) processFullCorrelation(alerts []*Alert) {
 	ctx := context.Background()
 	result := icl.clusterSingleLinkage(ctx, alerts)
-
+	
 	select {
 	case icl.resultsChan <- result:
 	default:

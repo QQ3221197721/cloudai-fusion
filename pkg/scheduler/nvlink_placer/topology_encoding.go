@@ -1,4 +1,4 @@
-package nvlink_placer
+package scheduler
 
 // encodeEdgeKey creates integer key from two GPU indices (eliminates string allocations)
 func encodeEdgeKey(gpu1, gpu2 uint8) uint64 {

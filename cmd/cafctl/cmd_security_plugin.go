@@ -1,4 +1,5 @@
-// Package main - cafctl security & plugin subcommands
+// Package main - cafctl security plugin commands (security scan only)
+// Note: plugin management commands (list/search/install/uninstall) moved to cmd_plugin_manage.go
 package main
 
 import (
@@ -6,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/security"
-	"github.com/cloudai-fusion/cloudai-fusion/pkg/plugin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -62,59 +62,3 @@ func newSecurityScanCmd() *cobra.Command {
 	return cmd
 }
 
-func newPluginCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "plugin",
-		Short: "Plugin — inspect runtime ecosystem (offline)",
-	}
-	cmd.AddCommand(newPluginListCmd())
-	return cmd
-}
-
-// newPluginListCmd shows active plugin chains via admission hub without network.
-func newPluginListCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:           "list [--filter <chain>]",
-		Short:         "List registered plugin chains",
-		Args:          cobra.NoArgs,
-		Example:       "  cafctl plugin list\n  cafctl plugin list --filter admission",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			_ = plugin.NewAdmissionHub()
-
-			out := cmd.OutOrStdout()
-			fmt.Fprintln(out, "")
-			fmt.Fprintln(out, Separator('═', 64))
-			fmt.Fprintln(out, "  cafctl plugin list · plugin ecosystem")
-			fmt.Fprintln(out, Separator('═', 64))
-			fmt.Fprintln(out, "")
-
-			chains := map[string][]string{
-				"admission": {"validation", "mutating-webhook"},
-				"scheduler": {"resource-scheduler", "gang-scheduler"},
-				"monitor":   {"metrics-collector", "trace-exporter"},
-			}
-			shown := 0
-			for chainName, plugins := range chains {
-				if filter := cmd.Flag("filter").Value.String(); filter != "" && chainName != filter {
-					continue
-				}
-				fmt.Fprintf(out, "\x1b[1m%s:\x1b[m\n", strings.ToUpper(chainName+"-chain"))
-				for _, p := range plugins {
-					fmt.Fprintf(out, "  • %s\n", p)
-				}
-				shown++
-			}
-			if shown == 0 {
-				fmt.Fprintln(out, "  (no chains match filter)")
-			}
-			fmt.Fprintln(out, "")
-			fmt.Fprintf(out, "%s Total chains visible: %d\n", OK(), shown)
-			fmt.Fprintln(out, "")
-			return nil
-		},
-	}
-	cmd.Flags().StringP("filter", "f", "", "Filter by chain type")
-	return cmd
-}

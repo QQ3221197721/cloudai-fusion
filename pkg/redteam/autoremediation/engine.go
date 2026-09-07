@@ -1,11 +1,10 @@
-
-// Package auto_remediation provides automated threat response with guaranteed SLAs
+﻿// Package auto_remediation provides automated threat response with guaranteed SLAs
 package autoremediation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -59,13 +58,6 @@ type RemediationAction struct {
 	RollbackAction RollbackAction
 }
 
-// Execute performs the remediation action
-func (ra *RemediationAction) Execute() error {
-	// In production: executes the actual remediation command
-	fmt.Printf("Executing %s on %s with parameters %v", ra.Type, ra.Target, ra.Parameters)
-	return nil
-}
-
 // ActionType defines remediation action category
 type ActionType string
 
@@ -93,7 +85,6 @@ type RemediationTask struct {
 	TriggerTime  time.Time
 	Status       RemediationStatus
 	Error        error
-	Result       error
 }
 
 // RemediationStatus tracks task progress
@@ -114,7 +105,7 @@ func NewRemediationEngine(logger *logrus.Logger) *RemediationEngine {
 	}
 	
 	engine := &RemediationEngine{
-		logger:       logrus.New(),
+		logger:       logger.WithField("component", "remediation_engine"),
 		slaConfig:    defaultSLADefinition(),
 		policies:     make([]RemediationPolicy, 0),
 		executionQueue: make(chan RemediationTask, 100),

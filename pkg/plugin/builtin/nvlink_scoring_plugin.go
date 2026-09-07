@@ -6,7 +6,6 @@ import (
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/plugin"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler"
-	"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler/nvlink_placer"
 )
 
 // NVLinkScorePlugin implements ScorePlugin interface for NVLink-aware GPU placement scoring
@@ -45,7 +44,7 @@ func (p *NVLinkScorePlugin) Score(ctx context.Context, state *scheduler.CycleSta
 		return 0, plugin.FailureResult("insufficient-gpus", fmt.Sprintf("node has %d, need %d", topo.TotalGPUs, gpuCount))
 	}
 
-	// Calculate NVLink-aware score using nvlink_placer framework
+	// Calculate NVLink-aware score using nvlink package
 	requireNVLink := workload.Annotations.GetAnnotation("cloudai-fusion.io/require-nvlink", "false") == "true"
 	minBandwidthStr := workload.Annotations.GetAnnotation("cloudai-fusion.io/min-bandwidth-gbps", "")
 	minBandwidth := 0.0
@@ -53,33 +52,9 @@ func (p *NVLinkScorePlugin) Score(ctx context.Context, state *scheduler.CycleSta
 		fmt.Sscanf(minBandwidthStr, "%f", &minBandwidth)
 	}
 
-	request := nvlink_placer.WorkloadRequest{
-		GPUCount:      gpuCount,
-		RequireNVLink: requireNVLink,
-		MinBandwidth:  minBandwidth,
-	}
+	score := scheduler.ScoreTopology(topo, gpuCount, requireNVLink, minBandwidth)
 
-	result, err := nvlink_placer.NewPlacer(&nvlink_placer.Discoverer{inner: p.discoverer}).Place(ctx, request)
-	if err != nil {
-		// Final fallback to neutral score
-		return 50, plugin.SuccessResult("placement-error")
-	}
-
-	// Normalize score to [0, 100] as required by Scheduler framework
-	score := int64(result.Toposcore)
-	if score > 100 {
-		score = 100
-	} else if score < 0 {
-		score = 0
-	}
-
-	// Return score with reasons explaining decision
-	reasons := plugin.SuccessResult(fmt.Sprintf("nvlink-score: %.2f, fit=%v", result.Toposcore, result.Fit))
-	for _, reason := range result.Reasons {
-		reasons.Reasons = append(reasons.Reasons, reason)
-	}
-
-	return score, reasons
+	return int64(score), plugin.SuccessResult(fmt.Sprintf("nvlink-topology-score=%.2f", score))
 }
 
 // ScoreWeight returns the weight of this scoring plugin (default 1)

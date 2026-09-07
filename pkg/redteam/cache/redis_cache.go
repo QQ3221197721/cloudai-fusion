@@ -1,5 +1,4 @@
-
-// Package redteam_cache - Redis caching layer for Red Team performance optimization
+﻿// Package redteam_cache - Redis caching layer for Red Team performance optimization
 package redteam_cache
 
 import (

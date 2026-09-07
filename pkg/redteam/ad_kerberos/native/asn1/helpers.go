@@ -1,4 +1,4 @@
-// Package kerberos_asn1 implements ASN.1 BER/TLV decoding helpers for Kerberos structures
+﻿// Package kerberos_asn1 implements ASN.1 BER/TLV decoding helpers for Kerberos structures
 package kerberos_asn1
 
 import (

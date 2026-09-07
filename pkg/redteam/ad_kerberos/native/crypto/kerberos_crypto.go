@@ -1,6 +1,6 @@
-// Package kerberos_crypto implements Kerberos cryptographic primitives from scratch
+﻿// Package kerberos_crypto implements Kerberos cryptographic primitives from scratch
 // Provides RC4, AES-CTE, HMAC-SHA1 without external dependencies
-package kerberos_crypto
+package crypto
 
 import (
 	"crypto/md5"

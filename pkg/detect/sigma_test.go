@@ -73,7 +73,7 @@ func TestMatchField_Modifiers(t *testing.T) {
 		{"CommandLine|re", `-Enc[a-zA-Z]+Command`, true},
 		{"Dst|cidr", "8.8.8.0/24", true},
 		{"Dst|cidr", "10.0.0.0/8", false},
-		{"Port", "4444", true}, // numeric event value vs string want
+		{"Port", "4444", true},   // numeric event value vs string want
 		{"Image", "MISSINGVAL", false},
 		{"Absent|contains", "x", false}, // absent field never matches contains
 	}

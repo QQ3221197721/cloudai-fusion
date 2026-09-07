@@ -96,8 +96,8 @@ func NewRLOptimizer(cfg RLOptimizerConfig) *RLOptimizer {
 	// ExplorationRate and MinExploration: 0 is a valid, meaningful choice (pure
 	// exploitation / no exploration floor), so it must be respected rather than
 	// treated as "unset". Only clamp out-of-range values.
-	cfg.ExplorationRate = clamp(cfg.ExplorationRate, 0, 1)
-	cfg.MinExploration = clamp(cfg.MinExploration, 0, 1)
+	cfg.ExplorationRate = rlClamp(cfg.ExplorationRate, 0, 1)
+	cfg.MinExploration = rlClamp(cfg.MinExploration, 0, 1)
 
 	return &RLOptimizer{
 		config:  cfg,
@@ -495,9 +495,9 @@ func (b *NeuralPolicyBridge) remoteInference(observation []float64) (*Continuous
 	}
 
 	return &ContinuousAction{
-		NodePreference:        clamp(result.Action[0], 0, 1),
-		GPUShareRatio:         clamp(result.Action[1], 0, 1),
-		PreemptionWillingness: clamp(result.Action[2], 0, 1),
+		NodePreference:        rlClamp(result.Action[0], 0, 1),
+		GPUShareRatio:         rlClamp(result.Action[1], 0, 1),
+		PreemptionWillingness: rlClamp(result.Action[2], 0, 1),
 	}, nil
 }
 
@@ -564,7 +564,7 @@ func discreteToContinuous(action SchedulingAction) *ContinuousAction {
 	return ca
 }
 
-func clamp(v, lo, hi float64) float64 {
+func rlClamp(v, lo, hi float64) float64 {
 	if v < lo {
 		return lo
 	}

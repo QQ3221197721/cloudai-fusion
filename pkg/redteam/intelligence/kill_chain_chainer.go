@@ -1,5 +1,4 @@
-
-package redteam
+﻿package redteam
 
 import (
 	"context"
@@ -127,8 +126,8 @@ func (kcc *KillChainChainer) recursivelyExtendPath(ctx context.Context, currentP
 	}
 
 	// Get possible next phases based on MITRE ATT&CK mapping
-	lastStep := currentPath.Steps[len(currentPath.Steps)-1]
-	nextPhases := kcc.getFollowingPhases(lastStep.Phase)
+	lastStep := currentPath.Steps[len(currentPath)-1]
+	nextPhases := kcc.ruleset.GetFollowingPhases(lastStep.Phase)
 
 	var bestNextStep *AttackStep
 	
@@ -166,7 +165,7 @@ func (kcc *KillChainChainer) generateNextStep(ctx context.Context, targetPhase s
 		"Lateral Movement":      "T1021",     // Remote Services
 		"Collection":            "T1005",     // Data from Local System
 		"Command and Control":   "T1071",     // Application Layer Protocol
-		"Exfiltration":          "T1041",
+		"Exfiltration":          "T1041",     "Exfiltration Over C2 Channel",
 	}
 
 	techniqueID := phaseMapping[targetPhase]
@@ -195,7 +194,7 @@ func (kcc *KillChainChainer) generateNextStep(ctx context.Context, targetPhase s
 func (kcc *KillChainChainer) isValidTransition(prev, next *AttackStep) bool {
 	// Check privilege escalation requirement
 	if next.RequiredPrivileges > prev.RequiredPrivileges {
-		return prev.Type == StepPrivilegeEscalation || prev.Type == StepCVEExploit
+		return prev.StepType == StepPrivilegeEscalation || prev.StepType == StepCVEExploit
 	}
 	
 	// Check prerequisite fulfillment
@@ -212,7 +211,7 @@ func (kcc *KillChainChainer) selectEvasionForPhase(phase string) []EvasionTech {
 	case "Defense Evasion":
 		return []EvasionTech{
 			EvasionObfuscatePayload,
-			EvasionUseStagedPayload,
+			E evasionUseStagedPayload,
 			EvasionEncodeDataStreams,
 		}
 	case "Privilege Escalation":
@@ -536,15 +535,15 @@ const (
 type EvasionTech string
 const (
 	EvasionBasicEvasion               EvasionTech = "basic_evasion"
-	EvasionObfuscatePayload         EvasionTech = "obfuscate_payload"
-	EvasionUseStagedPayload         EvasionTech = "use_staged_payload"
-	EvasionEncodeDataStreams        EvasionTech = "encode_data_streams"
-	EvasionDisableAntivirus         EvasionTech = "disable_antivirus"
-	EvasionBypassAMERestrictions    EvasionTech = "bypass_amerestrictions"
-	EvasionProcessInjection         EvasionTech = "process_injection"
-	EvasionLivingOffTheLand         EvasionTech = "living_off_the_land"
-	EvasionSignedBinaryProxyExecution EvasionTech = "signed_binary_proxy_execution"
-	EvasionPassTheHash              EvasionTech = "pass_the_hash"
+	E evasionObfuscatePayload         EvasionTech = "obfuscate_payload"
+	E evasionUseStagedPayload         EvasionTech = "use_staged_payload"
+	E evasionEncodeDataStreams        E evasionTech = "encode_data_streams"
+	E evasionDisableAntivirus         E evasionTech = "disable_antivirus"
+	E evasionBypassAMERestrictions    E evasionTech = "bypass_amerestrictions"
+	E evasionProcessInjection         E evasionTech = "process_injection"
+	E evasionLivingOffTheLand         E evasionTech = "living_off_the_land"
+	E evasionSignedBinaryProxyExecution E evasionTech = "signed_binary_proxy_execution"
+	E evasionPassTheHash              E evasionTech = "pass_the_hash"
 )
 
 type DetectionLevel float64

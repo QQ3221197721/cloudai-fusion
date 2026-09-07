@@ -1,0 +1,226 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudai-fusion-ai
+  namespace: cloudai-fusion
+  labels:
+    app: cloudai-fusion
+    module: "m47,m29,m31,m49,m9"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudai-fusion
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+      labels:
+        app: cloudai-fusion
+    spec:
+      serviceAccountName: cloudai-fusion
+      containers:
+        - name: cloudai-fusion
+          image: ghcr.io/cloudai-fusion/cloudai-fusion:latest
+          imagePullPolicy: IfNotPresent
+          
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+            - containerPort: 9090
+              name: metrics
+              protocol: TCP
+              
+          envFrom:
+            - configMapRef:
+                name: cloudai-fusion-config
+            - secretRef:
+                name: cloudai-fusion-secrets
+            
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+                  
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+              
+          volumeMounts:
+            - name: tmp-storage
+              mountPath: /tmp
+            - name: cache-dir
+              mountPath: /.cache
+      
+      volumes:
+        - name: tmp-storage
+          emptyDir: {}
+        - name: cache-dir
+          emptyDir:
+            medium: Memory
+      
+      nodeSelector:
+        kubernetes.io/os: linux
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: cloudai-fusion
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudai-fusion-ai
+  namespace: cloudai-fusion
+  labels:
+    app: cloudai-fusion
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 9090
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: cloudai-fusion
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudai-fusion-config
+  namespace: cloudai-fusion
+data:
+  # Default values (override in staging/production)
+  DRIFT_THRESHOLD: "0.25"
+  RATE_LIMIT_RPM: "100"
+  CANARY_TRAFFIC_PERCENT: "10"
+  ENABLE_TRACING: "true"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudai-fusion
+  namespace: cloudai-fusion
+  annotations:
+    description: "Service account for CloudAI Fusion AI engine"
+
+---
+apiVersion: policy.k8s.io/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cloudai-fusion-pdb
+  namespace: cloudai-fusion
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cloudai-fusion
+
+---
+apiVersion: autoscaling.v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cloudai-fusion-hpa
+  namespace: cloudai-fusion
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloudai-fusion-ai
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+      selectPolicy: Max
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloudai-fusion-ingress
+  namespace: cloudai-fusion
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+spec:
+  rules:
+    - host: cloudai-fusion.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cloudai-fusion-ai
+                port:
+                  number: 80

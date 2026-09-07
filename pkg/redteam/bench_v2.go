@@ -1,4 +1,4 @@
-package redteam
+﻿package redteam
 
 import (
 	"context"
@@ -87,9 +87,9 @@ func DefaultBenchSuite() []BenchCase {
 		}
 	}
 	return []BenchCase{
-		mk("cve-web-rce", "T1190"),     // Exploit Public-Facing Application
-		mk("cve-c2-beacon", "T1071"),   // Application Layer Protocol (C2)
-		mk("cve-lateral-smb", "T1210"), // Exploitation of Remote Services
+		mk("cve-web-rce", "T1190"),      // Exploit Public-Facing Application
+		mk("cve-c2-beacon", "T1071"),    // Application Layer Protocol (C2)
+		mk("cve-lateral-smb", "T1210"),  // Exploitation of Remote Services
 	}
 }
 

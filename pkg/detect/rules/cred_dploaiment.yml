@@ -1,0 +1,24 @@
+title: Credential Dumping - LSASS Memory Access
+id: 8f2a3b4c-5d6e-7f8g-9h0i-1j2k3l4m5n6o
+status: stable
+description: Detects processes attempting to access or read LSASS memory, a common technique used by attackers to harvest credentials from Windows systems.
+level: critical
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_lsass:
+    Image|endswith: '\lsass.exe'
+  selection_access:
+    - CommandLine|contains:
+      - '-ReadProcessMemory'
+      - 'OpenProcess'
+      - 'NtQueryInformationProcess'
+    - ParentImage|contains:
+      - '\powershell.exe'
+      - '\cmd.exe'
+      - '*.exe'
+  condition: selection_lsass and selection_access

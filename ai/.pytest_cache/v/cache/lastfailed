@@ -10,5 +10,17 @@
   "tests/test_operations_agent.py::TestIncidentAnalysis": true,
   "tests/test_operations_agent.py::TestOperationsAgent": true,
   "tests/test_scheduler.py::TestGPUSchedulingEnv": true,
-  "tests/test_scheduler.py::TestSchedulingTrainer": true
+  "tests/test_scheduler.py::TestSchedulingTrainer": true,
+  "tests/test_m29_m31_security.py::TestModelRegistry::test_list_versions": true,
+  "tests/test_m29_m31_security.py::TestDriftDetector::test_insufficient_baseline_samples": true,
+  "tests/test_m29_m31_security.py::TestDriftDetector::test_detect_stable_distribution": true,
+  "tests/test_m29_m31_security.py::TestDriftDetector::test_detect_drifting_distribution": true,
+  "tests/test_m29_m31_security.py::TestDriftDetector::test_batch_drift_multiple_features": true,
+  "tests/test_m29_m31_security.py::TestSecurityMiddleware::test_input_validation_success": true,
+  "tests/test_m29_m31_security.py::TestSecurityMiddleware::test_input_validation_failure": true,
+  "tests/test_m29_m31_security.py::TestSecurityMiddleware::test_adversarial_extreme_values": true,
+  "tests/test_m29_m31_security.py::TestSecurityMiddleware::test_adversarial_repetitive_pattern": true,
+  "tests/test_m29_m31_security.py::TestSecurityMiddleware::test_non_finite_value_detection": true,
+  "tests/test_m29_m31_security.py::TestSecurityMiddleware::test_no_adversarial_patterns": true,
+  "tests/test_m29_m31_security.py::TestSecurityMiddleware::test_combined_validation_pipeline": true
 }

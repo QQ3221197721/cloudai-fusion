@@ -1,0 +1,157 @@
+# CloudAI Fusion ZK Proof Generator - Kubernetes Helm Chart
+apiVersion: v2
+name: cloudai-zkp-prover
+description: Zero-Knowledge Proof generator for scheduling fairness verification
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - zkp
+  - zero-knowledge-proof
+  - scheduling
+  - fairness
+  - cloudai-fusion
+
+maintainers:
+  - name: CloudAI Fusion Engineering Team
+    email: platform-eng@cloudai-fusion.io
+
+icon: https://cloudai-fusion.io/images/zkp-logo.png
+
+dependencies:
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    tags:
+      - bitnami-common
+    version: ~2.0.0
+
+# Default values for the ZKP prover service
+values:
+  replicaCount: 3
+  
+  image:
+    repository: registry.cloudai-fusion.io/cloudai-zkp-prover
+    pullPolicy: IfNotPresent
+    tag: "" # Overrides appVersion
+    
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+    
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+    
+  podLabels: {}
+  
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+        
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: zkp-api.cloudai-fusion.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    
+  resources:
+    limits:
+      cpu: 4
+      memory: 8Gi
+    requests:
+      cpu: 2
+      memory: 4Gi
+      
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+    
+  nodeSelector: {}
+  
+  tolerations: []
+  
+  affinity: {}
+  
+  # Circuit configuration
+  circuit:
+    name: scheduling_fairness
+    numTenants: 25
+    threshold: 0.7
+    
+  # Trusted setup configuration  
+  trustedSetup:
+    enabled: true
+    powersOfTauVersion: 27
+    
+  # Performance tuning
+  performance:
+    proofTimeout: 5s
+    cacheSize: 1000
+    parallelWorkers: 4
+    
+  # Security settings
+  security:
+    differentialPrivacyEpsilon: 0.01
+    nonceRotationInterval: 1h
+    
+  # Monitoring and logging
+  monitoring:
+    enableMetrics: true
+    logLevel: info
+    sampleRate: 0.1
+    
+  # External dependencies
+  external:
+    redis:
+      enabled: false
+      url: ""
+      
+    certManager:
+      enabled: true
+      issuer: letsencrypt-prod
+      
+# Custom resource definitions
+extraObjects: []
+  # - apiVersion: apiextensions.k8s.io/v1
+  #   kind: CustomResourceDefinition
+  #   metadata:
+  #     name: zkevidence.fusion.cloudai.io
+  #   spec:
+  #     group: fusion.cloudai.io
+  #     versions:
+  #       - name: v1alpha1
+  #         served: true
+  #         storage: true
+  #     scope: Namespaced
+  #     names:
+  #       plural: zkevidences
+  #       singular: zkevidence
+  #       kind: ZKEvidence

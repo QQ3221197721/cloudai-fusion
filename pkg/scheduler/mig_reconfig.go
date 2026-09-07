@@ -230,8 +230,8 @@ func (c *MIGReconfigCluster) Metrics() ReconfigMetrics { return c.metrics }
 // Only when neither applies is a reshape required, and that is where the policies
 // diverge (see reshapeMinDisruption vs reshapeFullDrain).
 func (c *MIGReconfigCluster) Arrive(id, profileName string) error {
-	p, ok := profileByName(profileName)
-	if !ok {
+	p, err := profileByName(profileName)
+	if err != nil {
 		return fmt.Errorf("unknown profile %s", profileName)
 	}
 

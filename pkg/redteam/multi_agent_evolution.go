@@ -1,5 +1,4 @@
-
-// Package redteam - Adaptive Multi-Agent Evolutionary Threat Hunting Engine (Patent #15)
+﻿// Package redteam - Adaptive Multi-Agent Evolutionary Threat Hunting Engine (Patent #15)
 // ORIGINAL ALGORITHM: Multi-agent reinforcement learning with evolutionary game theory
 // This is NOT a tool wrapper - it's COMPLETELY ORIGINAL GAME-THEORETIC SEARCH!
 package redteam
@@ -7,10 +6,9 @@ package redteam
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
-	"math"
 	"math/rand"
-	"sort"
 	"sync"
 	"time"
 
@@ -123,7 +121,7 @@ func NewAdaptiveHuntEngine(ctx context.Context, logger *logrus.Logger) (*Adaptiv
 	
 	engine := &AdaptiveHuntEngine{
 		agentPool: make([]*ThreatAgent, 0),
-		scoring: NewAdaptiveScorer(),
+		score: NewAdaptiveScorer(),
 		convergenceTracker: NewConvergenceTracker(),
 		
 		// Patented population parameters (optimized via meta-learning)
@@ -185,7 +183,7 @@ func (e *AdaptiveHuntEngine) createDiverseAgent(index int) *ThreatAgent {
 		ID:              agentID,
 		Genotype:        genome,
 		Phenotype:       strategy,
-		FitnessScore:    e.calculateInitialFitness(strategy),
+		FitnessScore:    e.calculateInitialFitness(strategies),
 		Pedigree:        []string{agentID},
 		EvolutionMetrics: EvolutionMetrics{
 			TotalMutations:   0,
@@ -361,8 +359,8 @@ func (e *AdaptiveHuntEngine) RunEvolution(ctx context.Context) *EvolutionReport 
 		BestFitness:        bestAgent.FitnessScore,
 		BestGenotypeHash:   hashGenome(&bestAgent.Genotype),
 		TotalTimeMS:        totalTime,
-		ConvergenceDetected: e.convergenceTracker.converged,
-		ConvergenceGeneration: e.convergenceTracker.convergenceGen,
+		ConvergenceDetected: e.convergenceTracker.Converged,
+		ConvergenceGeneration: e.convergenceTracker.ConvergenceGen,
 		BestScenario:       e.bestSolution,
 	}
 	
@@ -456,7 +454,7 @@ func (e *AdaptiveHuntEngine) crossover(parent1, parent2 *ThreatAgent) *ThreatAge
 func (e *AdaptiveHuntEngine) mutate(agent *ThreatAgent) {
 	agent.MutationCount++
 	
-	// Fitness-guided mutation (higher fitness = lower mutation rate)
+	// Fitness-guided mutation (higher fitness → lower mutation rate)
 	adaptiveMutationRate := e.mutationRate * (1.0 - agent.FitnessScore/100.0)
 	
 	// Bit-flip mutation for strategy bits

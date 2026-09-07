@@ -1,4 +1,4 @@
-package redteam
+﻿package redteam
 
 import (
 	"context"

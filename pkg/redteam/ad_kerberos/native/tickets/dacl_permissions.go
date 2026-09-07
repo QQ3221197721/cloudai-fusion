@@ -1,4 +1,4 @@
-//go:build ignore
+﻿//go:build ignore
 
 // Package tickets implements DACL (Discretionary Access Control List) manipulation for Kerberos tickets
 // Enables setting privileges, rights, and group memberships within forged tickets
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"cloudai-fusion/pkg/redteam/ad_kerberos/native/crypto"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/redteam/ad_kerberos/native/crypto"
 )
 
 // ============================================================================

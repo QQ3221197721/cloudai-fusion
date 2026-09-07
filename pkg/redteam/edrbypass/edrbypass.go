@@ -1,4 +1,4 @@
-// Package edrbypass - EDR bypass techniques interface for cross-platform compilation
+﻿// Package edrbypass - EDR bypass techniques interface for cross-platform compilation
 // Actual implementations are platform-specific (windows)
 package edrbypass
 

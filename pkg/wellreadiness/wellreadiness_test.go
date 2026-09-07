@@ -21,13 +21,13 @@ func TestValidate_HonestRecordPasses(t *testing.T) {
 
 func TestValidate_OverclaimsCaught(t *testing.T) {
 	cases := []struct {
-		name   string
+		name  string
 		mutate func(*Status)
 	}{
-		{"wired-lie", func(s *Status) { s.Wired = false }},                    // claims M3 but not wired
-		{"backend-lie", func(s *Status) { s.BackendMode = BackendSimulated }}, // claims M2+ but simulated
-		{"fabric-lie", func(s *Status) { s.FabricConnected = false }},         // claims M3 but not connected
-		{"range-lie", func(s *Status) { s.Well = 99 }},                        // out of range
+		{"wired-lie", func(s *Status) { s.Wired = false }},                         // claims M3 but not wired
+		{"backend-lie", func(s *Status) { s.BackendMode = BackendSimulated }},      // claims M2+ but simulated
+		{"fabric-lie", func(s *Status) { s.FabricConnected = false }},              // claims M3 but not connected
+		{"range-lie", func(s *Status) { s.Well = 99 }},                             // out of range
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

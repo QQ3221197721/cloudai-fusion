@@ -1,4 +1,4 @@
-// Package redteam - Complete MITRE ATT&CK Framework Coverage Implementation
+﻿// Package redteam - Complete MITRE ATT&CK Framework Coverage Implementation
 package redteam
 
 import (

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 )
 
 // ============================================================================
@@ -52,29 +54,15 @@ const (
 	NEQ    ComparisonOp = "!="
 )
 
-// Action defines remediation action
+// Action defines remediation action - uses unified common.ActionType
 type Action struct {
-	Type           ActionType       `json:"type"`
+	Type           common.ActionType      `json:"type"`
 	Payload        map[string]interface{} `json:"payload,omitempty"`
-	RollbackAction *Action          `json:"rollback,omitempty"`
-	SafeMode       bool             `json:"safe_mode"`
-	TimeoutSec     int              `json:"timeout_sec"`
-	Result         DecisionResult   `json:"result,omitempty"`
+	RollbackAction *Action                `json:"rollback,omitempty"`
+	SafeMode       bool                   `json:"safe_mode"`
+	TimeoutSec     int                    `json:"timeout_sec"`
+	Result         common.DecisionResult  `json:"result,omitempty"`
 }
-
-// ActionType defines available actions
-type ActionType string
-
-const (
-	ActionScaleUp           ActionType = "scale_up"
-	ActionScaleDown         ActionType = "scale_down"
-	ActionRestart           ActionType = "restart"
-	ActionFailover          ActionType = "failover"
-	ActionIsolate           ActionType = "isolate"
-	ActionRollback          ActionType = "rollback"
-	ActionNotifyOps         ActionType = "notify_ops"
-	ActionRunDiagnostic     ActionType = "run_diagnostic"
-)
 
 // SelfHealEngine orchestrates automated healing based on ML predictions
 type SelfHealEngine struct {
@@ -287,19 +275,19 @@ func (sh *SelfHealEngine) executeSingleAction(ctx context.Context, action Action
 	
 	// Execute action based on type
 	switch action.Type {
-	case ActionScaleUp:
+	case common.ActionScaleUp, common.ActionPreemption:
 		result := sh.scaleUp(ctx, action.Payload)
 		action.Result = result
 		
-	case ActionScaleDown:
+	case common.ActionScaleDown:
 		result := sh.scaleDown(ctx, action.Payload)
 		action.Result = result
 		
-	case ActionRestart:
+	case common.ActionRestart:
 		result := sh.restartService(ctx, action.Payload)
 		action.Result = result
 		
-	case ActionIsolate:
+	case common.ActionIsolate:
 		result := sh.isolateService(ctx, action.Payload)
 		action.Result = result
 		

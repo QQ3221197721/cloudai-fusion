@@ -1,4 +1,4 @@
-package redteam
+﻿package redteam
 
 // adgraph.go is the M4 Active Directory attack graph and BloodHound-style
 // pathfinding. Nodes are principals (users/computers/groups); directed edges are

@@ -77,7 +77,9 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: github/codeql-action/autobuild@v4
+      # autobuild fails to extract this module ("Extraction failed for all
+      # discovered Go projects"); a traced explicit build is the supported fix.
+      - run: go build ./...
       - uses: github/codeql-action/analyze@v4
         with:
           category: '/language:go'
@@ -94,6 +96,8 @@ jobs:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
         env:
+          # gitleaks-action v2 requires GITHUB_TOKEN to scan (breaking change).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
   # ---------------------------------------------------------------------------

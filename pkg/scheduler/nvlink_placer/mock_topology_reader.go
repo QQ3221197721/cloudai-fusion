@@ -1,4 +1,4 @@
-package nvlink_placer
+package scheduler
 
 // MockTopologyReader implements TopologyReader interface for testing without real GPU hardware
 type MockTopologyReader struct {

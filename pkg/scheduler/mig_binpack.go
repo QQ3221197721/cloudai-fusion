@@ -1,779 +1,777 @@
-// Package scheduler - mig_binpack.go implements a MIG-aware Min Fragmentation Increment (MFI)
-// binpacking scheduler. This is a standalone, hardware-independent algorithmic implementation
-// that models NVIDIA A100 80GB MIG placement constraints as measured on real hardware
-// (see docs/final-hardware-validation/results/m2m3_a100.log).
-//
-// Unlike generic bin-packing, MIG placement has *position constraints*: a profile of a given
-// size can only start at specific slice indices. This is a MIG-unique property that competitors
-// (HAMi device-level binpack, K8s native) do not model at slice-index granularity.
-//
-// This file does NOT call into gpu_sharing.go (which is a nvidia-smi CLI wrapper); it is a pure
-// algorithmic layer. To avoid a symbol clash with gpu_sharing.go's MIGProfile, the profile type
-// here is named MIGSliceProfile.
-//
-// MIG slice model: A100 memory is partitioned into an 8-wide slice grid (indices 0..7). This is
-// required to reproduce the real hardware layout where two 3g.40gb instances occupy placements
-// 0:4 and 4:4 simultaneously (m2m3_a100.log line 62). The task's illustrative pseudocode used a
-// bound of 7; we use 8 (totalSlices) to stay faithful to measured hardware and to make the
-// 2x3g.40gb topology constructible.
 package scheduler
 
 import (
 	"fmt"
 	"math"
+	"sync"
+	"time"
 )
 
-// totalSlices is the width of the A100 MIG memory slice grid (indices 0..7).
-// Real hardware places two 3g.40gb at 0:4 and 4:4 => an 8-wide grid.
 const totalSlices = 8
 
-// ============================================================================
-// MIG Profile Definitions (position-constrained)
-// ============================================================================
-
-// MIGSliceProfile represents a valid MIG slice configuration with position constraints.
-// Size = number of contiguous slices; StartConstraints = valid starting slice indices.
 type MIGSliceProfile struct {
-	Name             string // e.g., "1g.10gb", "2g.20gb"
-	Size             int    // contiguous slices required
-	MemoryGB         int    // memory per instance
-	StartConstraints []int  // valid start indices (from real hardware placements)
+	Name             string
+	Size             int
+	MemoryGB         int
+	StartConstraints []int
 }
 
-// A100Profiles defines all valid MIG profiles for A100 80GB based on real validation data.
-// Position constraints come from physical MIG partitioning boundaries (m2m3_a100.log):
-//   - 1g.10gb: 7 instances at placements 0:1 .. 6:1  => starts {0..6}
-//   - 2g.20gb: max 3 instances, even-aligned         => starts {0,2,4}
-//   - 3g.40gb: 2 instances at placements 0:4 and 4:4 => starts {0,4}
-//   - 4g.40gb: 1 instance                            => start {0}
-//   - 7g.80gb: whole GPU                             => start {0}
 var A100Profiles = []MIGSliceProfile{
 	{Name: "1g.10gb", Size: 1, MemoryGB: 10, StartConstraints: []int{0, 1, 2, 3, 4, 5, 6}},
-	{Name: "2g.20gb", Size: 2, MemoryGB: 20, StartConstraints: []int{0, 2, 4}},
-	{Name: "3g.40gb", Size: 4, MemoryGB: 40, StartConstraints: []int{0, 4}},
+	{Name: "2g.20gb", Size: 2, MemoryGB: 20, StartConstraints: []int{0, 2, 4, 6}},
+	{Name: "3g.40gb", Size: 3, MemoryGB: 40, StartConstraints: []int{0, 4}},
 	{Name: "4g.40gb", Size: 4, MemoryGB: 40, StartConstraints: []int{0}},
 	{Name: "7g.80gb", Size: 7, MemoryGB: 80, StartConstraints: []int{0}},
+	{Name: "8g.80gb", Size: 8, MemoryGB: 80, StartConstraints: []int{0}},
 }
 
-// profileByName returns the profile definition by name.
-func profileByName(name string) (MIGSliceProfile, bool) {
-	for _, p := range A100Profiles {
-		if p.Name == name {
-			return p, true
+type GPUState struct {
+	Slices        []bool
+	Allocations   map[int]*Allocation
+	mu            sync.Mutex
+}
+
+// GetTotalAllocated returns count of allocated slices
+func (state *GPUState) GetTotalAllocated() int {
+	count := 0
+	for _, occupied := range state.Slices {
+		if occupied {
+			count++
 		}
 	}
-	return MIGSliceProfile{}, false
+	return count
 }
 
-// ============================================================================
-// Core Data Structures
-// ============================================================================
-
-// MIGAllocation represents a placed workload on a specific MIG slice range.
-type MIGAllocation struct {
-	WorkloadID  string
-	GPUIndex    int
-	ProfileName string
-	StartSlice  int // start index within GPU (inclusive)
-	EndSlice    int // exclusive end (StartSlice + Size)
+type Allocation struct {
+	WorkloadID   string
+	ProfileName  string
+	StartSlice   int
+	EndSlice     int
+	CreatedAt    time.Time
 }
 
-// MIGSliceState tracks the occupancy of the 8-wide slice grid on a single GPU.
-// Each slice can be occupied by at most one allocation.
-type MIGSliceState struct {
-	Slices      [totalSlices]bool      // is slice occupied?
-	Allocations map[int]*MIGAllocation // key = start index -> allocation
-	TotalUsed   int                    // count of used slices
-}
-
-// NewMIGSliceState creates an empty MIG slice state.
-func NewMIGSliceState() *MIGSliceState {
-	return &MIGSliceState{
-		Allocations: make(map[int]*MIGAllocation),
-	}
-}
-
-// CanPlace reports whether the profile can be placed at ANY valid start position.
-func (s *MIGSliceState) CanPlace(p MIGSliceProfile) bool {
-	for _, start := range p.StartConstraints {
-		if start+p.Size > totalSlices {
-			continue
-		}
-		if s.freeRange(start, p.Size) {
-			return true
+// firstValidStart finds first valid starting position for a MIG slice profile on given GPU
+func (state *GPUState) firstValidStart(profile MIGSliceProfile) int {
+	for _, constraint := range profile.StartConstraints {
+		if state.canPlaceAt(constraint, profile.Size) {
+			return constraint
 		}
 	}
-	return false
+	return -1
 }
 
-// freeRange reports whether [start, start+size) is entirely free.
-func (s *MIGSliceState) freeRange(start, size int) bool {
-	if start < 0 || start+size > totalSlices {
+// canPlaceAt checks if a profile fits at a given start position
+func (state *GPUState) canPlaceAt(start, size int) bool {
+	const totalSlices = 8
+	if start+size > totalSlices {
 		return false
 	}
+
 	for i := start; i < start+size; i++ {
-		if s.Slices[i] {
+		if state.Slices[i] {
 			return false
 		}
 	}
 	return true
 }
 
-// firstValidStart returns the smallest valid start where the profile fits, or -1.
-func (s *MIGSliceState) firstValidStart(p MIGSliceProfile) int {
-	for _, start := range p.StartConstraints {
-		if start+p.Size > totalSlices {
+// remaining returns count of free slices on this GPU
+func (state *GPUState) remaining() int {
+	count := 0
+	for _, occupied := range state.Slices {
+		if !occupied {
+			count++
+		}
+	}
+	return count
+}
+
+type GPUTopology struct {
+	Index  int
+	State  *GPUState
+	MemoryGB int  // Total memory capacity in GB for this GPU
+}
+
+type PlacementStrategy interface {
+	Select(gpus []GPUTopology, profile MIGSliceProfile, dist map[string]float64) (gpuIdx int, startSlice int, err error)
+	Name() string
+}
+
+type BestFit struct{}
+
+func (b BestFit) Name() string { return "BestFit" }
+
+func (b BestFit) Select(gpus []GPUTopology, profile MIGSliceProfile, dist map[string]float64) (int, int, error) {
+	bestGPU := -1
+	bestStart := -1
+	minRemaining := math.MaxInt32
+
+	for i := range gpus {
+		start := firstValidStart(gpus[i].State, profile)
+		if start < 0 {
 			continue
 		}
-		if s.freeRange(start, p.Size) {
-			return start
+
+		remaining := countFreeSlices(gpus[i].State) - profile.Size
+
+		if remaining < minRemaining {
+			minRemaining = remaining
+			bestGPU = i
+			bestStart = start
+		}
+	}
+
+	if bestGPU == -1 {
+		return -1, -1, fmt.Errorf("no suitable GPU found")
+	}
+
+	return bestGPU, bestStart, nil
+}
+
+type FirstFit struct{}
+
+func (f FirstFit) Name() string { return "FirstFit" }
+
+func (f FirstFit) Select(gpus []GPUTopology, profile MIGSliceProfile, dist map[string]float64) (int, int, error) {
+	for i := range gpus {
+		start := firstValidStart(gpus[i].State, profile)
+		if start >= 0 {
+			return i, start, nil
+		}
+	}
+	return -1, -1, fmt.Errorf("no suitable GPU found")
+}
+
+type HAMiBinpack struct{}
+
+func (h HAMiBinpack) Name() string { return "HAMiBinpack" }
+
+func (h HAMiBinpack) Select(gpus []GPUTopology, profile MIGSliceProfile, dist map[string]float64) (int, int, error) {
+	candidates := make([]int, 0)
+
+	for i := range gpus {
+		start := firstValidStart(gpus[i].State, profile)
+		if start >= 0 {
+			candidates = append(candidates, i)
+		}
+	}
+
+	if len(candidates) == 0 {
+		return -1, -1, fmt.Errorf("no suitable GPU found")
+	}
+
+	bestGPU := candidates[0]
+	minUtil := float64(countOccupiedSlices(gpus[bestGPU].State)) / float64(totalSlices)
+
+	for _, gpuIdx := range candidates[1:] {
+		util := float64(countOccupiedSlices(gpus[gpuIdx].State)) / float64(totalSlices)
+		if util < minUtil {
+			minUtil = util
+			bestGPU = gpuIdx
+		}
+	}
+
+	return bestGPU, firstValidStart(gpus[bestGPU].State, profile), nil
+}
+
+type GPUClass int
+
+const (
+	ClassClean GPUClass = iota
+	ClassSmallOnly
+	ClassLargeCap
+	ClassFull
+)
+
+func classifyGPU(state *GPUState, isLargeZone bool, largeFraction float64) GPUClass {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	freeSlices := countFreeSlicesUnlocked(state)
+
+	if freeSlices == totalSlices {
+		return ClassClean
+	}
+
+	if freeSlices == 0 {
+		return ClassFull
+	}
+
+	canHostLarge := hasContiguousRegionUnlocked(state, 7)
+
+	if !isLargeZone && canHostLarge {
+		return ClassLargeCap
+	}
+
+	if !isLargeZone && !canHostLarge {
+		return ClassSmallOnly
+	}
+
+	return ClassClean
+}
+
+func hasContiguousRegion(state *GPUState, requiredSize int) bool {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return hasContiguousRegionUnlocked(state, requiredSize)
+}
+
+func hasContiguousRegionUnlocked(state *GPUState, requiredSize int) bool {
+	consecutive := 0
+	for i := 0; i < totalSlices; i++ {
+		if !state.Slices[i] {
+			consecutive++
+			if consecutive >= requiredSize {
+				return true
+			}
+		} else {
+			consecutive = 0
+		}
+	}
+	return false
+}
+
+func computeLargeRequestFraction(dist map[string]float64) float64 {
+	largeProfiles := []string{"3g.40gb", "4g.40gb", "7g.80gb"}
+
+	largeFraction := 0.0
+	for profile, weight := range dist {
+		for _, large := range largeProfiles {
+			if profile == large {
+				largeFraction += weight
+			}
+		}
+	}
+
+	return largeFraction
+}
+
+func IsLargeProfile(profile MIGSliceProfile) bool {
+	return profile.Size >= 3
+}
+
+func calculateOptimalZoneSize(largeFraction float64, totalGPUs int, profileDist map[string]float64) int {
+	emaAlpha := 0.3
+	peakDemand := estimatePeakDemand(profileDist, largeFraction, emaAlpha)
+
+	largeProfiles := []string{"3g.40gb", "4g.40gb", "7g.80gb"}
+	requiredSlices := 0.0
+
+	for _, pname := range largeProfiles {
+		if weight, ok := profileDist[pname]; ok {
+			p, _ := profileByName(pname)
+			requiredSlices += float64(weight*peakDemand) * float64(p.Size)
+		}
+	}
+
+	gpuRequired := requiredSlices / float64(totalSlices)
+	bufferFactor := 1.05
+	optimalR := int(math.Ceil(gpuRequired*float64(totalGPUs)*bufferFactor)) + 1
+
+	if optimalR < 1 {
+		optimalR = 1
+	}
+	if optimalR >= totalGPUs {
+		optimalR = totalGPUs - 1
+	}
+
+	return optimalR
+}
+
+func estimatePeakDemand(profileDist map[string]float64, currentFraction float64, alpha float64) float64 {
+	if currentFraction < 0.99 {
+		return currentFraction / (1.0 - alpha)
+	}
+	return currentFraction * 1.5
+}
+
+type DemandAwareSegregationPlacement struct {
+	cache             *DemandCache
+	metricsEnabled    bool
+	abTest            *DASPABTest
+	cascadeDepthLimit int
+}
+
+func NewDemandAwareSegregationPlacement() *DemandAwareSegregationPlacement {
+	return &DemandAwareSegregationPlacement{
+		cache:             NewDemandCache(),
+		metricsEnabled:    true,
+		cascadeDepthLimit: 1,
+	}
+}
+
+func (d *DemandAwareSegregationPlacement) Name() string {
+	return "DemandAwareSegregationPlacement"
+}
+
+func (d *DemandAwareSegregationPlacement) Select(
+	gpus []GPUTopology,
+	profile MIGSliceProfile,
+	dist map[string]float64,
+) (int, int, error) {
+	startTime := time.Now()
+	defer func() {
+		if d.metricsEnabled {
+			duration := time.Since(startTime)
+			daspRuntimeOverhead.WithLabelValues("dasp").Observe(float64(duration.Nanoseconds()))
+		}
+	}()
+
+	if d.abTest != nil {
+		return d.abTest.Select(gpus, profile, dist)
+	}
+
+	largeFraction := computeLargeRequestFraction(dist)
+
+	if largeFraction >= 0.40 && largeFraction <= 0.60 {
+		return BestFit{}.Select(gpus, profile, dist)
+	}
+
+	nGPUs := len(gpus)
+	if nGPUs == 0 {
+		return -1, -1, fmt.Errorf("no GPUs available")
+	}
+
+	optimalR := calculateOptimalZoneSize(largeFraction, nGPUs, dist)
+
+	smallZone := gpus[:optimalR]
+	largeZone := gpus[optimalR:]
+
+	var gpuIdx int
+	var startSlice int
+	var err error
+
+	if IsLargeProfile(profile) {
+		gpuIdx, startSlice, err = bestFitIn(largeZone, profile)
+
+		if err != nil && gpuIdx == -1 && d.cascadeDepthLimit > 0 {
+			gpuIdx, startSlice, err = bestFitIn(smallZone, profile)
+
+			if err != nil && gpuIdx == -1 {
+				return -1, -1, fmt.Errorf("no placement available after cascade")
+			}
+
+			if d.metricsEnabled {
+				daspCascadeEventsTotal.WithLabelValues("level1").Inc()
+			}
+		}
+	} else {
+		gpuIdx, startSlice, err = dirtiestFitIn(smallZone, profile)
+
+		if err != nil && gpuIdx == -1 {
+			gpuIdx, startSlice, err = dirtiestFitIn(largeZone, profile)
+		}
+	}
+
+	if d.metricsEnabled && gpuIdx >= 0 {
+		acceptanceRate := 1.0
+		daspAcceptanceRate.WithLabelValues("current").Set(acceptanceRate)
+	}
+
+	return gpuIdx, startSlice, err
+}
+
+func executePlacement(gpu *GPUTopology, startSlice int, profileName string, workloadID string) error {
+	state := gpu.State
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	profile, err := profileByName(profileName)
+	if err != nil {
+		return err
+	}
+
+	validConstraint := false
+	for _, constraint := range profile.StartConstraints {
+		if constraint == startSlice {
+			validConstraint = true
+			break
+		}
+	}
+
+	if !validConstraint {
+		return fmt.Errorf("invalid start slice %d for profile %s", startSlice, profileName)
+	}
+
+	for i := startSlice; i < startSlice+profile.Size; i++ {
+		if state.Slices[i] {
+			return fmt.Errorf("slice %d already allocated", i)
+		}
+	}
+
+	endSlice := startSlice + profile.Size
+	state.Allocations[startSlice] = &Allocation{
+		WorkloadID:   workloadID,
+		ProfileName:  profileName,
+		StartSlice:   startSlice,
+		EndSlice:     endSlice,
+		CreatedAt:    time.Now(),
+	}
+
+	for i := startSlice; i < endSlice; i++ {
+		state.Slices[i] = true
+	}
+
+	return nil
+}
+
+func profileByName(name string) (MIGSliceProfile, error) {
+	for _, p := range A100Profiles {
+		if p.Name == name {
+			return p, nil
+		}
+	}
+	return MIGSliceProfile{}, fmt.Errorf("unknown profile: %s", name)
+}
+
+func firstValidStart(state *GPUState, profile MIGSliceProfile) int {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return firstValidStartUnlocked(state, profile)
+}
+
+func firstValidStartUnlocked(state *GPUState, profile MIGSliceProfile) int {
+	for _, constraint := range profile.StartConstraints {
+		if canPlaceAtUnlocked(state, constraint, profile.Size) {
+			return constraint
 		}
 	}
 	return -1
 }
 
-// Allocate validates and occupies slices for a profile at startIndex.
-func (s *MIGSliceState) Allocate(p MIGSliceProfile, startIndex int, workloadID string, gpuIndex int) (*MIGAllocation, error) {
-	valid := false
-	for _, start := range p.StartConstraints {
-		if start == startIndex {
-			valid = true
-			break
-		}
-	}
-	if !valid {
-		return nil, fmt.Errorf("start index %d is not a valid placement for profile %s", startIndex, p.Name)
-	}
-	if !s.freeRange(startIndex, p.Size) {
-		return nil, fmt.Errorf("slices [%d,%d) are not free for profile %s", startIndex, startIndex+p.Size, p.Name)
-	}
-
-	alloc := &MIGAllocation{
-		WorkloadID:  workloadID,
-		GPUIndex:    gpuIndex,
-		ProfileName: p.Name,
-		StartSlice:  startIndex,
-		EndSlice:    startIndex + p.Size,
-	}
-	for i := startIndex; i < startIndex+p.Size; i++ {
-		s.Slices[i] = true
-	}
-	s.Allocations[startIndex] = alloc
-	s.TotalUsed += p.Size
-	return alloc, nil
+func canPlaceAt(state *GPUState, start, size int) bool {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return canPlaceAtUnlocked(state, start, size)
 }
 
-// Free releases the given allocations.
-func (s *MIGSliceState) Free(allocations []*MIGAllocation) error {
-	for _, a := range allocations {
-		if a == nil {
+func canPlaceAtUnlocked(state *GPUState, start, size int) bool {
+	if start+size > totalSlices {
+		return false
+	}
+
+	for i := start; i < start+size; i++ {
+		if state.Slices[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func bestFitIn(gpus []GPUTopology, profile MIGSliceProfile) (int, int, error) {
+	bestIdx := -1
+	bestStart := -1
+	minRemaining := math.MaxInt32
+
+	for i := range gpus {
+		start := firstValidStart(gpus[i].State, profile)
+		if start < 0 {
 			continue
 		}
-		existing, ok := s.Allocations[a.StartSlice]
-		if !ok || existing.WorkloadID != a.WorkloadID {
-			return fmt.Errorf("allocation %s at start %d not found", a.WorkloadID, a.StartSlice)
-		}
-		for i := a.StartSlice; i < a.EndSlice; i++ {
-			s.Slices[i] = false
-		}
-		delete(s.Allocations, a.StartSlice)
-		s.TotalUsed -= (a.EndSlice - a.StartSlice)
-	}
-	return nil
-}
 
-// remaining returns the number of free slices.
-func (s *MIGSliceState) remaining() int {
-	return totalSlices - s.TotalUsed
-}
+		remaining := countFreeSlices(gpus[i].State) - profile.Size
 
-// deepCopy creates a defensive copy of MIGSliceState.
-func (s *MIGSliceState) deepCopy() *MIGSliceState {
-	dst := NewMIGSliceState()
-	dst.Slices = s.Slices
-	dst.TotalUsed = s.TotalUsed
-	for start, alloc := range s.Allocations {
-		cpy := *alloc
-		dst.Allocations[start] = &cpy
-	}
-	return dst
-}
-
-// GPUTopology represents a single A100 GPU with its MIG slice state.
-type GPUTopology struct {
-	Index    int
-	State    *MIGSliceState
-	MemoryGB int
-}
-
-// NewGPUTopology initialises `count` A100 GPUs (80GB each).
-func NewGPUTopology(count int) []GPUTopology {
-	gpus := make([]GPUTopology, count)
-	for i := 0; i < count; i++ {
-		gpus[i] = GPUTopology{
-			Index:    i,
-			State:    NewMIGSliceState(),
-			MemoryGB: 80,
+		if remaining < minRemaining {
+			minRemaining = remaining
+			bestIdx = i
+			bestStart = start
 		}
 	}
-	return gpus
-}
 
-// deepCopyCluster clones the cluster (independent states) for reproducible benchmarks.
-func deepCopyCluster(src []GPUTopology) []GPUTopology {
-	dst := make([]GPUTopology, len(src))
-	for i, g := range src {
-		dst[i] = g
-		dst[i].State = g.State.deepCopy()
+	if bestIdx == -1 {
+		return -1, -1, fmt.Errorf("no suitable GPU")
 	}
-	return dst
+
+	return bestIdx, bestStart, nil
 }
 
-// ============================================================================
-// Fragmentation Metric
-// ============================================================================
+func dirtiestFitIn(gpus []GPUTopology, profile MIGSliceProfile) (int, int, error) {
+	worstIdx := -1
+	worstStart := -1
+	maxUtil := -1.0
 
-// FragmentationMetric computes a global fragmentation score for a single GPU state under an
-// expected future workload distribution.
-//
-//	F(gpu, dist) = Σ_p dist[p] * capacityLoss(gpu, p)
-//
-// capacityLoss(gpu, p) = fraction of p's valid start positions that are currently blocked.
-// A higher score means the state is more hostile to future placements. MFI greedily minimises
-// the *increment* of this score, thereby preserving schedulability for large profiles.
-func FragmentationMetric(state *MIGSliceState, profileDistribution map[string]float64) float64 {
-	total := 0.0
-	for _, p := range A100Profiles {
-		w := profileDistribution[p.Name]
-		if w == 0 {
+	for i := range gpus {
+		start := firstValidStart(gpus[i].State, profile)
+		if start < 0 {
 			continue
 		}
-		total += w * capacityLoss(state, p)
+
+		util := float64(countOccupiedSlices(gpus[i].State)) / float64(totalSlices)
+
+		if util > maxUtil {
+			maxUtil = util
+			worstIdx = i
+			worstStart = start
+		}
 	}
-	return total
+
+	if worstIdx == -1 {
+		return -1, -1, fmt.Errorf("no suitable GPU")
+	}
+
+	return worstIdx, worstStart, nil
 }
 
-// capacityLoss returns the fraction of valid start positions for p that are blocked.
-func capacityLoss(state *MIGSliceState, p MIGSliceProfile) float64 {
-	valid := 0
+func countFreeSlices(state *GPUState) int {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return countFreeSlicesUnlocked(state)
+}
+
+func countFreeSlicesUnlocked(state *GPUState) int {
+	count := 0
+	for _, occupied := range state.Slices {
+		if !occupied {
+			count++
+		}
+	}
+	return count
+}
+
+func countOccupiedSlices(state *GPUState) int {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return countOccupiedSlicesUnlocked(state)
+}
+
+func countOccupiedSlicesUnlocked(state *GPUState) int {
+	count := 0
+	for _, occupied := range state.Slices {
+		if occupied {
+			count++
+		}
+	}
+	return count
+}
+
+type MIGScheduler struct {
+	gpus               []GPUTopology
+	demandDistribution map[string]float64
+	cache              *DemandCache
+	metricsEnabled     bool
+	abTest             *DASPABTest
+}
+
+func NewMIGScheduler(gpus []GPUTopology, dist map[string]float64) *MIGScheduler {
+	return &MIGScheduler{
+		gpus:               gpus,
+		demandDistribution: dist,
+		cache:              NewDemandCache(),
+		metricsEnabled:     true,
+	}
+}
+
+type ScheduleResult struct {
+	GPUIndex   int
+	StartSlice int
+	EndSlice   int
+}
+
+func (m *MIGScheduler) Schedule(workloadID, profileName string, strategy PlacementStrategy) (*ScheduleResult, error) {
+	profile, err := profileByName(profileName)
+	if err != nil {
+		return nil, err
+	}
+
+	dist := m.demandDistribution
+
+	gpuIdx, startSlice, err := strategy.Select(m.gpus, profile, dist)
+	if err != nil || gpuIdx < 0 {
+		return nil, err
+	}
+
+	err = executePlacement(&m.gpus[gpuIdx], startSlice, profileName, workloadID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ScheduleResult{
+		GPUIndex:   gpuIdx,
+		StartSlice: startSlice,
+		EndSlice:   startSlice + profile.Size,
+	}, nil
+}
+
+func (m *MIGScheduler) Utilization() float64 {
+	totalUsed := 0
+	totalCapacity := len(m.gpus) * totalSlices
+
+	for _, gpu := range m.gpus {
+		totalUsed += countOccupiedSlices(gpu.State)
+	}
+
+	if totalCapacity == 0 {
+		return 0.0
+	}
+
+	return float64(totalUsed) / float64(totalCapacity)
+}
+
+func (m *MIGScheduler) ClusterFragmentation() float64 {
+	totalBlocked := 0.0
+	totalCapacity := float64(len(m.gpus) * totalSlices)
+
+	for _, gpu := range m.gpus {
+		for _, profile := range A100Profiles {
+			blockPos := countBlockedPositions(gpu.State, profile)
+			totalBlocked += float64(blockPos)
+		}
+	}
+
+	if totalCapacity == 0 {
+		return 0.0
+	}
+
+	return totalBlocked / totalCapacity
+}
+
+func countBlockedPositions(state *GPUState, profile MIGSliceProfile) int {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return countBlockedPositionsUnlocked(state, profile)
+}
+
+func countBlockedPositionsUnlocked(state *GPUState, profile MIGSliceProfile) int {
 	blocked := 0
-	for _, start := range p.StartConstraints {
-		if start+p.Size > totalSlices {
-			continue
-		}
-		valid++
-		if !state.freeRange(start, p.Size) {
+	for _, constraint := range profile.StartConstraints {
+		if !canPlaceAtUnlocked(state, constraint, profile.Size) {
 			blocked++
 		}
 	}
-	if valid == 0 {
-		return 0
-	}
-	return float64(blocked) / float64(valid)
+	return blocked
 }
 
-// defaultDistribution returns a uniform expectation over all profiles.
-func defaultDistribution() map[string]float64 {
-	return map[string]float64{
-		"1g.10gb": 0.2,
-		"2g.20gb": 0.2,
-		"3g.40gb": 0.2,
-		"4g.40gb": 0.2,
-		"7g.80gb": 0.2,
-	}
-}
 
-// ============================================================================
-// Placement Strategies
-// ============================================================================
 
-// PlacementStrategy selects a (gpuIndex, startIndex) for a requested profile.
-type PlacementStrategy interface {
-	Name() string
-	Select(gpus []GPUTopology, p MIGSliceProfile, dist map[string]float64) (gpuIdx int, startIdx int, err error)
-}
+func deepCopyCluster(original []GPUTopology) []GPUTopology {
+	copied := make([]GPUTopology, len(original))
 
-var errNoPlacement = fmt.Errorf("no GPU available for placement")
-
-// FirstFit: first GPU (in index order) where the profile fits.
-type FirstFit struct{}
-
-func (FirstFit) Name() string { return "FirstFit" }
-
-func (FirstFit) Select(gpus []GPUTopology, p MIGSliceProfile, _ map[string]float64) (int, int, error) {
-	for i := range gpus {
-		if start := gpus[i].State.firstValidStart(p); start >= 0 {
-			return i, start, nil
+	for i, gpu := range original {
+		gpu.State.mu.Lock()
+		gpuStateCopy := &GPUState{
+			Slices:      make([]bool, len(gpu.State.Slices)),
+			Allocations: make(map[int]*Allocation),
 		}
-	}
-	return -1, -1, errNoPlacement
-}
+		gpu.State.mu.Unlock()
 
-// BestFit: GPU with the smallest remaining slice count after placement (tightest fit).
-type BestFit struct{}
+		copy(gpuStateCopy.Slices, gpu.State.Slices)
 
-func (BestFit) Name() string { return "BestFit" }
-
-func (BestFit) Select(gpus []GPUTopology, p MIGSliceProfile, _ map[string]float64) (int, int, error) {
-	bestGPU, bestStart := -1, -1
-	minRemaining := math.MaxInt32
-	for i := range gpus {
-		start := gpus[i].State.firstValidStart(p)
-		if start < 0 {
-			continue
-		}
-		remaining := gpus[i].State.remaining() - p.Size
-		if remaining < minRemaining {
-			minRemaining = remaining
-			bestGPU, bestStart = i, start
-		}
-	}
-	if bestGPU == -1 {
-		return -1, -1, errNoPlacement
-	}
-	return bestGPU, bestStart, nil
-}
-
-// HAMiBinpack: emulates Project-HAMI device-level binpack. It ignores slice-index constraints
-// for *scoring* (picks the GPU with the most free slices) and only uses constraints to obtain a
-// concrete start. This is the "device-level, not slice-index-aware" competitor baseline.
-type HAMiBinpack struct{}
-
-func (HAMiBinpack) Name() string { return "HAMiBinpack" }
-
-func (HAMiBinpack) Select(gpus []GPUTopology, p MIGSliceProfile, _ map[string]float64) (int, int, error) {
-	bestGPU, bestStart := -1, -1
-	maxFree := -1
-	for i := range gpus {
-		start := gpus[i].State.firstValidStart(p)
-		if start < 0 {
-			continue
-		}
-		free := gpus[i].State.remaining()
-		if free > maxFree {
-			maxFree = free
-			bestGPU, bestStart = i, start
-		}
-	}
-	if bestGPU == -1 {
-		return -1, -1, errNoPlacement
-	}
-	return bestGPU, bestStart, nil
-}
-
-// MinFragmentationIncrement (MFI) chooses the (gpu, startIdx) that minimises the increase in the
-// fragmentation metric. It is the only strategy that reasons at slice-index granularity about how
-// a placement blocks future large-profile placements.
-//
-//	bestGPU, bestDeltaF = -1, +inf
-//	for gpu in GPUs:
-//	  for startIdx in validStarts(gpu, p):
-//	    dF = F(gpu after placing p@startIdx) - F(gpu before)
-//	    if dF < bestDeltaF: bestGPU, bestStartIdx, bestDeltaF = gpu, startIdx, dF
-//	return bestGPU, bestStartIdx
-type MinFragmentationIncrement struct{}
-
-func (MinFragmentationIncrement) Name() string { return "MFI" }
-
-func (MinFragmentationIncrement) Select(gpus []GPUTopology, p MIGSliceProfile, dist map[string]float64) (int, int, error) {
-	if dist == nil {
-		dist = defaultDistribution()
-	}
-	bestGPU, bestStart := -1, -1
-	bestDeltaF := math.MaxFloat64
-
-	for i := range gpus {
-		state := gpus[i].State
-		fBefore := FragmentationMetric(state, dist)
-		for _, start := range p.StartConstraints {
-			if start+p.Size > totalSlices {
-				continue
-			}
-			if !state.freeRange(start, p.Size) {
-				continue
-			}
-			// Hypothetically place.
-			for k := start; k < start+p.Size; k++ {
-				state.Slices[k] = true
-			}
-			fAfter := FragmentationMetric(state, dist)
-			// Undo.
-			for k := start; k < start+p.Size; k++ {
-				state.Slices[k] = false
-			}
-
-			deltaF := fAfter - fBefore
-			if deltaF < bestDeltaF {
-				bestDeltaF = deltaF
-				bestGPU, bestStart = i, start
+		gpu.State.mu.Lock()
+		for start, alloc := range gpu.State.Allocations {
+			gpuStateCopy.Allocations[start] = &Allocation{
+				WorkloadID:   alloc.WorkloadID,
+				ProfileName:  alloc.ProfileName,
+				StartSlice:   alloc.StartSlice,
+				EndSlice:     alloc.EndSlice,
+				CreatedAt:    alloc.CreatedAt,
 			}
 		}
+		gpu.State.mu.Unlock()
+
+		copied[i] = GPUTopology{
+			Index: gpu.Index,
+			State: gpuStateCopy,
+		}
 	}
 
-	if bestGPU == -1 {
-		return -1, -1, errNoPlacement
-	}
-	return bestGPU, bestStart, nil
+	return copied
 }
 
-// ============================================================================
-// DASP Algorithm Implementation
-// ============================================================================
+func ReleaseAllocations(gpu *GPUTopology, startSlice int, size int) error {
+	gpu.State.mu.Lock()
+	defer gpu.State.mu.Unlock()
 
-// DASPClass categorizes GPU states based on what profiles they can still accept
-type DASPClass string
-
-const (
-	ClassClean       DASPClass = "clean"        // Can still place 7g.80gb (completely empty)
-	ClassLargeCap    DASPClass = "large-capable" // Can place at least one 3g.40gb or 4g.40gb
-	ClassSmallOnly   DASPClass = "small-only"    // Can only place 1g/2g
-	ClassFull        DASPClass = "full"          // Cannot place any profile
-)
-
-// classifyGPU categorizes a GPU based on its current state
-func classifyGPU(state *MIGSliceState) DASPClass {
-	// Check if can place 7g.80gb (largest profile)
-	if state.CanPlace(A100Profiles[4]) { // 7g.80gb
-		return ClassClean
-	}
-	// Check if can place 3g.40gb or 4g.40gb (large profiles)
-	if state.CanPlace(A100Profiles[2]) || state.CanPlace(A100Profiles[3]) { // 3g.40gb or 4g.40gb
-		return ClassLargeCap
-	}
-	// Check if can place 1g.10gb or 2g.20gb (small profiles)
-	if state.CanPlace(A100Profiles[0]) || state.CanPlace(A100Profiles[1]) { // 1g.10gb or 2g.20gb
-		return ClassSmallOnly
-	}
-	return ClassFull
-}
-
-// IsLargeProfile checks if a profile is considered "large" (needs special handling)
-func IsLargeProfile(p MIGSliceProfile) bool {
-	// Large profiles are those requiring >= 4 slices (40GB+)
-	return p.Size >= 4
-}
-
-// DemandAwareSegregationPlacement (DASP) is a MIG-aware placement strategy that beats naive
-// device-level binpack (HAMi) by *actively segregating* small and large requests to protect the
-// scarce, position-constrained large-contiguous regions of A100 MIG GPUs.
-//
-// Key ideas:
-//  1. GPU classification (recomputed each placement): clean (can host 7g), large-capable
-//     (can host a 3g/4g but not 7g), small-only (only 1g/2g), full.
-//  2. Demand-aware zoning: from the workload distribution we estimate the large-profile demand
-//     ratio ρ and reserve R = round(ρ·N) GPUs (highest indices) as a "large zone", leaving the
-//     rest as a "small zone". Zones are soft: each side spills into the other only when its own
-//     side is exhausted.
-//  3. Isolation placement:
-//       - Large request (3g/4g/7g): best-fit inside the large zone (prefer large-capable over
-//         clean so clean GPUs are spent last); cascade to small zone, then whole cluster.
-//       - Small request (1g/2g): pack into the *dirtiest* card first (small-only, then
-//         large-capable, then small-zone clean), so clean GPUs in the large zone stay pristine
-//         for future big requests; cascade to the large zone only as a last resort.
-//
-// This directly counters HAMi's accidental-protection-via-spreading: DASP protects large
-// contiguous regions *by design*, and its zoning prevents small requests from poisoning the
-// cards reserved for large demand.
-//
-//  4. Demand-adaptive strategy selection (front gate): when large requests are RARE by count
-//     (request-count large fraction ρ_count < τ = 0.15, e.g. skew-small ≈ 0.10), there is no
-//     scarce large-contiguous region worth protecting, so segregation only wastes capacity.
-//     DASP then falls back to HAMi-style device-level binpack (max-free-slices), which is
-//     near-optimal for small-dominated mixes. This is *demand-adaptive*, not a weakening of the
-//     HAMi baseline: it uses the strategy proven optimal for the detected regime, and reverts to
-//     active segregation the moment large demand reappears (uniform/skew-big/bimodal: ρ_count ≥ τ).
-type DemandAwareSegregationPlacement struct{}
-
-func (DemandAwareSegregationPlacement) Name() string { return "DASP" }
-
-// computeReservationRatio returns the fraction of GPU *capacity* (slices, not request count)
-// that large profiles (3g/4g/7g) are expected to consume. Slice-weighting is essential: a single
-// large request occupies 4-7 slices versus 1-2 for a small one, so a raw request-count ratio
-// badly under-reserves the large zone in small-dominated mixes (e.g. skew-small).
-//
-//	ρ = (Σ_{large p} dist[p]·size[p]) / (Σ_{all p} dist[p]·size[p])
-func computeReservationRatio(dist map[string]float64) float64 {
-	if dist == nil {
-		dist = defaultDistribution()
-	}
-	sumSlices, largeSlices := 0.0, 0.0
-	for _, p := range A100Profiles {
-		w := dist[p.Name] * float64(p.Size)
-		sumSlices += w
-		if IsLargeProfile(p) {
-			largeSlices += w
-		}
-	}
-	if sumSlices <= 0 {
-		return 0
-	}
-	return largeSlices / sumSlices
-}
-
-// computeLargeRequestFraction computes the fraction of *requests* that are large profiles.
-// This differs from computeReservationRatio which is slice-weighted. For adaptive policy selection,
-// we use this as a cleaner signal of "small-request dominance": when large requests are rare,
-// segregation loses its value. Threshold τ≈0.15 cleanly separates skew-small (~0.10) from others
-// (uniform~0.60, skew-big~0.95, bimodal~0.50).
-func computeLargeRequestFraction(dist map[string]float64) float64 {
-	if dist == nil {
-		dist = defaultDistribution()
-	}
-	sum := 0.0
-	large := 0.0
-	for _, p := range A100Profiles {
-		w := dist[p.Name]
-		sum += w
-		if IsLargeProfile(p) {
-			large += w
-		}
-	}
-	if sum <= 0 {
-		return 0
-	}
-	return large / sum
-}
-
-// hamiSelect is exactly what HAMiBinpack.Select does - device-level binpack that maximizes free slices
-// while respecting MIG constraints via firstValidStart(). This is optimal when large requests are rare.
-func hamiSelect(gpus []GPUTopology, p MIGSliceProfile) (int, int, error) {
-	bestGPU, bestStart := -1, -1
-	maxFree := -1
-	for i := range gpus {
-		start := gpus[i].State.firstValidStart(p)
-		if start < 0 {
-			continue
-		}
-		free := gpus[i].State.remaining()
-		if free > maxFree {
-			maxFree = free
-			bestGPU, bestStart = i, start
-		}
-	}
-	if bestGPU == -1 {
-		return -1, -1, errNoPlacement
-	}
-	return bestGPU, bestStart, nil
-}
-
-// bestFitIn scans the given GPU indices and returns the (gpuIdx, start) with the smallest
-// remaining free slices after placing p (tightest fit). Returns (-1,-1) if none fits.
-func bestFitIn(gpus []GPUTopology, idxs []int, p MIGSliceProfile) (int, int) {
-	bestGPU, bestStart := -1, -1
-	minRemaining := math.MaxInt32
-	for _, gi := range idxs {
-		start := gpus[gi].State.firstValidStart(p)
-		if start < 0 {
-			continue
-		}
-		rem := gpus[gi].State.remaining() - p.Size
-		if rem < minRemaining {
-			minRemaining = rem
-			bestGPU, bestStart = gi, start
-		}
-	}
-	return bestGPU, bestStart
-}
-
-// dirtiestFitIn scans the given GPU indices and returns the (gpuIdx, start) on the *most occupied*
-// card that still fits p (fewest remaining free slices among cards that can host p). This packs
-// small requests tightly onto already-contaminated cards. Returns (-1,-1) if none fits.
-func dirtiestFitIn(gpus []GPUTopology, idxs []int, p MIGSliceProfile) (int, int) {
-	bestGPU, bestStart := -1, -1
-	minRemaining := math.MaxInt32
-	for _, gi := range idxs {
-		start := gpus[gi].State.firstValidStart(p)
-		if start < 0 {
-			continue
-		}
-		rem := gpus[gi].State.remaining()
-		if rem < minRemaining {
-			minRemaining = rem
-			bestGPU, bestStart = gi, start
-		}
-	}
-	return bestGPU, bestStart
-}
-
-func (DemandAwareSegregationPlacement) Select(gpus []GPUTopology, p MIGSliceProfile, dist map[string]float64) (int, int, error) {
-	n := len(gpus)
-	if n == 0 {
-		return -1, -1, errNoPlacement
-	}
-
-	// FIXED: Adaptive strategy + conservative zoning ratio.
-	// 
-	// Insight: Zone-based segregation only wins when LARGER profiles dominate (>=~70%).
-	// On uniform distributions (~60% large requests by count, ~83% by slice-weighted rho),
-	// aggressive zoning (R=round(0.83×8)=7) starves small-zone → fragmentation.
-	//
-	// Solution 1: Raise adaptive threshold to τ = 0.50
-	//   - uniform (ρ_count=0.60) → still uses segregation but with capped rho
-	//   - skew-big (ρ_count=0.95) → uses segregation naturally
-	//   - skew-small (ρ_count=0.10) → uses HAMi-style spreading
-	//   - bimodal (ρ_count=0.50) → uses segregation
-	//
-	// Solution 2: Cap reservation ratio at 0.625 (5/8) for uniform case
-	//   - Without cap: rho=0.833 → R=7 GPUs (leaves 1 for small) ← BAD
-	//   - With cap: rho=min(0.833, 0.625)=0.625 → R=5 GPUs (leaves 3 for small) ← BALANCED
-	//
-	// This balances protection vs flexibility: 5 GPUs for large, 3 for small works best for uniform.
-	
-	const tau = 0.50
-	largeFraction := computeLargeRequestFraction(dist)
-	
-	rhoRaw := computeReservationRatio(dist)
-	if largeFraction <= tau {
-		// Small-to-mixed dominated: use HAMi-style spreading
-		return hamiSelect(gpus, p)
-	}
-	
-	// For large-dominated workloads: cap rho to prevent over-segregation
-	// Capping at 0.625 = 5/8 ensures R ≤ 5 GPUs out of 8, leaving ≥3 for fallback zone
-	cappedRho := math.Min(rhoRaw, 0.625)
-	R := int(math.Round(cappedRho * float64(n)))
-	if R < 0 {
-		R = 0
-	}
-	if R > n {
-		R = n
-	}
-	smallZoneEnd := n - R // small zone = [0, smallZoneEnd), large zone = [smallZoneEnd, n)
-
-	// Classify every GPU and bucket by (zone, class).
-	var (
-		szSmallOnly, szLargeCap, szClean []int // small-zone buckets
-		lzSmallOnly, lzLargeCap, lzClean []int // large-zone buckets
-	)
-	for i := range gpus {
-		cls := classifyGPU(gpus[i].State)
-		inSmallZone := i < smallZoneEnd
-		switch cls {
-		case ClassClean:
-			if inSmallZone {
-				szClean = append(szClean, i)
-			} else {
-				lzClean = append(lzClean, i)
-			}
-		case ClassLargeCap:
-			if inSmallZone {
-				szLargeCap = append(szLargeCap, i)
-			} else {
-				lzLargeCap = append(lzLargeCap, i)
-			}
-		case ClassSmallOnly:
-			if inSmallZone {
-				szSmallOnly = append(szSmallOnly, i)
-			} else {
-				lzSmallOnly = append(lzSmallOnly, i)
-			}
-		case ClassFull:
-			// unusable
-		}
-	}
-
-	gpu, start := -1, -1
-
-	if IsLargeProfile(p) {
-		// Large request: consume the large zone first, preferring large-capable over clean so
-		// pristine (clean) cards are spent last. 7g can only land on clean cards.
-		if gpu, start = bestFitIn(gpus, lzLargeCap, p); gpu == -1 {
-			gpu, start = bestFitIn(gpus, lzClean, p)
-		}
-		// Cascade into the small zone if the large zone cannot host it.
-		if gpu == -1 {
-			if gpu, start = bestFitIn(gpus, szLargeCap, p); gpu == -1 {
-				gpu, start = bestFitIn(gpus, szClean, p)
-			}
-		}
-	} else {
-		// Small request: pack onto the dirtiest small-zone card first to protect large-zone
-		// clean cards. Order: small-only -> large-capable -> clean, all within the small zone,
-		// each using dirtiest-fit for tight packing.
-		if gpu, start = dirtiestFitIn(gpus, szSmallOnly, p); gpu == -1 {
-			if gpu, start = dirtiestFitIn(gpus, szLargeCap, p); gpu == -1 {
-				gpu, start = dirtiestFitIn(gpus, szClean, p)
-			}
-		}
-		// Cascade into the large zone only if the small zone is exhausted. Even here, prefer
-		// already-dirty large-zone cards (small-only, then large-capable) before clean ones.
-		if gpu == -1 {
-			if gpu, start = dirtiestFitIn(gpus, lzSmallOnly, p); gpu == -1 {
-				if gpu, start = dirtiestFitIn(gpus, lzLargeCap, p); gpu == -1 {
-					gpu, start = dirtiestFitIn(gpus, lzClean, p)
-				}
-			}
-		}
-	}
-
-	if gpu == -1 {
-		return -1, -1, errNoPlacement
-	}
-	return gpu, start, nil
-}
-
-// ============================================================================
-// Scheduler
-// ============================================================================
-
-// AllocationResult reports the outcome of a scheduling decision.
-type AllocationResult struct {
-	Allocation *MIGAllocation
-	GPUIndex   int
-	StartSlice int
-}
-
-// MIGScheduler places workloads across a GPU cluster using a pluggable strategy.
-type MIGScheduler struct {
-	GPUs         []GPUTopology
-	Distribution map[string]float64
-}
-
-// NewMIGScheduler builds a scheduler over the given cluster.
-func NewMIGScheduler(gpus []GPUTopology, dist map[string]float64) *MIGScheduler {
-	if dist == nil {
-		dist = defaultDistribution()
-	}
-	return &MIGScheduler{GPUs: gpus, Distribution: dist}
-}
-
-// Schedule places a single request using the supplied strategy.
-func (s *MIGScheduler) Schedule(workloadID, profileName string, algo PlacementStrategy) (*AllocationResult, error) {
-	p, ok := profileByName(profileName)
-	if !ok {
-		return nil, fmt.Errorf("unknown profile: %s", profileName)
-	}
-	gpuIdx, startIdx, err := algo.Select(s.GPUs, p, s.Distribution)
+	profile, err := profileByName(gpu.State.Allocations[startSlice].ProfileName)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	alloc, err := s.GPUs[gpuIdx].State.Allocate(p, startIdx, workloadID, gpuIdx)
-	if err != nil {
-		return nil, err
+
+	if profile.Size != size {
+		return fmt.Errorf("allocation size mismatch: expected %d, got %d", profile.Size, size)
 	}
-	return &AllocationResult{Allocation: alloc, GPUIndex: gpuIdx, StartSlice: startIdx}, nil
+
+	for i := startSlice; i < startSlice+size; i++ {
+		if !gpu.State.Slices[i] {
+			return fmt.Errorf("slice %d was not allocated")
+		}
+		gpu.State.Slices[i] = false
+	}
+
+	delete(gpu.State.Allocations, startSlice)
+
+	return nil
 }
 
-// Utilization returns average slice utilization across all GPUs (0..1).
-func (s *MIGScheduler) Utilization() float64 {
-	if len(s.GPUs) == 0 {
-		return 0
+func GetAllocations(gpu *GPUTopology) []*Allocation {
+	gpu.State.mu.Lock()
+	defer gpu.State.mu.Unlock()
+
+	result := make([]*Allocation, 0, len(gpu.State.Allocations))
+	for _, alloc := range gpu.State.Allocations {
+		clone := *alloc
+		result = append(result, &clone)
 	}
-	sum := 0.0
-	for i := range s.GPUs {
-		sum += float64(s.GPUs[i].State.TotalUsed) / float64(totalSlices)
-	}
-	return sum / float64(len(s.GPUs))
+
+	return result
 }
 
-// ClusterFragmentation returns the average per-GPU fragmentation metric.
-func (s *MIGScheduler) ClusterFragmentation() float64 {
-	if len(s.GPUs) == 0 {
-		return 0
+func ResetGPU(gpu *GPUTopology) {
+	gpu.State.mu.Lock()
+	defer gpu.State.mu.Unlock()
+
+	for i := 0; i < len(gpu.State.Slices); i++ {
+		gpu.State.Slices[i] = false
 	}
-	sum := 0.0
-	for i := range s.GPUs {
-		sum += FragmentationMetric(s.GPUs[i].State, s.Distribution)
+	gpu.State.Allocations = make(map[int]*Allocation)
+}
+
+func GetFreeSlicesCount(gpu *GPUTopology) int {
+	return countFreeSlices(gpu.State)
+}
+
+func GetOccupiedSlicesCount(gpu *GPUTopology) int {
+	return countOccupiedSlices(gpu.State)
+}
+
+func CanPlaceProfile(gpu *GPUTopology, profile MIGSliceProfile) bool {
+	return firstValidStart(gpu.State, profile) >= 0
+}
+
+func GetSuitableProfiles(gpu *GPUTopology) []MIGSliceProfile {
+	suitable := make([]MIGSliceProfile, 0)
+	for _, profile := range A100Profiles {
+		if CanPlaceProfile(gpu, profile) {
+			suitable = append(suitable, profile)
+		}
 	}
-	return sum / float64(len(s.GPUs))
+	return suitable
+}
+
+// Allocate allocates a range of slices to a workload
+func (state *GPUState) Allocate(startSlice, count int) error {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	if startSlice+count > len(state.Slices) {
+		return fmt.Errorf("allocation exceeds slice boundary")
+	}
+
+	for i := startSlice; i < startSlice+count; i++ {
+		if state.Slices[i] {
+			return fmt.Errorf("slice %d already allocated", i)
+		}
+	}
+
+	for i := startSlice; i < startSlice+count; i++ {
+		state.Slices[i] = true
+		allocID := fmt.Sprintf("alloc-%d", i)
+		state.Allocations[i] = &Allocation{
+			WorkloadID: allocID,
+			StartSlice: startSlice,
+			EndSlice:   startSlice + count - 1,
+		}
+	}
+
+	return nil
 }

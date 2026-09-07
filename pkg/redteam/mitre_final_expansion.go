@@ -1,4 +1,4 @@
-// Package redteam - Final MITRE Technique Expansion to reach 100+ TIDs
+﻿// Package redteam - Final MITRE Technique Expansion to reach 100+ TIDs
 package redteam
 
 import (

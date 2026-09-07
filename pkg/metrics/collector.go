@@ -179,3 +179,30 @@ func CollectDBPoolStats(poolName string, stats DBPoolStats) {
 		ConnectionPoolUtilization.WithLabelValues(poolName).Set(utilization)
 	}
 }
+
+// ============================================================================
+// Self-Healing Metrics Methods
+// ============================================================================
+
+// Collector provides methods for recording self-healing metrics.
+type Collector struct{}
+
+// NewCollector creates a new self-healing metrics collector.
+func NewCollector() *Collector {
+	return &Collector{}
+}
+
+// RecordMTTR records mean time to remediation.
+func (c *Collector) RecordMTTR(faultType string, actionType string, duration time.Duration) {
+	MTTR.WithLabelValues(faultType, actionType).Observe(duration.Seconds())
+}
+
+// IncrementSuccessfulRemediations increments successful remediation count.
+func (c *Collector) IncrementSuccessfulRemediations(faultType string, actionType string) {
+	SuccessfulRemediationsTotal.WithLabelValues(faultType, actionType).Inc()
+}
+
+// IncrementFailedRemediations increments failed remediation count.
+func (c *Collector) IncrementFailedRemediations(faultType string, actionType string) {
+	FailedRemediationsTotal.WithLabelValues(faultType, actionType, "unknown").Inc()
+}

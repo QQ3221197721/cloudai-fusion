@@ -1,4 +1,4 @@
-package scaler_test
+package main
 
 import (
 	"math/rand"

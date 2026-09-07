@@ -1,0 +1,68 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base configuration for CloudAI Fusion platform
+# Applies to all environments (dev, staging, production)
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - configmap.yaml
+  - serviceaccount.yaml
+  - pdb.yaml
+  - hpa.yaml
+  - ingress.yaml
+
+commonLabels:
+  app: cloudai-fusion
+  version: dev
+  
+commonAnnotations:
+  description: "CloudAI Fusion AI Engine with M47/M29/M31/M49/M9 modules"
+
+configMapGenerator:
+  - name: cloudai-fusion-config
+    literals:
+      # AI Engine Configuration
+      - PYTHON_VERSION=3.11
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      
+      # Module-specific settings
+      - DRIFT_THRESHOLD=0.25
+      - RATE_LIMIT_RPM=100
+      - CANARY_TRAFFIC_PERCENT=10
+      - CIRCUIT_BREAKER_THRESHOLD=0.5
+      - CIRCUIT_BREAKER_TIMEOUT=60
+      
+      # Monitoring and Tracing
+      - ENABLE_TRACING=true
+      - TRACING_ENDPOINT=http://jaeger-all-in-one:16686/api/traces
+      - PROMETHEUS_SCRAPE_INTERVAL=15s
+      
+      # Security Settings
+      - MODEL_REGISTRY_ENABLED=true
+      - ML_SECURITY_CHECKS=true
+      
+      # Feature Flags
+      - FEATURE_M47_TRACING_ENABLED=true
+      - FEATURE_M29_M31_API_ENABLED=true
+      - FEATURE_M49_CHAOS_ENABLED=true
+      - FEATURE_M9_METRICS_ENABLED=true
+
+secretGenerator:
+  - name: cloudai-fusion-secrets
+    envs:
+      - secrets.env
+
+generatorOptions:
+  disableNameSuffixHash: false
+
+images:
+  - name: ghcr.io/cloudai-fusion/cloudai-fusion
+    newName: ghcr.io/cloudai-fusion/cloudai-fusion
+    newTag: latest
+
+patchesStrategicMerge:
+  # Apply default resource limits
+  - deployment-patch.yaml

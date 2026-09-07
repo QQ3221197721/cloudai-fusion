@@ -425,10 +425,8 @@ func NewRenderFarmCollectorPlugin(configs []RenderFarmConfig, score *RenderFarmS
 	}, nil
 }
 
-func (p *RenderFarmCollectorPlugin) Init(_ context.Context, _ map[string]interface{}) error {
-	return nil
-}
-func (p *RenderFarmCollectorPlugin) Health(_ context.Context) error { return nil }
+func (p *RenderFarmCollectorPlugin) Init(_ context.Context, _ map[string]interface{}) error { return nil }
+func (p *RenderFarmCollectorPlugin) Health(_ context.Context) error                         { return nil }
 
 // MetricNames lists the metrics this collector produces.
 func (p *RenderFarmCollectorPlugin) MetricNames() []string {

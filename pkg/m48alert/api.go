@@ -30,10 +30,10 @@ func (cr *ClusteringResult) ResultJSON() ([]byte, error) {
 	}
 
 	return json.MarshalIndent(map[string]interface{}{
-		"method":             cr.Method.String(),
+		"method":         cr.Method.String(),
 		"processing_time_ms": cr.ProcessingTime.Milliseconds(),
-		"metrics":            cr.Metrics,
-		"clusters":           summaries,
+		"metrics":        cr.Metrics,
+		"clusters":     summaries,
 	}, "", "  ")
 }
 
@@ -195,10 +195,10 @@ func (sf *SyntheticAlertFactory) Generate(ctx context.Context, n int) []*Alert {
 		val := sf.values[i%len(sf.values)]
 
 		alert := &Alert{
-			Labels:   cloneMap(lbl),
-			Value:    val,
-			StartsAt: now.Add(time.Duration(i) * time.Second),
-			EndsAt:   now.Add(time.Duration(i+1) * time.Second),
+			Labels:    cloneMap(lbl),
+			Value:     val,
+			StartsAt:  now.Add(time.Duration(i)*time.Second),
+			EndsAt:    now.Add(time.Duration(i+1)*time.Second),
 		}
 		result = append(result, alert)
 	}

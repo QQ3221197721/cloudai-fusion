@@ -99,13 +99,13 @@ func tenantPoolTransitionCmd(use, short, example string, apply func(ctx context.
 			}
 			if output == "json" {
 				return writeJSON(cmd.OutOrStdout(), map[string]any{
-					"pool_id":            updated.ID,
-					"name":               updated.Name,
-					"status":             updated.Status,
-					"members":            len(updated.Members),
-					"updated_at":         updated.UpdatedAt.Format(time.RFC3339),
-					"attestation_hash":   mgr.LastAttestationHash,
-					"attestation_signed": mgr.LastAttestation() != nil,
+				"pool_id":            updated.ID,
+				"name":               updated.Name,
+				"status":             updated.Status,
+				"members":            len(updated.Members),
+				"updated_at":         updated.UpdatedAt.Format(time.RFC3339),
+				"attestation_hash":   mgr.LastAttestationHash,
+				"attestation_signed": mgr.LastAttestation() != nil,
 				})
 			}
 			renderTenantPoolTransition(cmd.OutOrStdout(), use, updated, mgr, noAttest)
@@ -184,8 +184,8 @@ func renderTenantPoolTransition(out io.Writer, verb string, p *tenants.TenantPoo
 func newTenantAddTenantCmd() *cobra.Command {
 	var (
 		store, output, poolID, name, uid, resourceMode string
-		slices                                         int
-		noAttest                                       bool
+		slices                                          int
+		noAttest                                        bool
 	)
 	cmd := &cobra.Command{
 		Use:   "add-tenant",
@@ -352,18 +352,18 @@ func newTenantCreateCmd() *cobra.Command {
 			}
 			if output == "json" {
 				result := map[string]any{
-					"id":                  pool.ID,
-					"pool_id":             poolID,
-					"name":                pool.Name,
-					"gpu_type":            pool.GPUType,
-					"mode":                pool.Mode,
-					"mig_profile":         pool.MigProfile,
+					"id":                 pool.ID,
+					"pool_id":            poolID,
+					"name":               pool.Name,
+					"gpu_type":           pool.GPUType,
+					"mode":               pool.Mode,
+					"mig_profile":        pool.MigProfile,
 					"node_index":          pool.NodeIndex,
-					"gpu_indices":         pool.GPUIndices,
-					"total_slices":        pool.TotalSlices,
-					"member_count":        len(pool.Members),
-					"created_at":          pool.CreatedAt.Format(time.RFC3339),
-					"status":              pool.Status,
+					"gpu_indices":        pool.GPUIndices,
+					"total_slices":       pool.TotalSlices,
+					"member_count":       len(pool.Members),
+					"created_at":         pool.CreatedAt.Format(time.RFC3339),
+					"status":             pool.Status,
 					"attestation_enabled": mgr.AttestationEnabled && !noAttest,
 					"attestation_hash":    mgr.LastAttestationHash,
 					"attestation_signed":  mgr.LastAttestation() != nil,
@@ -477,9 +477,9 @@ func newTenantAllocateCmd() *cobra.Command {
 		noAttest                      bool
 	)
 	cmd := &cobra.Command{
-		Use:           "allocate",
-		Short:         "Allocate additional MIG slices (or MPS client capacity) to a tenant",
-		Example:       `  cafctl tenant allocate --pool <pool-id> --tenant <tenant-id> --slices 2`,
+		Use:   "allocate",
+		Short: "Allocate additional MIG slices (or MPS client capacity) to a tenant",
+		Example: `  cafctl tenant allocate --pool <pool-id> --tenant <tenant-id> --slices 2`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -505,14 +505,14 @@ func newTenantAllocateCmd() *cobra.Command {
 			}
 			if output == "json" {
 				return writeJSON(cmd.OutOrStdout(), map[string]any{
-					"tenant_id":          member.ID,
-					"pool_id":            member.PoolID,
-					"name":               member.Name,
-					"mig_slices":         len(member.MIGSlices),
-					"max_clients":        member.MaxClients,
-					"updated_at":         member.UpdatedAt.Format(time.RFC3339),
-					"status":             member.Status,
-					"attestation_hash":   mgr.LastAttestationHash,
+					"tenant_id":         member.ID,
+					"pool_id":           member.PoolID,
+					"name":              member.Name,
+					"mig_slices":        len(member.MIGSlices),
+					"max_clients":       member.MaxClients,
+					"updated_at":        member.UpdatedAt.Format(time.RFC3339),
+					"status":            member.Status,
+					"attestation_hash":  mgr.LastAttestationHash,
 					"attestation_signed": mgr.LastAttestation() != nil,
 				})
 			}
@@ -542,9 +542,9 @@ func newTenantDeleteCmd() *cobra.Command {
 		noAttest                      bool
 	)
 	cmd := &cobra.Command{
-		Use:           "delete",
-		Short:         "Delete a tenant from a pool (MIG instances are destroyed)",
-		Example:       `  cafctl tenant delete --pool <pool-id> --tenant <tenant-id>`,
+		Use:   "delete",
+		Short: "Delete a tenant from a pool (MIG instances are destroyed)",
+		Example: `  cafctl tenant delete --pool <pool-id> --tenant <tenant-id>`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

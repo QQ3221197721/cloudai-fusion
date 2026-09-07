@@ -93,7 +93,7 @@ func SolveBPPCBruteForce(inst BPPCInstance) map[string][2]int {
 			// Try each valid start position
 			for _, start := range item.StartBounds {
 				end := start + item.Size
-				if end > inst.BinCap {
+				if end > inst.BinCap || start < 0 {
 					continue
 				}
 				// Check feasibility

@@ -1,0 +1,434 @@
+openapi: 3.0.3
+
+info:
+  title: CloudAI Fusion API v2 - Complete Specification
+  version: 2.0.0
+  generated: "2026-08-02"
+  status: Production Ready
+  description: |
+    Complete API specification for CloudAI Fusion platform including all endpoints, schemas, and authentication mechanisms.
+    
+servers:
+  - url: https://api.cloudai-fusion.io/v2
+    description: Production
+  - url: https://staging-api.cloudai-fusion.io/v2
+    description: Staging
+  - url: http://localhost:8080/api/v2
+    description: Development
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      
+    oauth2Auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://auth.cloudai-fusion.io/oauth/authorize
+          scopes:
+            read: Grants read access to resources
+            write: Grants write access to resources
+            admin: Grants administrative access
+  
+  schemas:
+    Evidence:
+      type: object
+      required:
+        - id
+        - hash
+        - signature
+        - quote
+        - verified_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        hash:
+          type: string
+          format: hex
+        signature:
+          type: string
+          format: hex
+        quote:
+          type: string
+          format: hex
+        verified_at:
+          type: string
+          format: date-time
+        enclave_id:
+          type: string
+        version_vector:
+          type: array
+          items:
+            type: integer
+        workload_id:
+          type: string
+        tenant_id:
+          type: string
+
+    ZKProofGenerateRequest:
+      type: object
+      required:
+        - threshold
+        - allocations
+        - weights
+      properties:
+        threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        allocations:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Allocation'
+        weights:
+          type: array
+          minItems: 1
+          items:
+            type: number
+            minimum: 0
+            maximum: 1
+        workload_id:
+          type: string
+
+    Allocation:
+      type: object
+      required:
+        - tenant_id
+        - gpu_hours
+      properties:
+        tenant_id:
+          type: string
+        gpu_hours:
+          type: number
+          minimum: 0
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+        resource_type:
+          type: string
+        qos_class:
+          type: string
+          enum: [low, medium, high]
+
+    ConflictReport:
+      type: object
+      required:
+        - id
+        - local_record
+        - cloud_record
+        - strategy
+        - winner_source
+      properties:
+        id:
+          type: string
+          format: uuid
+        local_record:
+          $ref: '#/components/schemas/LocalDecisionRecord'
+        cloud_record:
+          $ref: '#/components/schemas/CloudDecisionRecord'
+        comparison:
+          type: string
+          enum: [CAUSAL_BEFORE, CAUSAL_AFTER, CONFLICT_DETECTED, EQUIVALENT]
+        strategy_used:
+          type: string
+          enum: [LAST_WRITER_WINS, HIGHEST_PRIORITY, CLOUD_AUTHORITY, MERGE_COMPATIBLE, AUTO_SELECT]
+        winner_source:
+          type: string
+          enum: [LOCAL_FIRST, CLOUD_AUTHORITY, MERGED, MANUAL_REVIEW]
+        resolution_details:
+          type: object
+
+    LocalDecisionRecord:
+      type: object
+      required:
+        - record_id
+        - node_id
+        - workload_id
+        - decision
+        - timestamp
+        - synced
+      properties:
+        record_id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        workload_id:
+          type: string
+        decision:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        synced:
+          type: boolean
+        synced_at:
+          type: string
+          format: date-time
+
+    CloudDecisionRecord:
+      type: object
+      required:
+        - id
+        - node_id
+        - workload_id
+        - timestamp
+        - priority
+        - decision
+        - version_vec
+      properties:
+        id:
+          type: string
+        node_id:
+          type: string
+        workload_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        priority:
+          type: integer
+        decision:
+          type: object
+        version_vec:
+          type: array
+          items:
+            type: integer
+
+    DeleteConfirmation:
+      type: object
+      required:
+        - success
+        - record_id
+        - deleted_at
+        - deleted_by
+      properties:
+        success:
+          type: boolean
+        record_id:
+          type: string
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+        reason:
+          type: string
+        audit_log_id:
+          type: string
+          format: uuid
+
+    SyncStatus:
+      type: object
+      required:
+        - sync_id
+        - status
+        - start_time
+      properties:
+        sync_id:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, IN_PROGRESS, COMPLETED, FAILED]
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        records_processed:
+          type: integer
+        conflicts_found:
+          type: integer
+        duration_seconds:
+          type: number
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncOperationRecord'
+
+    SyncOperationRecord:
+      type: object
+      required:
+        - operation_id
+        - direction
+        - status
+        - timestamp
+      properties:
+        operation_id:
+          type: string
+        direction:
+          type: string
+          enum: [EDGE_TO_CLOUD, CLOUD_TO_EDGE, BIDIRECTIONAL]
+        status:
+          type: string
+          enum: [SUCCESS, FAILED, PARTIAL]
+        records_processed:
+          type: integer
+        conflicts_resolved:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        duration_sec:
+          type: number
+        error_message:
+          type: string
+
+paths:
+  /evidence/{id}:
+    get:
+      summary: Retrieve single evidence record by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Evidence retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evidence'
+        '404':
+          description: Evidence not found
+
+  /evidence:
+    post:
+      summary: Create new evidence record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEvidenceRequest'
+      responses:
+        '201':
+          description: Evidence created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evidence'
+
+  /zkp/generate:
+    post:
+      summary: Generate zero-knowledge proof for scheduling fairness
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZKProofGenerateRequest'
+      responses:
+        '201':
+          description: ZK proof generated successfully
+          headers:
+            X-Proof-ID:
+              description: Unique identifier for generated proof
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZKProofResponse'
+        '400':
+          description: Invalid request parameters
+
+  /edge/{nodeId}/sync/start:
+    post:
+      summary: Initiate bidirectional sync between edge and cloud
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Sync initiated, processing in background
+          headers:
+            X-Sync-ID:
+              description: Unique sync operation identifier
+              schema:
+                type: string
+                format: uuid
+        '409':
+          description: Another sync already in progress
+
+  /resources/{type}/{id}/delete:
+    patch:
+      summary: Soft-delete resource with audit trail
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [orders, workloads, decisions, evidence]
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 10
+                  maxLength: 500
+                deleted_by:
+                  type: string
+      responses:
+        '200':
+          description: Resource soft-deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteConfirmation'
+
+x-rate-limit:
+  free_tier:
+    requests_per_minute: 60
+    requests_per_hour: 1000
+    
+  business_tier:
+    requests_per_minute: 300
+    requests_per_hour: 10000
+    
+  enterprise_tier:
+    requests_per_minute: 1000
+    requests_per_hour: 100000
+
+x-versioning-policy:
+  major_version_increment_on:
+    - Breaking change to response schema
+    - Removal of required field
+    - Change in authentication requirements
+  deprecation_timeline:
+    announcement_period: 90 days before removal
+    grace_period: 180 days

@@ -284,7 +284,7 @@ func (atc *AlertToTicketConverter) getSeverityEmoji(severity SeverityLevel) stri
 	case High:
 		return "⚠️"
 	case Medium:
-		return "⚡"
+		return "�?
 	case Low:
 		return "ℹ️"
 	default:
@@ -488,7 +488,7 @@ func (wm *WorkflowManager) ApproveTicket(ticketKey string, approver string, reas
 	request.Reason = reason
 	
 	// Update ticket with approval
-	comment := fmt.Sprintf("✅ **Approved**\n\n"+
+	comment := fmt.Sprintf("�?**Approved**\n\n"+
 		"Ticket %s has been approved.\n\n"+
 		"**Approver**: %s\n"+
 		"**Approval Time**: %s\n"+
@@ -530,7 +530,7 @@ func (wm *WorkflowManager) RejectTicket(ticketKey string, rejector string, reaso
 	wm.rejections[ticketKey] = log
 	
 	// Update ticket with rejection
-	comment := fmt.Sprintf("❌ **Rejected**\n\n"+
+	comment := fmt.Sprintf("�?**Rejected**\n\n"+
 		"Ticket %s has been rejected.\n\n"+
 		"**Rejector**: %s\n"+
 		"**Rejection Time**: %s\n"+

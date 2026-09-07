@@ -21,7 +21,7 @@ type ActuationResult struct {
 	Action   ActionType `json:"action"`
 	Target   string     `json:"target"`
 	Mode     string     `json:"mode"` // "real" | "simulated"
-	Executed bool       `json:"executed"`
+	Executed bool        `json:"executed"`
 	Detail   string     `json:"detail,omitempty"`
 }
 
@@ -36,9 +36,9 @@ type Actuator interface {
 
 // Mitigation is one active, actuated control (e.g. an isolated host).
 type Mitigation struct {
-	Action ActionType `json:"action"`
-	Target string     `json:"target"`
-	Since  time.Time  `json:"since"`
+	Action    ActionType `json:"action"`
+	Target    string     `json:"target"`
+	Since     time.Time  `json:"since"`
 }
 
 // RecordingActuator is the honest default: it does not touch a real network, but

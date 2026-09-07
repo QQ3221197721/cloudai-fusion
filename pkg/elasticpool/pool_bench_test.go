@@ -94,8 +94,8 @@ func benchmarkAcquire(b *testing.B, attest bool) {
 	}
 }
 
-func BenchmarkAcquire_Attested(b *testing.B) { benchmarkAcquire(b, true) }
-func BenchmarkAcquire_NoAttest(b *testing.B) { benchmarkAcquire(b, false) }
+func BenchmarkAcquire_Attested(b *testing.B)   { benchmarkAcquire(b, true) }
+func BenchmarkAcquire_NoAttest(b *testing.B)   { benchmarkAcquire(b, false) }
 
 // ---------------------------------------------------------------------------
 // 2. Release latency (isolated: Acquire is excluded from the timer)
@@ -309,8 +309,8 @@ func TestConcurrentAcquireRelease_NoRace(t *testing.T) {
 	}
 
 	const (
-		workers      = 16
-		opsPerWorker = 40
+		workers        = 16
+		opsPerWorker   = 40
 	)
 	var acquired, released, noCapacity int64
 	var wg sync.WaitGroup

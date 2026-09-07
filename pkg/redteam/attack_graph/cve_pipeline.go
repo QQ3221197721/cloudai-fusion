@@ -1,5 +1,4 @@
-
-// Package attack_graph implements CVE knowledge graph and kill chain mapping.
+﻿// Package attack_graph implements CVE knowledge graph and kill chain mapping.
 // This module ingests CVE data from NVD API, builds Neo4j knowledge graph,
 // maps vulnerabilities to MITRE ATT&CK framework, and generates exploit chains.
 package attack_graph
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/audit"
@@ -31,7 +29,7 @@ type CVEIngestionService struct {
 	logger      *logrus.Logger
 	audit       *audit.Manager
 	
-	// Added: Neo4j graph client for real database operations
+	// Added: Neo4j graph client for real database operations ✅
 	graphClient *Neo4jGraphClient
 }
 
@@ -52,7 +50,7 @@ type CVEItem struct {
 	Configurations []ConfigRef `json:"configurations"`
 	References   []Ref       `json:"references"`
 	Impact       ImpactScore `json:"impact"`
-	BaseScore    float64     `json:"base_score"`
+	BaseScore    float32     `json:"base_score"`
 }
 
 type CVEData struct {
@@ -62,7 +60,26 @@ type CVEData struct {
 	Impact        ImpactScore         `json:"impact"`
 }
 
-// (ImpactScore and Ref are defined in kill_chain_mapper.go)
+type ImpactScore struct {
+	Version            string  `json:"version"`
+	VectorString       string  `json:"vector_string"`
+	AttackVector       string  `json:"av"` // Network/Adjacent/Local/Physical
+	AttackComplexity   string  `json:"ac"` // Low/High
+	PrivilegesRequired string  `json:"pr"` // None/Low/High
+	UserInteraction    string  `json:"ui"` // None/Required
+	Scope              string  `json:"s"`  // Changed/Unchanged
+	Confidentiality    string  `json:"c"`  // High/Low/None
+	Integrity          string  `json:"i"`
+	Availability       string  `json:"a"`
+	BaseScore          float32 `json:"basis_score"`
+	BaseSeverity       string  `json:"base_severity"`
+}
+
+type Ref struct {
+	URL       string   `json:"url"`
+	Sources   []string `json:"sources"`
+	Tags      []string `json:"tags"`
+}
 
 type ConfigRef struct {
 	Negate          bool              `json:"negate"`
@@ -104,22 +121,16 @@ func NewCVEIngestionService(cfg CVEIngestionConfig) (*CVEIngestionService, error
 		password: "password", // Should be from environment variable in production!
 		cacheTTL: cfg.RefreshInterval,
 		logger: cfg.Logger,
-		audit: audit.NewManager(audit.ManagerConfig{}),
+		audit: audit.DefaultManager(),
 	}
 	
-	// Initialize Neo4j client if URI provided
+	// Initialize Neo4j client if URI provided ✅
 	if cfg.DBURI != "" {
-		client, err := NewNeo4jClient(
-			Neo4jConfig{
-				URI:      cfg.DBURI,
-				Username: cis.username,
-				Password: cis.password,
-			},
-			cis.logger,
+		client := NewNeo4jGraphClient(
+			cfg.DBURI,
+			cis.username,
+			cis.password,
 		)
-		if err != nil {
-			cis.logger.WithError(err).Warn("Failed to create Neo4j client")
-		}
 		
 		// Try to connect (non-blocking - continue even if fails)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -128,22 +139,12 @@ func NewCVEIngestionService(cfg CVEIngestionConfig) (*CVEIngestionService, error
 		if err := client.Connect(ctx); err != nil {
 			cis.logger.WithError(err).Warn("Failed to connect to Neo4j, continuing without graph support")
 		} else {
-			cis.graphClient = client  // Set only if connection succeeds
+			cis.graphClient = client  // ← Set only if connection succeeds ✅
 			cis.logger.Info("Successfully connected to Neo4j graph database")
 		}
 	}
 	
 	return cis, nil
-}
-
-// GetAPIKey returns the configured NVD API key for external verification.
-func (s *CVEIngestionService) GetAPIKey() string {
-	return s.nvdAPIKey
-}
-
-// GetCacheTTL returns the cache TTL duration for external verification.
-func (s *CVEIngestionService) GetCacheTTL() time.Duration {
-	return s.cacheTTL
 }
 
 // IngestLatestCVEs fetches and processes latest CVEs from NVD API
@@ -186,15 +187,9 @@ func (cis *CVEIngestionService) IngestLatestCVEs(ctx context.Context, sinceDays 
 		}
 		
 		// Bridge to audit system: record this as a security event
-		cis.audit.RecordEvent(ctx, &audit.AuditEvent{
-			Action:     "cve_ingested",
-			Resource:   "cve",
-			ResourceID: item.ID,
-			Metadata: map[string]string{
-				"cvss_score":  fmt.Sprintf("%.1f", item.Impact.BaseScore),
-				"severity":     item.Impact.BaseSeverity,
-			},
-		})
+		audit.RecordSecurityEvent(ctx, "cve_ingested", "system", 
+			fmt.Sprintf("%s CVSS=%.1f SEVERITY=%s", 
+				item.ID, item.Impact.BaseScore, item.Impact.BaseSeverity))
 		
 		cis.logger.WithFields(logrus.Fields{
 			"cve_id": item.ID,
@@ -270,36 +265,39 @@ func (cis *CVEIngestionService) GenerateVulnerabilityReport(ctx context.Context,
 				RETURN c.base_severity as severity, COUNT(c) as count`
 	
 	if cis.graphClient != nil {
-		session := cis.graphClient.driver.NewSession(ctx, neo4j.SessionConfig{
-			AccessMode: neo4j.AccessModeRead,
+		session, err := cis.graphClient.driver.Session(ctx, neo4j.SessionConfig{
+			AccessMode: neo4j.AccessReadDefault,
 		})
-		defer session.Close(ctx)
 		
-		_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
-			result, err := tx.Run(ctx, severityQuery, map[string]interface{}{"days": days})
+		if err == nil {
+			defer session.Close()
+			
+			result, err := session.ReadTransaction(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+				result, err := tx.Run(ctx, severityQuery, map[string]interface{}{"days": days})
+				if err != nil {
+					return nil, err
+				}
+				
+				totalCVEs := 0
+				severities := make(map[string]int)
+				
+				for result.Next(ctx) {
+					record := result.Record()
+					severity := record.Get("severity").(string)
+					count := record.Get("count").(int64)
+					severities[severity] = int(count)
+					totalCVEs += int(count)
+				}
+				
+				report.TotalCVEs = totalCVEs
+				report.BySeverity = severities
+				
+				return severities, result.Err()
+			})
+			
 			if err != nil {
-				return nil, err
+				cis.logger.WithError(err).Warn("Failed to query severity stats")
 			}
-			
-			totalCVEs := 0
-			severities := make(map[string]int)
-			
-			for result.Next(ctx) {
-				record := result.Record()
-				severityVal, _ := record.Get("severity")
-				countVal, _ := record.Get("count")
-				severities[severityVal.(string)] = int(countVal.(int64))
-				totalCVEs += int(countVal.(int64))
-			}
-			
-			report.TotalCVEs = totalCVEs
-			report.BySeverity = severities
-			
-			return severities, result.Err()
-		})
-		
-		if err != nil {
-			cis.logger.WithError(err).Warn("Failed to query severity stats")
 		}
 	} else {
 		// Mock data for testing when Neo4j unavailable
@@ -319,31 +317,34 @@ func (cis *CVEIngestionService) GenerateVulnerabilityReport(ctx context.Context,
 				ORDER BY count DESC`
 	
 	if cis.graphClient != nil {
-		session := cis.graphClient.driver.NewSession(ctx, neo4j.SessionConfig{
-			AccessMode: neo4j.AccessModeRead,
+		session, err := cis.graphClient.driver.Session(ctx, neo4j.SessionConfig{
+			AccessMode: neo4j.AccessReadDefault,
 		})
-		defer session.Close(ctx)
 		
-		_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
-			result, err := tx.Run(ctx, phaseQuery, nil)
+		if err == nil {
+			defer session.Close()
+			
+			_, err = session.ReadTransaction(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+				result, err := tx.Run(ctx, phaseQuery, nil)
+				if err != nil {
+					return nil, err
+				}
+				
+				phases := make(map[string]int)
+				for result.Next(ctx) {
+					record := result.Record()
+					phase := record.Get("phase").(string)
+					count := record.Get("count").(int64)
+					phases[phase] = int(count)
+				}
+				
+				report.KillChainDistribution = phases
+				return phases, result.Err()
+			})
+			
 			if err != nil {
-				return nil, err
+				cis.logger.WithError(err).Warn("Failed to query phase distribution")
 			}
-			
-			phases := make(map[string]int)
-			for result.Next(ctx) {
-				record := result.Record()
-				phaseVal, _ := record.Get("phase")
-				countVal, _ := record.Get("count")
-				phases[phaseVal.(string)] = int(countVal.(int64))
-			}
-			
-			report.KillChainDistribution = phases
-			return phases, result.Err()
-		})
-		
-		if err != nil {
-			cis.logger.WithError(err).Warn("Failed to query phase distribution")
 		}
 	}
 	

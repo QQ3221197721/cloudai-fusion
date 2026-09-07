@@ -1,4 +1,4 @@
-// Package kerberos_asn1 implements RFC 4120 compliant BER/TLV encoding/decoding for Kerberos
+﻿// Package kerberos_asn1 implements RFC 4120 compliant BER/TLV encoding/decoding for Kerberos
 // Pure Go implementation without external dependencies for native protocol handling
 package kerberos_asn1
 

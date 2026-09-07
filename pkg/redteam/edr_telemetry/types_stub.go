@@ -1,4 +1,4 @@
-// Package edr_telemetry implements real-time telemetry ingestion and training pipeline
+﻿// Package edr_telemetry implements real-time telemetry ingestion and training pipeline
 package edr_telemetry
 
 // KafkaClient is an interface for Kafka client operations

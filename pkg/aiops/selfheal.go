@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/capability"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 )
 
@@ -96,6 +97,7 @@ type FaultEvent struct {
 	Severity     string    `json:"severity"`
 	Resource     string    `json:"resource"` // affected resource
 	Description  string    `json:"description"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"` // additional metadata like pod/namespace/node info
 	MetricValue  float64   `json:"metric_value"`
 	DetectedAt   time.Time `json:"detected_at"`
 	Correlated   []string  `json:"correlated_events,omitempty"` // related event IDs
@@ -167,6 +169,19 @@ type StepResult struct {
 	Output   string        `json:"output,omitempty"`
 	Error    string        `json:"error,omitempty"`
 	Duration time.Duration `json:"duration"`
+}
+
+// ============================================================================
+// K8s Integration - Types for Production Remediation
+// ============================================================================
+
+// Fault represents a Kubernetes fault for production remediation.
+type Fault struct {
+	Type       string                         `json:"type"`
+	Severity   string                         `json:"severity"`
+	Metadata   map[string]interface{}         `json:"metadata"`
+	DetectedAt time.Time                      `json:"detected_at"`
+	Source     string                         `json:"source"` // detector or sensor that detected it
 }
 
 // ============================================================================

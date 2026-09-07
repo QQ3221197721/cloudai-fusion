@@ -94,9 +94,9 @@ type FeedSource struct {
 
 // SyncResult accumulates the outcome of a synchronization run.
 type SyncResult struct {
-	CVEAdded int      `json:"cve_added"`
-	IOCAdded int      `json:"ioc_added"`
-	Errors   []string `json:"errors,omitempty"`
+	CVEAdded   int      `json:"cve_added"`
+	IOCAdded   int      `json:"ioc_added"`
+	Errors     []string `json:"errors,omitempty"`
 }
 
 // AddCVE increments the CVE-added counter.

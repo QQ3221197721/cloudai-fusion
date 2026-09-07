@@ -1,4 +1,4 @@
-package zkp_test
+package zkp
 
 import (
 	"testing"

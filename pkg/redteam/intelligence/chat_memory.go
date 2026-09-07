@@ -1,9 +1,7 @@
-
-package redteam
+﻿package redteam
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -32,7 +30,7 @@ type TurnMeta struct {
 	ToolsUsed        []string   `json:"tools_used,omitempty"`
 	ConfidenceScore  float64    `json:"confidence_score,omitempty"`
 	Intent           string     `json:"intent,omitempty"`
-	ParsedIntentData interface{}          `json:"parsed_intent_data,omitempty"`
+	ParsedIntentData json.MarshalJSON `json:"parsed_intent_data,omitempty"`
 	ActionsTaken     []string   `json:"actions_taken,omitempty"`
 	RiskLevel        RiskLevel  `json:"risk_level,omitempty"`
 	NeedsApproval    bool       `json:"needs_approval,omitempty"`

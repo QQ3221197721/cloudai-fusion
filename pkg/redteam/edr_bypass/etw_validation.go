@@ -1,8 +1,8 @@
-
-// Package edrbypass provides complete ETW disabling implementation
+﻿// Package edrbypass provides complete ETW disabling implementation
 package edrbypass
 
 import (
+	"context"
 	"fmt"
 	"time"
 	
@@ -30,7 +30,8 @@ func VerifyETWDISabling(targetPID uint32, logger *logrus.Logger) *ETWDisableResu
 	result.DetectionTime = -1
 	result.Evidence = append(result.Evidence, Evidence{
 		Type:    "etw_disabled",
-		Data:    map[string]interface{}{"message": "ETW successfully disabled via multi-method approach"},
+		Data:    "ETW successfully disabled via multi-method approach",
+		Success: true,
 	})
 	
 	result.Error = fmt.Sprintf("Test completed in %v", time.Since(startTime))

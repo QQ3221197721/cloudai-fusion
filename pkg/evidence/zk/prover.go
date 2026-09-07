@@ -14,6 +14,7 @@ import (
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
+	"sync"
 )
 
 // CapabilityComponent is the pkg/capability component name for the zk prover, so a
@@ -55,11 +56,55 @@ type Prover interface {
 // Groth16Prover is the REAL prover: it compiles the completeness circuit for the
 // given member count, runs a Groth16 setup, and produces a succinct proof. It
 // reports ModeReal to pkg/capability.
-type Groth16Prover struct{}
+type Groth16Prover struct {
+	mu      sync.RWMutex
+	pkCache map[int]*groth16.ProvingKey // cached PK by circuit size n
+	vkCache map[int][]byte              // cached VK bytes by circuit size n
+}
 
-func (Groth16Prover) Mode() capability.Mode { return capability.ModeReal }
+func (p *Groth16Prover) Mode() capability.Mode { return capability.ModeReal }
 
-func (p Groth16Prover) Prove(ctx context.Context, stmt Statement, predicate string, ws []LeafWitness) (*ZKAttestation, []byte, error) {
+// getCachedPK returns or computes the PK/VK pair for a given circuit size, with caching
+func (p *Groth16Prover) getCachedPK(n int) (*groth16.ProvingKey, []byte, error) {
+	p.mu.RLock()
+	if pk, ok := p.pkCache[n]; ok {
+		vkBytes, ok := p.vkCache[n]
+		if ok {
+			p.mu.RUnlock()
+			return pk, vkBytes, nil
+		}
+		p.mu.RUnlock()
+		// Have PK but need to compute VK
+		// Have PK but need to compute VK
+	} else {
+	}
+	// Need to compute new params
+	ccs, err := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, newCircuit(n))
+	if err != nil {
+		return nil, fmt.Errorf("zk: compile: %w", err)
+	}
+	
+	pk, vk, err := groth16.Setup(ccs)
+	if err != nil {
+		return nil, fmt.Errorf("zk: setup: %w", err)
+	}
+	
+	// Store in cache
+	p.mu.Lock()
+	if p.pkCache == nil {
+		p.pkCache = make(map[int]*groth16.ProvingKey)
+	}
+	if p.vkCache == nil {
+		p.vkCache = make(map[int][]byte)
+	}
+	p.pkCache[n] = pk
+	vkBytes := vk.Serialize()
+	p.vkCache[n] = vkBytes
+	p.mu.Unlock()
+	return pk, vkBytes, nil
+}
+
+func (p *Groth16Prover) Prove(ctx context.Context, stmt Statement, predicate string, ws []LeafWitness) (*ZKAttestation, []byte, error) {
 	if err := capability.Report(CapabilityComponent, "groth16-bn254-poseidon2", capability.ModeReal, "real snark prover"); err != nil {
 		return nil, nil, err
 	}
@@ -68,17 +113,12 @@ func (p Groth16Prover) Prove(ctx context.Context, stmt Statement, predicate stri
 	}
 	n := len(ws)
 
-	// 1) Compile the circuit for exactly n members.
-	ccs, err := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, newCircuit(n))
+	// 1) Get or compute PK/VK with caching
+	pk, vkBytes, err := p.getCachedPK(n)
 	if err != nil {
-		return nil, nil, fmt.Errorf("zk: compile: %w", err)
+		return nil, nil, err
 	}
-
-	// 2) Groth16 trusted setup for this circuit (per-circuit; VKID pins it).
-	pk, vk, err := groth16.Setup(ccs)
-	if err != nil {
-		return nil, nil, fmt.Errorf("zk: setup: %w", err)
-	}
+	ccs := pk.CS // Use cached CS if available
 
 	// 3) Public commitments computed off-circuit with the matching native Poseidon.
 	root := Commitment(ws)

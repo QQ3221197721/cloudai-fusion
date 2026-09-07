@@ -1,4 +1,4 @@
-package nvlink_placer
+package scheduler
 
 import "sync"
 

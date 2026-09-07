@@ -1,4 +1,4 @@
-// Package redteam - evidence_campaign.go adds the Evidence-Native contract to
+﻿// Package redteam - evidence_campaign.go adds the Evidence-Native contract to
 // red-team campaign execution: every campaign returns a cryptographically signed
 // *evidence.Receipt committing to the ATT&CK coverage achieved, AND the campaign
 // engine uses coverage-guided genetic mutation instead of random fitness search.

@@ -423,8 +423,125 @@ var (
 )
 
 // ============================================================================
-// Registry — centralized metric access
+// Self-Healing Metrics (M49 Benchmark)
 // ============================================================================
+
+var (
+	// DetectionLatency tracks time from fault occurrence to detection.
+	DetectionLatency = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "detection_latency_seconds",
+			Help:      "Time from fault occurrence to detection in seconds (M49 SLA: p99 < 30s)",
+			Buckets:   []float64{1, 5, 10, 15, 20, 25, 30, 45, 60, 90, 120},
+		},
+		[]string{"fault_type", "detector_id"},
+	)
+
+	// MTTR tracks mean time to remediate by fault and action type.
+	MTTR = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "mttr_seconds",
+			Help:      "Mean Time To Remediation in seconds (M49 SLA: p95 < 120s)",
+			Buckets:   []float64{10, 20, 30, 45, 60, 75, 90, 105, 120, 180, 300},
+		},
+		[]string{"fault_type", "action_type"},
+	)
+
+	// SuccessfulRemediationsTotal counts successful auto-remediations.
+	SuccessfulRemediationsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "successful_remediations_total",
+			Help:      "Total successful automated remediations (M49 goal: zero false positives)",
+		},
+		[]string{"fault_type", "action_type"},
+	)
+
+	// FailedRemediationsTotal counts failed remediation attempts.
+	FailedRemediationsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "failed_remediations_total",
+			Help:      "Total failed remediation attempts",
+		},
+		[]string{"fault_type", "action_type", "failure_reason"},
+	)
+
+	// FaultsDetectedTotal counts total faults detected.
+	FaultsDetectedTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "faults_detected_total",
+			Help:      "Total faults detected by all detectors",
+		},
+		[]string{"fault_type", "category", "severity"},
+	)
+
+	// FalsePositivesTotal counts false positive detections.
+	FalsePositivesTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "false_positives_total",
+			Help:      "Total false positive fault detections (M49 target: < 0.1%)",
+		},
+	)
+
+	// Coverage tracks percentage of known fault types detected.
+	Coverage = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "coverage_percent",
+			Help:      "Percentage of known fault types being monitored (M49 target: >= 95%)",
+		},
+	)
+
+	// ActiveIncidents counts currently open incidents.
+	ActiveIncidents = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "active_incidents",
+			Help:      "Number of currently active incidents by severity",
+		},
+		[]string{"severity"},
+	)
+
+	// RecoveryAttemptsPerFaultType tracks retry count per fault.
+	RecoveryAttemptsPerFaultType = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "recovery_attempts",
+			Help:      "Number of recovery attempts needed per fault type",
+			Buckets:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		},
+		[]string{"fault_type"},
+	)
+
+	// CircuitBreakerState tracks circuit breaker states.
+	CircuitBreakerState = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "cloudai",
+			Subsystem: "selfheal",
+			Name:      "circuit_breaker_state",
+			Help:      "Circuit breaker state (0=closed, 1=open, 2=half-open)",
+		},
+		[]string{"fault_type"},
+	)
+	
+	// ============================================================================
+	// Registry — centralized metric access
+	// ============================================================================
+)
 
 // Registry provides thread-safe access to custom metric collectors.
 type Registry struct {

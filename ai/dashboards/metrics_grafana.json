@@ -1,0 +1,352 @@
+{
+  "dashboard": {
+    "title": "M29/M31 ML Pipeline Security - Drift Monitoring",
+    "tags": ["cloudai-fusion", "ml-security", "drift-detection"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Real-time PSI Trends by Feature",
+        "type": "graph",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "cloudai_drift_detections_total{drift_type=\"psi\"}",
+            "legendFormat": "{{feature_name}} - {{severity}}",
+            "refId": "A"
+          }
+        ],
+        "timeFrom": "6h",
+        "aliasColors": {},
+        "thresholds": [
+          {"value": 0.1, "color": "yellow"},
+          {"value": 0.2, "color": "red"}
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "pointradius": 2,
+        "points": false,
+        "yaxis": {"show": true, "mode": "none"},
+        "yaxes": [
+          {"show": true, "format": "none"},
+          {"show": true, "format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "KL Divergence - Label Distribution Shift",
+        "type": "graph",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "cloudai_drift_detections_total{drift_type=\"kl_divergence\"}",
+            "legendFormat": "{{severity}}",
+            "refId": "A"
+          }
+        ],
+        "timeFrom": "6h",
+        "aliasColors": {},
+        "thresholds": [{"value": 0.5, "color": "red"}],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "yaxis": {"show": true, "mode": "none"}
+      },
+      {
+        "id": 3,
+        "title": "Feature-wise Drift Heatmap (PSI Severity)",
+        "type": "heatmap",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 0, "y": 8, "w": 24, "h": 6},
+        "targets": [
+          {
+            "expr": "cloudai_drift_severity_gauge",
+            "legendFormat": "{{model_name}}",
+            "refId": "A"
+          }
+        ],
+        "color": {
+          "scheme": "interpolateReds",
+          "mode": "continuous-YlRd"
+        },
+        "decodeLimit": 2,
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showValue": "always",
+        "exemplars": {"color": "rgba(255,0,255,0.7)"},
+        "yAxis": {"side": "left"},
+        "tooltip": {"show": true, "showHighlight": true, "showLegend": true}
+      },
+      {
+        "id": 4,
+        "title": "Drift Alert History Timeline",
+        "type": "table",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 0, "y": 14, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "increase(cloudai_drift_detections_total[1h]) > 0",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "styles": [
+          {
+            "pattern": "/.*/",
+            "alias": "",
+            "align": "auto",
+            "colors": [
+              "rgba(50, 172, 45, 0.97)",
+              "rgba(237, 129, 40, 0.89)",
+              "rgba(245, 54, 54, 0.9)"
+            ],
+            "patterns": [
+              {"pattern": "/critical/", "color": "red", "fontSize": "100%"},
+              {"pattern": "/warning/", "color": "#FFC46E", "fontSize": "100%"}
+            ]
+          }
+        ],
+        "sortAsc": true,
+        "sortDesc": false
+      },
+      {
+        "id": 5,
+        "title": "Baseline vs Current Distribution Overlay",
+        "type": "histogram",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 12, "y": 14, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(cloudai_model_registry_operations_total[5m])",
+            "legendFormat": "Model operations rate",
+            "refId": "A"
+          }
+        ],
+        "mergeData": true,
+        "legend": {"show": true, "calcs": ["mean", "max"]},
+        "tooltip": {"show": true, "shared": true, "sort": 0}
+      },
+      {
+        "id": 6,
+        "title": "Drift Detection Latency (P95/P99)",
+        "type": "stat",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 0, "y": 20, "w": 8, "h": 4},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(cloudai_drift_detection_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(cloudai_drift_detection_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "B"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "center",
+          "orientation": "vertical"
+        },
+        "transform": "timeseries_to_rows",
+        "fieldOptions": {
+          "calcs": ["lastNotNull"],
+          "defaults": {
+            "unit": "s",
+            "min": 0,
+            "max": 10,
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Models at Risk (Critical Drift)",
+        "type": "stat",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 8, "y": 20, "w": 8, "h": 4},
+        "targets": [
+          {
+            "expr": "sum(cloudai_drift_severity_gauge{model_name!=\"baseline\"})",
+            "legendFormat": "Critical drift count",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "center"
+        },
+        "fieldOptions": {
+          "calcs": ["sum"],
+          "defaults": {
+            "unit": "none",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "thresholds"}
+          }
+        },
+        "thresholds": [
+          {"value": 1, "color": "green"},
+          {"value": 3, "color": "yellow"},
+          {"value": 5, "color": "red"}
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Baseline Sample Count Health",
+        "type": "gauge",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 16, "y": 20, "w": 8, "h": 4},
+        "targets": [
+          {
+            "expr": "avg(cloudai_drift_baseline_samples)",
+            "legendFormat": "Average samples per feature",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "reduceOptions": {"calcs": ["mean"], "fields": "", "values": false}
+        },
+        "fieldOptions": {
+          "calcs": ["mean"],
+          "defaults": {
+            "unit": "short",
+            "min": 1000,
+            "max": 50000,
+            "decimals": 0
+          }
+        },
+        "thresholds": [
+          {"value": 0, "color": "red"},
+          {"value": 5000, "color": "yellow"},
+          {"value": 10000, "color": "green"}
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Drift Detection Rate (Per Hour)",
+        "type": "bar Gauge",
+        "datasource": "Prometheus",
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 4},
+        "targets": [
+          {
+            "expr": "increase(cloudai_drift_detections_total{severity=\"critical\"}[1h])",
+            "legendFormat": "Critical drifts/hour",
+            "refId": "A"
+          },
+          {
+            "expr": "increase(cloudai_drift_detections_total{severity=\"warning\"}[1h])",
+            "legendFormat": "Warning drifts/hour",
+            "refId": "B"
+          }
+        ],
+        "options": {
+          "displayMode": "basic",
+          "orientation": "horizontal",
+          "showUnfilled": true
+        },
+        "fieldOptions": {
+          "calcs": ["sum"],
+          "defaults": {"min": 0, "max": 100}
+        }
+      },
+      {
+        "id": 10,
+        "title": "Latest Baseline Update Age",
+        "type": "time-series",
+        "datasource": "Loki",
+        "gridPos": {"x": 12, "y": 24, "w": 12, "h": 4},
+        "targets": [
+          {
+            "query": "count by (model) (log_count{name=~\".*\"})",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showPoints": "always",
+          "showLines": true,
+          "legend": {"calcs": ["last"]}
+        }
+      }
+    ],
+    "refresh": "30s",
+    "time": {"from": "6h ago", "to": "now"},
+    "timepicker": {
+      "refresh_intervals": ["5m", "15m", "1h", "6h", "12h", "24h"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "7d", "30d"]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "model_name",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(cloudai_drift_severity_gauge, model_name)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "feature_name",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(cloudai_drift_detections_total{drift_type=\"psi\"}, feature_name)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Model Deployments",
+          "datasource": "Prometheus",
+          "enable": true,
+          "icon": "down-arrow",
+          "expr": "changes(cloudai_model_registry_stages_gauge{stage=\"production\"}[1h]) > 0",
+          "tags": ["deployment"],
+          "builtIn": 0,
+          "dashType": "graph",
+          "row": 1
+        },
+        {
+          "name": "Baseline Updates",
+          "datasource": "Prometheus",
+          "enable": true,
+          "icon": "clock",
+          "expr": "increase(cloudai_drift_detections_total[1h]) > 0",
+          "tags": ["baseline"],
+          "builtIn": 0
+        }
+      ]
+    },
+    "links": [
+      {
+        "title": "CloudAI Fusion Documentation",
+        "url": "/d/cloudai-fusion-overview",
+        "icon": "doc",
+        "tags": [],
+        "type": "dashboard"
+      },
+      {
+        "title": "Alert Configuration",
+        "url": "/alerts?folderId=ml-security",
+        "icon": "gear",
+        "tags": [],
+        "type": "dashboard"
+      }
+    ],
+    "schemaVersion": 16,
+    "iteration": 1725576000000
+  }
+}

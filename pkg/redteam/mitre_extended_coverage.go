@@ -1,4 +1,4 @@
-// Package redteam - Extended MITRE ATT&CK Techniques (Reach 50+ TIDs)
+﻿// Package redteam - Extended MITRE ATT&CK Techniques (Reach 50+ TIDs)
 package redteam
 
 import (

@@ -1,5 +1,4 @@
-
-package redteam
+﻿package redteam
 
 import (
 	"time"

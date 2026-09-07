@@ -17,8 +17,8 @@ import (
 // Plugin Submission Workflow
 // ============================================================================
 
-// MarketplaceSubmission represents a third-party plugin submission
-type MarketplaceSubmission struct {
+// PluginSubmission represents a third-party plugin submission
+type PluginSubmission struct {
 	ID            string              `json:"id"`
 	Author        string              `json:"author"`
 	Email         string              `json:"email"`
@@ -213,8 +213,8 @@ type SubmissionManager struct {
 	mu            sync.RWMutex
 }
 
-// SubmissionConfig holds submission configuration
-type SubmissionConfig struct {
+// Config holds submission configuration
+type Config struct {
 	EnableThirdParty bool
 	AutoApproveLowRisk bool
 	RequireSecurityScan bool
@@ -223,7 +223,7 @@ type SubmissionConfig struct {
 }
 
 // NewSubmissionManager creates new submission manager
-func NewSubmissionManager(ctx context.Context, config SubmissionConfig) (*SubmissionManager, error) {
+func NewSubmissionManager(ctx context.Context, config Config) (*SubmissionManager, error) {
 	if !config.EnableThirdParty {
 		return nil, fmt.Errorf("third-party submissions disabled")
 	}
@@ -240,7 +240,7 @@ func NewSubmissionManager(ctx context.Context, config SubmissionConfig) (*Submis
 }
 
 // SubmitPlugin initiates plugin submission process
-func (sm *SubmissionManager) SubmitPlugin(ctx context.Context, submission *MarketplaceSubmission) error {
+func (sm *SubmissionManager) SubmitPlugin(ctx context.Context, submission *PluginSubmission) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	
@@ -270,7 +270,7 @@ func (sm *SubmissionManager) SubmitPlugin(ctx context.Context, submission *Marke
 }
 
 // validateSubmission performs basic validation
-func (sm *SubmissionManager) validateSubmission(sub *MarketplaceSubmission) error {
+func (sm *SubmissionManager) validateSubmission(sub *PluginSubmission) error {
 	if sub.Name == "" || sub.Version == "" {
 		return fmt.Errorf("missing required fields")
 	}
@@ -283,7 +283,7 @@ func (sm *SubmissionManager) validateSubmission(sub *MarketplaceSubmission) erro
 }
 
 // runAutomatedChecks runs pre-review automated tests
-func (sm *SubmissionManager) runAutomatedChecks(sub *MarketplaceSubmission) error {
+func (sm *SubmissionManager) runAutomatedChecks(sub *PluginSubmission) error {
 	// Run security scan
 	securityReport, err := sm.runSecurityScan(sub)
 	if err != nil {
@@ -312,7 +312,7 @@ func (sm *SubmissionManager) runAutomatedChecks(sub *MarketplaceSubmission) erro
 }
 
 // runSecurityScan executes static analysis
-func (sm *SubmissionManager) runSecurityScan(sub *MarketplaceSubmission) (*SecurityReport, error) {
+func (sm *SubmissionManager) runSecurityScan(sub *PluginSubmission) (*SecurityReport, error) {
 	report := &SecurityReport{
 		ScanDate:  time.Now(),
 		Scanner:   "internal-scanner",
@@ -326,7 +326,7 @@ func (sm *SubmissionManager) runSecurityScan(sub *MarketplaceSubmission) (*Secur
 }
 
 // runTestSuite executes test suite
-func (sm *SubmissionManager) runTestSuite(sub *MarketplaceSubmission) (*TestReport, error) {
+func (sm *SubmissionManager) runTestSuite(sub *PluginSubmission) (*TestReport, error) {
 	report := &TestReport{
 		ExecutedAt: time.Now(),
 		Status:     StatusPass,
@@ -339,7 +339,7 @@ func (sm *SubmissionManager) runTestSuite(sub *MarketplaceSubmission) (*TestRepo
 }
 
 // assignToReviewerQueue assigns submission to next available reviewer
-func (sm *SubmissionManager) assignToReviewerQueue(sub *MarketplaceSubmission) {
+func (sm *SubmissionManager) assignToReviewerQueue(sub *PluginSubmission) {
 	// Find least-busy reviewer
 	var bestReviewer *Reviewer
 	minWorkload := int(^uint(0) >> 1)
@@ -429,12 +429,12 @@ func (sm *SubmissionManager) calculateBadgeLevel(totalEarnings float64) BadgeLev
 }
 
 // loadSubmission retrieves submission by ID
-func (sm *SubmissionManager) loadSubmission(id string) (*MarketplaceSubmission, bool) {
+func (sm *SubmissionManager) loadSubmission(id string) (*PluginSubmission, bool) {
 	val, exists := sm.submissions.Load(id)
 	if !exists {
 		return nil, false
 	}
-	return val.(*MarketplaceSubmission), true
+	return val.(*PluginSubmission), true
 }
 
 // Reviewer manages plugin review workflow

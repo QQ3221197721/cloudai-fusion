@@ -1,5 +1,4 @@
-
-package redteam
+﻿package redteam
 
 import (
 	"context"
@@ -115,8 +114,8 @@ func (ar *AutoRemediator) ProcessIncident(ctx context.Context, incident *Classif
 	// Update metrics
 	duration := time.Since(startTime)
 	ar.mu.Lock()
-	ar.metrics.avgResponseTime = duration
-	if result.Status == StatusSuccess {
+	ar.metrics.avgResponseTime += (duration - ar.metrics.avgResponseTime) / float64(ar.metrics.totalIncidents)
+	if result.Success {
 		ar.metrics.successful++
 	} else {
 		ar.metrics.failed++
@@ -134,7 +133,7 @@ func (ar *AutoRemediator) executeAction(ctx context.Context, agent interface{}, 
 	
 	// In production, this would call actual agent methods
 	// For now, return simulated success/failure
-	_ = 0.95 // 95% success rate
+	successRate := 0.95 // 95% success rate
 	
 	var result RemediationResult
 	

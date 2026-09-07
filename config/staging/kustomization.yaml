@@ -1,0 +1,54 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Staging environment configuration for CloudAI Fusion
+# Overrides base configuration for staging deployments
+
+namespace: cloudai-fusion-staging
+
+bases:
+  - ../base
+
+# Or use resources (preferred in newer versions):
+# resources:
+#   - ../base
+
+nameSuffix: -staging
+
+commonLabels:
+  environment: staging
+  managed-by: github-actions
+
+patchesStrategicMerge:
+  # Increase replicas for staging
+  - deployment-staging-patch.yaml
+  
+  # Adjust resource limits for testing
+  - deployment-resources-staging-patch.yaml
+
+configMapPatch:
+  data:
+    DRIFT_THRESHOLD: "0.25"
+    RATE_LIMIT_RPM: "200"
+    CANARY_TRAFFIC_PERCENT: "20"
+    ENABLE_TRACING: "true"
+    ENVIRONMENT_NAME: "staging"
+
+# Add additional configmaps for staging-specific features
+configMapGenerator:
+  - name: cloudai-fusion-config-staging
+    literals:
+      - LOG_LEVEL=debug
+      - TEST_MODE=true
+      - DEBUG_ENABLED=true
+      - ENABLE_PROFILING=true
+      - PROMETHEUS_EXPORTER_PORT=9090
+
+secretGenerator:
+  - name: cloudai-fusion-secrets-staging
+    envs:
+      - secrets-staging.env
+
+images:
+  - name: ghcr.io/cloudai-fusion/cloudai-fusion
+    newTag: ${CI_COMMIT_SHA:-latest}

@@ -21,7 +21,7 @@ func Test_HAMi_Suboptimality_Uniform_Construction(t *testing.T) {
 
 	const clusterSize = 4
 	gpus := NewGPUTopology(clusterSize)
-	dist := distributionWeights(DistUniform) // uniform = 20% each profile => ρ_count≈0.6 ≥ τ=0.15, zoning active
+	dist := distributionWeights(DistUniform) // uniform = 20% each profile => ρ_count�?.6 �?τ=0.15, zoning active
 
 	// Adversarial trace: 4 small requests followed by 4 large requests.
 	// HAMi's max-free-slices spreading places each 1g on a DISTINCT clean GPU, contaminating
@@ -45,7 +45,7 @@ func Test_HAMi_Suboptimality_Uniform_Construction(t *testing.T) {
 	daspSched := NewMIGScheduler(daspGPUs, dist)
 	daspAccepts := 0
 	for i, profName := range workload {
-		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", i), profName, DemandAwareSegregationPlacement{})
+		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", i), profName, NewDemandAwareSegregationPlacement())
 		if err == nil {
 			daspAccepts++
 		}
@@ -55,9 +55,9 @@ func Test_HAMi_Suboptimality_Uniform_Construction(t *testing.T) {
 
 	// DASP must strictly beat HAMi on this crafted counterexample.
 	if daspAccepts > hamiAccepts {
-		t.Logf("✓ COUNTEREXAMPLE CONFIRMED: DASP (%d) strictly beats HAMi (%d) — HAMi spreading trapped in local optimum", daspAccepts, hamiAccepts)
+		t.Logf("�?COUNTEREXAMPLE CONFIRMED: DASP (%d) strictly beats HAMi (%d) �?HAMi spreading trapped in local optimum", daspAccepts, hamiAccepts)
 	} else {
-		t.Errorf("✗ Counterexample failed to reproduce: DASP=%d HAMi=%d (expected DASP>HAMi)", daspAccepts, hamiAccepts)
+		t.Errorf("�?Counterexample failed to reproduce: DASP=%d HAMi=%d (expected DASP>HAMi)", daspAccepts, hamiAccepts)
 	}
 }
 
@@ -79,7 +79,7 @@ func Test_DASP_FallbackToSpreadingOnSkewSmall(t *testing.T) {
 	t.Logf("For skew-small: ρ_count = %.2f (threshold τ = 0.15)", rhoCount)
 
 	if rhoCount < 0.15 {
-		t.Logf("✓ ρ_count < τ, DASP will use HAMi-style spreading (correct)")
+		t.Logf("�?ρ_count < τ, DASP will use HAMi-style spreading (correct)")
 	} else {
 		t.Errorf("Unexpected: ρ_count=%.2f >= 0.15, expected spreading deactivation", rhoCount)
 	}
@@ -107,7 +107,7 @@ func Test_DASP_FallbackToSpreadingOnSkewSmall(t *testing.T) {
 	daspSched := NewMIGScheduler(daspGPUs, dist)
 	daspAccepts := 0
 	for _, profName := range skewWorkload {
-		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", daspAccepts), profName, DemandAwareSegregationPlacement{})
+		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", daspAccepts), profName, NewDemandAwareSegregationPlacement())
 		if err == nil {
 			daspAccepts++
 		}
@@ -161,7 +161,7 @@ func Test_MinFragmentationGreedyTrap(t *testing.T) {
 	mfiSched := NewMIGScheduler(mfiGPUs, dist)
 	mfiAccepts := 0
 	for _, job := range skewWorkload {
-		_, err := mfiSched.Schedule(fmt.Sprintf("m-%d", mfiAccepts), job.Name, MinFragmentationIncrement{})
+		_, err := mfiSched.Schedule(fmt.Sprintf("m-%d", mfiAccepts), job.Name, BestFit{})
 		if err == nil {
 			mfiAccepts++
 		}
@@ -183,7 +183,7 @@ func Test_MinFragmentationGreedyTrap(t *testing.T) {
 	daspSched := NewMIGScheduler(daspGPUs, dist)
 	daspAccepts := 0
 	for _, job := range skewWorkload {
-		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", daspAccepts), job.Name, DemandAwareSegregationPlacement{})
+		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", daspAccepts), job.Name, NewDemandAwareSegregationPlacement())
 		if err == nil {
 			daspAccepts++
 		}
@@ -201,7 +201,7 @@ func Test_MinFragmentationGreedyTrap(t *testing.T) {
 	// From real benchmark data (m2_dir1_dasp_vs_hami.txt line 22):
 	//   skew-small 1.0x: DASP=0.9410 | HAMi=0.9410 | BestFit=0.8598 | MFI=0.8930
 	if bestfitRate < hamiRate-5.0 || mfiRate < hamiRate-2.0 {
-		t.Logf("✓ Confirmed: BestFit/MFI trapped by tight-packing fragmentation (gap >%%2%% from spreading baseline)")
+		t.Logf("�?Confirmed: BestFit/MFI trapped by tight-packing fragmentation (gap >%%2%% from spreading baseline)")
 	} else {
 		t.Logf("! No strong trap detected; gap smaller than expected (may be due to cluster size)")
 	}
@@ -214,7 +214,7 @@ func Test_MinFragmentationGreedyTrap(t *testing.T) {
 // Test_DSAS_ScaleDegradation measures acceptance rate degradation as GPU count scales from 20 to 500.
 // Expected: Linear decay in AR, sub-linear wall-clock growth (O(n_g)).
 func Test_DASP_ScaleDegradation(t *testing.T) {
-	t.Log("Testing DASP scale behavior (N=20→500 GPUs)...")
+	t.Log("Testing DASP scale behavior (N=20�?00 GPUs)...")
 
 	clusterSizes := []int{20, 50, 100, 200, 500}
 	dist := distributionWeights(DistUniform)
@@ -228,7 +228,7 @@ func Test_DASP_ScaleDegradation(t *testing.T) {
 	for _, n := range clusterSizes {
 		gpus := NewGPUTopology(n)
 		sched := NewMIGScheduler(gpus, dist)
-		algo := DemandAwareSegregationPlacement{}
+		algo := NewDemandAwareSegregationPlacement()
 
 		// Generate workload proportional to capacity (1.0x load level)
 		totalCapacity := n * totalSlices
@@ -269,7 +269,7 @@ func Test_DASP_ScaleDegradation(t *testing.T) {
 		}
 	}
 	if monotonic {
-		t.Logf("✓ Acceptance rate decays monotonically with scale (as expected)")
+		t.Logf("�?Acceptance rate decays monotonically with scale (as expected)")
 	} else {
 		t.Logf("! Non-monotonic behavior detected (may be due to discrete capacity effects)")
 	}
@@ -300,7 +300,7 @@ func Test_DASP_ExtremeOverloadValidation(t *testing.T) {
 	daspSched := NewMIGScheduler(daspGPUs, dist)
 	daspAccepts := 0
 	for _, job := range workload {
-		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", daspAccepts), job.Name, DemandAwareSegregationPlacement{})
+		_, err := daspSched.Schedule(fmt.Sprintf("d-%d", daspAccepts), job.Name, NewDemandAwareSegregationPlacement())
 		if err == nil {
 			daspAccepts++
 		}
@@ -324,9 +324,9 @@ func Test_DASP_ExtremeOverloadValidation(t *testing.T) {
 
 	// Allow HAMi edge within -15% (real data shows -11.67% on uniform, -4.30% on bimodal)
 	if hamiAR-daspAR < 0.15 {
-		t.Logf("✓ HAMi can edge DASP at extreme overload (diff=%.2f%%); acceptable production behavior", (hamiAR-daspAR)/daspAR*100)
+		t.Logf("�?HAMi can edge DASP at extreme overload (diff=%.2f%%); acceptable production behavior", (hamiAR-daspAR)/daspAR*100)
 	} else {
-		t.Errorf("✗ Unexpected large HAMi superiority (%.2f%%); check algorithm correctness", (hamiAR-daspAR)/daspAR*100)
+		t.Errorf("�?Unexpected large HAMi superiority (%.2f%%); check algorithm correctness", (hamiAR-daspAR)/daspAR*100)
 	}
 }
 
@@ -334,12 +334,6 @@ func Test_DASP_ExtremeOverloadValidation(t *testing.T) {
 // Helper Functions
 // ============================================================================
 
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
 
 // BenchmarkScaling_TimeComplexity measures per-placement wall-clock time as GPU count scales.
 // Validates O(n_g) claim from Section 5 of T3 proof document.
@@ -348,7 +342,7 @@ func BenchmarkScaling_TimeComplexity(b *testing.B) {
 	profiles := []MIGSliceProfile{A100Profiles[0], A100Profiles[1], A100Profiles[2], A100Profiles[3], A100Profiles[4]}
 
 	clusterSizes := []int{10, 50, 100, 200, 500}
-	strategies := []PlacementStrategy{HAMiBinpack{}, DemandAwareSegregationPlacement{}, MinFragmentationIncrement{}}
+	strategies := []PlacementStrategy{HAMiBinpack{}, NewDemandAwareSegregationPlacement(), BestFit{}}
 
 	for _, n := range clusterSizes {
 		b.Run(fmt.Sprintf("N%d", n), func(b *testing.B) {
@@ -371,3 +365,4 @@ func BenchmarkScaling_TimeComplexity(b *testing.B) {
 		})
 	}
 }
+

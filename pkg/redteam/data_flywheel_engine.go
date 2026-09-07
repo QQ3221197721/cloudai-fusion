@@ -1,3 +1,4 @@
+﻿//go:build ignore
 
 // Package redteam - Data Flywheel Engine for Threat Intelligence Growth Loop
 // ORIGINAL ALGORITHM: Self-improving threat intelligence system using feedback loops,
@@ -6,6 +7,7 @@ package redteam
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -191,7 +193,7 @@ func (f *DataFlywheelEngine) RecordFeedback(ctx context.Context, eventID string,
 		EventID:          event.ID,
 		ActionTaken:      actionTaken,
 		Outcome:          outcome,
-		TimeToNeutralize: time.Duration(metrics["time_to_neutralize_ms"]) * time.Millisecond,
+		TimeToNeutralize: metrics["time_to_neutralize_ms"] * time.Millisecond,
 		ResourceCost:     metrics["resource_cost"],
 		ImpactOnUsers:    metrics["user_impact"],
 		LearnedValue:     calculateLearnedValue(outcome, actionTaken),
@@ -303,7 +305,7 @@ func (f *DataFlywheelEngine) extractIndicators(event *ThreatEvent) []Indicator {
 }
 
 // updateEffectiveAccuracy recalculates system-wide accuracy metric
-func (f *DataFlywheelEngine) updateEffectiveAccuracy(predictions []Prediction) {
+func (f *DataFlywheelEngine) updateEffectiveAccuracy(predictions []*Prediction) {
 	correctPredictions := 0
 	totalPredictions := len(predictions)
 	

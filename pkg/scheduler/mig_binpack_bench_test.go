@@ -13,12 +13,7 @@ import (
 // Workload Generation
 // ============================================================================
 
-const (
-	DistUniform   = "uniform"    // 20% each profile
-	DistSkewSmall = "skew-small" // ~80% small, ~20% large
-	DistSkewBig   = "skew-big"   // ~80% large, ~20% small
-	DistBimodal   = "bimodal"    // 50% smallest + largest
-)
+// Distribution constants are already defined in flip_workload_generators.go
 
 // generateWorkloadWithDist generates N profile requests according to distribution.
 func generateWorkloadWithDist(n int, distribution string, seed int64) []MIGSliceProfile {

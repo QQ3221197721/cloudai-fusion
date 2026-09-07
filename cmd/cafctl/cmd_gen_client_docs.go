@@ -279,3 +279,11 @@ func demoOpenAPISpec() []byte {
   }
 }`)
 }
+
+// outputOrDefault returns the output directory if specified, or default text representation.
+func outputOrDefault(outputDir string) string {
+	if outputDir == "" || outputDir == "." {
+			return "current directory (stdout only)"
+	}
+	return outputDir
+}

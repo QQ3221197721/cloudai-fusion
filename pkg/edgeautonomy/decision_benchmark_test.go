@@ -583,19 +583,3 @@ func TestEdgeDifferentiators(t *testing.T) {
 		}
 	})
 }
-// BenchmarkM22_NaiveRuleEngine_Evaluate - FallbackRuleEngine baseline
-func BenchmarkM22_NaiveRuleEngine_Evaluate(b *testing.B) {
-	ctx := context.Background()
-	workloads := generateTestWorkloads(testWorkloadCount)
-	nodes := generateNodePool(nodePoolSize)
-	engine := newNaiveRuleEngine()
-	
-	b.ResetTimer()
-	b.ReportAllocs()
-	
-	for i := 0; i < b.N; i++ {
-		for _, wl := range workloads {
-			engine.Evaluate(ctx, wl, nodes)
-		}
-	}
-}

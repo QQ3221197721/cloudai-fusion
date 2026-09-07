@@ -1,18 +1,24 @@
-package schedulertypes
+package scheduler
 
 import (
 	"context"
 )
 
-// TopologyReader interface for discovering GPU topology information
-type TopologyReader interface {
-	GetNVLinkConnections(ctx context.Context) ([]NVLinkConnection, error)
-	GetNUMAPolicy(ctx context.Context, gpuIdx int) (int, error)
-	HasNVSwitch() bool
+// NVLinkConnection represents a single NVLink connection between two GPUs
+type NVLinkConnection struct {
+	SourceGPU   int
+	DestinationGPU int
+	SpeedInGBps float64
 }
 
-// NodeGPUTopology represents complete GPU topology for a single node
-type NodeGPUTopology struct {
+// NUMAPolicy represents NUMA affinity policy for GPU allocation
+type NUMAPolicy int
+
+const (
+	NUMAPolicyNone NUMAPolicy = iota
+	NUMAPolicyStrict
+	NUMAPolicyPreferred
+)
 	NodeName    string
 	GPUs        []DiscoveredGPU
 	NVLinks     []NVLinkConnection
