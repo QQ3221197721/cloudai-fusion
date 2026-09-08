@@ -1,0 +1,66 @@
+﻿time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:54:07+08:00" level=warning msg="Error budget policy transition" consumed="60.0%" from=normal service=test-svc to=warning
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:54:07+08:00" level=warning msg="Error budget policy transition" consumed="90.0%" from=normal service=test-svc to=critical
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:54:07+08:00" level=warning msg="Error budget policy transition" consumed="200.0%" from=normal service=test-svc to=exhausted
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:54:07+08:00" level=warning msg="Error budget policy transition" consumed="70.0%" from=normal service=svc to=warning
+time="2026-09-08T10:54:07+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:54:07+08:00" level=info msg="Silence rule added" id=s1 matchers=1 reason="planned maintenance"
+time="2026-09-08T10:54:07+08:00" level=info msg="Silence rule added" id=s1 matchers=1 reason=
+time="2026-09-08T10:54:07+08:00" level=info msg="Silence rule added" id=s1 matchers=1 reason=
+time="2026-09-08T10:54:07+08:00" level=info msg="Silence rule added" id=active matchers=1 reason=
+time="2026-09-08T10:54:07+08:00" level=info msg="Silence rule added" id=expired matchers=1 reason=
+time="2026-09-08T10:54:07+08:00" level=info msg="SLO tracker started"
+time="2026-09-08T10:54:07+08:00" level=info msg="Resource collector started" goruntime=true gpu=false interval=50ms node=test-node
+time="2026-09-08T10:54:07+08:00" level=info msg="Resource collector started" goruntime=false gpu=true interval=50ms node=gpu-node
+time="2026-09-08T10:54:07+08:00" level=info msg="SLO tracker started"
+--- FAIL: TestAccuracyVsBufferSizing (1.01s)
+    m9_flip_bench_test.go:398: BufferSize=256: P50_error=101.9468%, P95_error=19.1111%
+    m9_flip_bench_test.go:403: BufferSize=256 exceeded tolerance: P50=101.9468, P95=19.1111
+    m9_flip_bench_test.go:398: BufferSize=512: P50_error=71.8685%, P95_error=92.3385%
+    m9_flip_bench_test.go:403: BufferSize=512 exceeded tolerance: P50=71.8685, P95=92.3385
+    m9_flip_bench_test.go:398: BufferSize=1024: P50_error=88.6636%, P95_error=80.0755%
+    m9_flip_bench_test.go:403: BufferSize=1024 exceeded tolerance: P50=88.6636, P95=80.0755
+    m9_flip_bench_test.go:398: BufferSize=2048: P50_error=62.5767%, P95_error=26.0386%
+    m9_flip_bench_test.go:403: BufferSize=2048 exceeded tolerance: P50=62.5767, P95=26.0386
+    m9_flip_bench_test.go:398: BufferSize=4096: P50_error=11.1361%, P95_error=37.6599%
+    m9_flip_bench_test.go:403: BufferSize=4096 exceeded tolerance: P50=11.1361, P95=37.6599
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:56:02+08:00" level=warning msg="Error budget policy transition" consumed="60.0%" from=normal service=test-svc to=warning
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:56:02+08:00" level=warning msg="Error budget policy transition" consumed="90.0%" from=normal service=test-svc to=critical
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:56:02+08:00" level=warning msg="Error budget policy transition" consumed="200.0%" from=normal service=test-svc to=exhausted
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=1
+time="2026-09-08T10:56:02+08:00" level=warning msg="Error budget policy transition" consumed="70.0%" from=normal service=svc to=warning
+time="2026-09-08T10:56:02+08:00" level=info msg="Error budget manager initialized" services=4
+time="2026-09-08T10:56:02+08:00" level=info msg="Silence rule added" id=s1 matchers=1 reason="planned maintenance"
+time="2026-09-08T10:56:02+08:00" level=info msg="Silence rule added" id=s1 matchers=1 reason=
+time="2026-09-08T10:56:02+08:00" level=info msg="Silence rule added" id=s1 matchers=1 reason=
+time="2026-09-08T10:56:02+08:00" level=info msg="Silence rule added" id=active matchers=1 reason=
+time="2026-09-08T10:56:02+08:00" level=info msg="Silence rule added" id=expired matchers=1 reason=
+time="2026-09-08T10:56:02+08:00" level=info msg="SLO tracker started"
+time="2026-09-08T10:56:02+08:00" level=info msg="Resource collector started" goruntime=true gpu=false interval=50ms node=test-node
+time="2026-09-08T10:56:02+08:00" level=info msg="Resource collector started" goruntime=false gpu=true interval=50ms node=gpu-node
+time="2026-09-08T10:56:02+08:00" level=info msg="SLO tracker started"
+--- FAIL: TestAccuracyVsBufferSizing (0.81s)
+    m9_flip_bench_test.go:398: BufferSize=256: P50_error=101.9468%, P95_error=19.1111%
+    m9_flip_bench_test.go:403: BufferSize=256 exceeded tolerance: P50=101.9468, P95=19.1111
+    m9_flip_bench_test.go:398: BufferSize=512: P50_error=71.8685%, P95_error=92.3385%
+    m9_flip_bench_test.go:403: BufferSize=512 exceeded tolerance: P50=71.8685, P95=92.3385
+    m9_flip_bench_test.go:398: BufferSize=1024: P50_error=88.6636%, P95_error=80.0755%
+    m9_flip_bench_test.go:403: BufferSize=1024 exceeded tolerance: P50=88.6636, P95=80.0755
+    m9_flip_bench_test.go:398: BufferSize=2048: P50_error=62.5767%, P95_error=26.0386%
+    m9_flip_bench_test.go:403: BufferSize=2048 exceeded tolerance: P50=62.5767, P95=26.0386
+    m9_flip_bench_test.go:398: BufferSize=4096: P50_error=11.1361%, P95_error=37.6599%
+    m9_flip_bench_test.go:403: BufferSize=4096 exceeded tolerance: P50=11.1361, P95=37.6599

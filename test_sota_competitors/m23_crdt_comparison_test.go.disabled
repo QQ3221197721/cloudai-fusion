@@ -1,0 +1,411 @@
+//go:build sotabenchmark
+// +build sotabenchmark
+
+package sotabenchmark
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync"
+)
+
+// BenchmarkM23_OUR_RSet_Merge tests CloudAI's RSet CRDT implementation
+// against a competitor reference model with equivalent semantics.
+// Measures merge latency and memory efficiency for conflict-free replicated sets.
+
+const (
+	rsetSize           = 500      // Elements per replica before merge
+	testMergeIterations = 1000    // How many merge operations to benchmark
+	collidingElements   = 100     // Number of elements that exist in both replicas
+	concurrentElements  = 400     // Number of unique elements in each replica
+)
+
+// -----------------------------------------------------------------------------
+// Ours Implementation: DeltaSync RSet
+// -----------------------------------------------------------------------------
+// This uses the actual CloudAI Fusion RSet implementation from pkg/deltasync
+
+func BenchmarkM23_OUR_RSet_Insert_Abserve(b *testing.B) {
+	set := deltasync.NewRSet()
+	rng := newDeterministicRNG(42)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Clear set between runs
+		if i > 0 {
+			set = deltasync.NewRSet()
+		}
+
+		// Simulate multiple clients adding elements concurrently
+		// Each element has a vector clock timestamp
+		for j := 0; j < rsetSize; j++ {
+			timestamp := generateClockVector(i, j)
+			element := deltasync.ElementID(fmt.Sprintf("client-%d-item-%d", rng.Intn(10), j))
+			set.Add(element, timestamp)
+		}
+
+		// Observe membership queries
+		_ = len(set.Elements())
+	}
+}
+
+func BenchmarkM23_OUR_RSet_SingleMerge(b *testing.B) {
+	// Set up two replicas with some overlap
+	replica1 := createRSetWithOverlap(0, rsetSize-collidingElements)
+	replica2 := createRSetWithOverlap(rsetSize-collidingElements, collidingElements)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Clone state for clean merge
+		merged1 := cloneRSet(replica1)
+		_ = merged1.Merge(replica2)
+
+		// Check result
+		count := len(merged1.Elements())
+		if count != rsetSize {
+			b.Fatalf("expected %d elements after merge, got %d", rsetSize, count)
+		}
+	}
+}
+
+func BenchmarkM23_OUR_RSet_MultiReplicaMerge(b *testing.B) {
+	// Create 5 replicas with random overlap
+	replicas := make([]*deltasync.RSet, 5)
+	for i := range replicas {
+		replicas[i] = createRandomRSet(deterministicSeed + uint64(i))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Merge all replicas into one
+		target := cloneRSet(replicas[0])
+		for j := 1; j < len(replicas); j++ {
+			_ = target.Merge(replicas[j])
+		}
+
+		// Verify final size
+		finalSize := len(target.Elements())
+		expectedSize := concurrentElements * 5 - collidingElements*10
+		if finalSize != expectedSize {
+			b.Logf("expected %d, got %d", expectedSize, finalSize)
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Competitor Reference: Naive Automerge-style RSet
+// -----------------------------------------------------------------------------
+// Reference implementation simulating what competitors like automerge-rs do
+// Uses vector clocks + element IDs similar to automerge's CRDT approach
+
+type VectorClock map[uint8]uint64
+type AutomergeRSet struct {
+	elements map[elementKey]*AutomergeElement
+	clocks   []VectorClock
+	nextVec  VectorClock
+}
+
+type elementKey struct {
+	id string
+	opID uint64
+	client uint8
+}
+
+type AutomergeElement struct {
+	ID       elementKey
+	Timestamp VectorClock
+	Value    interface{}
+	Mergers  []elementKey // Elements that merged this one
+}
+
+func NewAutomergeRSet() *AutomergeRSet {
+	return &AutomergeRSet{
+		elements: make(map[elementKey]*AutomergeElement),
+		clocks:   make([]VectorClock, 10), // Support up to 10 replicas
+		nextVec:  make(VectorClock),
+	}
+}
+
+func (ars *AutomergeRSet) Add(clientID uint8, value string) {
+	opID := ars.nextOpID(clientID)
+	
+	key := elementKey{
+		id: value,
+		opID: opID,
+		client: clientID,
+	}
+
+	ts := make(VectorClock)
+	for k, v := range ars.clocks[clientID] {
+		ts[k] = v
+	}
+
+	element := &AutomergeElement{
+		ID:       key,
+		Timestamp: ts,
+		Value: value,
+		Mergers: make([]elementKey, 0),
+	}
+
+	ars.elements[key] = element
+	ars.advanceClock(clientID)
+}
+
+func (ars *AutomergeRSet) GetElements() []string {
+	result := make([]string, 0, len(ars.elements))
+	for _, elem := range ars.elements {
+		result = append(result, elem.Value.(string))
+	}
+	return result
+}
+
+func (ars *AutomergeRSet) Merge(other *AutomergeRSet) error {
+	// Merge vector clocks
+	mergedClock := make(VectorClock)
+	for cid := range ars.clocks {
+		maxTime := maxValue(ars.clocks[cid], other.clocks[cid])
+		mergedClock[cid] = maxTime
+	}
+
+	// Merge elements (LWW-Register style with Lamport timestamps)
+	for key, otherElem := range other.elements {
+		if _, exists := ars.elements[key]; !exists {
+			// Copy element from remote replica
+			newElem := &AutomergeElement{
+				ID: key,
+				Timestamp: copyVector(otherElem.Timestamp),
+				Value: otherElem.Value,
+				Mergers: copyMergers(otherElem.Mergers),
+			}
+			ars.elements[key] = newElem
+			
+			// Track merger relationship
+			elemClock := make(VectorClock)
+			for k, v := range ars.clocks[otherElem.ID.client] {
+				elemClock[k] = v
+			}
+			ars.advanceClock(otherElem.ID.client)
+		}
+	}
+
+	return nil
+}
+
+func (ars *AutomergeRSet) nextOpID(client uint8) uint64 {
+	ars.nextVec[client]++
+	return ars.nextVec[client]
+}
+
+func (ars *AutomergeRSet) advanceClock(client uint8) {
+	ars.clocks[client][client]++
+}
+
+// -----------------------------------------------------------------------------
+// Helper Functions
+// -----------------------------------------------------------------------------
+
+func generateClockVector(runIdx, elemIdx int) deltasync.ClockVector {
+	cv := make(deltasync.ClockVector)
+	
+	// Deterministic clock generation based on run and element
+	clientID := byte(elemIdx % 10)
+	clockValue := uint64(runIdx*rsetSize + elemIdx)
+	
+	cv[int(clientID)] = clockValue
+	
+	return cv
+}
+
+func (rset *deltasync.RSet) Add(element deltasync.ElementID, clock deltasync.ClockVector) {
+	rset.mu.Lock()
+	defer rset.mu.Unlock()
+	
+	rset.elements[element] = clock
+	
+	// Update global clock
+	for c, t := range clock {
+		if rset.globals[c] < t {
+			rset.globals[c] = t
+		}
+	}
+}
+
+func createRSetWithOverlap(startOffset, collisionCount int) *deltasync.RSet {
+	set := deltasync.NewRSet()
+	
+	// Add non-colliding elements
+	for i := 0; i < startOffset; i++ {
+		element := deltasync.ElementID(fmt.Sprintf("unique-%d", i))
+		clock := generateClockVector(0, i)
+		set.Add(element, clock)
+	}
+	
+	// Add colliding elements
+	for i := 0; i < collisionCount; i++ {
+		element := deltasync.ElementID(fmt.Sprintf("collision-%d", i))
+		// Use same timestamp for first half, different for second half
+		clock := generateClockVector(0, i+rsizeOffset)
+		set.Add(element, clock)
+	}
+	
+	return set
+}
+
+func cloneRSet(original *deltasync.RSet) *deltasync.RSet {
+	cloned := deltasync.NewRSet()
+	
+	// Deep copy all elements
+	elements := original.Elements()
+	for _, elem := range elements {
+		// Find original clock
+		clock := original.getClock(elem)
+		cloned.Add(elem, clock)
+	}
+	
+	return cloned
+}
+
+func createRandomRSet(seed uint64) *deltasync.RSet {
+	set := deltasync.NewRSet()
+	rng := deterministicRNG(seed)
+	
+	for i := 0; i < rsetSize; i++ {
+		element := deltasync.ElementID(fmt.Sprintf("rnd-%d-%d", seed, i))
+		clock := generateClockVector(int(seed), i)
+		set.Add(element, clock)
+	}
+	
+	return set
+}
+
+type deterministicRNG uint64
+
+func (r *deterministicRNG) Intn(n int) int {
+	*r = deterministicRNG(*r*1103515245 + 12345)
+	return int(uint64(*r)%uint64(n))
+}
+
+var (
+	deterministicSeed uint64 = 42
+)
+
+func maxValue(a, b VectorClock) uint64 {
+	maxVal := uint64(0)
+	for k := range a {
+		if a[k] > maxVal {
+			maxVal = a[k]
+		}
+		if b[k] > maxVal {
+			maxVal = b[k]
+		}
+	}
+	return maxVal
+}
+
+func copyVector(src VectorClock) VectorClock {
+	dst := make(VectorClock)
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
+}
+
+func copyMergers(src []elementKey) []elementKey {
+	dst := make([]elementKey, len(src))
+	copy(dst, src)
+	return dst
+}
+
+func (ars *AutomergeRSet) GetElements() []string {
+	result := make([]string, 0, len(ars.elements))
+	for _, elem := range ars.elements {
+		result = append(result, elem.Value.(string))
+	}
+	return result
+}
+
+// -----------------------------------------------------------------------------
+// Automatedmerger-style Benchmark
+// -----------------------------------------------------------------------------
+
+func BenchmarkAutomergeRSet_BasicMerge(b *testing.B) {
+	doc1 := NewAutomergeRSet()
+	doc2 := NewAutomergeRSet()
+
+	// Initialize with different elements
+	for i := 0; i < rsetSize; i++ {
+		doc1.Add(0, fmt.Sprintf("doc1-item-%d", i))
+		doc2.Add(1, fmt.Sprintf("doc2-item-%d", i))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Merge docs together
+		_ = doc1.Merge(doc2)
+		
+		// Reset state for fair comparison
+		doc1 = NewAutomergeRSet()
+		doc2 = NewAutomergeRSet()
+		for j := 0; j < rsetSize; j++ {
+			doc1.Add(0, fmt.Sprintf("doc1-item-%d", j))
+			doc2.Add(1, fmt.Sprintf("doc2-item-%d", j))
+		}
+	}
+}
+
+func BenchmarkAutomergeRSet_MultipleClientsMerge(b *testing.B) {
+	var clients [5]*AutomergeRSet
+	for i := range clients {
+		clients[i] = NewAutomergeRSet()
+		
+		for j := 0; j < rsetSize/5; j++ {
+			clients[i].Add(uint8(i), fmt.Sprintf("client-%d-item-%d", i, j))
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Merge all clients into first
+		for j := 1; j < len(clients); j++ {
+			_ = clients[0].Merge(clients[j])
+			
+			// Recreate clients for next iteration
+			clients[j] = NewAutomergeRSet()
+			for k := 0; k < rsetSize/5; k++ {
+				clients[j].Add(uint8(j), fmt.Sprintf("client-%d-item-%d", j, k))
+			}
+		}
+	}
+}
+
+func BenchmarkM23_vs_Automerge_MemAllocs(b *testing.B) {
+	b.ReportAllocs()
+	
+	ours1 := createRandomRSet(100)
+	ours2 := createRandomRSet(200)
+	
+	automerge1 := createRandomAutoRSet(100)
+	automerge2 := createRandomAutoRSet(200)
+	
+	for i := 0; i < b.N; i++ {
+		// Our implementation
+		_ = ours1.Merge(ours2)
+		
+		// Automerge implementation
+		_ = automerge1.Merge(automerge2)
+	}
+}
+
+func createRandomAutoRSet(seed uint64) *AutomergeRSet {
+	set := NewAutomergeRSet()
+	rng := deterministicRNG(seed)
+	
+	for i := 0; i < rsetSize; i++ {
+		clientID := uint8(rng.Intn(5))
+		value := fmt.Sprintf("auto-%d-%d-%d", seed, clientID, i)
+		set.Add(clientID, value)
+	}
+	
+	return set
+}

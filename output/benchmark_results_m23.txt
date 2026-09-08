@@ -1,0 +1,36 @@
+﻿FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync [build failed]
+go : # github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync [github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync.t
+est]
+所在位置 行:1 字符: 45
++ ... dai-fusion; go test -bench=BenchmarkGCounter_ -benchtime=2s -count=6  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# github.com/cl...deltasync.test]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+pkg\deltasync\fastcdc_bench_test.go:16:6: BenchmarkFastCDC1MB redeclared in this block
+	pkg\deltasync\benchmark_test.go:12:6: other declaration of BenchmarkFastCDC1MB
+pkg\deltasync\fastcdc_bench_test.go:34:17: assignment mismatch: 2 variables but NewNaiveFixedChunker returns 1 value
+pkg\deltasync\fastcdc_bench_test.go:124:81: cannot slice unaddressable value s1.Digest() (value of type [32]byte)
+pkg\deltasync\fastcdc_bench_test.go:124:97: cannot use s2.Digest() (value of type [32]byte) as []byte value in argument
+ to bytes.Equal
+pkg\deltasync\m23_crdt_benchmark_test.go:89:4: b.SetReplicaID undefined (type *testing.B has no field or method SetRepl
+icaID)
+pkg\deltasync\m23_crdt_benchmark_test.go:89:17: undefined: replica
+pkg\deltasync\m23_crdt_benchmark_test.go:384:8: undefined: NewLWWRegisterWithInitial
+pkg\deltasync\m23_crdt_benchmark_test.go:385:8: undefined: NewLWWRegisterWithInitial
+pkg\deltasync\m23_crdt_benchmark_test.go:386:8: undefined: NewLWWRegisterWithInitial
+pkg\deltasync\m23_crdt_benchmark_test.go:477:11: counter.GetContributions undefined (type *GCounter has no field or met
+hod GetContributions)
+pkg\deltasync\m23_crdt_benchmark_test.go:477:11: too many errors
+FAIL
+FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync [build failed]
+go : # github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync [github.com/cloudai-fusion/cloudai-fusion/pkg/deltasync.t
+est]
+所在位置 行:1 字符: 45
++ ... dai-fusion; go test -bench=BenchmarkGCounter_ -benchtime=1s -count=3  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# github.com/cl...deltasync.test]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+pkg\deltasync\fastcdc_bench_test.go:4:2: "bytes" imported and not used
+FAIL

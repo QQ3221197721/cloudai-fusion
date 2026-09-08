@@ -1,0 +1,758 @@
+/**
+ * CloudAI Fusion Red Team Console - Design System
+ * 
+ * Philosophy: 知己知彼，百战不殆 (Know yourself, know your enemy, win every battle)
+ * Style: Linear-inspired professional security operations aesthetic
+ */
+
+/* ============================================
+   COLOR PALETTE
+   ============================================ */
+
+:root {
+    /* Primary Colors - Red Team Identity */
+    --primary-red: #e53935;
+    --primary-red-dark: #c62828;
+    --primary-red-light: #ff7067;
+    
+    /* Secondary Colors - Professional Blue */
+    --secondary-blue: #1e88e5;
+    --secondary-blue-dark: #1565c0;
+    --secondary-blue-light: #42a5f5;
+    
+    /* Success & Status Colors */
+    --accent-green: #43a047;
+    --accent-green-dark: #2e7d32;
+    --accent-green-light: #66bb6a;
+    
+    /* Warning & Alert Colors */
+    --warning-yellow: #fdd835;
+    --warning-yellow-dark: #fbc02d;
+    --warning-yellow-light: #fff176;
+    
+    --danger-red: #d32f2f;
+    --danger-red-dark: #b71c1c;
+    --danger-red-light: #ef5350;
+    
+    /* Neutral Grayscale */
+    --gray-50: #fafafa;
+    --gray-100: #f5f5f5;
+    --gray-200: #eeeeee;
+    --gray-300: #e0e0e0;
+    --gray-400: #bdbdbd;
+    --gray-500: #9e9e9e;
+    --gray-600: #757575;
+    --gray-700: #616161;
+    --gray-800: #424242;
+    --gray-900: #212121;
+    
+    /* Background Colors */
+    --bg-light: #ffffff;
+    --bg-dark: #1a1a2e;
+    --bg-sidebar: #0f0f23;
+    --bg-card-light: #ffffff;
+    --bg-card-dark: #16213e;
+    --bg-hover-light: #f8f9fa;
+    --bg-hover-dark: #1e293b;
+    
+    /* Text Colors */
+    --text-primary: #1a1a2e;
+    --text-secondary: #6c757d;
+    --text-inverse: #ffffff;
+    --text-muted: #adb5bd;
+    
+    /* Border Colors */
+    --border-light: rgba(0, 0, 0, 0.08);
+    --border-medium: rgba(0, 0, 0, 0.12);
+    --border-dark: rgba(0, 0, 0, 0.15);
+    
+    /* Shadow System */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark Theme Variant */
+[data-theme="dark"] {
+    --bg-primary: var(--bg-dark);
+    --bg-secondary: var(--bg-sidebar);
+    --bg-card: var(--bg-card-dark);
+    --bg-hover: var(--bg-hover-dark);
+    --text-primary: #e2e8f0;
+    --text-secondary: #cbd5e0;
+    --text-muted: #94a3b8;
+    --border-light: rgba(255, 255, 255, 0.08);
+    --border-medium: rgba(255, 255, 255, 0.12);
+    --border-dark: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+:root {
+    /* Font Family Stack - Modern & Professional */
+    --font-family-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Roboto Mono', monospace;
+    
+    /* Font Sizes */
+    --text-xs: 0.75rem;      /* 12px */
+    --text-sm: 0.875rem;     /* 14px */
+    --text-base: 1rem;       /* 16px */
+    --text-lg: 1.125rem;     /* 18px */
+    --text-xl: 1.25rem;      /* 20px */
+    --text-2xl: 1.5rem;      /* 24px */
+    --text-3xl: 1.875rem;    /* 30px */
+    --text-4xl: 2.25rem;     /* 36px */
+    
+    /* Font Weights */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    
+    /* Line Heights */
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+}
+
+/* ============================================
+   BASE COMPONENTS
+   ============================================ */
+
+/* Reset & Base Styles */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+    background-color: var(--bg-light);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   DASHBOARD LAYOUT
+   ============================================ */
+
+.red-team-dashboard {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    gap: 2rem;
+}
+
+/* Header Styles */
+.dashboard-header {
+    text-align: center;
+    color: var(--text-inverse);
+    animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dashboard-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-header .subtitle {
+    font-size: var(--text-xl);
+    font-weight: var(--font-normal);
+    opacity: 0.9;
+    font-style: italic;
+}
+
+/* ============================================
+   CARD COMPONENTS
+   ============================================ */
+
+.card {
+    background: var(--bg-card-light);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-light);
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .card {
+    background: var(--bg-card-dark);
+    border-color: var(--border-medium);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-2px);
+}
+
+/* Card Variants */
+.card-primary {
+    border-top: 4px solid var(--primary-red);
+}
+
+.card-secondary {
+    border-top: 4px solid var(--secondary-blue);
+}
+
+.card-success {
+    border-top: 4px solid var(--accent-green);
+}
+
+.card-warning {
+    border-top: 4px solid var(--warning-yellow);
+}
+
+.card-danger {
+    border-top: 4px solid var(--danger-red);
+}
+
+/* Card Headers */
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.card-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   BUTTON COMPONENTS
+   ============================================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Button Variants */
+.btn-primary {
+    background: var(--primary-red);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-red-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--secondary-blue);
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--secondary-blue-dark);
+}
+
+.btn-accent {
+    background: var(--accent-green);
+    color: white;
+}
+
+.btn-accent:hover:not(:disabled) {
+    background: var(--accent-green-dark);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary-red);
+    color: var(--primary-red);
+}
+
+.btn-outline:hover:not(:disabled) {
+    background: var(--primary-red);
+    color: white;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+/* Loading State */
+.btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   STATUS INDICATORS
+   ============================================ */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.status-badge.success {
+    background: rgba(67, 160, 71, 0.1);
+    color: var(--accent-green-dark);
+}
+
+.status-badge.success::before {
+    background: var(--accent-green);
+}
+
+.status-badge.warning {
+    background: rgba(253, 216, 53, 0.1);
+    color: var(--warning-yellow-dark);
+}
+
+.status-badge.warning::before {
+    background: var(--warning-yellow);
+}
+
+.status-badge.error {
+    background: rgba(211, 47, 47, 0.1);
+    color: var(--danger-red-dark);
+}
+
+.status-badge.error::before {
+    background: var(--danger-red);
+}
+
+.status-badge.info {
+    background: rgba(30, 136, 229, 0.1);
+    color: var(--secondary-blue-dark);
+}
+
+.status-badge.info::before {
+    background: var(--secondary-blue);
+}
+
+/* ============================================
+   PROGRESS INDICATORS
+   ============================================ */
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-blue) 0%, var(--accent-green) 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-fill.warning {
+    background: var(--warning-yellow);
+}
+
+.progress-fill.danger {
+    background: var(--danger-red);
+}
+
+.progress-text {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+/* ============================================
+   GRID & FLEX LAYOUTS
+   ============================================ */
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-1 {
+    gap: 0.25rem;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.gap-3 {
+    gap: 0.75rem;
+}
+
+.gap-4 {
+    gap: 1rem;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.data-table thead {
+    background: var(--gray-100);
+}
+
+.data-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.data-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-hover-light);
+}
+
+[data-theme="dark"] .data-table tbody tr:hover {
+    background: var(--bg-hover-dark);
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: var(--text-base);
+    border: 1px solid var(--border-medium);
+    border-radius: 6px;
+    background: var(--bg-card-light);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+}
+
+.form-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   SPINNER & LOADING STATES
+   ============================================ */
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-light);
+    border-top-color: var(--primary-red);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-placeholder {
+    animation: shimmer 1.5s infinite;
+    background: linear-gradient(
+        90deg,
+        var(--gray-100) 0%,
+        var(--gray-200) 50%,
+        var(--gray-100) 100%
+    );
+    background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-success {
+    color: var(--accent-green-dark);
+}
+
+.text-warning {
+    color: var(--warning-yellow-dark);
+}
+
+.text-error {
+    color: var(--danger-red-dark);
+}
+
+.mt-1 {
+    margin-top: 0.25rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-3 {
+    margin-top: 0.75rem;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.mb-1 {
+    margin-bottom: 0.25rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+    margin-bottom: 0.75rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.p-2 {
+    padding: 0.5rem;
+}
+
+.p-3 {
+    padding: 0.75rem;
+}
+
+.p-4 {
+    padding: 1rem;
+}
+
+.rounded {
+    border-radius: 8px;
+}
+
+.rounded-full {
+    border-radius: 9999px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .red-team-dashboard {
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: var(--text-2xl);
+    }
+    
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}
