@@ -1,0 +1,9 @@
+﻿go : github.com/cloudai-fusion/cloudai-fusion/pkg/capability.test: go test github.com/cloudai-fusion/cloudai-fusion/pkg
+/capability.test: build output "D:\\IdeaProjects\\untitled\\cloudai-fusion\\capability.test.exe" already exists and is 
+not an object file
+所在位置 行:1 字符: 20
++ cd cloudai-fusion; go test -c ./pkg/capability 2>&1 | Out-File verify ...
++                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (github.com/clou... an object file:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

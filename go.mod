@@ -10,7 +10,11 @@ require (
 	github.com/DataDog/sketches-go v1.4.8
 	github.com/IBM/sarama v1.43.2
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
+	github.com/aquasecurity/trivy v0.65.0
 	github.com/aquasecurity/trivy-db v0.0.0-20260813095258-0e0340a01b57
+	github.com/google/osv-scanner v1.9.2
+	github.com/owenrumney/go-sarif/v2 v2.3.4
+	github.com/package-python/syft v0.108.0
 	github.com/aws/aws-sdk-go-v2 v1.43.6
 	github.com/aws/aws-sdk-go-v2/config v1.32.33
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.32
@@ -34,10 +38,10 @@ require (
 	github.com/google/go-github/v53 v53.2.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
-	github.com/grandcat/zeroconf v1.0.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/raft v1.6.1
+	github.com/hashicorp/vault/api v1.23.0
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.1.187
 	github.com/hyperjumptech/grule-rule-engine v1.20.4
 	github.com/jackc/puddle/v2 v2.2.2
@@ -204,6 +208,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/hashicorp/mdns v1.0.7 // indirect
 	github.com/hashicorp/memberlist v0.6.0 // indirect
 	github.com/huandu/go-clone v1.7.3 // indirect
 	github.com/huandu/go-sqlbuilder v1.42.1 // indirect
@@ -336,6 +341,7 @@ require (
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
+	gonum.org/v1/gonum v0.17.0 // indirect
 	google.golang.org/genproto v0.0.0-20260622175928-b703f567277d // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect

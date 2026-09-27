@@ -1,0 +1,11 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/capability
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkKubeStyle_Get_Allocation-24    	48468601	        31.65 ns/op	       0 B/op	       0 allocs/op
+BenchmarkKubeStyle_Get_Allocation-24    	50560802	        20.72 ns/op	       0 B/op	       0 allocs/op
+BenchmarkKubeStyle_Get_Allocation-24    	56670601	        20.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkKubeStyle_Get_Allocation-24    	57827701	        20.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkKubeStyle_Get_Allocation-24    	67078828	        20.33 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/capability	7.210s

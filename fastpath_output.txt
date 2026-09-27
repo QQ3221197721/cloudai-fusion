@@ -1,0 +1,9 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/cloudai-fusion/cloudai-fusion/pkg/capability
+cpu: Intel(R) Core(TM) Ultra 9 275HX
+BenchmarkM1_HasSimulated_NoSimulated-24    	 3292195	       370.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM1_HasSimulated_NoSimulated-24    	 3795534	       321.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkM1_HasSimulated_NoSimulated-24    	 3880038	       309.1 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/capability	5.690s

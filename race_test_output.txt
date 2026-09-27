@@ -1,0 +1,7 @@
+﻿go : go: -race requires cgo; enable cgo by setting CGO_ENABLED=1
+所在位置 行:1 字符: 20
++ ... dai-fusion; go test ./pkg/capability -race -bench=BenchmarkM1_Mixed_W ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (go: -race requi...g CGO_ENABLED=1:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

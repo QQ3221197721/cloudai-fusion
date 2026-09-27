@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grandcat/zeroconf"
+	"github.com/hashicorp/mdns"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,7 +26,7 @@ import (
 //    - Best for: Orchestrator view of known fleet, offline-first scenarios
 //
 // 2. MULTICAST DNS / zeroconf (RFC 6762/6763 compliant)
-//    - Library: github.com/grandcat/zeroconf v1.0.0
+//    - Library: github.com/hashicorp/mdns v1.0.7
 //    - Registration: mdns.Register() sends UDP multicast ANNOUNCE
 //    - Discovery: Browse() listens on 224.0.0.251:5353 for SERVICE-LOOKUP
 //    - Compatible with: Avahi, Bonjour, Windows Network Discover
@@ -73,6 +73,10 @@ const (
 )
 
 var logger *logrus.Logger
+
+// zeroconf is an alias for hashicorp/mdns package
+// This maintains compatibility with existing code that uses zeroconf terminology
+var zeroconf = mdns
 
 func init() {
 	logger = logrus.New()

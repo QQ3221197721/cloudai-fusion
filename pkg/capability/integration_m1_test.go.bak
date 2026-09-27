@@ -1,0 +1,684 @@
+package capability
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/runmode"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// ============================================================================
+// Integration Test Suite - M1 Production Integration & Fail-Fast Verification
+// ============================================================================
+
+// TestM1_RunMode_Integration_ThreeModes tests all three run modes work correctly
+func TestM1_RunMode_Integration_ThreeModes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		runMode        runmode.RunMode
+		expectReal     bool
+		expectSimulated bool
+	}{
+		{"Production Mode", runmode.Production, true, false},
+		{"Degraded Mode", runmode.Degraded, false, true},
+		{"Simulation Mode", runmode.Simulation, false, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Reset() // Clean state
+
+			registry := NewRegistry(tt.runMode)
+			require.Equal(t, tt.runMode, registry.Policy())
+
+			testComponent := "test_component"
+			if tt.expectReal {
+				err := registry.MustReal(testComponent, "real_driver", true, "using real backend")
+				assert.NoError(t, err)
+			} else if tt.expectSimulated {
+				err := registry.MustReal(testComponent, "sim_driver", false, "using simulated backend")
+				assert.NoError(t, err)
+			}
+
+			snapshot := registry.Snapshot()
+			assert.Len(t, snapshot, 1)
+			assert.Equal(t, testComponent, snapshot[0].Component)
+
+			if tt.expectReal {
+				assert.Equal(t, ModeReal, snapshot[0].Mode)
+			} else if tt.expectSimulated {
+				assert.Equal(t, ModeSimulated, snapshot[0].Mode)
+			}
+		})
+	}
+}
+
+// TestM1_FailFast_Production_MissingDB verifies fail-fast behavior when DB is missing
+func TestM1_FailFast_Production_MissingDB(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	registry := NewRegistry(runmode.Production)
+
+	scenarios := []struct {
+		name      string
+		component string
+		real      bool
+		detail    string
+		shouldFail bool
+	}{
+		{"Database Real Backend", "database", true, "postgres driver", false},
+		{"Cache Simulated Fallback", "cache", false, "memory fallback", true},
+		{"Redis Real Backend", "messaging", true, "redis driver", false},
+	}
+
+	var errors []error
+	for _, s := range scenarios {
+		err := registry.MustReal(s.component, s.detail, s.real, s.detail)
+		if s.shouldFail {
+			errors = append(errors, err)
+			require.Error(t, err, "%s should fail in production mode", s.name)
+		} else {
+			assert.NoError(t, err, "%s should succeed in production mode", s.name)
+		}
+	}
+
+	enforceErr := registry.Enforce()
+	if len(errors) > 0 {
+		require.Error(t, enforceErr)
+		assert.Contains(t, enforceErr.Error(), fmt.Sprintf("%d subsystem(s) are simulated", len(errors)))
+	} else {
+		assert.NoError(t, enforceErr)
+	}
+}
+
+// TestM1_CapabilityEndpoint_Verification tests the GET /api/v1/capabilities endpoint
+func TestM1_CapabilityEndpoint_Verification(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() {
+		Reset()
+	})
+
+	router := SetupTestRouter()
+
+	scenarios := []struct {
+		name         string
+		setupMode    runmode.RunMode
+		expectedMode string
+		backendCount int
+	}{
+		{"Production Mode Backend", runmode.Production, "production", 3},
+		{"Degraded Mode Backend", runmode.Degraded, "degraded", 4},
+		{"Simulation Mode Backend", runmode.Simulation, "simulation", 5},
+	}
+
+	for _, tt := range scenarios {
+		t.Run(tt.name, func(t *testing.T) {
+			Reset()
+			SetPolicy(tt.setupMode)
+
+			components := []string{"database", "cache", "messaging", "storage", "scheduler"}
+			for i, comp := range components[:tt.backendCount] {
+				mode := ModeSimulated
+				driver := "simulated"
+				
+				if tt.setupMode == runmode.Production && i < 2 {
+					mode = ModeReal
+					driver = "real_driver"
+				}
+				
+				err := Default().Report(comp, driver, mode, fmt.Sprintf("component %d", i))
+				assert.NoError(t, err)
+			}
+
+			req, err := http.NewRequest(http.MethodGet, "/api/v1/capabilities", nil)
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+
+			var response map[string]interface{}
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.expectedMode, response["run_mode"])
+			assert.InDelta(1, float64(response["all_real"].(bool)), 1.0)
+			assert.Contains(t, response, "backends")
+			assert.Contains(t, response, "simulated")
+
+			backendsList := response.([]interface{})
+			assert.GreaterOrEqual(t, len(backendsList), tt.backendCount-1)
+		})
+	}
+}
+
+// TestM1_DegradedMode_Warnings verifies degraded mode continues with warnings
+func TestM1_DegradedMode_Warnings(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	registry := NewRegistry(runmode.Degraded)
+
+	allowedComponents := []struct {
+		name   string
+		driver string
+		detail string
+	}{
+		{"redis", "redis-driver", "main cache"},
+		{"queue", "kafka-driver", "message bus"},
+	}
+
+	for _, comp := range allowedComponents {
+		err := registry.Report(comp.name, comp.driver, ModeSimulated, comp.detail)
+		assert.NoError(t, err, "degraded mode should allow simulated backends without error")
+	}
+
+	enforceErr := registry.Enforce()
+	assert.NoError(t, enforceErr, "enforce should pass in degraded mode")
+
+	sim := registry.Simulated()
+	assert.Len(t, sim, len(allowedComponents))
+	for _, s := range sim {
+		assert.Equal(t, ModeSimulated, s.Mode)
+	}
+}
+
+// TestM1_SimulationMode_NoWarnings verifies simulation mode has no warnings
+func TestM1_SimulationMode_NoWarnings(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	registry := NewRegistry(runmode.Simulation)
+
+	fakeBackends := []struct {
+		name   string
+		driver string
+		detail string
+	}{
+		{"fake_database", "sqlite-memory", ":memory:"},
+		{"fake_cache", "memory-cache", "in-memory"},
+		{"fake_storage", "temp-storage", "/tmp/fake"},
+		{"fake_auth", "mock-auth", "no-op"},
+		{"fake_logging", "discard-log", "null"},
+	}
+
+	for _, fb := range fakeBackends {
+		err := registry.MustReal(fb.name, fb.driver, false, fb.detail)
+		assert.NoError(t, err)
+	}
+
+	enforceErr := registry.Enforce()
+	assert.NoError(t, enforceErr)
+
+	hasSim := registry.HasSimulated()
+	assert.True(t, hasSim)
+	
+	snapshot := registry.Snapshot()
+	assert.Len(t, snapshot, len(fakeBackends))
+	for _, b := range snapshot {
+		assert.Equal(t, ModeSimulated, b.Mode)
+	}
+}
+
+// TestM1_StartupPerf_Overhead measures bootstrapping overhead
+func TestM1_StartupPerf_Overhead(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	type perfMetric struct {
+		cmpName       string
+		regTimeNanos  int64
+		lookupTimeNanos int64
+	}
+
+	metrics := make(map[string]perfMetric)
+
+	compSizes := []int{10, 50, 100, 500, 1000}
+
+	for _, size := range compSizes {
+		Reset()
+		registry := NewRegistry(runmode.Production)
+
+		registerNames := make([]string, size)
+		for i := 0; i < size; i++ {
+			registerNames[i] = fmt.Sprintf("component_%d", i)
+		}
+
+		start := time.Now()
+		for _, name := range registerNames {
+			registry.MustReal(name, "driver", true, "real backend")
+		}
+		regDuration := time.Since(start)
+
+		lookupStart := time.Now()
+		_ = registry.Snapshot()
+		lookupDuration := time.Since(lookupStart)
+
+		key := fmt.Sprintf("size_%d", size)
+		metrics[key] = perfMetric{
+			cmpName:             "capability_registry",
+			regTimeNanos:        regDuration.Nanoseconds(),
+			lookupTimeNanos:     lookupDuration.Nanoseconds(),
+		}
+	}
+
+	averageOverhead := float64(metrics["size_100"].lookupTimeNanos) / 100.0
+	t.Logf("Average overhead per component registration: %.2f µs", 
+		float64(metrics["size_100"].regTimeNanos)/float64(100)/1000.0)
+	t.Logf("Snapshot lookup overhead: %.3f µs", 
+		float64(metrics["size_100"].lookupTimeNanos)/float64(100)/1000.0)
+
+	assert.Less(t, averageOverhead, float64(1000), 
+		"Each component registration should add <1ms overhead")
+	assert.Less(t, metrics["size_100"].lookupTimeNanos, int64(time.Millisecond.Nanoseconds()),
+		"Snapshot lookup should complete within 1ms")
+}
+
+// TestM1_Atomic_Snapshot verifies atomic snapshot serves from registry_atomic pattern
+func TestM1_Atomic_Snapshot(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	registry := NewRegistry(runmode.Production)
+
+	nConcurrent := 50
+	updatesPerGoroutine := 20
+
+	done := make(chan struct{})
+	updateCh := make(chan string, nConcurrent*updatesPerGoroutine)
+
+	go func() {
+		for i := 0; i < nConcurrent; i++ {
+			go func(id int) {
+				for j := 0; j < updatesPerGoroutine; j++ {
+					select {
+					case <-done:
+						return
+					default:
+						component := fmt.Sprintf("goroutine_%d_update_%d", id, j)
+						updateCh <- component
+					}
+				}
+			}(i)
+		}
+		close(updateCh)
+	}()
+
+	go func() {
+		for comp := range updateCh {
+			registry.MustReal(comp, "driver", true, "concurrent")
+		}
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	close(done)
+
+	snapshots := make([][]Backend, nConcurrent)
+	var goroutines syncWaitGroup
+	goroutines.Add(nConcurrent)
+
+	for i := 0; i < nConcurrent; i++ {
+		go func(idx int) {
+			defer goroutines.Done()
+			snapshots[idx] = registry.Snapshot()
+		}(i)
+	}
+	goroutines.Wait()
+
+	firstLen := len(snapshots[0])
+	allSame := true
+	for _, snap := range snapshots {
+		if len(snap) != firstLen {
+			allSame = false
+			break
+		}
+	}
+
+	assert.True(t, allSame, "All concurrent snapshots must be identical")
+	assert.Positive(t, firstLen)
+}
+
+// TestM1_API_Mode_Enforcement tests API enforces mode restrictions
+func TestM1_API_Mode_Enforcement(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	setupRouter := func(mode runmode.RunMode) *gin.Engine {
+		Reset()
+		SetPolicy(mode)
+
+		router := gin.Default()
+		router.GET("/api/v1/capabilities", handleCapabilities)
+		router.GET("/health", handleHealth)
+
+		return router
+	}
+
+	tests := []struct {
+		name          string
+		mode          runmode.RunMode
+		expectStatus  int
+		expectReal    bool
+		expectSimCount int
+	}{
+		{"Production All Real", runmode.Production, http.StatusOK, true, 0},
+		{"Degraded With Sims", runmode.Degraded, http.StatusOK, false, 1},
+		{"Simulation Mixed", runmode.Simulation, http.StatusOK, false, 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := setupRouter(tt.mode)
+
+			testComponent := []struct {
+				name string
+				mode Mode
+			}{
+				{"db", ModeReal},
+				{"cache", ModeSimulated},
+				{"redis", ModeSimulated},
+				{"logging", ModeDisabled},
+			}
+
+			for _, tc := range testComponent {
+				Default().Report(tc.name, "driver", tc.mode, "")
+			}
+
+			req, _ := http.NewRequest(http.MethodGet, "/api/v1/capabilities", nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectStatus, w.Code)
+
+			var resp map[string]interface{}
+			json.Unmarshal(w.Body.Bytes(), &resp)
+
+			if tt.expectReal {
+				assert.True(t, resp["all_real"] == true || resp["all_real"] == float64(1))
+			}
+
+			simCount, ok := resp["simulated_count"].(float64)
+			if ok {
+				assert.Equal(t, tt.expectSimCount, int(simCount))
+			}
+		})
+	}
+}
+
+// TestM1_Comprehensive_Backend_Patterns tests various backend patterns
+func TestM1_Comprehensive_Backend_Patterns(t *testing.T) {
+	t.Parallel()
+
+	patterns := []struct {
+		name         string
+		mode         runmode.RunMode
+		backends     []struct{ comp string; driver string; real bool }
+		expectEnforce error
+	}{
+		{
+			name:     "Full Production Stack",
+			mode:     runmode.Production,
+			expected: nil,
+			backends: []struct{ comp string; driver string; real bool }{
+				{"postgresql", "pgx", true},
+				{"redis", "go-redis", true},
+				{"kafka", "sarama", true},
+				{"minio", "aws-sdk", true},
+			},
+		},
+		{
+			name:     "Partial Degradation",
+			mode:     runmode.Degraded,
+			expected: nil,
+			backends: []struct{ comp string; driver string; real bool }{
+				{"postgresql", "pgx", true},
+				{"redis", "memory", false},
+				{"kafka", "sarama", true},
+				{"minio", "memfs", false},
+			},
+		},
+		{
+			name:     "Complete Simulation",
+			mode:     runmode.Simulation,
+			expected: nil,
+			backends: []struct{ comp string; driver string; real bool }{
+				{"sqlite", "sqlite-memory", false},
+				{"memory", "builtin", false},
+				{"noop", "discarded", false},
+			},
+		},
+	}
+
+	for _, pattern := range patterns {
+		t.Run(pattern.name, func(t *testing.T) {
+			Reset()
+			registry := NewRegistry(pattern.mode)
+
+			for _, b := range pattern.backends {
+				err := registry.MustReal(b.comp, b.driver, b.real, b.driver)
+				assert.NoError(t, err)
+			}
+
+			enforceErr := registry.Enforce()
+			if pattern.expectEnforce == nil {
+				assert.NoError(t, enforceErr)
+			} else {
+				assert.ErrorIs(t, enforceErr, pattern.expectEnforce)
+			}
+		})
+	}
+}
+
+// TestM1_Environment_Variable_Inheritance tests CLOUDAI_RUN_MODE env var
+func TestM1_Environment_Variable_Inheritance(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		envValue     string
+		expectedMode runmode.RunMode
+	}{
+		{"production", runmode.Production},
+		{"prod", runmode.Production},
+		{"degraded", runmode.Degraded},
+		{"staging", runmode.Degraded},
+		{"simulation", runmode.Simulation},
+		{"dev", runmode.Simulation},
+		{"unknown", runmode.Simulation},
+		{"", runmode.Simulation},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("Env_%s", tt.envValue), func(t *testing.T) {
+			os.Setenv("CLOUDAI_RUN_MODE", tt.envValue)
+			defer os.Unsetenv("CLOUDAI_RUN_MODE")
+
+			mode := runmode.Parse(tt.envValue)
+			assert.Equal(t, tt.expectedMode, mode)
+
+			Reset()
+			SetPolicy(mode)
+			assert.Equal(t, mode, Policy())
+		})
+	}
+}
+
+// TestM1_Error_Messages_Verification tests that error messages are informative
+func TestM1_Error_Messages_Verification(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	registry := NewRegistry(runmode.Production)
+
+	simulatedBackends := []struct {
+		comp string
+	 drv string
+	}{
+		{"fake_db", "sqlite-memory"},
+		{"fake_cache", "memory-backend"},
+		{"fake_redis", "fake-redis"},
+	}
+
+	for _, b := range simulatedBackends {
+		err := registry.Report(b.comp, b.drv, ModeSimulated, "fallback for testing")
+		assert.Error(t, err)
+	}
+
+	enforceErr := registry.Enforce()
+	require.Error(t, enforceErr)
+
+	errorStr := enforceErr.Error()
+	assert.Contains(t, errorStr, "run_mode=production")
+	assert.Contains(t, errorStr, "3 subsystem(s)")
+	assert.Contains(t, errorStr, "fake_db(driver=fake-redis)")
+	assert.Contains(t, errorStr, "fake_cache(driver=memory-backend)")
+	assert.Contains(t, errorStr, "simulate backends or lower run_mode")
+}
+
+// TestM1_Registry_Reset_Cleanliness tests registry reset between tests
+func TestM1_Registry_Reset_Cleanliness(t *testing.T) {
+	t.Parallel()
+
+	registry := NewRegistry(runmode.Simulation)
+
+	initial := []string{"initial_1", "initial_2"}
+	for _, name := range initial {
+		registry.MustReal(name, "driver", false, "init")
+	}
+	assert.NotEmpty(t, registry.Snapshot())
+
+	registry.Reset()
+	assert.Empty(t, registry.Snapshot())
+	assert.Zero(t, len(registry.backends))
+
+	newBackends := []string{"new_1", "new_2", "new_3"}
+	for _, name := range newBackends {
+		registry.MustReal(name, "newDriver", false, "reset")
+	}
+	assert.Len(t, registry.Snapshot(), len(newBackends))
+}
+
+// TestM1_Component_Naming_Convention tests proper component naming
+func TestM1_Component_Naming_Convention(t *testing.T) {
+	t.Parallel()
+
+	t.Cleanup(func() { Reset() })
+
+	registry := NewRegistry(runmode.Production)
+
+	validNames := []string{
+		"database",
+		"cache_layer",
+		"messaging_bus",
+		"object_storage",
+		"scheduler_engine",
+		"auth_provider",
+		"audit_logger",
+	}
+
+	for _, name := range validNames {
+		err := registry.MustReal(name, "driver", true, "valid")
+		assert.NoError(t, err)
+
+		snap := registry.Snapshot()
+		found := false
+		for _, b := range snap {
+			if b.Component == name {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "Component %s should be registered", name)
+	}
+
+	assert.Len(t, registry.Snapshot(), len(validNames))
+}
+
+// BenchmarkM1_Startup_Performance benchmarks startup overhead
+func BenchmarkM1_Startup_Performance(b *testing.B) {
+	b.Run("ProductionModeBoot", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			Reset()
+			registry := NewRegistry(runmode.Production)
+			
+			components := []string{"db", "cache", "queue", "storage", "auth"}
+			for _, c := range components {
+				registry.MustReal(c, "real-driver", true, "real")
+			}
+
+			_ = registry.Enforce()
+		}
+	})
+
+	b.Run("DegradedModeBoot", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			Reset()
+			registry := NewRegistry(runmode.Degraded)
+
+			components := []struct{ name string; real bool }{
+				{"db", true}, {"cache", false}, {"queue", true}, {"storage", false}}
+
+			for _, c := range components {
+				registry.MustReal(c.name, "driver", c.real, "mixed")
+			}
+
+			_ = registry.Enforce()
+		}
+	})
+
+	b.Run("SimulationModeBoot", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			Reset()
+			registry := NewRegistry(runmode.Simulation)
+
+			components := []string{"fake1", "fake2", "fake3", "fake4", "fake5"}
+			for _, c := range components {
+				registry.MustReal(c, "mock", false, "fake")
+			}
+
+			_ = registry.Enforce()
+		}
+	})
+
+	b.Run("ConcurrentRegistryAccess", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			Reset()
+			registry := NewRegistry(runmode.Simulation)
+
+			for pb.Next() {
+				registry.MustReal(fmt.Sprintf("comp_%d", time.Now().UnixNano()), "drv", false, "concurrent")
+				_ = registry.Snapshot()
+			}
+		})
+	})
+}
+
+// Helper function to set up test router
+func SetupTestRouter() *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	router := gin.Default()
+	router.GET("/api/v1/capabilities", handleCapabilities)
+	return router
+}

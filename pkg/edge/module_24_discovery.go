@@ -10,7 +10,7 @@
 //
 //   - DiscoveryTransport      — where device advertisements come from.
 //     MockDiscoveryTransport  — deterministic in-memory fleet, IsReal() == false.
-//     A real implementation (grandcat/zeroconf, hashicorp/mdns) must be injected to
+//     A real implementation (hashicorp/mdns, miekg/mdns) must be injected to
 //     get IsReal() == true; none ships today.
 //   - HardwareProber          — how a device's capability spec is obtained.
 //     LocalHardwareProber     — REAL: reads this host's own CPU/arch from the Go

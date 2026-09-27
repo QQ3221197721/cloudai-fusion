@@ -41,14 +41,18 @@ const (
 type ExtensionPoint string
 
 const (
-	// --- Scheduler extension points (K8s scheduler framework style) ---
-	ExtSchedulerFilter   ExtensionPoint = "scheduler.filter"
-	ExtSchedulerScore    ExtensionPoint = "scheduler.score"
-	ExtSchedulerPreBind  ExtensionPoint = "scheduler.prebind"
-	ExtSchedulerBind     ExtensionPoint = "scheduler.bind"
-	ExtSchedulerPostBind ExtensionPoint = "scheduler.postbind"
-	ExtSchedulerReserve  ExtensionPoint = "scheduler.reserve"
-	ExtSchedulerPermit   ExtensionPoint = "scheduler.permit"
+	// --- K8s Scheduler Framework extension points (all 9 phases) ---
+	ExtSchedulerPreFilter   ExtensionPoint = "scheduler.prefilter"   // Phase 1: validate/enrich workload before filtering
+	ExtSchedulerFilter      ExtensionPoint = "scheduler.filter"      // Phase 2: filter unschedulable nodes
+	ExtSchedulerPostFilter  ExtensionPoint = "scheduler.postfilter"  // Phase 2b: post-filter remediation/preemption
+	ExtSchedulerScore       ExtensionPoint = "scheduler.score"       // Phase 3: score remaining nodes
+	ExtSchedulerNormalize   ExtensionPoint = "scheduler.normalize"   // Phase 3b: normalize scores to [0,100]
+	ExtSchedulerReserve     ExtensionPoint = "scheduler.reserve"     // Phase 4: reserve resources pre-binding
+	ExtSchedulerPermit      ExtensionPoint = "scheduler.permit"      // Phase 5: gate binding with optional wait
+	ExtSchedulerPreBind     ExtensionPoint = "scheduler.prebind"     // Phase 6: prepare node pre-binding
+	ExtSchedulerBind        ExtensionPoint = "scheduler.bind"        // Phase 7: bind workload to node
+	ExtSchedulerPostBind    ExtensionPoint = "scheduler.postbind"    // Phase 8: post-binding cleanup/notifications
+	ExtSchedulerReject      ExtensionPoint = "scheduler.reject"      // Custom: explicit rejection handling
 
 	// --- Security extension points ---
 	ExtSecurityScanner       ExtensionPoint = "security.scanner"

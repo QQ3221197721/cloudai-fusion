@@ -41,7 +41,7 @@ Detects the workload type from the argument:
   WASM module (.wasm file): Deploys via pkg/wasm runtime manager
 
 Every deployment automatically records a signed attestation into the evidence chain,
-proving that what's RUNNING matches the requested deployment. This is our "docker run" moment — instant value through verifiable control plane.
+proving that what's RUNNING matches the requested deployment. This is our "docker run" moment – instant value through verifiable control plane.
 
 Flags:
   --dry-run     Validate configuration without deploying (simulated mode)
@@ -68,18 +68,18 @@ func runDeploy(cmd *cobra.Command, target string, opts *deployRunOptions) error 
 
 	if opts.dryRun {
 		PrintStep(out, 1, 4, "Validating environment")
-		fmt.Fprintln(out, "  ✓ Environment ready for deployment")
+		fmt.Fprintln(out, "  ✅ Environment ready for deployment")
 		
 		if ext == ".wasm" {
 			PrintStep(out, 2, 4, "Analyzing WASM module")
 			fmt.Fprintln(out, "      Module structure valid")
 			PrintStep(out, 3, 4, "Checking runtime availability")
-			fmt.Fprintln(out, "      ✗ No real WasmEdge/containerd runtime available (simulated)")
+			fmt.Fprintln(out, "      ⚠️ No real WasmEdge/containerd runtime available (simulated)")
 		} else {
 			PrintStep(out, 2, 4, "Validating image reference")
-			fmt.Fprintln(out, "      ✓ Image reference valid:", target)
+			fmt.Fprintln(out, "      ✅ Image reference valid:", target)
 			PrintStep(out, 3, 4, "Checking Kubernetes cluster")
-			fmt.Fprintln(out, "      ✗ No real Kubernetes cluster available (simulated)")
+			fmt.Fprintln(out, "      ⚠️ No real Kubernetes cluster available (simulated)")
 		}
 		PrintStepDone(out, "Dry-run validation passed")
 		PrintNextSteps(out, "\nNext steps:\n", 
@@ -138,9 +138,9 @@ func runDeploy(cmd *cobra.Command, target string, opts *deployRunOptions) error 
 
 	// Pretty print result
 	fmt.Fprintln(out, "")
-	fmt.Fprintln(out, Separator('═', 64))
+	fmt.Fprintln(out, Separator('━', 64))
 	fmt.Fprintf(out, "  cafctl deploy run · %s\n", strings.Title(result.kind))
-	fmt.Fprintln(out, Separator('═', 64))
+	fmt.Fprintln(out, Separator('━', 64))
 	fmt.Fprintln(out, "")
 	fmt.Fprintf(out, "  Workload:     %s\n", target)
 	fmt.Fprintf(out, "  Type:         %s\n", strings.Title(result.kind))
@@ -199,7 +199,7 @@ func runDeployRollback(cmd *cobra.Command, opts *deployRollbackOptions) error {
 	out := cmd.OutOrStdout()
 	ctx := cmd.Context()
 
-	fmt.Fprintln(out, "↩️ Rolling back deployment:", opts.target)
+	fmt.Fprintln(out, "➤ Rolling back deployment:", opts.target)
 
 	// Mock rollback logic (in production would call scheduler.GetPreviousVersion())
 	fmt.Fprintln(out, "  Checking current version...")
@@ -215,7 +215,7 @@ func runDeployRollback(cmd *cobra.Command, opts *deployRollbackOptions) error {
 	}
 
 	fmt.Fprintln(out, "  Executing rollback...")
-	fmt.Fprintln(out, "  ✓ Rollback completed successfully")
+	fmt.Fprintln(out, "  ✅ Rollback completed successfully")
 
 	// Record rollback attestation
 	var attestHash string
@@ -284,7 +284,7 @@ func runDeployCheck(cmd *cobra.Command, deploymentName string, opts *deployCheck
 	out := cmd.OutOrStdout()
 	jsonMode := opts.output == "json"
 
-	fmt.Fprintln(out, "🏥 Checking deployment health:", deploymentName)
+	fmt.Fprintln(out, "🔍 Checking deployment health:", deploymentName)
 
 	// Mock health check (in production would call scheduler.CheckHealth())
 	checkResult := deploymentHealth{
@@ -482,22 +482,22 @@ type mockK8sDeployment struct {
 
 // Simple mock implementations for demonstration
 func validateWasmMock(data []byte) struct {
-	valid     bool
-	size      int64
-	name      string
-	errorMsg  string
+	valid      bool
+	size       int64
+	name       string
+	errorMsg   string
 	wasm_version int
-	has_wasi  bool
-	exports   []string
+	has_wasi   bool
+	exports    []string
 } {
 	result := struct {
-		valid     bool
-		size      int64
-		name      string
-		errorMsg  string
+		valid      bool
+		size       int64
+		name       string
+		errorMsg   string
 		wasm_version int
-		has_wasi  bool
-		exports   []string
+		has_wasi   bool
+		exports    []string
 	}{valid: true, size: int64(len(data)), name: "mock-module"}
 	
 	if len(data) >= 8 && string(data[:4]) == "\x00asm" {

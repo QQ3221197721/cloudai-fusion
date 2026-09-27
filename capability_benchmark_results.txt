@@ -1,0 +1,1 @@
+ok  	github.com/cloudai-fusion/cloudai-fusion/pkg/capability	0.035s

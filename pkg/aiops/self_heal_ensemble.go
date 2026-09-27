@@ -345,14 +345,7 @@ func (sh *SelfHealEngine) logDecision(snapshot MetricsSnapshot, action Action, a
 	}
 }
 
-// Helper functions
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
+// computeModelConfidence computes ML model agreement confidence based on scores from mahalanobis and isolation forest.
 func computeModelConfidence(mahalanobisScore, isolationForestScore float64, anomalyDetected bool) float64 {
 	if !anomalyDetected {
 		return 0.0

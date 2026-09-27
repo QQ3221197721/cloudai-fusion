@@ -41,8 +41,7 @@ const (
 	smallSymbolCount      = 10
 	mediumSymbolCount     = 50
 	largeSymbolCount      = 100
-	benchmarkIterations   = 50  // b.N iterations per test
-	medianIterationCount  = 6   // -count=6 for median
+	// benchmarkIterations and medianIterationCount are defined in m40_flip_bench_test.go
 )
 
 // BenchmarkM43_Optimized_Extract measures our OPTIMIZED extraction

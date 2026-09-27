@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/common/defensive"
-	"github.com/cloudai-fusion/cloudai-fusion/pkg/scheduler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

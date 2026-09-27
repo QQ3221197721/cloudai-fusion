@@ -2,12 +2,28 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 )
 
 // ============================================================================
 // Scheduler Extension Point Interfaces
 // Modeled after Kubernetes Scheduling Framework (KEP-624):
 //   https://kubernetes.io/docs/concepts/scheduling-eviction/scheduling-framework/
+//
+// This implements ALL 9 K8s scheduler phases plus custom GPU-aware extensions:
+// Phase 1: PreFilter - validate/enrich workload before filtering
+// Phase 2: Filter - filter unschedulable nodes
+// Phase 2b: PostFilter - remediation/preemption when no nodes pass
+// Phase 3: Score - score remaining nodes [0,100]
+// Phase 3b: Normalize - normalize scores to uniform scale
+// Phase 4: Reserve - reserve resources pre-binding (idempotent)
+// Phase 5: Permit - gate binding with optional wait
+// Phase 6: PreBind - prepare node pre-binding (volumes, network)
+// Phase 7: Bind - actual binding operation
+// Phase 8: PostBind - cleanup/notifications
+// Custom: Reject - explicit rejection handling/fallback
+// Custom: GPUScore - GPU topology optimization
+// Custom: GPUFit - NVLink/topology-aware fit checking
 // ============================================================================
 
 // NodeInfo is a minimal representation of a candidate node passed to scheduler
@@ -82,6 +98,7 @@ func (cs *CycleState) Delete(key string) {
 // ============================================================================
 
 // PreFilterPlugin runs before filtering to validate or enrich the workload.
+// Plugins can add information to CycleState or reject the workload early.
 type PreFilterPlugin interface {
 	Plugin
 	PreFilter(ctx context.Context, state *CycleState, workload *WorkloadInfo) *Result
@@ -123,7 +140,7 @@ type NormalizeScorePlugin interface {
 }
 
 // ReservePlugin is called after scoring but before binding to reserve
-// resources on the selected node.
+// resources on the selected node. Unreserve MUST be idempotent.
 type ReservePlugin interface {
 	Plugin
 	Reserve(ctx context.Context, state *CycleState, workload *WorkloadInfo, nodeName string) *Result
@@ -132,10 +149,12 @@ type ReservePlugin interface {
 }
 
 // PermitPlugin gates whether a workload is allowed to proceed to binding.
-// It can return Wait to defer the decision.
+// It can return Wait with a timeout to defer the decision.
 type PermitPlugin interface {
 	Plugin
 	Permit(ctx context.Context, state *CycleState, workload *WorkloadInfo, nodeName string) (*Result, int64)
+	// PermitTimeout returns default wait timeout in milliseconds. Default 30000.
+	PermitTimeout() int64
 }
 
 // PreBindPlugin runs before the workload is bound to the node
@@ -156,6 +175,36 @@ type BindPlugin interface {
 type PostBindPlugin interface {
 	Plugin
 	PostBind(ctx context.Context, state *CycleState, workload *WorkloadInfo, nodeName string)
+}
+
+// RejectPlugin handles explicit workload rejection and fallback strategies.
+type RejectPlugin interface {
+	Plugin
+	Reject(ctx context.Context, state *CycleState, workload *WorkloadInfo, reason string) *Result
+}
+
+// ============================================================================
+// Custom GPU-Aware Extension Points
+// Beyond standard K8s scheduler framework
+// ============================================================================
+
+// GPUScorePlugin assigns GPU-specific scores based on topology, utilization, cost.
+type GPUScorePlugin interface {
+	Plugin
+	GPUScore(ctx context.Context, state *CycleState, workload *WorkloadInfo, node *NodeInfo) (int64, *Result)
+	GPUScoreWeight() int64
+}
+
+// GPUFitPlugin checks GPU-specific fit constraints (NVLink, MIG instances, etc.).
+type GPUFitPlugin interface {
+	Plugin
+	GPUFit(ctx context.Context, state *CycleState, workload *WorkloadInfo, node *NodeInfo) *Result
+}
+
+// GPUMonitorPlugin monitors GPU metrics during scheduling and runtime.
+type GPUMonitorPlugin interface {
+	Plugin
+	CollectGPUStats(ctx context.Context, node *NodeInfo) (*NodeInfo, error)
 }
 
 // ============================================================================
@@ -254,4 +303,138 @@ func (c *SchedulerPluginChain) RunReservePlugins(ctx context.Context, state *Cyc
 		reserved = append(reserved, rp)
 	}
 	return SuccessResult("reserve-chain")
+}
+
+// ============================================================================
+// Additional Scheduler Plugin Chain Functions
+// ============================================================================
+
+// RunPreFilterPlugins runs all PreFilterPlugins before filtering.
+func (c *SchedulerPluginChain) RunPreFilterPlugins(ctx context.Context, state *CycleState, w *WorkloadInfo) *Result {
+	for _, p := range c.registry.GetByExtension(ExtSchedulerPreFilter) {
+		if pf, ok := p.(PreFilterPlugin); ok {
+			r := pf.PreFilter(ctx, state, w)
+			if r != nil && !r.IsSuccess() {
+				return r
+			}
+		}
+	}
+	return SuccessResult("prefilter-chain")
+}
+
+// RunPostFilterPlugins runs PostFilterPlugins when no nodes pass filtering.
+func (c *SchedulerPluginChain) RunPostFilterPlugins(ctx context.Context, state *CycleState, w *WorkloadInfo, filteredNodes map[string]*Result) (*PostFilterResult, *Result) {
+	for _, p := range c.registry.GetByExtension(ExtSchedulerPostFilter) {
+		if pf, ok := p.(PostFilterPlugin); ok {
+			result, err := pf.PostFilter(ctx, state, w, filteredNodes)
+			if err != nil && !err.IsSuccess() {
+				return nil, err
+			}
+			if result != nil {
+				return result, SuccessResult("postfilter-chain")
+			}
+		}
+	}
+	return nil, SuccessResult("postfilter-chain")
+}
+
+// RunNormalizePlugins normalizes scores across all nodes after scoring.
+func (c *SchedulerPluginChain) RunNormalizePlugins(ctx context.Context, state *CycleState, scores map[string]int64) *Result {
+	for _, p := range c.registry.GetByExtension(ExtSchedulerNormalize) {
+		if np, ok := p.(NormalizeScorePlugin); ok {
+			r := np.NormalizeScore(ctx, state, scores)
+			if r != nil && !r.IsSuccess() {
+				return r
+			}
+		}
+	}
+	return SuccessResult("normalize-chain")
+}
+
+// RunPermitPlugins gates binding with optional wait.
+func (c *SchedulerPluginChain) RunPermitPlugins(ctx context.Context, state *CycleState, w *WorkloadInfo, nodeName string) (*Result, error) {
+	timeout := int64(30000) // Default timeout in ms
+	for _, p := range c.registry.GetByExtension(ExtSchedulerPermit) {
+		if pp, ok := p.(PermitPlugin); ok {
+			r, wait := pp.Permit(ctx, state, w, nodeName)
+			if r != nil && !r.IsSuccess() {
+				return r, fmt.Errorf("permit denied: %s", r.Reason)
+			}
+			if wait > 0 && wait < timeout {
+				timeout = wait
+			}
+		}
+	}
+	return SuccessResult("permit-chain"), nil
+}
+
+// RunRejectPlugins handles workload rejection and fallback.
+func (c *SchedulerPluginChain) RunRejectPlugins(ctx context.Context, state *CycleState, w *WorkloadInfo, reason string) *Result {
+	for _, p := range c.registry.GetByExtension(ExtSchedulerReject) {
+		if rp, ok := p.(RejectPlugin); ok {
+			r := rp.Reject(ctx, state, w, reason)
+			if r != nil && !r.IsSuccess() {
+				return r
+			}
+		}
+	}
+	return SuccessResult("reject-chain")
+}
+
+// ============================================================================
+// GPU-Aware Extension Point Functions
+// ============================================================================
+
+// RunGPUScorePlugins assigns GPU-specific scores based on topology/utilization.
+func (c *SchedulerPluginChain) RunGPUScorePlugins(ctx context.Context, state *CycleState, w *WorkloadInfo, nodes []*NodeInfo) (map[string]int64, *Result) {
+	scores := make(map[string]int64)
+	for _, node := range nodes {
+		scores[node.Name] = 0
+	}
+
+	for _, p := range c.registry.GetByExtension(ExtSchedulerScore) {
+		if gsp, ok := p.(GPUScorePlugin); ok {
+			weight := gsp.GPUScoreWeight()
+			if weight <= 0 {
+				weight = 1
+			}
+			for _, node := range nodes {
+				score, r := gsp.GPUScore(ctx, state, w, node)
+				if r != nil && !r.IsSuccess() {
+					return nil, r
+				}
+				scores[node.Name] += score * weight
+			}
+		}
+	}
+	return scores, SuccessResult("gpu-score-chain")
+}
+
+// RunGPUFitPlugins checks GPU-specific fit constraints (NVLink, MIG, etc.).
+func (c *SchedulerPluginChain) RunGPUFitPlugins(ctx context.Context, state *CycleState, w *WorkloadInfo, node *NodeInfo) *Result {
+	for _, p := range c.registry.GetByExtension(ExtSchedulerFilter) {
+		if gfp, ok := p.(GPUFitPlugin); ok {
+			r := gfp.GPUFit(ctx, state, w, node)
+			if r != nil && !r.IsSuccess() {
+				return r
+			}
+		}
+	}
+	return SuccessResult("gpu-fit-chain")
+}
+
+// RunGPUMonitorPlugins collects real-time GPU stats from nodes.
+func (c *SchedulerPluginChain) RunGPUMonitorPlugins(ctx context.Context, node *NodeInfo) (*NodeInfo, error) {
+	for _, p := range c.registry.GetByExtension(ExtSchedulerFilter) {
+		if gm, ok := p.(GPUMonitorPlugin); ok {
+			updatedNode, err := gm.CollectGPUStats(ctx, node)
+			if err != nil {
+				return nil, fmt.Errorf("GPU stats collection failed: %w", err)
+			}
+			if updatedNode != nil {
+				return updatedNode, nil
+			}
+		}
+	}
+	return node, nil
 }

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grandcat/zeroconf"
+	"github.com/hashicorp/mdns"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,7 +28,7 @@ import (
 //    - Weaknesses: Requires pre-registration, centralized model only, no auto-discovery
 //    - Best for: Orchestrator view of known fleet, local state management
 //
-// 2. ZEROCONF / MULTICAST DNS (grandcat/zeroconf v1.0.0)
+// 2. MULTICAST DNS (hashicorp/mdns v1.0.7)
 //    - Registration: mdns.Register() creates UDP multicast service announcement
 //    - Discovery: Browse() listens on mDNS group (224.0.0.251:5353) for announcements
 //    - Strengths: True decentralized discovery, cross-device without registration,
@@ -65,6 +65,10 @@ const (
 )
 
 var logger *logrus.Logger
+
+// zeroconf is an alias for hashicorp/mdns package
+// This maintains compatibility with existing code that uses zeroconf terminology
+var zeroconf = mdns
 
 func init() {
 	logger = logrus.New()

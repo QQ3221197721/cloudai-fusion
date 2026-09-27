@@ -1,0 +1,20 @@
+﻿go : # github.com/cloudai-fusion/cloudai-fusion/pkg/capability [github.com/cloudai-fusion/cloudai-fusion/pkg/capability
+.test]
+所在位置 行:1 字符: 45
++ ... dai-fusion; go test ./pkg/capability -bench="BenchmarkRegistry_|Bench ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# github.com/cl...apability.test]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+pkg\capability\m1_audit_bench_test.go:5:2: "sync" imported and not used
+pkg\capability\m1_audit_bench_test.go:11:7: benchComponents redeclared in this block
+	pkg\capability\registry_bench_compare.go:133:7: other declaration of benchComponents
+pkg\capability\m1_audit_bench_test.go:59:14: undefined: NewSmartInferrer
+pkg\capability\registry_test.go:122:6: BenchmarkRegistry_Report redeclared in this block
+	pkg\capability\m1_audit_bench_test.go:27:6: other declaration of BenchmarkRegistry_Report
+pkg\capability\registry_test.go:129:6: BenchmarkRegistry_HasSimulated redeclared in this block
+	pkg\capability\m1_audit_bench_test.go:48:6: other declaration of BenchmarkRegistry_HasSimulated
+pkg\capability\registry_test.go:136:6: BenchmarkRegistry_Snapshot redeclared in this block
+	pkg\capability\m1_audit_bench_test.go:37:6: other declaration of BenchmarkRegistry_Snapshot
+FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/capability [build failed]
+FAIL
