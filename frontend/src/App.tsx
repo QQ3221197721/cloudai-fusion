@@ -6,6 +6,16 @@ import { DashboardPage } from "@/pages/Dashboard";
 import { WorkOrderSubmitPage } from "@/pages/WorkOrderSubmit";
 import { CampaignsPage } from "@/pages/Campaigns";
 import { ReportsPage } from "@/pages/Reports";
+import { M7RaftConsensusPage } from "@/pages/M7_RaftConsensus";
+import { M8ConfigManagerPage } from "@/pages/M8_ConfigManager";
+import { M9GPUSchedulerPage } from "@/pages/M9_GPUScheduler";
+import { M10RLOptimizerPage } from "@/pages/M10_RLOptimizer";
+import { M11MultiTenantGPUSharingPage } from "@/pages/M11_MultiTenantGPUSharing";
+import { M1DistributedLedgerPage } from "@/pages/M1_DistributedLedger";
+import { M3FabricConnectivityPage } from "@/pages/M3_FabricConnectivity";
+import { M4SecurityBaselinePage } from "@/pages/M4_SecurityBaseline";
+import M2ModelLifecyclePage from "@/pages/M2_ModelLifecycle";
+import M6FeatureStorePage from "@/pages/M6_FeatureStore";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +92,106 @@ function App() {
             element={
               <ProtectedRoute>
                 <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M7 Raft Consensus Module */}
+          <Route
+            path="/m7-raft-consensus"
+            element={
+              <ProtectedRoute>
+                <M7RaftConsensusPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M8 Global Configuration Manager */}
+          <Route
+            path="/m8-config-manager"
+            element={
+              <ProtectedRoute>
+                <M8ConfigManagerPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M9 GPU Scheduler & Live Migration */}
+          <Route
+            path="/m9-gpu-scheduler"
+            element={
+              <ProtectedRoute>
+                <M9GPUSchedulerPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M10 RL-Based Training Optimizer */}
+          <Route
+            path="/m10-rl-optimizer"
+            element={
+              <ProtectedRoute>
+                <M10RLOptimizerPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M11 Multi-tenant GPU Sharing & Quota Management */}
+          <Route
+            path="/m11-gpu-sharing"
+            element={
+              <ProtectedRoute>
+                <M11MultiTenantGPUSharingPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M1 Distributed Ledger - Verifiable Control Plane */}
+          <Route
+            path="/m1-distributed-ledger"
+            element={
+              <ProtectedRoute>
+                <M1DistributedLedgerPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M3 Fabric Connectivity - Event Mesh Dashboard */}
+          <Route
+            path="/m3-fabric"
+            element={
+              <ProtectedRoute>
+                <M3FabricConnectivityPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M4 Security Baseline - RBAC & Compliance */}
+          <Route
+            path="/m4-security"
+            element={
+              <ProtectedRoute>
+                <M4SecurityBaselinePage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M6 Feature Store - ML Feature Registry & Serving */}
+          <Route
+            path="/m6-feature-store"
+            element={
+              <ProtectedRoute>
+                <M6FeatureStorePage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M2 Model Lifecycle Management - AI/ML Model Registry */}
+          <Route
+            path="/m2-model-lifecycle"
+            element={
+              <ProtectedRoute>
+                <M2ModelLifecyclePage />
               </ProtectedRoute>
             }
           />

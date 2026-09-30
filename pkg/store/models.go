@@ -339,3 +339,17 @@ type SchedulerSnapshotModel struct {
 }
 
 func (SchedulerSnapshotModel) TableName() string { return "scheduler_snapshots" }
+
+// ============================================================================
+// Key-Value Store Model — Generic key-value persistence for common.StoreInterface
+// ============================================================================
+
+// KeyValueModel stores arbitrary data as key-value pairs with JSON serialization
+type KeyValueModel struct {
+	Key   string    `gorm:"type:varchar(256);primaryKey;index" json:"key"`
+	Value []byte    `gorm:"type:bytes;not null" json:"value"` // JSON-encoded data
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (KeyValueModel) TableName() string { return "key_value_store" }

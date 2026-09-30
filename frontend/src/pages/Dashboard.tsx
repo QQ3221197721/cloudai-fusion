@@ -152,7 +152,7 @@ export function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="scan" className="space-y-4">
-                  <TabsList className="grid w-full grid-cols-4 bg-slate-800/50">
+                  <TabsList className="grid w-full grid-cols-5 bg-slate-800/50">
                     <TabsTrigger value="scan" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
                       🔍 Quick Scan
                     </TabsTrigger>
@@ -164,6 +164,9 @@ export function DashboardPage() {
                     </TabsTrigger>
                     <TabsTrigger value="evidence" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
                       📊 Evidence
+                    </TabsTrigger>
+                    <TabsTrigger value="raft" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+                      🏛️ Raft Cluster
                     </TabsTrigger>
                   </TabsList>
                   
@@ -204,6 +207,16 @@ export function DashboardPage() {
                       <CardContent className="pt-6">
                         <Button size="lg" variant="outline" className="w-full py-6 text-base" asChild={{ isForwardRef: false }}>
                           <Link to="/reports">View Verifiable Reports →</Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="raft">
+                    <Card className="bg-slate-800/30 border-slate-700/50">
+                      <CardContent className="pt-6">
+                        <Button size="lg" variant="outline" className="w-full py-6 text-base" asChild={{ isForwardRef: false }}>
+                          <Link to="/m7-raft-consensus">Launch Raft Consensus Monitor →</Link>
                         </Button>
                       </CardContent>
                     </Card>

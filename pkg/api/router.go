@@ -21,6 +21,7 @@ import (
 	apperrors "github.com/cloudai-fusion/cloudai-fusion/pkg/errors"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/feature"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/featurestore"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/finops"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/hunt"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/intel"
@@ -33,6 +34,7 @@ import (
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/security"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/soc"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/store"
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/pipeline"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/tracing"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/wasm"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/websocket"
@@ -93,6 +95,14 @@ type RouterConfig struct {
 	// PluginManager backs the contrib plugin runtime (/api/v1/plugins). When nil,
 	// only the static manifest catalog is served (runtime endpoints are omitted).
 	PluginManager *plugin.Manager
+
+	// FeatureStoreManager backs the M6 Feature Store subsystem
+	// (/api/v1/features, /api/v1/feature-groups). When nil, feature store endpoints are omitted.
+	FeatureStoreManager *featurestore.Manager
+
+	// PipelineManager backs the M5 Data Pipeline subsystem
+	// (/api/v1/pipelines). When nil, pipeline endpoints are omitted.
+	PipelineManager *pipeline.Manager
 }
 
 // NewRouter creates the main API router with all routes configured
@@ -389,6 +399,18 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 		if cfg.IntelHub != nil {
 			v1.POST("/intel/sync", auth.RequirePermission(auth.PermSecurityManage), handleIntelSync(cfg.IntelHub))
 			v1.POST("/intel/stix", auth.RequirePermission(auth.PermSecurityManage), handleIntelSTIX(cfg.IntelHub))
+		}
+
+		// ---- M5 Data Pipeline ----
+		if cfg.PipelineManager != nil {
+			pipelineHandler := NewPipelineHandler(cfg.PipelineManager)
+			pipelineHandler.RegisterRoutes(v1)
+		}
+		
+		// ---- M6 Feature Store ----
+		if cfg.FeatureStoreManager != nil {
+			featureHandler := NewFeatureStoreHandler(cfg.FeatureStoreManager)
+			featureHandler.RegisterRoutes(v1)
 		}
 	}
 

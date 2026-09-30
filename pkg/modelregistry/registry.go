@@ -179,6 +179,10 @@ type Registry interface {
 	// Data is never deleted. If fromVer is non-empty it must match the current
 	// pointer (optimistic concurrency guard).
 	Rollback(ctx context.Context, name, fromVer, toVer string) error
+	// Current returns the model's current serving version, or "" when none is set.
+	Current(name string) (string, error)
+	// Verify performs cryptographic integrity verification of a model version.
+	Verify(ctx context.Context, name, version string) (*IntegrityReport, error)
 }
 
 // Compile-time proof that FSRegistry satisfies Registry.

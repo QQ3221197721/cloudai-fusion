@@ -624,6 +624,17 @@ func runServer(cmd *cobra.Command, args []string) error {
 	// evidence ledger, so red-team reports are offline-verifiable.
 	redteamManager := redteam.NewManager(evidenceLedger, logger)
 	logger.Info("Verifiable AI Red Team subsystem initialized (evidence-backed)")
+	
+	// M2 Model Lifecycle Management: model registry for AI/ML models
+	modelRegistryPath := cfg.ModelRegistryPath
+	if modelRegistryPath == "" {
+		modelRegistryPath = "./data/model-registry"
+	}
+	if err := InitializeM2ModelRegistry(modelRegistryPath, evidenceLedger); err != nil {
+		logger.WithError(err).Warn("Failed to initialize M2 Model Registry")
+	} else {
+		logger.WithField("path", modelRegistryPath).Info("M2 Model Lifecycle Management initialized")
+	}
 
 	// AISecOps L1 Threat Intelligence store. Prefer the real ClickHouse TSDB when
 	// an endpoint is configured and reachable; otherwise fall back to the honest
@@ -872,6 +883,14 @@ func runServer(cmd *cobra.Command, args []string) error {
 	auditHandlers := auth.NewAuditHandlers(auditStore)
 	router.GET("/admin/audit/recent", auditHandlers.RecentHandler())
 	router.GET("/admin/audit/query", auditHandlers.QueryHandler())
+	
+	// M2 Model Registry Routes (if initialized)
+	if globalModelRegistry != nil {
+		SetupM2ModelRoutes(router, logger)
+		logger.Info("M2 Model Lifecycle HTTP endpoints registered")
+	} else {
+		logger.Warn("M2 Model Registry not available - skipping model lifecycle endpoints")
+	}
 
 	// Expose dynamic log level endpoint
 	router.Any("/admin/log-level", gin.WrapH(appLogger.LevelHandler()))

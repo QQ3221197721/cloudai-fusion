@@ -4,6 +4,8 @@
 package store
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -92,6 +94,7 @@ func New(cfg Config) (*Store, error) {
 		&EdgeNodeModel{},
 		&AlertRuleModel{}, &AlertEventModel{},
 		&SchedulerSnapshotModel{},
+		&KeyValueModel{}, // For common.StoreInterface key-value operations
 	}
 	for _, model := range models {
 		if err := db.AutoMigrate(model); err != nil {
@@ -400,4 +403,120 @@ func (s *Store) LoadSchedulerSnapshot() (string, error) {
 		return "", result.Error
 	}
 	return snap.Data, nil
+}
+
+// ============================================================================
+// StoreInterface Implementation - satisfies common.StoreInterface
+// ============================================================================
+
+// Save persists data to key-value store using JSON serialization
+func (s *Store) Save(ctx context.Context, key string, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("marshal data: %w", err)
+	}
+	model := &KeyValueModel{Key: key, Value: jsonData}
+	// Use OnConflict to update existing records
+	return s.db.Create(model).OnConflict("key").DoUpdates(gorm.M{"value": jsonData}).Error
+}
+
+// Load retrieves data from key-value store and deserializes
+func (s *Store) Load(ctx context.Context, key string) (interface{}, error) {
+	var model KeyValueModel
+	if err := s.db.Where("key = ?", key).First(&model).Error; err != nil {
+		return nil, err
+	}
+	var data interface{}
+	if err := json.Unmarshal(model.Value, &data); err != nil {
+		return nil, fmt.Errorf("unmarshal value: %w", err)
+	}
+	return data, nil
+}
+
+// Delete removes a key-value pair
+func (s *Store) Delete(ctx context.Context, key string) error {
+	return s.db.Where("key = ?", key).Delete(&KeyValueModel{}).Error
+}
+
+// List returns all keys matching a prefix
+func (s *Store) List(ctx context.Context, prefix string) ([]string, error) {
+	var models []KeyValueModel
+	if err := s.db.Where("key LIKE ?", prefix+"%").Find(&models).Error; err != nil {
+		return nil, err
+	}
+	keys := make([]string, len(models))
+	for i, m := range models {
+		keys[i] = m.Key
+	}
+	return keys, nil
+}
+
+// BeginTransaction starts a new database transaction
+func (s *Store) BeginTransaction(ctx context.Context) (common.TxInterface, error) {
+	return &dbTransaction{tx: s.db.Begin()}, nil
+}
+
+// dbTransaction implements common.TxInterface
+type dbTransaction struct {
+	tx       *gorm.DB
+	closed   bool
+}
+
+func (t *dbTransaction) Commit() error {
+	if t.closed {
+		return fmt.Errorf("transaction already closed")
+	}
+	t.closed = true
+	return t.tx.Commit().Error
+}
+
+func (t *dbTransaction) Rollback() error {
+	if t.closed {
+		return nil // Already closed/committed
+	}
+	t.closed = true
+	return t.tx.Rollback().Error
+}
+
+func (t *dbTransaction) Save(key string, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("marshal data: %w", err)
+	}
+	return t.tx.Create(&KeyValueModel{Key: key, Value: jsonData}).Error
+}
+
+func (t *dbTransaction) Load(key string) (interface{}, error) {
+	var model KeyValueModel
+	if err := t.tx.Where("key = ?", key).First(&model).Error; err != nil {
+		return nil, err
+	}
+	var data interface{}
+	if err := json.Unmarshal(model.Value, &data); err != nil {
+		return nil, fmt.Errorf("unmarshal value: %w", err)
+	}
+	return data, nil
+}
+
+// ============================================================================
+// Additional Store methods for scheduler integration
+// ============================================================================
+
+// UpdateWorkloadStatus updates workload status with audit trail
+func (s *Store) UpdateWorkloadStatus(workloadID, oldStatus, newStatus, reason string) error {
+	// Create event record first
+	event := &WorkloadEvent{
+		WorkloadID: workloadID,
+		FromStatus: oldStatus,
+		ToStatus:   newStatus,
+		Reason:     reason,
+		CreatedAt:  time.Now().UTC(),
+	}
+	if err := s.db.Create(event).Error; err != nil {
+		return fmt.Errorf("create event: %w", err)
+	}
+	
+	// Then update workload status
+	return s.db.Model(&WorkloadModel{}).Where("id = ? AND status = ?", workloadID, oldStatus).
+		Update("status", newStatus).Error
 }

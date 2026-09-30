@@ -97,6 +97,10 @@ type Config struct {
 	ClickHouseUser     string `mapstructure:"clickhouse_user"`
 	ClickHousePassword string `mapstructure:"clickhouse_password"` //nolint:gosec // G101: config field, not a hardcoded credential
 
+	// M2 Model Registry (AI/ML model lifecycle management). Path to store
+	// model artifacts and version records in content-addressed format.
+	ModelRegistryPath string `mapstructure:"model_registry_path"`
+
 	// EDR (L3 endpoint telemetry). When true, the API's endpoint-collection route
 	// uses the real /proc collector (Linux); otherwise a simulated collector.
 	EDRRealCollector bool `mapstructure:"edr_real_collector"`

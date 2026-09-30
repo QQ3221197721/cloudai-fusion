@@ -67,7 +67,7 @@ type Engine struct {
 	policy    *SchedulingPolicy
 	queue     []*Workload          // in-memory hot-path queue (WAL-backed)
 	running   map[string]*Workload // in-memory running set (WAL-backed)
-	store     *store.Store         // DB persistence for scheduling records
+	store     common.StoreInterface // DB abstraction for scheduling records
 	k8sClient *k8s.Client
 	// Sub-engines for advanced scheduling
 	topology         *TopologyDiscoverer

@@ -130,5 +130,8 @@ type EdgeRepository interface {
 	DeleteEdgeNode(id string) error
 }
 
+// Note: PipelineRepository moved to pkg/pipeline/gorm_pipeline_store.go
+// This is kept for backward compatibility but the actual implementation is now in pkg/pipeline
+
 // Compile-time interface satisfaction check.
 var _ DataStore = (*Store)(nil)

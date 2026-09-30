@@ -4,6 +4,7 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -249,6 +250,14 @@ func (s *Store) DeleteAlertRule(id string) error {
 func (s *Store) CreateAlertEvent(event *AlertEventModel) error {
 	return s.db.Create(event).Error
 }
+
+// ============================================================================
+// Pipeline CRUD - using separate PipelineStoreImpl
+// ============================================================================
+
+// ============================================================================
+// Pipeline CRUD - defined inline here to avoid circular imports
+// ============================================================================
 
 // ListAlertEvents returns recent alert events
 func (s *Store) ListAlertEvents(limit int) ([]AlertEventModel, error) {
