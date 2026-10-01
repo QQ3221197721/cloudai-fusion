@@ -1,30 +1,27 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
-	"testing"
 	"time"
-
-	"github.com/spf13/cobra"
 )
 
 // benchmarkResult 记录基准测试结果
 type benchmarkResult struct {
-	Name             string        `json:"name"`
-	SubcommandCount  int           `json:"subcommand_count"`
-	DelayNsPerOp     int64         `json:"dispatch_latency_ns_per_op"`
-	MedianDelayNs    int64         `json:"median_dispatch_latency_ns"`
-	HelpGenTimeMs    int64         `json:"help_generation_time_ms"`
-	MedianHelpMs     int64         `json:"median_help_generation_ms"`
-	StdoutSizeBytes  int64         `json:"stdout_size_bytes"`
-	CorrectnessPass  bool          `json:"correctness_pass"`
-	Error            string        `json:"error,omitempty"`
+	Name             string  `json:"name"`
+	SubcommandCount  int     `json:"subcommand_count"`
+	DelayNsPerOp     int64   `json:"dispatch_latency_ns_per_op"`
+	MedianDelayNs    int64   `json:"median_dispatch_latency_ns"`
+	HelpGenTimeMs    int64   `json:"help_generation_time_ms"`
+	MedianHelpMs     int64   `json:"median_help_generation_ms"`
+	StdoutSizeBytes  int64   `json:"stdout_size_bytes"`
+	CorrectnessPass  bool    `json:"correctness_pass"`
+	Error            string  `json:"error,omitempty"`
 }
 
 type flipBenchmarkReport struct {
@@ -120,8 +117,8 @@ func benchmarkOurCLI(count int) []benchmarkResult {
 		result := benchmarkResult{
 			Name:            "our_cafctl",
 			SubcommandCount: 13, // From newRootCmd(): verify, verify-inclusion, etc.
-			DelayNsPerOp:    dispatchLatency.NsPerOp(),
-			HelpGenTimeMs:   helpGenTime.Milliseconds(),
+			DelayNsPerOp:    dispatchLatency,
+			HelpGenTimeMs:   helpGenTime,
 			CorrectnessPass: true,
 		}
 
@@ -135,7 +132,7 @@ func benchmarkOurCLI(count int) []benchmarkResult {
 	return results
 }
 
-func benchmarkDispatchLatency(cliPath string, iterations int) *testing.BenchmarkResult {
+func benchmarkDispatchLatency(cliPath string, iterations int) int64 {
 	var times []time.Duration
 
 	// Warmup
@@ -151,10 +148,7 @@ func benchmarkDispatchLatency(cliPath string, iterations int) *testing.Benchmark
 	for _, t := range times {
 		totalNanos += t.Nanoseconds()
 	}
-	avgPerDispatch := totalNanos / int64(iterations*100)
-	return &testing.BenchmarkResult{
-		NsPerOp: avgPerDispatch,
-	}
+	return totalNanos / int64(iterations*100)
 }
 
 func testDispatch(cliPath string, n int) {
@@ -164,7 +158,7 @@ func testDispatch(cliPath string, n int) {
 	}
 }
 
-func benchmarkHelpGeneration(cliPath string) *testing.BenchmarkResult {
+func benchmarkHelpGeneration(cliPath string) int64 {
 	var times []time.Duration
 
 	// Warmup
@@ -180,10 +174,7 @@ func benchmarkHelpGeneration(cliPath string) *testing.BenchmarkResult {
 	for _, t := range times {
 		totalNanos += t.Nanoseconds()
 	}
-	avgPerGen := totalNanos / int64(runCount)
-	return &testing.BenchmarkResult{
-		NsPerOp: avgPerGen,
-	}
+	return totalNanos / int64(runCount)
 }
 
 func generateHelp(cliPath, cmdName string) {
