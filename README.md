@@ -64,6 +64,7 @@ production).
 | **Verifiable AI Red Team** | scope-gated engagements, evidence-signed actions, LLM planner, web/AD exploit chaining | `client-go` + orchestrated tools | tools real-when-installed; LLM real-when-endpoint-set |
 | **AISecOps deep wells** | L1 intel (ClickHouse HTTP + STIX 2.1 feeds), L3 endpoint (`/proc` EDR, Linux), L8 response (gateway IP-ACL + active NetworkPolicy) | `net/http`, `/proc`, `pkg/security` | in-memory/static/recording fallback; real when the resp. env var is set |
 | **AI / LLM** | OpenAI / DashScope / Ollama / vLLM; optional PyTorch/SB3 RL | OpenAI-compatible + `torch`/`stable-baselines3` | rule-based heuristics (honestly reported at `/api/v1/models/status`) |
+| **M14 Training Orchestrator** | Θ(1) gang barrier sync, checkpoint I/O pipeline, hyperparameter tuning engine, multi-agent coordination | Go 1.25, Ed25519 attestation, SHA-256 validation | Kubernetes integration pending (Oct 15, 2026 target); currently simulates capacity management in-memory |
 
 Real Flux reconcile-status reads, cross-cluster failover, and hashicorp/raft consensus
 are now implemented and integration-tested against `kind` (run with `-tags integration`).
