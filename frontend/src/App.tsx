@@ -20,6 +20,11 @@ import { M17AutoMLPlatformPage } from "@/pages/M17_AutoMLPlatform";
 import { M18ExperimentTrackerPage } from "@/pages/M18_ExperimentTracker";
 import { M19BehaviorHuntingPage } from "@/pages/M19_BehaviorHunting";
 import { M20FederatedLearningPage } from "@/pages/M20_FederatedLearning";
+import { M36AIVulnerabilityManagementPage } from "@/pages/M36_AIVulnerabilityManagement";
+import { M37DevSecOpsPipelinePage } from "@/pages/M37_DevSecOpsPipeline";
+import { M38ContainerSecurityPlatformPage } from "@/pages/M38_ContainerSecurityPlatform";
+import { M39IdentityAccessManagementPage } from "@/pages/M39_IdentityAccessManagement";
+import { M40APISecurityGatewayPage } from "@/pages/M40_APISecurityGateway";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -236,6 +241,56 @@ function App() {
             element={
               <ProtectedRoute>
                 <M20FederatedLearningPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M36 AI-Powered Vulnerability Management */}
+          <Route
+            path="/m36-vuln-mgmt"
+            element={
+              <ProtectedRoute>
+                <M36AIVulnerabilityManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M37 DevSecOps Pipeline Integration */}
+          <Route
+            path="/m37-devsecops"
+            element={
+              <ProtectedRoute>
+                <M37DevSecOpsPipelinePage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M38 Container Security Platform */}
+          <Route
+            path="/m38-container-security"
+            element={
+              <ProtectedRoute>
+                <M38ContainerSecurityPlatformPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M39 Identity & Access Management */}
+          <Route
+            path="/m39-iam"
+            element={
+              <ProtectedRoute>
+                <M39IdentityAccessManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M40 API Security Gateway */}
+          <Route
+            path="/m40-api-gateway"
+            element={
+              <ProtectedRoute>
+                <M40APISecurityGatewayPage />
               </ProtectedRoute>
             }
           />
