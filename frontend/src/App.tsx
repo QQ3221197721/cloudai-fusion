@@ -16,6 +16,10 @@ import { M3FabricConnectivityPage } from "@/pages/M3_FabricConnectivity";
 import { M4SecurityBaselinePage } from "@/pages/M4_SecurityBaseline";
 import M2ModelLifecyclePage from "@/pages/M2_ModelLifecycle";
 import M6FeatureStorePage from "@/pages/M6_FeatureStore";
+import { M17AutoMLPlatformPage } from "@/pages/M17_AutoMLPlatform";
+import { M18ExperimentTrackerPage } from "@/pages/M18_ExperimentTracker";
+import { M19BehaviorHuntingPage } from "@/pages/M19_BehaviorHunting";
+import { M20FederatedLearningPage } from "@/pages/M20_FederatedLearning";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -192,6 +196,46 @@ function App() {
             element={
               <ProtectedRoute>
                 <M2ModelLifecyclePage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M17 AutoML Platform - Hyperparameter Tuning & Neural Architecture Search */}
+          <Route
+            path="/m17-automl"
+            element={
+              <ProtectedRoute>
+                <M17AutoMLPlatformPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M18 Experiment Tracker - ML Experiment Tracking & Comparison */}
+          <Route
+            path="/m18-experiment-tracker"
+            element={
+              <ProtectedRoute>
+                <M18ExperimentTrackerPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M19 Behavior Hunting - Security Threat Detection & UEBA */}
+          <Route
+            path="/m19-behavior-hunting"
+            element={
+              <ProtectedRoute>
+                <M19BehaviorHuntingPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* M20 Federated Learning - Distributed Privacy-Preserving AI */}
+          <Route
+            path="/m20-federated-learning"
+            element={
+              <ProtectedRoute>
+                <M20FederatedLearningPage />
               </ProtectedRoute>
             }
           />
