@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/common"
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -498,25 +499,3 @@ func (t *dbTransaction) Load(key string) (interface{}, error) {
 	return data, nil
 }
 
-// ============================================================================
-// Additional Store methods for scheduler integration
-// ============================================================================
-
-// UpdateWorkloadStatus updates workload status with audit trail
-func (s *Store) UpdateWorkloadStatus(workloadID, oldStatus, newStatus, reason string) error {
-	// Create event record first
-	event := &WorkloadEvent{
-		WorkloadID: workloadID,
-		FromStatus: oldStatus,
-		ToStatus:   newStatus,
-		Reason:     reason,
-		CreatedAt:  time.Now().UTC(),
-	}
-	if err := s.db.Create(event).Error; err != nil {
-		return fmt.Errorf("create event: %w", err)
-	}
-	
-	// Then update workload status
-	return s.db.Model(&WorkloadModel{}).Where("id = ? AND status = ?", workloadID, oldStatus).
-		Update("status", newStatus).Error
-}

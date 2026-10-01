@@ -80,6 +80,11 @@ const (
 	PermMonitorManage  Permission = "monitor:manage"
 	PermCostRead       Permission = "cost:read"
 	PermCostManage     Permission = "cost:manage"
+	
+	// Scheduler permissions for M9 GPU Scheduler (SCHEDULER-ENHANCED)
+	PermSchedulerRead   Permission = "scheduler:read"
+	PermSchedulerWrite  Permission = "scheduler:write"
+	
 	PermAgentManage    Permission = "agent:manage"
 	PermAgentRead      Permission = "agent:read"
 )
@@ -102,7 +107,7 @@ var rolePermissions = map[Role][]Permission{
 		PermSecurityRead,
 		PermUserRead,
 		PermProviderRead,
-		PermMonitorRead, PermMonitorManage,
+		PermMonitorRead, PermSchedulerRead,
 		PermCostRead,
 		PermAgentRead,
 	},

@@ -4,7 +4,6 @@
 // convergence proof components for DQN-based GPU scheduler.
 // This package implements the theoretical guarantees from m10_convergence_theorem.md
 // at the code level, enabling runtime verification of convergence conditions.
-package rl_optimizer
 
 import (
 	"fmt"

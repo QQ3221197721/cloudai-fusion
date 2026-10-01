@@ -1,4 +1,4 @@
-package config
+package config_test
 
 // reconcile_bench_test.go provides the performance-validation Module 8 numbers:
 //

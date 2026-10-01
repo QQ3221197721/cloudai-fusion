@@ -125,6 +125,8 @@ github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be/go.mod h1:ySMOLuW
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYWrPrQ=
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
+github.com/aquasecurity/trivy v0.65.0 h1:zVUVIfEZd3rzyKZ1reqr3QH0PEA1Se2y7/6ct3FlWCw=
+github.com/aquasecurity/trivy v0.65.0/go.mod h1:P13ofllvs/SYEH6KLvkCJiGAN/vMHNkZjaEbsr4TqWI=
 github.com/aquasecurity/trivy-db v0.0.0-20260813095258-0e0340a01b57 h1:A3Lz/9ip/qigafSxqBWcu7S8i+tJbQS7DB2V0XibOKs=
 github.com/aquasecurity/trivy-db v0.0.0-20260813095258-0e0340a01b57/go.mod h1:iIEV2oGuZScvfyX2SMIn78iVMNnepgo0QuJJh/srgVI=
 github.com/arbovm/levenshtein v0.0.0-20160628152529-48b4e1c0c4d0 h1:jfIu9sQUG6Ig+0+Ap1h4unLjW6YQJpKZVmUzxsD4E/Q=

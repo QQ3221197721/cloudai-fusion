@@ -6,8 +6,7 @@ package modelregistry
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,7 +58,7 @@ func (idx *lineageIndex) refresh(ctx context.Context, reg *FSRegistry, models []
 			continue
 		}
 		for _, art := range arts {
-			ref := ref(art.Name, art.Version)
+			refStr := ref(art.Name, art.Version)
 			node := &modelNode{
 				Name:      art.Name,
 				Version:   art.Version,
@@ -72,13 +71,13 @@ func (idx *lineageIndex) refresh(ctx context.Context, reg *FSRegistry, models []
 					return ref(art.Name, art.Lineage.ParentVersion)
 				}(),
 			}
-			newIdx.nodes[ref] = node
+			newIdx.nodes[refStr] = node
 
 			if node.ParentRef != "" {
-				newIdx.ancestors[ref] = []string{node.ParentRef}
-				newIdx.descendants[node.ParentRef] = append(newIdx.descendants[node.ParentRef], ref)
+				newIdx.ancestors[refStr] = []string{node.ParentRef}
+				newIdx.descendants[node.ParentRef] = append(newIdx.descendants[node.ParentRef], refStr)
 			} else {
-				newIdx.ancestors[ref] = nil
+				newIdx.ancestors[refStr] = nil
 			}
 		}
 	}
@@ -178,8 +177,8 @@ func (idx *lineageIndex) walkAncestorsDisk(ctx context.Context, reg *FSRegistry,
 
 // getBlobStats returns the number of unique blobs stored (content-addressed).
 func (idx *lineageIndex) getBlobCount(reg *FSRegistry) (int, error) {
-	blobsDir := filepathJoin(reg.root, blobsDir)
-	entries, err := osReadDir(blobsDir)
+	blobsDir := filepath.Join(reg.root, blobsDir)
+	entries, err := os.ReadDir(blobsDir)
 	if err != nil {
 		return 0, err
 	}
@@ -194,19 +193,15 @@ func (idx *lineageIndex) getBlobCount(reg *FSRegistry) (int, error) {
 
 // cycleError returns a lineage cycle detection error message.
 func cycleError(startRef string) error {
-	return errCycleDetected(startRef)
+	return fmt.Errorf("lineage cycle detected at %s", startRef)
 }
 
 // parseRef splits "name:version" into components. Assumes format is always valid.
 func parseRef(refStr string) (name, version string) {
-	i := stringsLastIndexByte(refStr, ':')
+	i := strings.LastIndexByte(refStr, ':')
 	if i <= 0 {
 		return refStr, "latest"
 	}
 	return refStr[:i], refStr[i+1:]
 }
-
-	// Filesystem helper aliases to avoid import issues during testing.
-	_ = sha256.New
-	_ = hex.EncodeToString
 

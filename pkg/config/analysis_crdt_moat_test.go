@@ -1,14 +1,14 @@
-package config
+package config_test
 
 // analysis_crdt_moat_test.go provides adversarial, provable tests that
-// demonstrate M8 配置中心的 CRDT 本质优势无法被 Viper/watch-based 系统替代。
+// demonstrate M8 配置中心�?CRDT 本质优势无法�?Viper/watch-based 系统替代�?
 //
 // Three core scenarios:
-//   - Offline-convergence: two nodes update same key offline → LWW converges deterministically;
+//   - Offline-convergence: two nodes update same key offline �?LWW converges deterministically;
 //     Viper diverges based on merge order (no timestamp/causality).
-//   - Crash-recovery-semantics: simulate crash/restart → CRDT HLC recovers winner by clock;
+//   - Crash-recovery-semantics: simulate crash/restart �?CRDT HLC recovers winner by clock;
 //     Viper simply re-reads file (last-write-wins lost between restarts).
-//   - Multi-writer-concurrency: 10 goroutines set keys concurrently → CRDT O(k) merge lock-free;
+//   - Multi-writer-concurrency: 10 goroutines set keys concurrently �?CRDT O(k) merge lock-free;
 //     Viper Set/Get unguarded, race detector triggers, performance tanks under contention.
 //
 // Real data sources: viper v1.18.2 has zero mutex guards (confirmed in E:\go\pkg\mod\github.com\spf13\viper@v1.18.2\viper.go),
@@ -69,7 +69,7 @@ func TestViperDivergenceOrderDependency(t *testing.T) {
 	if vx == vy {
 		t.Errorf("expected Viper replicas to DIVERGE (order-dependent merge), both got %q", vx)
 	} else {
-		t.Logf("PROVEN: Viper diverges (X=%q != Y=%q) — no timestamp/causality, merge order decides", vx, vy)
+		t.Logf("PROVEN: Viper diverges (X=%q != Y=%q) �?no timestamp/causality, merge order decides", vx, vy)
 	}
 
 	// Contrast: CRDT LWW is order-independent. The two offline writes carry HLC
@@ -398,7 +398,7 @@ func toMapStringAny(src any) map[string]any {
 // Hot-Reload Latency Benchmark: Our CRDT+HotStore vs Raw Viper
 // ---------------------------------------------------------------------------
 //
-// FAIRNESS CONTRACT — both sides run the IDENTICAL reload scenario that an
+// FAIRNESS CONTRACT �?both sides run the IDENTICAL reload scenario that an
 // fsnotify write event triggers in production:
 //
 //   1. read the SAME config file from disk (os.ReadFile)
@@ -414,7 +414,7 @@ func toMapStringAny(src any) map[string]any {
 // HONEST EXPECTATION: this is single-writer reload. Viper does a naive map
 // rebuild; we additionally maintain CRDT register state and compute a SHA-256
 // content version for change-detection/convergence. If Viper is faster here we
-// report it plainly — our structural advantage is NOT single-writer reload
+// report it plainly �?our structural advantage is NOT single-writer reload
 // latency, it is multi-writer convergence (see the correctness tests), which
 // Viper cannot provide at any latency.
 func BenchmarkHotReload_Latency_OurVsViper(b *testing.B) {
@@ -468,7 +468,7 @@ port=8080`
 	})
 
 	b.Run("Viper_ReadIn_Config", func(bb *testing.B) {
-		// Reuse ONE viper instance across reloads — exactly what viper.WatchConfig
+		// Reuse ONE viper instance across reloads �?exactly what viper.WatchConfig
 		// does (it re-runs ReadInConfig on the same *Viper on each fsnotify event).
 		// Constructing a fresh viper.New() per iteration would unfairly charge Viper
 		// for one-time setup that never recurs during a hot reload.

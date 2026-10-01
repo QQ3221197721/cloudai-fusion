@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // ============================================================================
@@ -70,7 +72,7 @@ type ExemptionRules struct {
 // ============================================================================
 
 // GenerateInvoice creates compliant invoice with tax calculations
-func (te *TaxComplianceEngine) GenerateInvoice(ctx context.Context, invoice InvoiceData) (*Invoice, error) {
+func (te *TaxComplianceEngine) GenerateInvoice(ctx context.Context, invoice CompleteInvoiceData) (*Invoice, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	

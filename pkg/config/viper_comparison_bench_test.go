@@ -1,6 +1,6 @@
-package config
+package config_test
 
-// viper_comparison_bench_test.go â€” M8 Global Config Manager T2 benchmark vs the
+// viper_comparison_bench_test.go ï¿?M8 Global Config Manager T2 benchmark vs the
 // real github.com/spf13/viper v1.21.0. This is an HONEST, apples-to-apples
 // comparison. No mocked competitor, no cherry-picked work units.
 //
@@ -15,7 +15,7 @@ package config
 // Two benchmark families:
 //
 //  1. RELOAD path (write side): parse a config file and install it.
-//     M8 pays an extra Ed25519 seal that viper does not â€” M8 is expected to be
+//     M8 pays an extra Ed25519 seal that viper does not ï¿?M8 is expected to be
 //     SLOWER here. We measure exactly how much and admit it.
 //
 //  2. READ path under concurrency (hot path): many goroutines read config
@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	// viperTestKeyCount is the config size (~100 keys â‰ˆ 1KB, realistic).
+	// viperTestKeyCount is the config size (~100 keys ï¿?1KB, realistic).
 	viperTestKeyCount = 100
 )
 
@@ -79,7 +79,7 @@ func itoa(n int) string {
 }
 
 // ---------------------------------------------------------------------------
-// FAMILY 1 â€” RELOAD PATH (write side): parse file + install config
+// FAMILY 1 ï¿?RELOAD PATH (write side): parse file + install config
 // ---------------------------------------------------------------------------
 
 // BenchmarkViper_Reload measures a full viper reload: fresh instance, point at
@@ -104,7 +104,7 @@ func BenchmarkViper_Reload(b *testing.B) {
 // BenchmarkM8_Reload measures the equivalent M8 reload: read the file, real
 // YAML parse (yaml.v3) into a flat map, then Publish (COW snapshot + Ed25519
 // seal + atomic swap), then a few reads. M8 does STRICTLY MORE work than viper
-// here (the cryptographic seal), so it is expected to be slower â€” we quantify
+// here (the cryptographic seal), so it is expected to be slower ï¿?we quantify
 // it honestly rather than hide it.
 func BenchmarkM8_Reload(b *testing.B) {
 	path, _ := newBenchConfig(b)
@@ -159,7 +159,7 @@ func BenchmarkM8_Reload_NoSeal(b *testing.B) {
 }
 
 // ---------------------------------------------------------------------------
-// FAMILY 2 â€” READ PATH UNDER CONCURRENCY (hot path): the defensible niche
+// FAMILY 2 ï¿?READ PATH UNDER CONCURRENCY (hot path): the defensible niche
 // ---------------------------------------------------------------------------
 
 // BenchmarkViper_ConcurrentReads_WithReload stresses viper the way a running
@@ -168,11 +168,11 @@ func BenchmarkM8_Reload_NoSeal(b *testing.B) {
 // throughput degrades under a concurrent writer.
 //
 // IMPORTANT: viper's own Get/Set are NOT internally synchronized for concurrent
-// Set+Get â€” doing so panics with "concurrent map read and map write" (this is
+// Set+Get ï¿?doing so panics with "concurrent map read and map write" (this is
 // the crash Alex misattributed to a "Go 1.26 bug"; it is viper's documented
 // non-thread-safety). A correct viper deployment MUST wrap access in an
 // external RWMutex. We do exactly that here, so this is the fair "viper as it
-// must actually be used" number â€” and the per-Get lock is precisely the cost
+// must actually be used" number ï¿?and the per-Get lock is precisely the cost
 // M8's lock-free atomic pointer eliminates.
 func BenchmarkViper_ConcurrentReads_WithReload(b *testing.B) {
 	path, m := newBenchConfig(b)
@@ -193,7 +193,7 @@ func BenchmarkViper_ConcurrentReads_WithReload(b *testing.B) {
 			case <-stop:
 				return
 			default:
-				// viper.Set takes the write lock â€” a live reconfigure.
+				// viper.Set takes the write lock ï¿?a live reconfigure.
 				mu.Lock()
 				v.Set("seq", itoa(i%1024))
 				mu.Unlock()
@@ -222,7 +222,7 @@ func BenchmarkViper_ConcurrentReads_WithReload(b *testing.B) {
 
 // BenchmarkM8_ConcurrentReads_WithReload is the identical scenario for M8: many
 // goroutines read a value while a writer Publishes new sealed snapshots. Reads
-// are a single atomic pointer load + map read â€” no lock, no contention with the
+// are a single atomic pointer load + map read ï¿?no lock, no contention with the
 // writer. This is where M8 is designed to win.
 func BenchmarkM8_ConcurrentReads_WithReload(b *testing.B) {
 	_, m := newBenchConfig(b)
@@ -311,7 +311,7 @@ func BenchmarkM8_Get_Serial(b *testing.B) {
 }
 
 // ---------------------------------------------------------------------------
-// FAMILY 3 â€” PRE-PARSED CACHE OPTIMIZATION
+// FAMILY 3 ï¿?PRE-PARSED CACHE OPTIMIZATION
 // ---------------------------------------------------------------------------
 
 // BenchmarkM8_Reload_PreParsed is our HOTPATH: config pre-parsed once,
@@ -375,7 +375,7 @@ func BenchmarkViper_Reload_AtomicSwap(b *testing.B) {
 }
 
 // ---------------------------------------------------------------------------
-// FAMILY 4 â€” LOOKUP LATENCY BENCHMARKS (N=10/N=100 keys)
+// FAMILY 4 ï¿?LOOKUP LATENCY BENCHMARKS (N=10/N=100 keys)
 // ---------------------------------------------------------------------------
 
 // BenchmarkLookupLatency_N10_Our measures per-key lookup time for N=10 keys

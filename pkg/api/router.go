@@ -103,6 +103,50 @@ type RouterConfig struct {
 	// PipelineManager backs the M5 Data Pipeline subsystem
 	// (/api/v1/pipelines). When nil, pipeline endpoints are omitted.
 	PipelineManager *pipeline.Manager
+
+	// ModelRegistry backs the M2/M13 Model Lifecycle Management subsystem
+	// (/api/v1/models). When nil, model registry endpoints are omitted.
+	ModelRegistry interface {
+		Register(ctx context.Context, input interface{}) (interface{}, error)
+		List(ctx context.Context, name string) ([]interface{}, error)
+		Get(ctx context.Context, name, version string) (interface{}, error)
+		Lineage(ctx context.Context, name, version string) (interface{}, error)
+		Rollback(ctx context.Context, name, fromVer, toVer string) error
+		Current(name string) (string, error)
+		Verify(ctx context.Context, name, version string) (interface{}, error)
+	}
+	
+	// SchedulerEngine provides GPU scheduling capabilities for M9/M10
+	SchedulerEngine *scheduler.Engine
+	
+	// InferencePoolMgr manages elastic inference pools for M12  
+	InferencePoolMgr interface {
+		CreatePool(req interface{}) (interface{}, error)
+		UpdatePool(id string, req interface{}) (interface{}, error)
+		DeletePool(id string) error
+		GetPool(id string) (interface{}, error)
+		ListPools(statusFilter, typeFilter string) (interface{}, error)
+		ScalePool(id string, targetInstances int) (interface{}, error)
+		GetScalingHistory(id string, limit int) (interface{}, error)
+		GetPoolHealth(id string) (interface{}, error)
+		FailoverTest(id string) (interface{}, error)
+		GetCostReport(id, startDate, endDate string) (interface{}, error)
+	}
+	
+	// TrainingOrchestrator manages training job lifecycle for M14
+	TrainingOrchestrator interface {
+		CreateTrainingJob(job interface{}) error
+		ListTrainingJobs() (interface{}, error)
+		GetTrainingJob(id string) (interface{}, error)
+		StartTrainingJob(id string) error
+		PauseTrainingJob(id string) error
+		ResumeTrainingJob(id string) error
+		DeleteTrainingJob(id string) error
+		GetTrainingLogs(id string) (string, error)
+		GetTrainingMetrics(id string) (map[string]float64, error)
+		ScheduleGangJob(id string, spec interface{}) error
+		HyperparameterTuning(id string, config interface{}) (interface{}, error)
+	}
 }
 
 // NewRouter creates the main API router with all routes configured
@@ -293,10 +337,25 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 
 			// Verifiable scheduling decisions: read "why this node / who was
 			// preempted" receipts from the evidence ledger.
-			sched := v1.Group("/scheduling")
-			{
-				sched.GET("/decisions", auth.RequirePermission(auth.PermMonitorRead), handleSchedulingDecisions(cfg.EvidenceLedger))
-				sched.GET("/decisions/:workloadID", auth.RequirePermission(auth.PermMonitorRead), handleSchedulingDecisionByWorkload(cfg.EvidenceLedger))
+			if cfg.SchedulerEngine != nil {
+				sched := v1.Group("/scheduling")
+				sched.Use(authMiddleware(), requirePermission(auth.PermMonitorRead))
+				{
+					// Existing read-only endpoints (lines already present)
+					sched.GET("/decisions", handleSchedulingDecisions(cfg.EvidenceLedger))
+					sched.GET("/decisions/:workloadID", handleSchedulingDecisionByWorkload(cfg.EvidenceLedger))
+					
+					// === ADD NEW WRITE OPERATIONS HERE ===
+					sched.POST("/decisions/:id/override", 
+						auth.RequirePermission(auth.PermSchedulerWrite), 
+						handleOverrideDecision(cfg.SchedulerEngine, cfg.EvidenceLedger, cfg.Logger))
+					sched.POST("/workloads/:id/preempt", 
+						auth.RequirePermission(auth.PermSchedulerWrite),
+						handlePreemptWorkload(cfg.SchedulerEngine, cfg.EvidenceLedger, cfg.Logger))
+					sched.PUT("/queue/reorder", 
+						auth.RequirePermission(auth.PermSchedulerWrite),
+						handleReorderQueue(cfg.SchedulerEngine, cfg.EvidenceLedger, cfg.Logger))
+				}
 			}
 
 			// Provable FinOps: measured, receipted GPU reclamation savings.
@@ -412,6 +471,154 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 			featureHandler := NewFeatureStoreHandler(cfg.FeatureStoreManager)
 			featureHandler.RegisterRoutes(v1)
 		}
+		
+			// ---- M8 Config Manager ----
+		// Runtime feature flag management system
+		if cfg.FeatureFlags != nil {
+			RegisterM8Routes(router, cfg.FeatureFlags, cfg.Logger)
+		}
+
+		// ---- M9 GPU Scheduler - Enhanced ======================
+		if cfg.SchedulerEngine != nil && cfg.EvidenceLedger != nil {
+			schedEnhanced := v1.Group("/scheduler")
+			schedEnhanced.Use(authMiddleware(), requirePermission(auth.PermSchedulerRead))
+			{
+				schedEnhanced.GET("/status", handleSchedulerStatus())
+				schedEnhanced.GET("/queue", handleSchedulerQueueInfo(cfg.SchedulerEngine))
+				schedEnhanced.POST("/rebalance", handleTriggerRebalance(cfg.SchedulerEngine, cfg.Logger))
+			}
+		}
+
+		// ---- M10 RL Optimizer =================================
+		if cfg.SchedulerEngine != nil && cfg.SchedulerEngine.RLOptimizer() != nil {
+			rlOpt := v1.Group("/optimize/rl")
+			rlOpt.Use(authMiddleware(), requirePermission(auth.PermSchedulerWrite))
+			{
+				rlOpt.POST("/job", handleJobSubmission(cfg.SchedulerEngine.RLOptimizer(), cfg.Logger))
+				rlOpt.GET("/job/:id/status", handleGetJobStatus())
+				rlOpt.PUT("/policy", handleUpdatePolicy(cfg.Logger))
+				rlOpt.POST("/feedback", handleCollectFeedback(cfg.EvidenceLedger, cfg.Logger))
+				rlOpt.POST("/benchmark/run", handleRunBenchmarks(cfg.Logger))
+				rlOpt.GET("/roi", handleCalculateROI(cfg.Logger))
+			}
+		}
+
+		// ---- M11 Multi-tenant GPU Sharing =====================
+		if cfg.FeatureStoreManager != nil { // Use as indicator for multi-tenancy enabled
+			tenants := v1.Group("/tenants")
+			tenants.Use(authMiddleware(), requirePermission(auth.PermClusterAdmin))
+			{
+				tenants.POST("", handleCreateTenant())
+				tenants.GET("", handleListTenants())
+				tenants.GET("/:id", handleGetTenant())
+				tenants.PUT("/:id/quota", handleUpdateTenantQuota())
+				tenants.GET("/:id/quota", handleGetTenantQuota())
+				tenants.GET("/:id/gpu-pools", handleGetTenantGPUPools())
+				tenants.POST("/:id/gpu-pools/assign", handleAssignGPUPool())
+				tenants.GET("/:id/billing", handleGetTenantBilling())
+			}
+		}
+
+		// ---- M12 Elastic Inference Pool (M12-EVALUATION) ======
+		if cfg.InferencePoolMgr != nil {
+			inference := v1.Group("/inference/pools")
+			inference.Use(authMiddleware())
+			{
+				inference.GET("", handleListPools(cfg.InferencePoolMgr))
+				inference.POST("", handleCreatePool(cfg.InferencePoolMgr))
+				inference.GET("/:id", handleGetPool(cfg.InferencePoolMgr))
+				inference.PUT("/:id", handleUpdatePool(cfg.InferencePoolMgr))
+				inference.POST("/:id/scale", handleScalePool(cfg.InferencePoolMgr))
+				inference.GET("/:id/health", handleGetPoolHealth(cfg.InferencePoolMgr))
+				inference.GET("/:id/cost-report", handleGetCostReport(cfg.InferencePoolMgr))
+			}
+			
+			endpoints := v1.Group("/inference/endpoints")
+			endpoints.Use(authMiddleware())
+			{
+				endpoints.GET("", handleListEndpoints())
+				endpoints.GET("/:id/metrics", handleGetEndpointMetrics())
+			}
+		}
+
+		// ---- M13 Model Registry Management ====================
+		if cfg.ModelRegistry != nil {
+			models := v1.Group("/models")
+			models.Use(authMiddleware())
+			{
+				models.POST("", handleCreateModel(cfg.ModelRegistry))
+				models.GET("", handleListModels(cfg.ModelRegistry))
+				models.GET("/:name/versions", handleListModelVersions(cfg.ModelRegistry))
+				models.POST("/:name/register-version", handleRegisterModelVersion(cfg.ModelRegistry))
+				models.GET("/:name/:version", handleGetModel(cfg.ModelRegistry))
+				models.DELETE("/:name/:version", handleDeleteModelVersion(cfg.ModelRegistry))
+				models.POST("/:name/promote", handlePromoteModel(cfg.ModelRegistry))
+				models.GET("/:name/:version/artifacts", handleListModelArtifacts(cfg.ModelRegistry))
+			}
+		}
+
+		// ---- M14 Training Orchestrator ========================
+		if cfg.TrainingOrchestrator != nil {
+			training := v1.Group("/training")
+			training.Use(authMiddleware(), requirePermission(auth.PermWorkloadCreate))
+			{
+				training.POST("/jobs", handleCreateTrainingJob(cfg.TrainingOrchestrator))
+				training.GET("/jobs", handleListTrainingJobs(cfg.TrainingOrchestrator))
+				training.GET("/jobs/:id", handleGetTrainingJob(cfg.TrainingOrchestrator))
+				training.POST("/jobs/:id/start", handleStartTrainingJob(cfg.TrainingOrchestrator))
+				training.POST("/jobs/:id/pause", handlePauseTrainingJob(cfg.TrainingOrchestrator))
+				training.POST("/jobs/:id/resume", handleResumeTrainingJob(cfg.TrainingOrchestrator))
+				training.DELETE("/jobs/:id", handleDeleteTrainingJob(cfg.TrainingOrchestrator))
+				training.GET("/jobs/:id/logs", handleGetTrainingLogs(cfg.TrainingOrchestrator))
+				training.GET("/jobs/:id/metrics", handleGetTrainingMetrics(cfg.TrainingOrchestrator))
+				training.POST("/jobs/:id/gang-schedule", handleScheduleGangJob(cfg.TrainingOrchestrator))
+				training.POST("/jobs/:id/tune", handleHyperparameterTuning(cfg.TrainingOrchestrator))
+			}
+		}
+
+		// ---- M15 A/B Testing Platform =========================
+		if cfg.EvidenceLedger != nil {
+			experiments := v1.Group("/experiments")
+			experiments.Use(authMiddleware())
+			{
+				experiments.POST("", handleCreateExperiment(cfg.EvidenceLedger, cfg.Logger))
+				experiments.GET("", handleListExperiments())
+				experiments.GET("/:id", handleGetExperiment())
+				experiments.PUT("/:id", handleUpdateExperiment(cfg.Logger))
+				experiments.DELETE("/:id", handleDeleteExperiment(cfg.Logger))
+				experiments.POST("/:id/start", handleStartExperiment(cfg.Logger))
+				experiments.POST("/:id/stop", handleStopExperiment(cfg.Logger))
+				
+				// Traffic routing
+				experiments.GET("/:id/routes", handleGetTrafficRoutes())
+				experiments.PUT("/:id/routes", handleUpdateTrafficRouting(cfg.Logger))
+				experiments.POST("/:id/canary", handleCanaryDeployment(cfg.Logger))
+				
+				// Results analysis
+				experiments.GET("/:id/results", handleGetExperimentResults())
+				experiments.GET("/:id/significance", handleCalculateSignificance())
+				experiments.GET("/:id/lift", handleCalculateLift())
+				
+				// Segment breakdown
+				experiments.GET("/:id/segments", handleGetSegmentBreakdown())
+			}
+		}
+
+		// ---- M5 Data Pipeline ----
+		if cfg.PipelineManager != nil {
+			pipelineHandler := NewPipelineHandler(cfg.PipelineManager)
+			pipelineHandler.RegisterRoutes(v1)
+		}
+		
+		// ---- M6 Feature Store ----
+		if cfg.FeatureStoreManager != nil {
+			featureHandler := NewFeatureStoreHandler(cfg.FeatureStoreManager)
+			featureHandler.RegisterRoutes(v1)
+		}
+
+		// ---- M2/M13 Model Registry ----
+		// Registered via separate handler instantiation (using FSRegistry type directly)
+		// Note: Requires injection of modelregistry.Registry at bootstrap
 	}
 
 	// Debug endpoints (pprof, log-level, services, tracing)

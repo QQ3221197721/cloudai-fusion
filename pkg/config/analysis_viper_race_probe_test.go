@@ -1,6 +1,6 @@
 //go:build viperrace
 
-package config
+package config_test
 
 // analysis_viper_race_probe_test.go is an OPT-IN probe that demonstrates, at
 // runtime, that spf13/viper v1.18.2 is NOT safe for concurrent read+write.

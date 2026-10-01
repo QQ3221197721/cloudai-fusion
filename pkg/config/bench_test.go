@@ -1,4 +1,4 @@
-package config
+package config_test
 
 // bench_test.go measures the real cost of Module 8 (global configuration
 // management) on the machine running `go test -bench`.

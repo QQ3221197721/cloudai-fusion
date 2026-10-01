@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/config"
+	"gopkg.in/yaml.v3"
 )
 
 // ============================================================================
@@ -20,24 +21,23 @@ import (
 // ============================================================================
 
 func BenchmarkM8_OurAtomicSwap(b *testing.B) {
-	store, err := config.NewHotStore()
-	if err != nil {
-		b.Fatalf("failed to create store: %v", err)
-	}
+	store := config.NewHotStore("benchmark-node")
 	
 	bootstrap := map[string]string{
 		"ff_rl_enabled": "true",
 		"cache_ttl_sec": "3600",
 	}
 	
-	snap, err := config.NewSnapshot(bootstrap, nil)
-	if err != nil {
-		b.Fatalf("failed to create snapshot: %v", err)
+	snap := &config.Snapshot{
+		Version:   "initial",
+		Values:    bootstrap,
+		Meta:      map[string]string{"node": "benchmark"},
+		Timestamp: time.Now().UTC(),
 	}
 	
-	if err := store.Swap(snap); err != nil {
-		b.Fatalf("failed to swap initial snapshot: %v", err)
-	}
+	store.Swap(snap)
+	
+	signer, _ := config.NewBundleSigner()
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -47,14 +47,17 @@ func BenchmarkM8_OurAtomicSwap(b *testing.B) {
 			"cache_ttl_sec": "7200",  // change cache TTL
 		}
 		
-		newSnap, err := config.NewSnapshot(newValues, nil)
-		if err != nil {
-			b.Fatal(err)
+		newSnap := &config.Snapshot{
+			Version:   config.ComputeVersion(newValues),
+			Values:    newValues,
+			Meta:      map[string]string{"node": "benchmark"},
+			Timestamp: time.Now().UTC(),
 		}
 		
-		if err := store.Swap(newSnap); err != nil {
-			b.Fatal(err)
-		}
+		sealed, _ := signer.Seal(newSnap.Version, newValues)
+		newSnap.Sealed = sealed
+		
+		store.Swap(newSnap)
 		
 		// Verify flag is readable immediately after swap (concurrency test)
 		_ = store.Flag("ff_rl_enabled")
@@ -62,21 +65,16 @@ func BenchmarkM8_OurAtomicSwap(b *testing.B) {
 }
 
 func BenchmarkM8_ConcurrentFlagLookup(b *testing.B) {
-	store, err := config.NewHotStore()
-	if err != nil {
-		b.Fatalf("failed to create store: %v", err)
+	store := config.NewHotStore("benchmark-node")
+	
+	snap := &config.Snapshot{
+		Version:   "initial",
+		Values:    map[string]string{"ff_rl_enabled": "true"},
+		Meta:      map[string]string{"node": "benchmark"},
+		Timestamp: time.Now().UTC(),
 	}
 	
-	snap, err := config.NewSnapshot(map[string]string{
-		"ff_rl_enabled": "true",
-	}, nil)
-	if err != nil {
-		b.Fatalf("failed to create snapshot: %v", err)
-	}
-	
-	if err := store.Swap(snap); err != nil {
-		b.Fatalf("failed to swap: %v", err)
-	}
+	store.Swap(snap)
 	
 	done := make(chan struct{})
 	go func() {
@@ -87,7 +85,7 @@ func BenchmarkM8_ConcurrentFlagLookup(b *testing.B) {
 			case <-done:
 				return
 			case <-ticker.C:
-				_ = store.Snapshot()
+				_ = store.Load()
 			}
 		}
 	}()
@@ -116,6 +114,9 @@ func BenchmarkM8_ConfigFileWatchProxy(b *testing.B) {
 		b.Fatal(err)
 	}
 	
+	store := config.NewHotStore("benchmark-node")
+	signer, _ := config.NewBundleSigner()
+	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		data, err := os.ReadFile(configPath)
@@ -123,12 +124,12 @@ func BenchmarkM8_ConfigFileWatchProxy(b *testing.B) {
 			b.Fatal(err)
 		}
 		
-		// Simulate Viper-style YAML unmarshal overhead
+		// Parse and publish with M8 (with seal for realistic cost)
 		var raw map[string]string
 		if err := yaml.Unmarshal(data, &raw); err != nil {
 			b.Fatal(err)
 		}
 		
-		_ = raw
+		store.Publish(raw, signer)
 	}
 }

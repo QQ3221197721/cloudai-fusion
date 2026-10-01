@@ -1,0 +1,22 @@
+﻿go : # github.com/cloudai-fusion/cloudai-fusion/pkg/config_test [github.com/clo
+udai-fusion/cloudai-fusion/pkg/config.test]
+所在位置 行:1 字符: 57
++ ... pkg\config; go test -bench=. -benchmem -count=3 -run=^$ -benchtime=1s ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# github.com/cl...kg/config.test] 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+.\analysis_crdt_moat_test.go:78:10: undefined: LWWRegister
+.\analysis_crdt_moat_test.go:78:38: undefined: HLC
+.\analysis_crdt_moat_test.go:79:10: undefined: LWWRegister
+.\analysis_crdt_moat_test.go:79:38: undefined: HLC
+.\analysis_crdt_moat_test.go:92:11: undefined: NewConfigState
+.\analysis_crdt_moat_test.go:93:11: undefined: NewConfigState
+.\analysis_crdt_moat_test.go:131:16: undefined: LWWRegister
+.\analysis_crdt_moat_test.go:184:38: undefined: LWWRegister
+.\analysis_crdt_moat_test.go:194:45: undefined: LWWRegister
+.\analysis_crdt_moat_test.go:203:18: undefined: ConfigState
+.\analysis_crdt_moat_test.go:131:16: too many errors
+FAIL	github.com/cloudai-fusion/cloudai-fusion/pkg/config [build failed]
+FAIL

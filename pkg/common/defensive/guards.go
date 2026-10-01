@@ -24,10 +24,42 @@ func RequireNil(val interface{}, fieldName string) error {
 	return nil
 }
 
+// RequireNonNil asserts that a value is non-nil. Panics if nil.
+// Use in initialization code where nil dependencies are programming errors.
+func RequireNonNil(value interface{}, name string) {
+	if value == nil {
+		panic(fmt.Sprintf("defensive: %s must not be nil", name))
+	}
+}
+
+// ValidateNonNil asserts that a value is non-nil. Returns an error if nil.
+// Note: In Go, empty slices/maps/pointers are still valid values (not nil).
+// Only actual nil references return an error.
+func ValidateNonNil(val interface{}, fieldName string) error {
+	if val == nil {
+		return &ValidationErrorStruct{Field: fieldName, Message: "must be non-nil"}
+	}
+	
+	// Explicitly check for typed nils using reflection
+	v := reflect.ValueOf(val)
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Chan, reflect.Func:
+		if v.IsNil() {
+			return &ValidationErrorStruct{Field: fieldName, Message: "must be non-nil"}
+		}
+	case reflect.Interface:
+		if v.IsNil() {
+			return &ValidationErrorStruct{Field: fieldName, Message: "must be non-nil"}
+		}
+	}
+	
+	return nil
+}
+
 // RequireNonNil asserts that a value is non-nil. Returns an error if nil.
 // Note: In Go, empty slices/maps/pointers are still valid values (not nil).
 // Only actual nil references return an error.
-func RequireNonNil(val interface{}, fieldName string) error {
+func RequireNonNilError(val interface{}, fieldName string) error {
 	if val == nil {
 		return &ValidationErrorStruct{Field: fieldName, Message: "must be non-nil"}
 	}

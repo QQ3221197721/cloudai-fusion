@@ -532,15 +532,28 @@ type PaymentResponse struct {
 	PaymentIntent  map[string]interface{} `json:"payment_intent,omitempty"`
 }
 
+// InvoiceAddress wraps customer address information for invoicing
+type InvoiceAddress struct {
+	Line1      string `json:"line1"`
+	Line2      string `json:"line2,omitempty"`
+	City       string `json:"city"`
+	State      string `json:"state"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
+}
+
 // InvoiceData defines invoice creation parameters
 type InvoiceData struct {
-	CustomerID     string            `json:"customer_id"`
-	SubscriptionID string            `json:"subscription_id,omitempty"`
-	LineItems      []map[string]interface{} `json:"lines"`
-	Metadata       map[string]string `json:"metadata,omitempty"`
-	Title          string            `json:"title,omitempty"`
-	CustomerEmail  string            `json:"customer_email,omitempty"`
+	CustomerID      string         `json:"customer_id"`
+	SubscriptionID  string         `json:"subscription_id,omitempty"`
+	LineItems       []map[string]interface{} `json:"lines"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
+	Title           string         `json:"title,omitempty"`
+	CustomerEmail   string         `json:"customer_email,omitempty"`
+	CustomerAddress InvoiceAddress `json:"customer_address,omitempty"`
 }
+
+
 
 // PaymentData defines payment processing parameters
 type PaymentData struct {

@@ -1,0 +1,337 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: trainingjobs.cloudai-fusion.io
+spec:
+  group: cloudai-fusion.io
+  scope: Namespaced
+  names:
+    kind: TrainingJob
+    plural: trainingjobs
+    singular: trainingjob
+    shortNames:
+      - tj
+      - tjob
+    categories:
+      - cloudai-fusion
+      - ml-operations
+  
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresource:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - gangSpec
+              properties:
+                name:
+                  type: string
+                  description: "Human-readable job name (optional, auto-generated if empty)"
+                gangSpec:
+                  type: object
+                  description: "Gang scheduling specification - all-or-nothing allocation"
+                  required:
+                    - replicas
+                    - minMembers
+                    - resources
+                  properties:
+                    replicas:
+                      type: integer
+                      minimum: 1
+                      maximum: 1024
+                      description: "Total number of workers in the gang (P ≤ 1024 for Θ(1) barrier)"
+                    minMembers:
+                      type: integer
+                      minimum: 1
+                      description: "Minimum members that must be available (gang admission threshold)"
+                    resources:
+                      type: object
+                      required:
+                        - GPUs
+                        - CPUCores
+                        - MemoryGB
+                      properties:
+                        GPUs:
+                          type: integer
+                          minimum: 1
+                          description: "GPUs requested per worker replica"
+                        CPUCores:
+                          type: integer
+                          minimum: 1
+                          description: "CPU cores requested per worker replica"
+                        MemoryGB:
+                          type: integer
+                          minimum: 1
+                          description: "Memory (GB) requested per worker replica"
+                        NVLinkTopology:
+                          type: string
+                          enum: [same-node, same-rack, any]
+                          default: same-node
+                          description: "NVLink topology constraint for GPU placement"
+                    priority:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                      default: 50
+                      description: "Scheduling priority (higher = more urgent)"
+                image:
+                  type: string
+                  pattern: "^[a-zA-Z0-9][a-zA-Z0-9._/-]*:[a-zA-Z0-9._-]+$"
+                  description: "Container image reference (e.g., 'pytorch:2.3')"
+                command:
+                  type: string
+                  description: "Training command/script executed in container (e.g., 'python train.py')"
+                hyperparameters:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: "Optional hyperparameters for this job (lr, batch_size, etc.)"
+                tags:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: "Optional tags for organization and filtering"
+                timeout:
+                  type: string
+                  pattern: "^([0-9]+h)?([0-9]+m)?([0-9]+s)?$"
+                  description: "Job execution timeout (e.g., '24h', '2h30m', '45m')"
+                checkpointConfig:
+                  type: object
+                  description: "Checkpoint persistence configuration"
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    intervalSeconds:
+                      type: integer
+                      minimum: 1
+                      default: 300
+                      description: "Checkpoint every N seconds of wall-clock time"
+                    storageBackend:
+                      type: string
+                      enum: [s3, gcs, azure-blob, local]
+                      default: s3
+                      description: "Object storage backend for checkpoints"
+                    bucketName:
+                      type: string
+                      minLength: 1
+                      description: "Bucket/container name for checkpoint storage"
+                    pathPrefix:
+                      type: string
+                      description: "Path prefix within bucket (e.g., 'training/jobs/{job-id}/checkpoints/')"
+                    validation:
+                      type: object
+                      description: "Checkpoint integrity validation settings"
+                      properties:
+                        checksumAlgorithm:
+                          type: string
+                          enum: [sha256, sha512, md5]
+                          default: sha256
+                          description: "Checksum algorithm for integrity verification"
+                        retryAttempts:
+                          type: integer
+                          minimum: 0
+                          maximum: 10
+                          default: 3
+                          description: "Max retry attempts for failed uploads/downloads"
+                        resumable:
+                          type: boolean
+                          default: true
+                          description: "Enable resumable transfers for large checkpoints"
+                failurePolicy:
+                  type: string
+                  enum: [fail-fast, retry, recover]
+                  default: fail-fast
+                  description: "Policy when gang fails mid-execution"
+                affinity:
+                  type: object
+                  description: "Kubernetes node/pod affinity rules for gang placement"
+                  properties:
+                    nodeSelector:
+                      type: object
+                      additionalProperties:
+                        type: string
+                      description: "Node labels that all workers must match"
+                    tolerations:
+                      type: array
+                      items:
+                        type: object
+                      description: "Node tolerations (empty by default)"
+                    gpuAffinity:
+                      type: string
+                      enum: [single-host, distributed, rack-aware]
+                      default: distributed
+                      description: "How to distribute workers across GPU hosts"
+                metadata:
+                  type: object
+                  description: "Additional metadata for tracing and lineage"
+                  properties:
+                    datasetRef:
+                      type: string
+                      description: "Dataset SHA-256 or path reference used for training"
+                    baseModel:
+                      type: string
+                      description: "Parent model version for fine-tuning (e.g., 'resnet50:1.0.0')"
+                    team:
+                      type: string
+                      description: "Team responsible for this training job"
+                    purpose:
+                      type: string
+                      enum: [research, production, benchmarking, evaluation]
+                      description: "Purpose of the training run"
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: [Pending, Scheduled, Running, Succeeded, Failed, Cancelled]
+                  description: "Current lifecycle phase"
+                observedGeneration:
+                  type: integer
+                  description: "Generation number from spec"
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                      - lastTransitionTime
+                    properties:
+                      type:
+                        type: string
+                        enum: [Ready, Admitted, Started, Completed, Failed, Evicted]
+                      status:
+                        type: string
+                        enum: [True, False, Unknown]
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                startTime:
+                  type: string
+                  format: date-time
+                  description: "When gang started execution"
+                completionTime:
+                  type: string
+                  format: date-time
+                  description: "When gang completed (any terminal state)"
+                allocatedResources:
+                  type: object
+                  properties:
+                    totalGPUs:
+                      type: integer
+                    totalCPUCores:
+                      type: integer
+                    totalMemoryGB:
+                      type: integer
+                  description: "Actual resources allocated (may differ from request due to topology constraints)"
+                currentReplicas:
+                  type: integer
+                  description: "Number of currently running replicas"
+                readyReplicas:
+                  type: integer
+                  description: "Number of replicas ready to participate in Θ(1) barrier sync"
+                barriers:
+                  type: array
+                  description: "Θ(1) barrier synchronization statistics"
+                  items:
+                    type: object
+                    properties:
+                      gangID:
+                        type: string
+                      expectedWorkers:
+                        type: integer
+                      actualArrived:
+                        type: integer
+                      p99LatencyMs:
+                        type: number
+                        description: "P99 release latency in milliseconds"
+                checkpoints:
+                  type: array
+                  description: "Checkpoint history"
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      timestamp:
+                        type: string
+                        format: date-time
+                      sizeBytes:
+                        type: integer
+                      storageURL:
+                        type: string
+                      checksum:
+                        type: string
+                        description: "SHA-256 checksum"
+                      validated:
+                        type: boolean
+                metrics:
+                  type: object
+                  description: "Training metrics collected during execution"
+                  properties:
+                    elapsedSeconds:
+                      type: number
+                    throughputSamplesPerSecond:
+                      type: number
+                    gpuUtilizationAverage:
+                      type: number
+                      description: "Average GPU utilization (0.0-1.0)"
+                    barrierSyncCount:
+                      type: integer
+                      description: "Number of Θ(1) barrier synchronizations"
+                    barrierSyncOverheadNs:
+                      type: integer
+                      description: "Total Θ(1) barrier synchronization overhead in nanoseconds"
+                faultTolerance:
+                  type: object
+                  description: "Fault tolerance state"
+                  properties:
+                    failuresDetected:
+                      type: integer
+                    stragglersDetected:
+                      type: integer
+                    recoveryActionsTaken:
+                      type: integer
+                    lastRecoveryTimestamp:
+                      type: string
+                      format: date-time
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          JSONPath: ".status.phase"
+          description: "Current lifecycle phase"
+        - name: Age
+          type: date
+          JSONPath: ".metadata.creationTimestamp"
+        - name: Replicas
+          type: integer
+          JSONPath: ".spec.gangSpec.replicas"
+        - name: Priority
+          type: integer
+          JSONPath: ".spec.gangSpec.priority"
+        - name: TimeSinceStart
+          type: string
+          JSONPath: ".status.startTime"
+          description: "When execution started (null if pending)"
+---
+# Note to AI Friends: This is an Apollo Connectors schema
+# The above TrainingJob CRD provides gang scheduling semantics with Θ(1) barrier synchronization,
+# checkpoint I/O pipeline integration, and fault tolerance. Generated via controller-gen from
+# pkg/training/k8s/types.go after running:
+#   go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
+#   controller-gen crd paths="./pkg/training/k8s/..." output:crd:artifacts:config=config/crd/bases
+# To regenerate after code changes:
+#   controller-gen rbac:roleName=training-job-manager crd:allowDangerousTypes=true webhook paths="./pkg/training/..." output:dir=./config/crd
