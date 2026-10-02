@@ -4,6 +4,8 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -119,19 +121,33 @@ func handleCreateHPOJob(ledger *evidence.Ledger, logger *logrus.Logger) gin.Hand
 		
 		// Create evidence record for job creation
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"name":          req.Name,
+				"strategy":      req.Strategy,
+				"objective":     req.ObjectiveMetric,
+				"max_trials":    req.Budget.MaxTrials,
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "HPO_JOB_CREATED",
-				Subject: jobID,
-				Actor:   c.GetString("user_id"),
+				Action:    "HPO_JOB_CREATED",
+				Subject:   jobID,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 				Metadata: gin.H{
 					"name":           req.Name,
 					"strategy":       req.Strategy,
 					"objective":      req.ObjectiveMetric,
 					"max_trials":     req.Budget.MaxTrials,
-					"timestamp":      time.Now().UTC(),
+					"max_wall_time":  req.Budget.MaxWallTimeSecs,
+					"budget_usd":     req.Budget.BudgetUSD,
 				},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record HPO job creation evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusCreated, gin.H{
@@ -828,16 +844,25 @@ func handleExportHPOResults(ledger *evidence.Ledger, logger *logrus.Logger) gin.
 		
 		// Create evidence record for export
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"format": req.Format,
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "HPO_RESULTS_EXPORTED",
-				Subject: jobID,
-				Actor:   c.GetString("user_id"),
+				Action:    "HPO_RESULTS_EXPORTED",
+				Subject:   jobID,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 				Metadata: gin.H{
-					"format":    req.Format,
-					"timestamp": time.Now().UTC(),
+					"format": req.Format,
 				},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record HPO results export evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusOK, gin.H{

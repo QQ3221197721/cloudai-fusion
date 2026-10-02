@@ -15,24 +15,29 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/pipeline"
 	"github.com/gin-gonic/gin"
 )
 
 // PipelineHandler handles data pipeline HTTP requests.
 type PipelineHandler struct {
-	manager *pipeline.Manager
+	manager    *pipeline.Manager
+	evidence   *evidence.Ledger
 }
 
 // NewPipelineHandler creates a new PipelineHandler instance.
-func NewPipelineHandler(mgr *pipeline.Manager) *PipelineHandler {
+func NewPipelineHandler(mgr *pipeline.Manager, ev *evidence.Ledger) *PipelineHandler {
 	return &PipelineHandler{
-		manager: mgr,
+		manager:  mgr,
+		evidence: ev,
 	}
 }
 
@@ -139,6 +144,30 @@ func (h *PipelineHandler) listPipelines(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, response)
+	
+	// Record evidence for sensitive operations
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":       "LIST_PIPELINES",
+			"filters":      filter,
+			"user_id":      c.GetString("user_id"),
+			"timestamp":    time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "PIPELINES_LISTED",
+			Subject:   "data_pipelines",
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":        "query",
+				"result_count": len(pipelines),
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
 }
 
 // createPipeline godoc
@@ -171,6 +200,33 @@ func (h *PipelineHandler) createPipeline(c *gin.Context) {
 			})
 		}
 		return
+	}
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":          "CREATE_PIPELINE",
+			"pipeline_name":   p.Name,
+			"source_type":     p.Source.Type,
+			"target_type":     p.Target.Type,
+			"user_id":         c.GetString("user_id"),
+			"timestamp":       time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "PIPELINE_CREATED",
+			Subject:   p.Name,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":               "create",
+				"status":             "active",
+				"transformation_count": len(p.Transformations),
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
 	}
 	
 	c.JSON(http.StatusCreated, p)
@@ -260,6 +316,32 @@ func (h *PipelineHandler) updatePipeline(c *gin.Context) {
 		return
 	}
 	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":            "UPDATE_PIPELINE",
+			"pipeline_id":       id,
+			"pipeline_name":     existing.Name,
+			"updated_fields":    updates,
+			"user_id":           c.GetString("user_id"),
+			"timestamp":         time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "PIPELINE_UPDATED",
+			Subject:   id,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":              "update",
+				"change_type":       "configuration",
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.JSON(http.StatusOK, existing)
 }
 
@@ -273,12 +355,28 @@ func (h *PipelineHandler) updatePipeline(c *gin.Context) {
 func (h *PipelineHandler) deletePipeline(c *gin.Context) {
 	id := c.Param("id")
 	
-	if err := h.manager.DeletePipeline(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":    "failed to delete pipeline",
-			"details":  err.Error(),
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":    "DELETE_PIPELINE",
+			"pipeline":  id,
+			"user_id":   c.GetString("user_id"),
+			"timestamp": time.Now().UTC(),
 		})
-		return
+		receipt := evidence.Receipt{
+			Action:    "PIPELINE_DELETED",
+			Subject:   id,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":     "delete",
+				"hard":     true,
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
 	}
 	
 	c.Status(http.StatusNoContent)
@@ -303,6 +401,32 @@ func (h *PipelineHandler) archivePipeline(c *gin.Context) {
 	}
 	
 	existing, _ := h.manager.GetPipeline(c.Request.Context(), id)
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":         "ARCHIVE_PIPELINE",
+			"pipeline_id":    id,
+			"pipeline_name":  existing.Name,
+			"user_id":        c.GetString("user_id"),
+			"timestamp":      time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "PIPELINE_ARCHIVED",
+			Subject:   id,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":    "archive",
+				"reason":  "soft_delete",
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.JSON(http.StatusOK, existing)
 }
 
@@ -325,6 +449,32 @@ func (h *PipelineHandler) activatePipeline(c *gin.Context) {
 	}
 	
 	existing, _ := h.manager.GetPipeline(c.Request.Context(), id)
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":         "ACTIVATE_PIPELINE",
+			"pipeline_id":    id,
+			"pipeline_name":  existing.Name,
+			"user_id":        c.GetString("user_id"),
+			"timestamp":      time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "PIPELINE_ACTIVATED",
+			Subject:   id,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":    "activate",
+				"from":    "archived",
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.JSON(http.StatusOK, existing)
 }
 

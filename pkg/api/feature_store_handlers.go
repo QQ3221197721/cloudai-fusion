@@ -12,24 +12,29 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cloudai-fusion/cloudai-fusion/pkg/evidence"
 	"github.com/cloudai-fusion/cloudai-fusion/pkg/featurestore"
 	"github.com/gin-gonic/gin"
 )
 
 // FeatureStoreHandler handles Feature Store HTTP requests
 type FeatureStoreHandler struct {
-	manager *featurestore.Manager
+	manager    *featurestore.Manager
+	evidence   *evidence.Ledger
 }
 
 // NewFeatureStoreHandler creates a new handler instance
-func NewFeatureStoreHandler(mgr *featurestore.Manager) *FeatureStoreHandler {
+func NewFeatureStoreHandler(mgr *featurestore.Manager, ev *evidence.Ledger) *FeatureStoreHandler {
 	return &FeatureStoreHandler{
-		manager: mgr,
+		manager:  mgr,
+		evidence: ev,
 	}
 }
 
@@ -103,7 +108,31 @@ func (h *FeatureStoreHandler) listFeatures(c *gin.Context) {
 		})
 		return
 	}
-
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":      "LIST_FEATURES",
+			"filters":     filters,
+			"user_id":     c.GetString("user_id"),
+			"timestamp":   time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "FEATURES_LISTED",
+			Subject:   "feature_registry",
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":         "query",
+				"result_count": len(features),
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.JSON(http.StatusOK, gin.H{
 		"features": features,
 		"count":    len(features),
@@ -127,7 +156,30 @@ func (h *FeatureStoreHandler) getFeature(c *gin.Context) {
 		})
 		return
 	}
-
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":   "GET_FEATURE",
+			"feature":  featureID,
+			"user_id":  c.GetString("user_id"),
+			"timestamp": time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "FEATURE_ACCESSED",
+			Subject:   featureID,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type": "read",
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.JSON(http.StatusOK, feature)
 }
 
@@ -153,7 +205,33 @@ func (h *FeatureStoreHandler) createFeature(c *gin.Context) {
 		})
 		return
 	}
-
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":          "CREATE_FEATURE",
+			"feature_name":    feature.Name,
+			"feature_type":    feature.Type,
+			"entity_type":     feature.EntityType,
+			"user_id":         c.GetString("user_id"),
+			"timestamp":       time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "FEATURE_REGISTERED",
+			Subject:   feature.Name,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":         "create",
+				"feature_type": string(feature.Type),
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.JSON(http.StatusCreated, feature)
 }
 
@@ -182,7 +260,33 @@ func (h *FeatureStoreHandler) updateFeature(c *gin.Context) {
 		})
 		return
 	}
-
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":            "UPDATE_FEATURE",
+			"feature_id":        featureID,
+			"feature_name":      feature.Name,
+			"updated_fields":    updates,
+			"user_id":           c.GetString("user_id"),
+			"timestamp":         time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "FEATURE_UPDATED",
+			Subject:   featureID,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type":     "update",
+				"changes":  len(updates),
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.JSON(http.StatusOK, feature)
 }
 
@@ -202,7 +306,30 @@ func (h *FeatureStoreHandler) deleteFeature(c *gin.Context) {
 		})
 		return
 	}
-
+	
+	// Record evidence
+	if h.evidence != nil {
+		inputBytes, _ := json.Marshal(gin.H{
+			"action":    "DELETE_FEATURE",
+			"feature":   featureID,
+			"user_id":   c.GetString("user_id"),
+			"timestamp": time.Now().UTC(),
+		})
+		receipt := evidence.Receipt{
+			Action:    "FEATURE_DELETED",
+			Subject:   featureID,
+			Actor:     c.GetString("user_id"),
+			Timestamp: time.Now().UTC(),
+			InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+			Metadata: gin.H{
+				"type": "delete",
+			},
+		}
+		if attestErr := h.evidence.RecordReceipt(receipt); attestErr != nil {
+			logger.WithError(attestErr).Warn("Evidence failed (non-critical)")
+		}
+	}
+	
 	c.NoContent(http.StatusNoContent)
 }
 

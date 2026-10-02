@@ -431,6 +431,28 @@ func handleRegisterModel(h *modelRegistryHandler) gin.HandlerFunc {
 			"benchmark":   req.Benchmarks, // T1 logging
 		}).Info("Model registered successfully")
 		
+		// Record evidence receipt (T1 requirement)
+		if h.ledger != nil {
+			receipt := evidence.Receipt{
+				Action:    "MODEL_REGISTERED",
+				Subject:   fmt.Sprintf("%s:%s", model.Name, model.Version),
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: sha256Hash(fmt.Sprintf("%s:%s:%s", req.Name, req.Version, req.ArtifactPath)),
+				Metadata: gin.H{
+					"framework":     req.Framework,
+					"task_type":     req.TaskType,
+					"size_bytes":    model.SizeBytes,
+					"sha256_prefix": model.SHA256[:16],
+					"benchmarks":    req.Benchmarks,
+				},
+			}
+			
+			if attestErr := h.ledger.RecordReceipt(receipt); attestErr != nil {
+				h.logger.WithError(attestErr).Warn("Failed to record model registration evidence (non-critical)")
+			}
+		}
+		
 		// Return created model
 		c.JSON(http.StatusCreated, gin.H{
 			"model":     model,
@@ -480,6 +502,23 @@ func handleArchiveModelVersion(h *modelRegistryHandler) gin.HandlerFunc {
 			"action":  "archive",
 			"created": model.CreatedAt,
 		}).Info("Model version archived")
+		
+		// Record evidence receipt (T1 requirement)
+		if h.ledger != nil {
+			receipt := evidence.Receipt{
+				Action:    "MODEL_ARCHIVED",
+				Subject:   fmt.Sprintf("%s:%s", name, version),
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				Metadata: gin.H{
+					"archived_at": time.Now().UTC().Format(time.RFC3339),
+				},
+			}
+			
+			if attestErr := h.ledger.RecordReceipt(receipt); attestErr != nil {
+				h.logger.WithError(attestErr).Warn("Failed to record model archival evidence (non-critical)")
+			}
+		}
 		
 		c.JSON(http.StatusOK, gin.H{
 			"archived":    true,
@@ -562,6 +601,25 @@ func handleRollbackModel(h *modelRegistryHandler) gin.HandlerFunc {
 			"to_version":    req.TargetVersion,
 			"reason":        req.Reason,
 		}).Info("Model rolled back successfully")
+		
+		// Record evidence receipt (T1 requirement)
+		if h.ledger != nil {
+			receipt := evidence.Receipt{
+				Action:    "MODEL_ROLLBACK",
+				Subject:   name,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				Metadata: gin.H{
+					"from_version": oldVersion,
+					"to_version":   req.TargetVersion,
+					"reason":       req.Reason,
+				},
+			}
+			
+			if attestErr := h.ledger.RecordReceipt(receipt); attestErr != nil {
+				h.logger.WithError(attestErr).Warn("Failed to record model rollback evidence (non-critical)")
+			}
+		}
 		
 		c.JSON(http.StatusOK, gin.H{
 			"action":           "rollback",
@@ -805,6 +863,29 @@ func handleDeployModel(h *modelRegistryHandler) gin.HandlerFunc {
 			"tenant_id":     req.TenantID,
 			"gpu_count":     req.GPUCount,
 		}).Info("Deployment initiated")
+		
+		// Record evidence receipt (T1 requirement)
+		if h.ledger != nil {
+			receipt := evidence.Receipt{
+				Action:    "MODEL_DEPLOYED",
+				Subject:   deploymentID,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: sha256Hash(fmt.Sprintf("%s:%s", name, req.EndpointName)),
+				Metadata: gin.H{
+					"model":           fmt.Sprintf("%s:%s", name, model.Version),
+					"endpoint_name":   req.EndpointName,
+					"tenant_id":       req.TenantID,
+					"gpu_count":       req.GPUCount,
+					"min_replicas":    req.MinReplicas,
+					"max_replicas":    req.MaxReplicas,
+				},
+			}
+			
+			if attestErr := h.ledger.RecordReceipt(receipt); attestErr != nil {
+				h.logger.WithError(attestErr).Warn("Failed to record model deployment evidence (non-critical)")
+			}
+		}
 		
 		c.JSON(http.StatusAccepted, gin.H{
 			"deployment_id":         deploymentID,

@@ -157,6 +157,33 @@ func RegisterPolicyEnforcementRoutes(router *echo.Echo, handler *PolicyEnforceme
 	group.POST("/policies/:id/validate-rules", handleValidateRules(handler))
 }
 
+// addAuditEntry records evidence for policy operations
+func (h *PolicyEnforcementHandler) addAuditEntry(entryType string, id string, extraData map[string]any) {
+	if h.evidence == nil {
+		return
+	}
+	
+	data := gin.H{
+		"type": entryType,
+		"id":   id,
+	}
+	for k, v := range extraData {
+		data[k] = v
+	}
+	
+	receipt := evidence.Receipt{
+		Action:    entryType,
+		Subject:   id,
+		Actor:     "system", // TODO: Extract from auth context
+		Timestamp: time.Now().UTC(),
+		Metadata:  data,
+	}
+	
+	if err := h.evidence.RecordReceipt(receipt); err != nil {
+		h.logger.WithError(err).Warn("Failed to record policy enforcement evidence (non-critical)")
+	}
+}
+
 // Policy Handlers
 func handleCreatePolicy(h *PolicyEnforcementHandler) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -176,14 +203,12 @@ func handleCreatePolicy(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "CREATE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{
-			"type":    "CREATE_POLICY",
-			"id":      policy.ID,
+		h.addAuditEntry("CREATE_POLICY", policy.ID, map[string]any{
 			"name":    policy.Name,
 			"rules":   len(policy.Rules),
 			"action":  policy.Action,
 			"enabled": policy.Enabled,
-		}, nil)
+		})
 
 		return c.JSON(http.StatusCreated, map[string]any{"code": "SUCCESS", "data": policy})
 	}
@@ -202,7 +227,7 @@ func handleUpdatePolicy(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "UPDATE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "UPDATE_POLICY", "id": id}, nil)
+		h.addAuditEntry("UPDATE_POLICY", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -216,7 +241,7 @@ func handleEnablePolicy(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "ENABLE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "ENABLE_POLICY", "id": id}, nil)
+		h.addAuditEntry("ENABLE_POLICY", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -230,7 +255,7 @@ func handleDisablePolicy(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "DISABLE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "DISABLE_POLICY", "id": id}, nil)
+		h.addAuditEntry("DISABLE_POLICY", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -244,7 +269,7 @@ func handleDeletePolicy(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "DELETE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "DELETE_POLICY", "id": id}, nil)
+		h.addAuditEntry("DELETE_POLICY", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -306,7 +331,7 @@ func handleResolveViolation(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "RESOLVE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "RESOLVE_VIOLATION", "id": id}, nil)
+		h.addAuditEntry("RESOLVE_VIOLATION", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -372,7 +397,7 @@ func handleGenerateReport(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			GeneratedAt: time.Now(),
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "GENERATE_REPORT", "id": report.ID}, nil)
+		h.addAuditEntry("GENERATE_REPORT", report.ID, nil)
 
 		return c.JSON(http.StatusAccepted, map[string]any{"code": "SUCCESS", "data": report})
 	}
@@ -450,7 +475,7 @@ func handleValidateRules(h *PolicyEnforcementHandler) echo.HandlerFunc {
 			"messages": []string{},
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "VALIDATE_RULES", "id": id}, nil)
+		h.addAuditEntry("VALIDATE_RULES", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS", "data": validation})
 	}

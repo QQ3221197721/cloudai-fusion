@@ -2,6 +2,8 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -91,18 +93,31 @@ func handleCreateHuntCase(ledger *evidence.Ledger, logger *logrus.Logger) gin.Ha
 		}).Info("Hunt case created")
 		
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"title":     req.Title,
+				"type":      req.Type,
+				"severity":  req.Severity,
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "HUNT_CASE_CREATED",
-				Subject: caseID,
-				Actor:   c.GetString("user_id"),
+				Action:    "HUNT_CASE_CREATED",
+				Subject:   caseID,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 				Metadata: gin.H{
 					"title":     req.Title,
 					"severity":  req.Severity,
 					"type":      req.Type,
-					"timestamp": time.Now().UTC(),
+					"priority":  req.Priority,
+					"tags":      req.Tags,
 				},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record hunt case creation evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusCreated, gin.H{
@@ -443,16 +458,25 @@ func handleAddInvestigationNote(ledger *evidence.Ledger, logger *logrus.Logger) 
 		}).Info("Investigation note added")
 		
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"note": req.Note,
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "INVESTIGATION_NOTE_ADDED",
-				Subject: c.Param("id"),
-				Actor:   c.GetString("user_id"),
+				Action:    "INVESTIGATION_NOTE_ADDED",
+				Subject:   c.Param("id"),
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 				Metadata: gin.H{
 					"note_length": len(req.Note),
-					"timestamp":   time.Now().UTC(),
 				},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record investigation note evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusOK, gin.H{

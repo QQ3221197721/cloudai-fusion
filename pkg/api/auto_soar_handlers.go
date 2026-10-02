@@ -151,6 +151,33 @@ func RegisterAutoSOARRoutes(router *echo.Echo, handler *AutoSOARHandler) {
 	group.GET("/analytics/playbook-stats", handleGetPlaybookStats(handler))
 }
 
+// Add audit trail entry with evidence recording (for backward compatibility)
+func (h *AutoSOARHandler) addAuditEntry(entryType string, id string, extraData map[string]any) {
+	if h.evidence == nil {
+		return
+	}
+	
+	data := gin.H{
+		"type": entryType,
+		"id":   id,
+	}
+	for k, v := range extraData {
+		data[k] = v
+	}
+	
+	receipt := evidence.Receipt{
+		Action:    entryType,
+		Subject:   id,
+		Actor:     "system", // TODO: Extract from auth context
+		Timestamp: time.Now().UTC(),
+		Metadata:  data,
+	}
+	
+	if err := h.evidence.RecordReceipt(receipt); err != nil {
+		h.logger.WithError(err).Warn("Failed to record SOAR evidence (non-critical)")
+	}
+}
+
 // handleCreatePlaybook creates new playbook
 func handleCreatePlaybook(h *AutoSOARHandler) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -170,12 +197,10 @@ func handleCreatePlaybook(h *AutoSOARHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "CREATE_FAILED", "message": "Failed to create playbook"})
 		}
 
-		h.evidence.AddEntry(map[string]any{
-			"type":  "CREATE_PLAYBOOK",
-			"id":    playbook.ID,
+		h.addAuditEntry("CREATE_PLAYBOOK", playbook.ID, map[string]any{
 			"name":  playbook.Name,
 			"steps": len(playbook.Steps),
-		}, nil)
+		})
 
 		return c.JSON(http.StatusCreated, map[string]any{"code": "SUCCESS", "data": playbook})
 	}
@@ -195,7 +220,7 @@ func handleUpdatePlaybook(h *AutoSOARHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "UPDATE_FAILED", "message": "Failed to update"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "UPDATE_PLAYBOOK", "id": id}, nil)
+		h.addAuditEntry("UPDATE_PLAYBOOK", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -210,7 +235,7 @@ func handleDeployPlaybook(h *AutoSOARHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "DEPLOY_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "DEPLOY_PLAYBOOK", "id": id}, nil)
+		h.addAuditEntry("DEPLOY_PLAYBOOK", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -252,7 +277,7 @@ func handleCreateIncident(h *AutoSOARHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "CREATE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "CREATE_INCIDENT", "id": incident.ID}, nil)
+		h.addAuditEntry("CREATE_INCIDENT", incident.ID, nil)
 
 		return c.JSON(http.StatusCreated, map[string]any{"code": "SUCCESS", "data": incident})
 	}
@@ -273,7 +298,7 @@ func handleResolveIncident(h *AutoSOARHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "RESOLVE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "CLOSE_INCIDENT", "id": id}, nil)
+		h.addAuditEntry("CLOSE_INCIDENT", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}
@@ -368,7 +393,7 @@ func handleDeletePlaybook(h *AutoSOARHandler) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, map[string]any{"code": "DELETE_FAILED"})
 		}
 
-		h.evidence.AddEntry(map[string]any{"type": "DELETE_PLAYBOOK", "id": id}, nil)
+		h.addAuditEntry("DELETE_PLAYBOOK", id, nil)
 
 		return c.JSON(http.StatusOK, map[string]any{"code": "SUCCESS"})
 	}

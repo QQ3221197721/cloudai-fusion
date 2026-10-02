@@ -2,6 +2,8 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -98,17 +100,28 @@ func handleEnrollEdgeDevice(ledger *evidence.Ledger, logger *logrus.Logger) gin.
 		}).Info("Edge device enrolled")
 		
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"name": req.Name,
+				"type": req.Type,
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "EDGE_DEVICE_ENROLLED",
-				Subject: deviceID,
-				Actor:   c.GetString("user_id"),
+				Action:    "EDGE_DEVICE_ENROLLED",
+				Subject:   deviceID,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 				Metadata: gin.H{
 					"name":       req.Name,
 					"type":       req.Type,
-					"timestamp":  time.Now().UTC(),
+					"location":   req.Location,
 				},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record edge device enrollment evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusCreated, gin.H{
@@ -266,17 +279,30 @@ func handleStartAggregationRound(ledger *evidence.Ledger, logger *logrus.Logger)
 		}).Info("Aggregation round started")
 		
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"round_name":         req.RoundName,
+				"num_devices":        len(req.ParticipatingDeviceIDs),
+				"aggregation_protocol": req.AggregationProtocol,
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "AGGREGATION_ROUND_STARTED",
-				Subject: roundID,
-				Actor:   c.GetString("user_id"),
+				Action:    "AGGREGATION_ROUND_STARTED",
+				Subject:   roundID,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 				Metadata: gin.H{
-					"round_name":       req.RoundName,
-					"num_devices":      len(req.ParticipatingDeviceIDs),
-					"timestamp":        time.Now().UTC(),
+					"round_name":           req.RoundName,
+					"num_devices":          len(req.ParticipatingDeviceIDs),
+					"aggregation_protocol": req.AggregationProtocol,
+					"min_participation":    req.MinParticipationThreshold,
 				},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record aggregation round start evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusCreated, gin.H{
@@ -402,16 +428,28 @@ func handleDeployGlobalModel(ledger *evidence.Ledger, logger *logrus.Logger) gin
 		}).Info("Global model deployment initiated")
 		
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"model_version": req.ModelVersion,
+				"target_devices": len(req.TargetDeviceIDs),
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "GLOBAL_MODEL_DEPLOYED",
-				Subject: req.ModelVersion,
-				Actor:   c.GetString("user_id"),
+				Action:    "GLOBAL_MODEL_DEPLOYED",
+				Subject:   req.ModelVersion,
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 				Metadata: gin.H{
-					"model_version": req.ModelVersion,
-					"timestamp":     time.Now().UTC(),
+					"model_version":  req.ModelVersion,
+					"accuracy":       req.TargetAccuracy,
+					"target_devices": len(req.TargetDeviceIDs),
 				},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record global model deployment evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusOK, gin.H{
@@ -583,15 +621,23 @@ func handleExportRoundResults(ledger *evidence.Ledger, logger *logrus.Logger) gi
 		}).Info("Round results exported")
 		
 		if ledger != nil {
+			// Create canonical JSON for hashing
+			inputBytes, _ := json.Marshal(gin.H{
+				"round_id": c.Param("id"),
+			})
+			
 			receipt := evidence.Receipt{
-				Action:  "ROUND_RESULTS_EXPORTED",
-				Subject: c.Param("id"),
-				Actor:   c.GetString("user_id"),
-				Metadata: gin.H{
-					"timestamp": time.Now().UTC(),
-				},
+				Action:    "ROUND_RESULTS_EXPORTED",
+				Subject:   c.Param("id"),
+				Actor:     c.GetString("user_id"),
+				Timestamp: time.Now().UTC(),
+				InputHash: fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
+				Metadata: gin.H{},
 			}
-			ledger.RecordReceipt(receipt)
+			
+			if attestErr := ledger.RecordReceipt(receipt); attestErr != nil {
+				logger.WithError(attestErr).Warn("Failed to record round results export evidence (non-critical)")
+			}
 		}
 		
 		c.JSON(http.StatusOK, gin.H{
