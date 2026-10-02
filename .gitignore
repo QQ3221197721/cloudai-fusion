@@ -84,3 +84,18 @@ tmp/
 models/*.json
 models/*.zip
 models/*.onnx
+
+# Sensitive Directories (Internal Use Only)
+
+# Red team weapons library - NOT FOR PUBLIC RELEASE
+
+pkg/redteam/
+
+# Critical fixes documentation (internal only)
+
+output/CITICAL_FIXES_*.md
+
+output/CRITICAL_FILE_DELETION_*.md
+
+output/critical_tests.txt
+
